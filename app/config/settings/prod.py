@@ -6,7 +6,7 @@ ENABLE_DEBUGGER = False
 # temporary
 ALLOWED_HOSTS = ["*"]
 
-ROOT_DOMAIN = ""
+ROOT_DOMAIN = "list-cutter.emilyflam.be"
 DEFAULT_HTTP_PROTOCOL = "https"
 CSRF_TRUSTED_ORIGINS = [f"{DEFAULT_HTTP_PROTOCOL}://{ROOT_DOMAIN}"]
 
