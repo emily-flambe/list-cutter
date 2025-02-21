@@ -15,14 +15,5 @@ docker-compose exec web python manage.py migrate
 echo "Collecting static files..."
 docker-compose exec web python manage.py collectstatic --noinput
 
-echo "Changing to frontend directory..."
-docker-compose exec web bash -l -c "cd frontend"
-
-echo "Installing npm dependencies..."
-docker-compose exec web bash -l -c "npm install"
-
-echo "Building npm assets..."
-docker-compose exec web bash -l -c "npm run build"
-
-echo "Starting npm in development mode..."
-docker-compose exec -T web bash -l -c "nohup npm run dev > /dev/null 2>&1 &"
+echo "Running frontend setup and build..."
+docker-compose exec web bash -l -c "cd frontend && npm install && npm run build && nohup npm run dev > /dev/null 2>&1 &"
