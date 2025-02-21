@@ -70,6 +70,13 @@ jobs:
         run: |
           ssh target "printf '%b' \"${{ secrets.PROD_ENV }}\" > list-cutter/.env"
 
-      - name: SSH into target host, git pull, and deploy
+      - name: SSH into target host and git pull
+        run: |
+          ssh target "eval \"\$(ssh-agent -s)\" \
+          && ssh-add github \
+          && cd chesscom-helper \
+          && git pull origin dev"
+
+      - name: SSH into target host and deploy
         run: |
           ssh target "cd list-cutter && bash ./deploy_scripts/deploy.sh ${{ steps.check_changes.outputs.rebuild }}"
