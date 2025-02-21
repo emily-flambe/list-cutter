@@ -133,7 +133,12 @@ STATIC_ROOT = get_env_variable("STATIC_ROOT", default="/app/static")
 STATIC_URL = "static/"
 
 # This config will move the Vite build output to the STATIC_ROOT under assets
-STATICFILES_DIRS = [f"{STATIC_ROOT}/js/app/public/"]
+VITE_OUTPUT_DIR = f"{STATIC_ROOT}/js/app/public/"
+
+# Only add to STATICFILES_DIRS if the directory exists
+STATICFILES_DIRS = []
+if os.path.exists(VITE_OUTPUT_DIR):
+    STATICFILES_DIRS.append(VITE_OUTPUT_DIR)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
