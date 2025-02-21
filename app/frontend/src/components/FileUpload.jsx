@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 
-// API_BASE_URL is set in the .env file; this should be 127.0.0.1:8000 in development and listcutter.emilyflam.be in production
+// API_BASE_URL is set in the .env file; this should be 127.0.0.1:8000 in development and list-cutter.emilyflam.be in production
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const FileUpload = () => {
