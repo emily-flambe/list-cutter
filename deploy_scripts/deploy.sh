@@ -10,10 +10,13 @@ else
 fi
 
 echo "Running Django migrations..."
-docker-compose exec web python ../manage.py migrate
+docker-compose exec web python manage.py migrate
 
 echo "Collecting static files..."
-docker-compose exec web python ../manage.py collectstatic --noinput
+docker-compose exec web python manage.py collectstatic --noinput
+
+echo "Changing to frontend directory..."
+docker-compose exec web bash -l -c "cd frontend"
 
 echo "Installing npm dependencies..."
 docker-compose exec web bash -l -c "npm install"
