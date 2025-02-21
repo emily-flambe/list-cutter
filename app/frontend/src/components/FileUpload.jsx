@@ -1,6 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const FileUpload = () => {
   const [file, setFile] = useState(null);
   const [columns, setColumns] = useState([]);
@@ -16,7 +18,7 @@ const FileUpload = () => {
     formData.append("file", file);
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/upload/", formData, {
+      const response = await axios.post("${API_BASE_URL}/api/upload/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
