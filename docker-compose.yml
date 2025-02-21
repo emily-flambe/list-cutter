@@ -1,0 +1,39 @@
+services:
+  web:
+    container_name: list_cutter_web
+    build:
+      dockerfile: Dockerfile
+      context: .
+    environment:
+      - COMMIT_INFO_GIT_SHA=${GIT_SHA:-}
+      - DJANGO_SETTINGS_MODULE=config.settings.dev
+    env_file: .env
+    volumes:
+      - ./app:/app
+    ports:
+      - "8000:8000"  # Django backend
+      - "5173:5173"  # Vite frontend
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-c", "/app/scripts/setup.sh && python manage.py runserver 0.0.0.0:8000"]
+  db:
+    image: postgres:15
+    container_name: list_cutter_db
+    env_file: .env
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
