@@ -79,4 +79,4 @@ jobs:
 
       - name: SSH into target host and deploy
         run: |
-          ssh target "cd list-cutter && bash ./deploy_scripts/deploy.sh ${{ steps.check_changes.outputs.rebuild }}"
+          ssh target "cd list-cutter && bash ./scripts/deploy.sh ${{ steps.check_changes.outputs.rebuild }}"

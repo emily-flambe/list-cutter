@@ -3,28 +3,62 @@ import axios from "axios";
 
 // Assume API_BASE_URL is defined somewhere
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE) || 10 * 1024 * 1024;
+const MAX_FILE_SIZE_MB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(2);
 
 const FileUpload = () => {
   const [file, setFile] = useState(null);
   const [columns, setColumns] = useState([]);
   const [selectedColumns, setSelectedColumns] = useState([]);
+  const [filters, setFilters] = useState({}); // New state for filters
   const [filePath, setFilePath] = useState("");
   const [downloadUrl, setDownloadUrl] = useState("");
   const [showPopup, setShowPopup] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const fileInputRef = useRef(null);
 
   const handleFileChange = (event) => {
-    setFile(event.target.files[0]);
+    const selectedFile = event.target.files[0];
+
     // Reset states on new file selection
+    setFile(selectedFile);
     setColumns([]);
     setSelectedColumns([]);
+    setFilters({});
     setDownloadUrl("");
     setFilePath("");
     setShowPopup(false);
+    setErrorMessage("");
+
+    // Validate file type
+    if (selectedFile && !selectedFile.name.toLowerCase().endsWith(".csv")) {
+      setErrorMessage("Invalid file type. Please upload a CSV file.");
+      return;
+    }
+
+    // Frontend file size validation
+    if (selectedFile && selectedFile.size > MAX_FILE_SIZE) {
+      setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit.`);
+    }
   };
 
   const handleUpload = async () => {
-    if (!file) return alert("Please select a file");
+    if (!file) {
+      setErrorMessage("Please select a file.");
+      return;
+    }
+
+    // Validate file type again before upload
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      setErrorMessage("Invalid file type. Please upload a CSV file.");
+      return;
+    }
+
+    // Prevent upload if file size exceeds limit
+    if (file.size > MAX_FILE_SIZE) {
+      setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit.`);
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", file);
@@ -41,19 +75,28 @@ const FileUpload = () => {
       // Expecting response.data to contain { columns: [...], file_path: "..." }
       setColumns(response.data.columns);
       setFilePath(response.data.file_path || "");
+      setErrorMessage(""); // Clear error if successful
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("Error uploading file");
+
+      // Backend file size enforcement message
+      if (error.response && error.response.status === 400 && error.response.data.error.includes("File size exceeds")) {
+        setErrorMessage(error.response.data.error);
+      } else {
+        setErrorMessage("Error uploading file. Please try again.");
+      }
     }
   };
 
   const handleColumnSelection = (event) => {
     const { value, checked } = event.target;
-    if (checked) {
-      setSelectedColumns((prev) => [...prev, value]);
-    } else {
-      setSelectedColumns((prev) => prev.filter((col) => col !== value));
-    }
+    setSelectedColumns((prev) =>
+      checked ? [...prev, value] : prev.filter((col) => col !== value)
+    );
+  };
+
+  const handleFilterChange = (column, value) => {
+    setFilters((prev) => ({ ...prev, [column]: value }));
   };
 
   const handleExport = async () => {
@@ -63,15 +106,15 @@ const FileUpload = () => {
     if (!filePath) {
       return alert("File path is not available.");
     }
+
     try {
       const exportUrl = `${API_BASE_URL}/api/export_csv/`;
       const response = await axios.post(
         exportUrl,
-        { columns: selectedColumns, file_path: filePath },
-        { responseType: "blob" } // Expecting a CSV blob in response
+        { columns: selectedColumns, file_path: filePath, filters },
+        { responseType: "blob" }
       );
 
-      // Create a download URL for the blob
       const blob = new Blob([response.data], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       setDownloadUrl(url);
@@ -82,21 +125,25 @@ const FileUpload = () => {
   };
 
   const handleDownloadClick = () => {
-    // Once the user clicks the download button, show the popup.
     setShowPopup(true);
   };
 
-  const handlePopupYes = () => {
-    // Reset state and clear the file input value
+  const handlePopupStartOver = () => {
     setFile(null);
     setColumns([]);
     setSelectedColumns([]);
+    setFilters({});
     setFilePath("");
     setDownloadUrl("");
     setShowPopup(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handlePopupKeepGoing = () => {
+    setShowPopup(false);
+    setDownloadUrl(""); // Clear the download URL to hide the download section
   };
 
   const handlePopupNo = () => {
@@ -106,28 +153,33 @@ const FileUpload = () => {
   return (
     <div>
       <h2>Upload CSV File</h2>
-      <input
-        type="file"
-        accept=".csv"
-        onChange={handleFileChange}
-        ref={fileInputRef}
-      />
-      <button onClick={handleUpload}>Upload CSV</button>
+      <p style={{ fontSize: "12px", color: "#666" }}>Max file size: {MAX_FILE_SIZE_MB}MB</p>
+      <input type="file" accept=".csv" onChange={handleFileChange} ref={fileInputRef} />
+      <button onClick={handleUpload} disabled={!!errorMessage}>Upload CSV</button>
+
+      {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
 
       {columns.length > 0 && (
         <div>
-          <h3>Select Columns to Export:</h3>
+          <h3>Select Columns & Filters:</h3>
+          <p style={{ fontSize: "14px", color: "#666", marginBottom: "10px" }}>
+            Filters use SQL WHERE clause syntax (e.g., "&gt;10", "&lt;=20", "!=15", "LIKE '%text%'", "IN (1,2,3)")
+          </p>
           <ul>
             {columns.map((col, index) => (
               <li key={index}>
                 <label>
-                  <input
-                    type="checkbox"
-                    value={col}
-                    onChange={handleColumnSelection}
-                  />
+                  <input type="checkbox" value={col} onChange={handleColumnSelection} />
                   {col}
                 </label>
+                {selectedColumns.includes(col) && (
+                  <input
+                    type="text"
+                    placeholder="e.g. >10, <=20, !=15"
+                    value={filters[col] || ""}
+                    onChange={(e) => handleFilterChange(col, e.target.value)}
+                  />
+                )}
               </li>
             ))}
           </ul>
@@ -157,10 +209,13 @@ const FileUpload = () => {
             color: "black",
             textAlign: "center"
           }}>
-            <h3>Great job! Wanna do it again?</h3>
+            <h3>Great job! What would you like to do next?</h3>
             <div style={{ marginTop: "10px" }}>
-              <button style={{ marginRight: "10px" }} onClick={handlePopupYes}>
-                YES, AGAIN
+              <button style={{ marginRight: "10px" }} onClick={handlePopupStartOver}>
+                START OVER
+              </button>
+              <button style={{ marginRight: "10px" }} onClick={handlePopupKeepGoing}>
+                KEEP GOING
               </button>
               <button onClick={handlePopupNo}>DO NOT</button>
             </div>
