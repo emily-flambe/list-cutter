@@ -1,5 +1,5 @@
 # ===== Stage 1: Base (shared code) =====
-FROM python:3.12.8-slim-bookworm as base
+FROM python:3.12.8-slim-bookworm AS base
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ COPY app/ /app/
 
 
 # ===== Stage 2: Backend =====
-FROM base as backend
+FROM base AS backend
 
 # Expose the Django port
 EXPOSE 8000
@@ -33,12 +33,15 @@ CMD ["sh", "-c", "/app/scripts/setup.sh && python manage.py runserver 0.0.0.0:80
 
 
 # ===== Stage 3: Frontend =====
-FROM node:18-slim as frontend
+FROM node:18-slim AS frontend
 
 WORKDIR /app/frontend
 
 # Copy only the frontend code from the base stage
 COPY --from=base /app/frontend/ . 
+
+# Copy .env file for frontend
+COPY .env .env
 
 # Install frontend dependencies (e.g., Vite, etc.)
 RUN npm install
