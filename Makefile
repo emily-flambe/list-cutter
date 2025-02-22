@@ -54,16 +54,13 @@ logs:
 ps:
 	docker compose -f docker-compose.yml ps
 
-# Get a shell to the web container. Really helpful for running django commands
-web:
-	docker compose -f docker-compose.yml exec web bash
+# Get a shell to the frontend container. Really helpful for running django commands
+frontend:
+	docker compose -f docker-compose.yml exec frontend bash
 
 # Get a shell to the DB container. PW will be in the .env file
 db:
 	docker compose -f docker-compose.yml exec db psql -Upostgres
 
 black:
-	docker compose -f docker-compose.yml exec web bash -c "cd .. && poetry run black --config pyproject.toml . $(c)"
-
-frontend:
-	docker compose -f docker-compose.yml exec web bash -c "cd /app/frontend && npm run dev"
+	docker compose -f docker-compose.yml exec backend bash -c "cd .. && poetry run black --config pyproject.toml . $(c)"
