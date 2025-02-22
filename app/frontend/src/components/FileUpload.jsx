@@ -78,7 +78,7 @@ const FileUpload = () => {
     <div>
       <h2>Upload CSV File</h2>
       <input type="file" accept=".csv" onChange={handleFileChange} />
-      <button onClick={handleUpload}>Upload</button>
+      <button onClick={handleUpload}>Uploadddd</button>
 
       {columns.length > 0 && (
         <div>

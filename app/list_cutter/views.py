@@ -41,7 +41,10 @@ def upload_file(request):
         df = pd.read_csv(file_path)
         columns = df.columns.tolist()
 
-        return Response({'columns': columns}, status=200)
+        return Response({
+            'columns': columns,
+            'file_path': file_path
+        }, status=200)
 
     except Exception as e:
         return Response({'error': str(e)}, status=400)
