@@ -1,2 +1,5 @@
 # list-cutter
-Are you overthinking list cutting? Maybe!
+
+A simple web app to cut lists.
+
+I'll write more later (unless I don't lol)
