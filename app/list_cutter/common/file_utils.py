@@ -50,37 +50,51 @@ def filter_csv_columns(file_path, selected_columns):
 
 def parse_where_clause(value, condition):
     """Parses and evaluates SQL-like WHERE conditions on CSV data."""
+    # If no condition is provided, include all values
+    if not condition or condition.strip() == "":
+        return True
+
     match = re.match(r'([<>!=]=?|BETWEEN|IN)\s*(.+)', condition, re.IGNORECASE)
     if not match:
         raise ValueError(f"Invalid WHERE clause format: {condition}")
 
     operator, expression = match.groups()
     
+    # Try converting value to float if possible
     try:
-        value = float(value)  # Try treating it as a number
+        num_value = float(value)
     except ValueError:
-        value = str(value).strip()
+        num_value = str(value).strip()  # Ensure proper string comparison
 
     if operator.upper() == "BETWEEN":
-        lower, upper = map(float, expression.split("AND"))
-        return lower <= value <= upper
-    elif operator.upper() == "IN":
-        values = [v.strip().strip("'\"") for v in expression.split(",")]
-        return str(value) in values
-    elif operator == ">":
-        return float(value) > float(expression)
-    elif operator == "<":
-        return float(value) < float(expression)
-    elif operator == ">=":
-        return float(value) >= float(expression)
-    elif operator == "<=":
-        return float(value) <= float(expression)
-    elif operator == "!=":
-        return str(value) != str(expression)
-    elif operator == "=" or operator == "==":
-        return str(value) == str(expression)
+        # Extract and parse BETWEEN values
+        bounds = expression.replace("AND", "").split()
+        if len(bounds) != 2:
+            raise ValueError(f"Invalid BETWEEN clause: {condition}")
+        lower, upper = map(float, bounds)
+        return lower <= num_value <= upper if isinstance(num_value, (int, float)) else False
 
-    return True  # Default (no filtering)
+    elif operator.upper() == "IN":
+        # Extract values from IN clause (handles both single and multiple values)
+        values = re.findall(r"'(.*?)'|\"(.*?)\"|(\S+)", expression)
+        values = {v[0] or v[1] or v[2] for v in values if any(v)}  # Convert to set
+
+        return str(num_value) in values  # Ensure exact string matching
+
+    elif operator == ">":
+        return num_value > float(expression) if isinstance(num_value, (int, float)) else False
+    elif operator == "<":
+        return num_value < float(expression) if isinstance(num_value, (int, float)) else False
+    elif operator == ">=":
+        return num_value >= float(expression) if isinstance(num_value, (int, float)) else False
+    elif operator == "<=":
+        return num_value <= float(expression) if isinstance(num_value, (int, float)) else False
+    elif operator == "!=":
+        return str(num_value) != expression.strip("'\"")  # Strip quotes for string comparison
+    elif operator == "=" or operator == "==":
+        return str(num_value) == expression.strip("'\"")  # Strip quotes for string comparison
+
+    return True
 
 def filter_csv_with_where(file_path, selected_columns, where_clauses: Dict[str, str]):
     """Filters a CSV file based on selected columns and SQL-like WHERE clauses."""
