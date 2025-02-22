@@ -162,6 +162,9 @@ const FileUpload = () => {
       {columns.length > 0 && (
         <div>
           <h3>Select Columns & Filters:</h3>
+          <p style={{ fontSize: "14px", color: "#666", marginBottom: "10px" }}>
+            Filters use SQL WHERE clause syntax (e.g., "&gt;10", "&lt;=20", "!=15", "LIKE '%text%'", "IN (1,2,3)")
+          </p>
           <ul>
             {columns.map((col, index) => (
               <li key={index}>
