@@ -10,7 +10,7 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     hmr: {
-      host: 'localhost' // or your host machine's IP
+      host: 'localhost'
     },
     watch: {
       usePolling: true,

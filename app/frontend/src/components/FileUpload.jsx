@@ -100,9 +100,7 @@ const FileUpload = () => {
   };
 
   const handlePopupNo = () => {
-    // Show an error message forcing them to eventually choose "YES, AGAIN"
-    alert(":<");
-    // Optionally, leave the popup open.
+    alert(">:[");
   };
 
   return (
