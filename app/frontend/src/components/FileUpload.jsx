@@ -128,7 +128,7 @@ const FileUpload = () => {
     setShowPopup(true);
   };
 
-  const handlePopupYes = () => {
+  const handlePopupStartOver = () => {
     setFile(null);
     setColumns([]);
     setSelectedColumns([]);
@@ -139,6 +139,11 @@ const FileUpload = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const handlePopupKeepGoing = () => {
+    setShowPopup(false);
+    setDownloadUrl(""); // Clear the download URL to hide the download section
   };
 
   const handlePopupNo = () => {
@@ -201,10 +206,13 @@ const FileUpload = () => {
             color: "black",
             textAlign: "center"
           }}>
-            <h3>Great job! Wanna do it again?</h3>
+            <h3>Great job! What would you like to do next?</h3>
             <div style={{ marginTop: "10px" }}>
-              <button style={{ marginRight: "10px" }} onClick={handlePopupYes}>
-                YES, AGAIN
+              <button style={{ marginRight: "10px" }} onClick={handlePopupStartOver}>
+                START OVER
+              </button>
+              <button style={{ marginRight: "10px" }} onClick={handlePopupKeepGoing}>
+                KEEP GOING
               </button>
               <button onClick={handlePopupNo}>DO NOT</button>
             </div>
