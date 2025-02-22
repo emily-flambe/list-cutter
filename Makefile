@@ -54,7 +54,9 @@ logs:
 ps:
 	docker compose -f docker-compose.yml ps
 
-# Get a shell to the frontend container. Really helpful for running django commands
+backend:
+	docker compose -f docker-compose.yml exec backend bash
+
 frontend:
 	docker compose -f docker-compose.yml exec frontend bash
 
