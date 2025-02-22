@@ -75,8 +75,7 @@ jobs:
           ssh target "eval \"\$(ssh-agent -s)\" \
           && ssh-add github \
           && cd list-cutter \
-          && git fetch origin dev \
-          && git reset --hard origin/dev"
+          && git pull origin dev"
 
       - name: SSH into target host and deploy
         run: |
