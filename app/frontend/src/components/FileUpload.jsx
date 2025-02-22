@@ -3,17 +3,18 @@ import axios from "axios";
 
 // Assume API_BASE_URL is defined somewhere
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE) || 10 * 1024 * 1024; // Default to 10MB
-const MAX_FILE_SIZE_MB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(2); // Convert to MB
+const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE) || 10 * 1024 * 1024;
+const MAX_FILE_SIZE_MB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(2);
 
 const FileUpload = () => {
   const [file, setFile] = useState(null);
   const [columns, setColumns] = useState([]);
   const [selectedColumns, setSelectedColumns] = useState([]);
+  const [filters, setFilters] = useState({}); // New state for filters
   const [filePath, setFilePath] = useState("");
   const [downloadUrl, setDownloadUrl] = useState("");
   const [showPopup, setShowPopup] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(""); // State for error messages
+  const [errorMessage, setErrorMessage] = useState("");
   const fileInputRef = useRef(null);
 
   const handleFileChange = (event) => {
@@ -23,6 +24,7 @@ const FileUpload = () => {
     setFile(selectedFile);
     setColumns([]);
     setSelectedColumns([]);
+    setFilters({});
     setDownloadUrl("");
     setFilePath("");
     setShowPopup(false);
@@ -88,11 +90,13 @@ const FileUpload = () => {
 
   const handleColumnSelection = (event) => {
     const { value, checked } = event.target;
-    if (checked) {
-      setSelectedColumns((prev) => [...prev, value]);
-    } else {
-      setSelectedColumns((prev) => prev.filter((col) => col !== value));
-    }
+    setSelectedColumns((prev) =>
+      checked ? [...prev, value] : prev.filter((col) => col !== value)
+    );
+  };
+
+  const handleFilterChange = (column, value) => {
+    setFilters((prev) => ({ ...prev, [column]: value }));
   };
 
   const handleExport = async () => {
@@ -102,15 +106,15 @@ const FileUpload = () => {
     if (!filePath) {
       return alert("File path is not available.");
     }
+
     try {
       const exportUrl = `${API_BASE_URL}/api/export_csv/`;
       const response = await axios.post(
         exportUrl,
-        { columns: selectedColumns, file_path: filePath },
-        { responseType: "blob" } // Expecting a CSV blob in response
+        { columns: selectedColumns, file_path: filePath, filters },
+        { responseType: "blob" }
       );
 
-      // Create a download URL for the blob
       const blob = new Blob([response.data], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       setDownloadUrl(url);
@@ -128,6 +132,7 @@ const FileUpload = () => {
     setFile(null);
     setColumns([]);
     setSelectedColumns([]);
+    setFilters({});
     setFilePath("");
     setDownloadUrl("");
     setShowPopup(false);
@@ -144,30 +149,29 @@ const FileUpload = () => {
     <div>
       <h2>Upload CSV File</h2>
       <p style={{ fontSize: "12px", color: "#666" }}>Max file size: {MAX_FILE_SIZE_MB}MB</p>
-      <input
-        type="file"
-        accept=".csv"
-        onChange={handleFileChange}
-        ref={fileInputRef}
-      />
+      <input type="file" accept=".csv" onChange={handleFileChange} ref={fileInputRef} />
       <button onClick={handleUpload} disabled={!!errorMessage}>Upload CSV</button>
 
-      {errorMessage && <p style={{ color: "red", marginTop: "10px" }}>{errorMessage}</p>}
+      {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
 
       {columns.length > 0 && (
         <div>
-          <h3>Select Columns to Export:</h3>
+          <h3>Select Columns & Filters:</h3>
           <ul>
             {columns.map((col, index) => (
               <li key={index}>
                 <label>
-                  <input
-                    type="checkbox"
-                    value={col}
-                    onChange={handleColumnSelection}
-                  />
+                  <input type="checkbox" value={col} onChange={handleColumnSelection} />
                   {col}
                 </label>
+                {selectedColumns.includes(col) && (
+                  <input
+                    type="text"
+                    placeholder="e.g. >10, <=20, !=15"
+                    value={filters[col] || ""}
+                    onChange={(e) => handleFilterChange(col, e.target.value)}
+                  />
+                )}
               </li>
             ))}
           </ul>
