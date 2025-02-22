@@ -5,8 +5,12 @@ from django.conf import settings
 import re
 import csv
 from typing import Dict
+import logging
 
+logging.basicConfig(level=logging.DEBUG)  # Set global log level to DEBUG
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # Ensure your specific logger is also at DEBUG level
+
 
 UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, 'uploads')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -48,53 +52,68 @@ def filter_csv_columns(file_path, selected_columns):
     except Exception as e:
         raise ValueError(f"Error processing CSV: {str(e)}")
 
+
 def parse_where_clause(value, condition):
     """Parses and evaluates SQL-like WHERE conditions on CSV data."""
-    # If no condition is provided, include all values
     if not condition or condition.strip() == "":
-        return True
+        logger.debug(f"Empty filter for value '{value}', including all rows.")
+        return True  # No condition = include all rows
 
     match = re.match(r'([<>!=]=?|BETWEEN|IN)\s*(.+)', condition, re.IGNORECASE)
     if not match:
+        logger.error(f"Invalid WHERE clause format: {condition}")
         raise ValueError(f"Invalid WHERE clause format: {condition}")
 
     operator, expression = match.groups()
-    
-    # Try converting value to float if possible
+
+    # Convert value to float if possible
     try:
         num_value = float(value)
     except ValueError:
-        num_value = str(value).strip()  # Ensure proper string comparison
+        num_value = None
+        value = str(value).strip()  # Ensure clean string comparisons
+
+    logger.debug(f"Filtering: Column Value='{value}', Condition='{condition}'")
 
     if operator.upper() == "BETWEEN":
-        # Extract and parse BETWEEN values
         bounds = expression.replace("AND", "").split()
         if len(bounds) != 2:
+            logger.error(f"Invalid BETWEEN clause: {condition}")
             raise ValueError(f"Invalid BETWEEN clause: {condition}")
         lower, upper = map(float, bounds)
-        return lower <= num_value <= upper if isinstance(num_value, (int, float)) else False
+        result = lower <= num_value <= upper if num_value is not None else False
+        logger.debug(f"BETWEEN filter: {lower} <= {num_value} <= {upper} → {result}")
+        return result
 
     elif operator.upper() == "IN":
-        # Extract values from IN clause (handles both single and multiple values)
-        values = re.findall(r"'(.*?)'|\"(.*?)\"|(\S+)", expression)
-        values = {v[0] or v[1] or v[2] for v in values if any(v)}  # Convert to set
-
-        return str(num_value) in values  # Ensure exact string matching
+        # ✅ Fix: Remove parentheses, properly extract values
+        expression = expression.strip("()")  # Remove outer parentheses
+        values = [v.strip().strip("'\"") for v in expression.split(",")]  # Split & clean values
+        
+        values_set = set(values)  # Convert to set for faster lookup
+        logger.debug(f"IN Clause Parsed Values (Fixed): {values_set}")
+        
+        result = str(value) in values_set
+        logger.debug(f"Checking if '{value}' is in {values_set} → {result}")
+        return result
 
     elif operator == ">":
-        return num_value > float(expression) if isinstance(num_value, (int, float)) else False
+        result = num_value > float(expression) if num_value is not None else False
     elif operator == "<":
-        return num_value < float(expression) if isinstance(num_value, (int, float)) else False
+        result = num_value < float(expression) if num_value is not None else False
     elif operator == ">=":
-        return num_value >= float(expression) if isinstance(num_value, (int, float)) else False
+        result = num_value >= float(expression) if num_value is not None else False
     elif operator == "<=":
-        return num_value <= float(expression) if isinstance(num_value, (int, float)) else False
+        result = num_value <= float(expression) if num_value is not None else False
     elif operator == "!=":
-        return str(num_value) != expression.strip("'\"")  # Strip quotes for string comparison
+        result = value != expression.strip("'\"")  # Strip quotes for string comparison
     elif operator == "=" or operator == "==":
-        return str(num_value) == expression.strip("'\"")  # Strip quotes for string comparison
+        result = value == expression.strip("'\"")  # Strip quotes for string comparison
+    else:
+        result = True  # Default (no filtering)
 
-    return True
+    logger.debug(f"Filter Result: '{value}' {operator} '{expression}' → {result}")
+    return result
 
 def filter_csv_with_where(file_path, selected_columns, where_clauses: Dict[str, str]):
     """Filters a CSV file based on selected columns and SQL-like WHERE clauses."""
