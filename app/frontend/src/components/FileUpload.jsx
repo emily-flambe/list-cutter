@@ -28,6 +28,12 @@ const FileUpload = () => {
     setShowPopup(false);
     setErrorMessage("");
 
+    // Validate file type
+    if (selectedFile && !selectedFile.name.toLowerCase().endsWith(".csv")) {
+      setErrorMessage("Invalid file type. Please upload a CSV file.");
+      return;
+    }
+
     // Frontend file size validation
     if (selectedFile && selectedFile.size > MAX_FILE_SIZE) {
       setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit.`);
@@ -37,6 +43,12 @@ const FileUpload = () => {
   const handleUpload = async () => {
     if (!file) {
       setErrorMessage("Please select a file.");
+      return;
+    }
+
+    // Validate file type again before upload
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      setErrorMessage("Invalid file type. Please upload a CSV file.");
       return;
     }
 
