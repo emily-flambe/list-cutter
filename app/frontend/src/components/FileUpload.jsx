@@ -1,12 +1,16 @@
 import { useState } from "react";
 import axios from "axios";
 
+// Assume API_BASE_URL is defined somewhere
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const FileUpload = () => {
   const [file, setFile] = useState(null);
   const [columns, setColumns] = useState([]);
   const [selectedColumns, setSelectedColumns] = useState([]);
   const [filePath, setFilePath] = useState("");
   const [downloadUrl, setDownloadUrl] = useState("");
+  const [showPopup, setShowPopup] = useState(false);
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -15,6 +19,7 @@ const FileUpload = () => {
     setSelectedColumns([]);
     setDownloadUrl("");
     setFilePath("");
+    setShowPopup(false);
   };
 
   const handleUpload = async () => {
@@ -24,9 +29,13 @@ const FileUpload = () => {
     formData.append("file", file);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/upload/`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/api/upload/`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
       // Expecting response.data to contain { columns: [...], file_path: "..." }
       setColumns(response.data.columns);
@@ -71,11 +80,31 @@ const FileUpload = () => {
     }
   };
 
+  const handleDownloadClick = () => {
+    // Once the user clicks the download button, show the popup.
+    setShowPopup(true);
+  };
+
+  const handlePopupYes = () => {
+    // Simulate file deletion (or call your API to delete the file here)
+    // Then reset the component state to initial
+    setFile(null);
+    setColumns([]);
+    setSelectedColumns([]);
+    setFilePath("");
+    setDownloadUrl("");
+    setShowPopup(false);
+  };
+
+  const handlePopupNo = () => {
+    alert(">:[");
+  };
+
   return (
     <div>
       <h2>Upload CSV File</h2>
       <input type="file" accept=".csv" onChange={handleFileChange} />
-      <button onClick={handleUpload}>Uploadddd</button>
+      <button onClick={handleUpload}>Upload CSV</button>
 
       {columns.length > 0 && (
         <div>
@@ -102,8 +131,24 @@ const FileUpload = () => {
         <div>
           <h3>Download Filtered CSV</h3>
           <a href={downloadUrl} download="filtered.csv">
-            <button>Download CSV</button>
+            <button onClick={handleDownloadClick}>Download CSV</button>
           </a>
+        </div>
+      )}
+
+      {showPopup && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center",
+          alignItems: "center"
+        }}>
+          <div style={{ background: "white", padding: "20px", borderRadius: "8px", color: "black", textAlign: "center" }}>
+            <h3>Great job! Wanna do it again?</h3>
+            <div style={{ marginTop: "10px" }}>
+              <button style={{ marginRight: "10px" }} onClick={handlePopupYes}>YES, AGAIN</button>
+              <button onClick={handlePopupNo}>DO NOT</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
