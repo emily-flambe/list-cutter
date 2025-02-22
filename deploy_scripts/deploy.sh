@@ -4,6 +4,9 @@
 # Exit immediately if any command fails
 set -e
 
+echo "Pruning docker images..."
+docker system prune -a -f --volumes
+
 if [ "$1" == "true" ]; then
   echo "Changes detected in Dockerfile or docker-compose.yml. Rebuilding Docker container..."
   
