@@ -114,7 +114,7 @@ const FileUpload = () => {
         onChange={handleFileChange}
         ref={fileInputRef}
       />
-      <button onClick={handleUpload}>Upload CSV :O</button>
+      <button onClick={handleUpload}>Upload CSV</button>
 
       {columns.length > 0 && (
         <div>
