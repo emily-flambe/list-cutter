@@ -1,7 +1,7 @@
 #!/bin/bash
 # deploy-dev.sh
 
-# error noisily
+# Exit immediately if any command fails
 set -e
 
 if [ "$1" == "true" ]; then
@@ -24,10 +24,10 @@ echo "Collecting static files..."
 docker-compose exec backend python manage.py collectstatic --noinput
 
 echo "Installing frontend dependencies..."
-docker-compose exec backend bash -l -c "cd frontend && npm install"
+docker-compose exec frontend bash -l -c "npm install"
 
 echo "Building frontend..."
-docker-compose exec backend bash -l -c "cd frontend && npm run build"
+docker-compose exec frontend bash -l -c "npm run build"
 
 echo "Starting frontend development server..."
-docker-compose exec backend bash -l -c "cd frontend && nohup npm run dev > /dev/null 2>&1 &"
+docker-compose exec frontend bash -l -c "nohup npm run dev > /dev/null 2>&1 &"
