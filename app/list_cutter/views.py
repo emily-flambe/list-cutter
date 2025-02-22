@@ -10,34 +10,39 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, 'uploads')  # Temporary storage
-
-# Ensure the directory exists
+UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, 'uploads')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Load file size limit from environment variables (default 10MB)
+MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", 10 * 1024 * 1024))
 
 def list_cutter_home(request):
 
-    html = "<html><body><div>This is a List Cutter App</div></body></html>"
+    html = "<html><body><div>This is a List Cutter App (lol)</div></body></html>"
     return HttpResponse(html)
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser])
 def upload_file(request):
-    """Handle CSV upload, return column names, and delete file"""
+    """Handle CSV upload, enforce file size limit, return column names"""
     if 'file' not in request.FILES:
         return Response({'error': 'No file uploaded'}, status=400)
 
     file = request.FILES['file']
+
+    # Backend file size enforcement
+    if file.size > MAX_FILE_SIZE:
+        return Response({
+            'error': f'File size exceeds {(MAX_FILE_SIZE / (1024 * 1024)):.2f}MB limit'
+        }, status=400)
+
     file_path = os.path.join(UPLOAD_DIR, file.name)
 
     try:
-        # Save the file temporarily
         with open(file_path, 'wb+') as destination:
             for chunk in file.chunks():
                 destination.write(chunk)
 
-        # Read CSV and extract column names
         df = pd.read_csv(file_path)
         columns = df.columns.tolist()
 

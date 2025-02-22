@@ -3,6 +3,8 @@ import axios from "axios";
 
 // Assume API_BASE_URL is defined somewhere
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE) || 10 * 1024 * 1024; // Default to 10MB
+const MAX_FILE_SIZE_MB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(2); // Convert to MB
 
 const FileUpload = () => {
   const [file, setFile] = useState(null);
@@ -11,20 +13,38 @@ const FileUpload = () => {
   const [filePath, setFilePath] = useState("");
   const [downloadUrl, setDownloadUrl] = useState("");
   const [showPopup, setShowPopup] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(""); // State for error messages
   const fileInputRef = useRef(null);
 
   const handleFileChange = (event) => {
-    setFile(event.target.files[0]);
+    const selectedFile = event.target.files[0];
+
     // Reset states on new file selection
+    setFile(selectedFile);
     setColumns([]);
     setSelectedColumns([]);
     setDownloadUrl("");
     setFilePath("");
     setShowPopup(false);
+    setErrorMessage("");
+
+    // Frontend file size validation
+    if (selectedFile && selectedFile.size > MAX_FILE_SIZE) {
+      setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit.`);
+    }
   };
 
   const handleUpload = async () => {
-    if (!file) return alert("Please select a file");
+    if (!file) {
+      setErrorMessage("Please select a file.");
+      return;
+    }
+
+    // Prevent upload if file size exceeds limit
+    if (file.size > MAX_FILE_SIZE) {
+      setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit.`);
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", file);
@@ -41,9 +61,16 @@ const FileUpload = () => {
       // Expecting response.data to contain { columns: [...], file_path: "..." }
       setColumns(response.data.columns);
       setFilePath(response.data.file_path || "");
+      setErrorMessage(""); // Clear error if successful
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("Error uploading file");
+
+      // Backend file size enforcement message
+      if (error.response && error.response.status === 400 && error.response.data.error.includes("File size exceeds")) {
+        setErrorMessage(error.response.data.error);
+      } else {
+        setErrorMessage("Error uploading file. Please try again.");
+      }
     }
   };
 
@@ -82,12 +109,10 @@ const FileUpload = () => {
   };
 
   const handleDownloadClick = () => {
-    // Once the user clicks the download button, show the popup.
     setShowPopup(true);
   };
 
   const handlePopupYes = () => {
-    // Reset state and clear the file input value
     setFile(null);
     setColumns([]);
     setSelectedColumns([]);
@@ -106,13 +131,16 @@ const FileUpload = () => {
   return (
     <div>
       <h2>Upload CSV File</h2>
+      <p style={{ fontSize: "12px", color: "#666" }}>Max file size: {MAX_FILE_SIZE_MB}MB</p>
       <input
         type="file"
         accept=".csv"
         onChange={handleFileChange}
         ref={fileInputRef}
       />
-      <button onClick={handleUpload}>Upload CSV</button>
+      <button onClick={handleUpload} disabled={!!errorMessage}>Upload CSV</button>
+
+      {errorMessage && <p style={{ color: "red", marginTop: "10px" }}>{errorMessage}</p>}
 
       {columns.length > 0 && (
         <div>
