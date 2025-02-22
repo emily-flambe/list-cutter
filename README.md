@@ -28,7 +28,7 @@ Columns can be filtered using SQL-like conditions, for example:
 - `BETWEEN 50 AND 100`
 - `IN ('Alice', 'Bob')`
 
-The list cutter applies these conditions while streaming CSV processing.
+The list cutter applies these conditions while streaming the CSV into a new CSV, which you can download, if that sparks joy.
 
 ## Type checking and query validation
 
