@@ -175,7 +175,7 @@ const FileUpload = () => {
                 {selectedColumns.includes(col) && (
                   <input
                     type="text"
-                    placeholder="e.g. >10, <=20, !=15"
+                    placeholder="e.g. >10, IN ('Alice', 'Bob'), != 'New York'"
                     value={filters[col] || ""}
                     onChange={(e) => handleFilterChange(col, e.target.value)}
                   />
