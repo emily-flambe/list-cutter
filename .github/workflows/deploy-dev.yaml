@@ -1,0 +1,82 @@
+name: DEV DEPLOY using SSH multi-hop
+
+# Prod? what is that? lmao deal with it
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: false
+        default: 'dev'
+
+jobs:
+  dev-deploy-to-ec2:
+    if: > # only run on push to dev or pull request with dev-deploy label
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'dev-deploy'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Create SSH config
+        run: |
+          cat <<EOF >> ~/.ssh/config
+          Host bastion
+            HostName "${{ secrets.BASTION_HOST }}"
+            User ec2-user
+            IdentityFile ~/.ssh/id_rsa
+
+          Host target
+            HostName "${{ secrets.PROD_TARGET_HOST }}"
+            User ec2-user
+            IdentityFile ~/.ssh/id_rsa
+            ProxyJump bastion
+          EOF
+
+      - name: Preload known hosts for bastion
+        run: |
+          ssh-keyscan -H "${{ secrets.BASTION_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Preload target host key via bastion
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.BASTION_HOST }} "ssh-keyscan -H '${{ secrets.PROD_TARGET_HOST }}'" >> ~/.ssh/known_hosts
+
+      - name: Check if Docker rebuild is needed
+        id: check_changes
+        run: |
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          echo "Changed files:"
+          echo "$CHANGED"
+          if echo "$CHANGED" | grep -qE '(Dockerfile|docker-compose.yml)'; then
+            echo "rebuild=true" >> $GITHUB_OUTPUT
+          else
+            echo "rebuild=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update .env file on target host
+        run: |
+          ssh target "printf '%b' \"${{ secrets.PROD_ENV }}\" > list-cutter/.env"
+
+      - name: SSH into target host and git pull
+        run: |
+          ssh target "eval \"\$(ssh-agent -s)\" \
+          && ssh-add github \
+          && cd list-cutter \
+          && git pull origin dev"
+
+      - name: SSH into target host and deploy
+        run: |
+          ssh target "cd list-cutter && bash ./deploy_scripts/deploy.sh ${{ steps.check_changes.outputs.rebuild }}"

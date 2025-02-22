@@ -1,44 +1,53 @@
-# Use an official Python image
-FROM python:3.12.8-slim-bookworm
+# ===== Stage 1: Base (shared code) =====
+FROM python:3.12.8-slim-bookworm AS base
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies needed for the backend build
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     git \
-    nodejs \
-    npm \
     curl \
     && apt-get clean
 
 # Install Poetry for dependency management
 RUN pip install --upgrade pip && pip install poetry
 
-# Install Node.js and npm for Vite frontend
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs
-
-# Copy project dependencies
-COPY app/pyproject.toml .
-COPY app/poetry.lock .
-
-# Install Python dependencies
+# Copy dependency definitions and install Python dependencies
+COPY app/pyproject.toml app/poetry.lock ./
 RUN poetry config virtualenvs.create false && poetry install --no-root
 
-# Copy entire project
+# Copy entire project (both backend and frontend code)
 COPY app/ /app/
 
-# Install frontend dependencies
+
+# ===== Stage 2: Backend =====
+FROM base AS backend
+
+# Expose the Django port
+EXPOSE 8000
+
+# Run any setup script and then start the Django development server
+CMD ["sh", "-c", "/app/scripts/setup.sh && python manage.py runserver 0.0.0.0:8000"]
+
+
+# ===== Stage 3: Frontend =====
+FROM node:18-slim AS frontend
+
 WORKDIR /app/frontend
+
+# Copy only the frontend code from the base stage
+COPY --from=base /app/frontend/ . 
+
+# Copy .env file for frontend
+COPY .env .env
+
+# Install frontend dependencies (e.g., Vite, etc.)
 RUN npm install
-WORKDIR /app
 
-# Expose ports
-EXPOSE 8000 5173
+# Expose the Vite dev server port
+EXPOSE 5173
 
-# Start both Django and Vite servers
-CMD ["sh", "-c", "cd /app && python manage.py migrate && python manage.py runserver 0.0.0.0:8000 & cd /app/frontend && npm run dev"]
+# Start the Vite development server, binding to 0.0.0.0
+CMD ["sh", "-c", "npm run dev -- --host"]
