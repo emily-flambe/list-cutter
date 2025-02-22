@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import axios from "axios";
 
 // Assume API_BASE_URL is defined somewhere
@@ -11,6 +11,7 @@ const FileUpload = () => {
   const [filePath, setFilePath] = useState("");
   const [downloadUrl, setDownloadUrl] = useState("");
   const [showPopup, setShowPopup] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -86,25 +87,34 @@ const FileUpload = () => {
   };
 
   const handlePopupYes = () => {
-    // Simulate file deletion (or call your API to delete the file here)
-    // Then reset the component state to initial
+    // Reset state and clear the file input value
     setFile(null);
     setColumns([]);
     setSelectedColumns([]);
     setFilePath("");
     setDownloadUrl("");
     setShowPopup(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handlePopupNo = () => {
-    alert(">:[");
+    // Show an error message forcing them to eventually choose "YES, AGAIN"
+    alert(":<");
+    // Optionally, leave the popup open.
   };
 
   return (
     <div>
       <h2>Upload CSV File</h2>
-      <input type="file" accept=".csv" onChange={handleFileChange} />
-      <button onClick={handleUpload}>Upload CSV</button>
+      <input
+        type="file"
+        accept=".csv"
+        onChange={handleFileChange}
+        ref={fileInputRef}
+      />
+      <button onClick={handleUpload}>Upload CSV :O</button>
 
       {columns.length > 0 && (
         <div>
@@ -142,10 +152,18 @@ const FileUpload = () => {
           background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center",
           alignItems: "center"
         }}>
-          <div style={{ background: "white", padding: "20px", borderRadius: "8px", color: "black", textAlign: "center" }}>
+          <div style={{
+            background: "white",
+            padding: "20px",
+            borderRadius: "8px",
+            color: "black",
+            textAlign: "center"
+          }}>
             <h3>Great job! Wanna do it again?</h3>
             <div style={{ marginTop: "10px" }}>
-              <button style={{ marginRight: "10px" }} onClick={handlePopupYes}>YES, AGAIN</button>
+              <button style={{ marginRight: "10px" }} onClick={handlePopupYes}>
+                YES, AGAIN
+              </button>
               <button onClick={handlePopupNo}>DO NOT</button>
             </div>
           </div>
