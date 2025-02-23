@@ -1,6 +1,7 @@
-import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import { Home, Upload } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
+import cuttlefishLogo from '../assets/cutty_logo.png';
 
 const DRAWER_WIDTH = 240;
 
@@ -8,12 +9,24 @@ const Layout = ({ children }) => {
   const location = useLocation();
 
   const menuItems = [
-    { text: 'Home', icon: <Home />, path: '/' },
+    { text: 'About', icon: <Home />, path: '/' },
     { text: 'CSV Uploader', icon: <Upload />, path: '/upload' },
   ];
 
+  // Determine the message based on the current path
+  const getCuttlefishMessage = () => {
+    switch (location.pathname) {
+      case '/':
+        return "Hello! I am Cutty, the friendly CUTTLEFISH. (not an octopus)";
+      case '/upload':
+        return "It looks like you are trying to cut a list! Would you like some help with that?";
+      default:
+        return "";
+    }
+  };
+
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', bgcolor: 'var(--primary-bg)', minHeight: '100vh' }}>
       <Drawer
         variant="permanent"
         sx={{
@@ -22,6 +35,9 @@ const Layout = ({ children }) => {
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
             boxSizing: 'border-box',
+            borderRight: 'none',
+            backgroundColor: 'var(--navbar-bg)',
+            color: '#e3f0f7',
           },
         }}
       >
@@ -33,6 +49,14 @@ const Layout = ({ children }) => {
                   component={Link}
                   to={item.path}
                   selected={location.pathname === item.path}
+                  sx={{
+                    '&.Mui-selected': {
+                      backgroundColor: '#7795ee',
+                      '&:hover': {
+                        backgroundColor: '#5894ff',
+                      },
+                    },
+                  }}
                 >
                   <ListItemIcon>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.text} />
@@ -41,12 +65,26 @@ const Layout = ({ children }) => {
             ))}
           </List>
         </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 'auto', mb: 5 }}>
+          <img src={cuttlefishLogo} alt="Cuttlefish Logo" style={{ maxWidth: '200px' }} />
+          <Typography variant="caption" sx={{ textAlign: 'center', mt: -1 }}>
+            {getCuttlefishMessage()}
+          </Typography>
+        </Box>
       </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8 }}>
+      <Box 
+        component="main" 
+        sx={{ 
+          flexGrow: 1, 
+          p: 3, 
+          mt: 8,
+          bgcolor: 'var(--primary-bg)', // Ensure this is set correctly
+        }}
+      >
         {children}
       </Box>
     </Box>
   );
 };
 
-export default Layout; 
+export default Layout;
