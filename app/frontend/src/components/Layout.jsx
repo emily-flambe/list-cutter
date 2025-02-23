@@ -1,4 +1,4 @@
-import { Box, Drawer, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
+import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { Home, Upload } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -28,15 +28,15 @@ const Layout = ({ children }) => {
         <Box sx={{ overflow: 'auto', mt: 8 }}>
           <List>
             {menuItems.map((item) => (
-              <ListItem
-                button
-                key={item.text}
-                component={Link}
-                to={item.path}
-                selected={location.pathname === item.path}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
+              <ListItem key={item.text} disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to={item.path}
+                  selected={location.pathname === item.path}
+                >
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.text} />
+                </ListItemButton>
               </ListItem>
             ))}
           </List>

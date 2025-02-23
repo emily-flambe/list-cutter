@@ -1,5 +1,20 @@
 import { useState, useRef } from "react";
 import axios from "axios";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  List,
+  ListItem,
+  TextField,
+  Typography,
+  Paper,
+} from '@mui/material';
+import { Upload as UploadIcon } from '@mui/icons-material';
 
 // Assume API_BASE_URL is defined somewhere
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -151,78 +166,125 @@ const FileUpload = () => {
   };
 
   return (
-    <div>
-      <h2>Upload CSV File</h2>
-      <p style={{ fontSize: "12px", color: "#666" }}>Max file size: {MAX_FILE_SIZE_MB}MB</p>
-      <input type="file" accept=".csv" onChange={handleFileChange} ref={fileInputRef} />
-      <button onClick={handleUpload} disabled={!!errorMessage}>Upload CSV</button>
+    <Paper sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>
+        Upload CSV File
+      </Typography>
+      <Typography variant="caption" color="text.secondary">
+        Max file size: {MAX_FILE_SIZE_MB}MB
+      </Typography>
+      
+      <Box sx={{ my: 2 }}>
+        <input
+          type="file"
+          accept=".csv"
+          onChange={handleFileChange}
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          id="csv-file-input"
+        />
+        <label htmlFor="csv-file-input">
+          <Button
+            variant="contained"
+            component="span"
+            startIcon={<UploadIcon />}
+            sx={{ mr: 2 }}
+          >
+            Choose File
+          </Button>
+        </label>
+        <Button
+          variant="contained"
+          onClick={handleUpload}
+          disabled={!!errorMessage}
+          color="primary"
+        >
+          Upload CSV
+        </Button>
+      </Box>
 
-      {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
+      {errorMessage && (
+        <Typography color="error" sx={{ mt: 2 }}>
+          {errorMessage}
+        </Typography>
+      )}
 
       {columns.length > 0 && (
-        <div>
-          <h3>Select Columns & Filters:</h3>
-          <p style={{ fontSize: "14px", color: "#666", marginBottom: "10px" }}>
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Select Columns & Filters:
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Filters use SQL WHERE clause syntax (e.g., "&gt;10", "&lt;=20", "!=15", "LIKE '%text%'", "IN (1,2,3)")
-          </p>
-          <ul>
+          </Typography>
+          
+          <List>
             {columns.map((col, index) => (
-              <li key={index}>
-                <label>
-                  <input type="checkbox" value={col} onChange={handleColumnSelection} />
-                  {col}
-                </label>
+              <ListItem key={index} sx={{ display: 'flex', alignItems: 'center' }}>
+                <Checkbox
+                  checked={selectedColumns.includes(col)}
+                  onChange={handleColumnSelection}
+                  value={col}
+                />
+                <Typography sx={{ minWidth: 150 }}>{col}</Typography>
                 {selectedColumns.includes(col) && (
-                  <input
-                    type="text"
+                  <TextField
+                    size="small"
                     placeholder="e.g. >10, IN ('Alice', 'Bob'), != 'New York'"
                     value={filters[col] || ""}
                     onChange={(e) => handleFilterChange(col, e.target.value)}
+                    sx={{ ml: 2, flex: 1 }}
                   />
                 )}
-              </li>
+              </ListItem>
             ))}
-          </ul>
-          <button onClick={handleExport}>Export Filtered CSV</button>
-        </div>
+          </List>
+          
+          <Button
+            variant="contained"
+            onClick={handleExport}
+            sx={{ mt: 2 }}
+          >
+            Export Filtered CSV
+          </Button>
+        </Box>
       )}
 
       {downloadUrl && (
-        <div>
-          <h3>Download Filtered CSV</h3>
-          <a href={downloadUrl} download="filtered.csv">
-            <button onClick={handleDownloadClick}>Download CSV</button>
-          </a>
-        </div>
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Download Filtered CSV
+          </Typography>
+          <Button
+            variant="contained"
+            color="success"
+            component="a"
+            href={downloadUrl}
+            download="filtered.csv"
+            onClick={handleDownloadClick}
+          >
+            Download CSV
+          </Button>
+        </Box>
       )}
 
-      {showPopup && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center",
-          alignItems: "center"
-        }}>
-          <div style={{
-            background: "white",
-            padding: "20px",
-            borderRadius: "8px",
-            color: "black",
-            textAlign: "center"
-          }}>
-            <h3>Great job! What would you like to do next?</h3>
-            <div style={{ marginTop: "10px" }}>
-              <button style={{ marginRight: "10px" }} onClick={handlePopupStartOver}>
-                START OVER
-              </button>
-              <button style={{ marginRight: "10px" }} onClick={handlePopupKeepGoing}>
-                KEEP GOING
-              </button>
-              <button onClick={handlePopupNo}>DO NOT</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      <Dialog open={showPopup} onClose={() => setShowPopup(false)}>
+        <DialogTitle>Great job! What would you like to do next?</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+            <Button variant="contained" onClick={handlePopupStartOver}>
+              START OVER
+            </Button>
+            <Button variant="contained" onClick={handlePopupKeepGoing}>
+              KEEP GOING
+            </Button>
+            <Button variant="contained" color="error" onClick={handlePopupNo}>
+              DO NOT
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
+    </Paper>
   );
 };
 
