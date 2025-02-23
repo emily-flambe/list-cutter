@@ -134,6 +134,11 @@ STATIC_URL = "static/"
 
 # This config will move the Vite build output to the STATIC_ROOT under assets
 VITE_OUTPUT_DIR = f"{STATIC_ROOT}/js/app/public/"
+DJANGO_VITE = {
+     "default": {
+        "manifest_path": "/app/static/js/app/public/.vite/manifest.json",
+     }
+ }
 
 # Only add to STATICFILES_DIRS if the directory exists
 STATICFILES_DIRS = []

@@ -13,7 +13,7 @@ CSRF_TRUSTED_ORIGINS = [f"{DEFAULT_HTTP_PROTOCOL}://{ROOT_DOMAIN}"]
 DJANGO_VITE = {
     "default": {
         "dev_mode": False,
-        "manifest_path": f"{STATIC_ROOT}/js/app/public/.vite/manifest.json",
+        "manifest_path": "/app/static/js/app/public/.vite/manifest.json",
     }
 }
 

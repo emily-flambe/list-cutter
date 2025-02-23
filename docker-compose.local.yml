@@ -4,11 +4,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: prod-backend
+      target: backend
     environment:
       - COMMIT_INFO_GIT_SHA=${GIT_SHA:-}
-      - DJANGO_SETTINGS_MODULE=config.settings.prod
+      - DJANGO_SETTINGS_MODULE=config.settings.dev
     env_file: .env
+    volumes:
+      - ./app:/app
     ports:
       - "8000:8000"
     depends_on:
@@ -21,21 +23,35 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  frontend:
+  frontend-dev:
     container_name: list_cutter_frontend
     build:
       context: .
       dockerfile: Dockerfile
-      target: frontend-prod
-    # Nginx exposes port 80 by default, so we map host:container as 3000:80 or 80:80, your choice
+      target: frontend-dev
+    working_dir: /app/frontend
+    command: ["sh", "-c", "npm run dev -- --host"]
+    env_file: .env
+    volumes:
+      - ./app/frontend:/app/frontend
     ports:
-      - "80:80"
+      - "5173:5173"
     depends_on:
       backend:
         condition: service_healthy
       db:
         condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   db:
     image: postgres:15
@@ -55,6 +71,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   db-data:
