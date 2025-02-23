@@ -33,18 +33,21 @@ CMD ["sh", "-c", "/app/scripts/setup.sh && python manage.py runserver 0.0.0.0:80
 
 
 # ===== Stage 3: Frontend =====
-FROM node:18-slim AS frontend
+FROM node:20-slim AS frontend
 
 WORKDIR /app/frontend
 
-# Copy only the frontend code from the base stage
-COPY --from=base /app/frontend/ . 
+# Copy package files first to leverage Docker cache
+COPY app/frontend/package*.json ./
+
+# Install frontend dependencies
+RUN npm install
+
+# Copy the rest of the frontend code
+COPY app/frontend/ ./
 
 # Copy .env file for frontend
 COPY .env .env
-
-# Install frontend dependencies (e.g., Vite, etc.)
-RUN npm install
 
 # Expose the Vite dev server port
 EXPOSE 5173

@@ -1,4 +1,4 @@
-.PHONY: help build up start down destroy stop restart logs ps web db black
+.PHONY: help build up start down destroy stop restart logs ps web db black sequential-up
 
 help:
 	make -pRrq  -f Makefile 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$'
@@ -66,3 +66,11 @@ db:
 
 black:
 	docker compose -f docker-compose.yml exec backend bash -c "cd .. && poetry run black --config pyproject.toml . $(c)"
+
+sequential-up:
+	docker-compose up -d db
+	docker-compose logs -f db & sleep 30
+	docker-compose up -d backend
+	docker-compose logs -f backend & sleep 30
+	docker-compose up -d frontend
+	docker-compose logs -f frontend
