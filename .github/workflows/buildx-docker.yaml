@@ -2,9 +2,6 @@ name: Build and Publish Image
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - dev
 
 jobs:
   publish:
