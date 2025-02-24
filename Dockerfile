@@ -42,10 +42,8 @@ CMD ["sh", "-c", "npm run dev -- --host"]
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 
-# If needed for native deps
-# RUN apk add --no-cache python3 make g++
+ENV NODE_OPTIONS="--max-old-space-size=512"
 
-ENV NODE_OPTIONS="--max-old-space-size=1536"
 
 COPY app/frontend/package*.json ./
 RUN npm ci
