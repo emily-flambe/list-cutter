@@ -63,7 +63,7 @@ EXPOSE 80
 # Nginx starts automatically. No need for CMD.
 
 # ===== Stage 6: Production Backend (Django) =====
-FROM base AS prod-backend
+FROM base AS backend-prod
 # If django-vite or WhiteNoise needs the built assets, copy them in:
 # COPY --from=frontend-builder /app/frontend/public /app/static/js/app/public
 
