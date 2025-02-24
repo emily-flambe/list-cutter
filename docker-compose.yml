@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   backend:
     container_name: list_cutter_backend
@@ -28,7 +30,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: frontend-prod
-    # Nginx exposes port 80 by default, so we map host:container as 3000:80 or 80:80, your choice
+    # The final stage is Nginx-based, serving your built assets
     ports:
       - "80:80"
     depends_on:
