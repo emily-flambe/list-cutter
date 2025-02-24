@@ -2,13 +2,17 @@ name: Build and Publish Image
 
 on:
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Tag for the Docker images (e.g. v1.0.0)'
+        required: true
+        default: 'latest'
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
-    
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -25,31 +29,9 @@ jobs:
           username: emilycogsdill
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Generate Docker metadata for backend
-        id: meta-backend
-        uses: docker/metadata-action@v4
-        with:
-          images: emilycogsdill/list-cutter-backend
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha
-            latest
-
-      - name: Generate Docker metadata for frontend
-        id: meta-frontend
-        uses: docker/metadata-action@v4
-        with:
-          images: emilycogsdill/list-cutter-frontend
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha
-            latest
-
       - name: Create .env file for frontend build
         run: |
-          printf '%b' "${{ secrets.PROD_ENV }}" > .env            
+          printf '%b' "${{ secrets.PROD_ENV }}" > .env
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v3
@@ -58,8 +40,7 @@ jobs:
           target: frontend-prod
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: emilycogsdill/list-cutter-frontend:${{ github.event.inputs.image_tag }}
 
       - name: Build and push backend image
         uses: docker/build-push-action@v3
@@ -68,5 +49,4 @@ jobs:
           target: backend-prod
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
+          tags: emilycogsdill/list-cutter-backend:${{ github.event.inputs.image_tag }}
