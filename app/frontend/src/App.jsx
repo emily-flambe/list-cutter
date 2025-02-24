@@ -6,6 +6,7 @@ import FileUpload from './components/FileUpload';
 import Register from './components/Register';
 import Login from './components/Login';
 import Logout from './components/LogoutConfirmation';
+import FAQ from './components/FAQ';
 import './index.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { AuthProvider } from './context/AuthContext';
@@ -45,6 +46,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
+            <Route path="/faq" element={<FAQ />} />
           </Routes>
         </Layout>
       </BrowserRouter>

@@ -1,5 +1,5 @@
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
-import { Home, Upload, PersonAdd, Login, Logout } from '@mui/icons-material';
+import { Home, Upload, PersonAdd, Login, Logout, Help } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 
@@ -14,6 +14,7 @@ const Layout = ({ children }) => {
     { text: 'Register', icon: <PersonAdd />, path: '/register' },
     { text: 'Login', icon: <Login />, path: '/login' },
     { text: 'Logout', icon: <Logout />, path: '/logout' },
+    { text: 'FAQ', icon: <Help />, path: '/faq' },
   ];
 
   // Determine the message based on the current path
