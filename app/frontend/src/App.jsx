@@ -3,8 +3,12 @@ import { CssBaseline } from '@mui/material';
 import Layout from './components/Layout';
 import Home from './components/Home';
 import FileUpload from './components/FileUpload';
+import Register from './components/Register';
+import Login from './components/Login';
+import Logout from './components/LogoutConfirmation';
 import './index.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { AuthProvider } from './context/AuthContext';
 
 // Function to get CSS variable values
 const getCssVariable = (variable) => {
@@ -38,6 +42,9 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/upload" element={<FileUpload />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/logout" element={<Logout />} />
           </Routes>
         </Layout>
       </BrowserRouter>

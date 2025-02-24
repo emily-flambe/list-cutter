@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 import { Upload as UploadIcon } from '@mui/icons-material';
 
-// Assume API_BASE_URL is defined somewhere
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE) || 10 * 1024 * 1024;
 const MAX_FILE_SIZE_MB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(2);
