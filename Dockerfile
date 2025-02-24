@@ -54,7 +54,7 @@ RUN npm run build
 # ===== Stage 5: Frontend Production (Nginx) =====
 FROM nginx:alpine AS frontend-prod
 
-# Copy the built files from the builder stage (dist instead of public)
+# Copy the built files from the builder stage
 COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
 
 COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
