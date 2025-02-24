@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -49,15 +50,9 @@ jobs:
             type=sha
             latest
 
-      - name: Build and push backend image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          target: backend-prod
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
+      - name: Create .env file for frontend build
+        run: |
+          printf '%b' "${{ secrets.PROD_ENV }}" > .env            
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v3
@@ -68,3 +63,13 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          target: backend-prod
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
