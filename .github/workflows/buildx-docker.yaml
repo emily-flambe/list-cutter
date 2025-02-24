@@ -36,6 +36,7 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
+            latest
 
       - name: Generate Docker metadata for frontend
         id: meta-frontend
@@ -46,22 +47,23 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
+            latest
 
-      #- name: Build and push backend image
-      #  uses: docker/build-push-action@v3
-      #  with:
-      #    context: .
-      #    target: prod-backend
-      #    push: true
-      #    platforms: linux/amd64,linux/arm64
-      #    tags: ${{ steps.meta-backend.outputs.tags }}
-      #    labels: ${{ steps.meta-backend.outputs.labels }}
+      - name: Build and push backend image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          target: prod-backend
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v3
         with:
           context: .
-          target: frontend
+          target: prod-frontend
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta-frontend.outputs.tags }}
