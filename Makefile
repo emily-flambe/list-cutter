@@ -67,10 +67,17 @@ db:
 black:
 	docker compose -f docker-compose.local.yml exec backend bash -c "cd .. && poetry run black --config pyproject.toml . $(c)"
 
-# build and push production images to docker hub
+# build and push cross-platform images to docker hub for production deployment to pull and enjoy
 push:
-	docker-compose -f docker-compose.yml build
+
+	docker compose -f docker-compose.yml build
 	docker tag list-cutter-backend emilycogsdill/list-cutter-backend:latest
 	docker tag list-cutter-frontend emilycogsdill/list-cutter-frontend:latest
-	docker push emilycogsdill/list-cutter-backend:latest
-	docker push emilycogsdill/list-cutter-frontend:latest
+	docker buildx build --platform linux/amd64,linux/arm64 \
+		--target prod-backend \
+		-t emilycogsdill/list-cutter-backend:latest \
+		--push .
+	docker buildx build --platform linux/amd64,linux/arm64 \
+		--target frontend \
+		-t emilycogsdill/list-cutter-frontend:latest \
+		--push .
