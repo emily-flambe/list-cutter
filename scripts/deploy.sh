@@ -7,6 +7,9 @@ set -e
 echo "Pruning docker images..."
 docker system prune -a -f --volumes
 
+echo "Pulling latest images from Docker Hub..."
+docker-compose -f docker-compose.web.yml pull
+
 if [ "$1" == "true" ]; then
   echo "Changes detected in Dockerfile or docker-compose.yml. Rebuilding Docker container..."
   
@@ -14,23 +17,9 @@ if [ "$1" == "true" ]; then
   docker-compose down --remove-orphans
   
   # Build and bring up containers with orphan removal
-  docker-compose build && docker-compose up -d --remove-orphans
+  docker-compose -f docker-compose.web.yml build && docker-compose -f docker-compose.web.yml up -d --remove-orphans
 else
   echo "No rebuild required. Restarting container..."
-  docker-compose restart
+  docker-compose -f docker-compose.web.yml restart
 fi
 
-echo "Running Django migrations..."
-docker-compose exec backend python manage.py migrate
-
-echo "Collecting static files..."
-docker-compose exec backend python manage.py collectstatic --noinput
-
-echo "Installing frontend dependencies..."
-docker-compose exec frontend bash -l -c "npm install"
-
-echo "Building frontend..."
-docker-compose exec frontend bash -l -c "npm run build"
-
-echo "Starting frontend development server..."
-docker-compose exec frontend bash -l -c "nohup npm run dev > /dev/null 2>&1 &"
