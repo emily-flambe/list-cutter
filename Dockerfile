@@ -54,14 +54,11 @@ RUN npm run build
 # ===== Stage 5: Frontend Production (Nginx) =====
 FROM nginx:alpine AS frontend-prod
 
-# Copy the built files from the builder stage
-COPY --from=frontend-builder /app/frontend/public /usr/share/nginx/html
+# Copy the built files from the builder stage (dist instead of public)
+COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
 
-# If you have a custom Nginx config that proxies /api to backend:8000, copy it here:
-# For example, if your config is named "default.conf":
 COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Expose port 80 for Nginx
 EXPOSE 80
 # Nginx starts automatically. No need for CMD.
 
