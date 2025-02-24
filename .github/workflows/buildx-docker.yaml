@@ -2,16 +2,12 @@ name: Build and Publish Image
 
 on:
   workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - dev
 
 jobs:
   publish:
-    # Run the job if manually triggered OR if the pull request has a label that contains "docker-deploy"
-    if: >
-      github.event_name == 'workflow_dispatch'
-      || (github.event_name == 'pull_request' &&
-         contains(join(github.event.pull_request.labels.*.name, ','), 'docker-deploy'))
     runs-on: ubuntu-latest
 
     steps:
