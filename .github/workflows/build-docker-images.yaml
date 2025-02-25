@@ -8,8 +8,8 @@ on:
         required: true
         default: 'latest'
         options:
-          - dev
           - latest
+          - dev
 
 jobs:
   publish:
