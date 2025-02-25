@@ -20,6 +20,8 @@ git clone --branch dev --single-branch git@github.com:emily-flambe/list-cutter.g
 
 cd list-cutter
 
+vim .env
+
 docker-compose -f docker-compose.web-dev.yml pull
 
 docker-compose -f docker-compose.web-dev.yml up -d

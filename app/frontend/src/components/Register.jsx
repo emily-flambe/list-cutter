@@ -56,10 +56,6 @@ const Register = () => {
         Register
       </Typography>
 
-      <Typography variant="body2" color="textSecondary" gutterBottom sx={{ fontStyle: 'italic', my: 4 }}>
-        Act like you've been here before!
-      </Typography>
-
       {successMessage && (
         <Alert severity="success" sx={{ mb: 2 }}>
           {successMessage}
