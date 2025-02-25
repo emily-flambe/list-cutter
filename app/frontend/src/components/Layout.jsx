@@ -2,18 +2,21 @@ import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText
 import { Home, Upload, PersonAdd, Login, Logout, Help } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 
 const DRAWER_WIDTH = 240;
 
 const Layout = ({ children }) => {
   const location = useLocation();
+  const { token, user } = useContext(AuthContext);
 
   const menuItems = [
     { text: 'About', icon: <Home />, path: '/' },
-    { text: 'CSV Uploader', icon: <Upload />, path: '/upload' },
-    { text: 'Register', icon: <PersonAdd />, path: '/register' },
-    { text: 'Login', icon: <Login />, path: '/login' },
-    { text: 'Logout', icon: <Logout />, path: '/logout' },
+    { text: 'CSV Cutter', icon: <Upload />, path: '/upload' },
+    ...(token ? [] : [{ text: 'Create Account', icon: <Login />, path: '/register' }]),
+    ...(token ? [] : [{ text: 'Login', icon: <Login />, path: '/login' }]),
+    ...(token ? [{ text: 'Logout', icon: <Logout />, path: '/logout' }] : []),
     { text: 'FAQ', icon: <Help />, path: '/faq' },
   ];
 
@@ -46,6 +49,9 @@ const Layout = ({ children }) => {
         }}
       >
         <Box sx={{ overflow: 'auto', mt: 8 }}>
+          <Typography variant="body2" sx={{ padding: 2 }}>
+            {token ? <>Hello, <strong>{user ? user.username : 'Unknown User'}</strong>! Thank you for visiting this web site!</> : 'You are not logged in :/'}
+          </Typography>
           <List>
             {menuItems.map((item) => (
               <ListItem key={item.text} disablePadding>
