@@ -109,14 +109,14 @@ jobs:
           && git fetch origin ${{ github.event.inputs.branch }} \
           && git reset --hard FETCH_HEAD"
 
-      - name: 'Create/Update env file on target host'
-        run: |
-          ssh target "touch list-cutter/.env \
-          && echo DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE} >> list-cutter/.env \
-          && echo EMAIL_ENABLED=${EMAIL_ENABLED} >> list-cutter/.env \
-          && echo ANALYTICS_ENABLED=${ANALYTICS_ENABLED} >> list-cutter/.env \
-          && echo DD_TRACE_ENABLED=${DD_TRACE_ENABLED} >> list-cutter/.env \
-          && echo ENABLE_DEBUG_TOOLBAR=${ENABLE_DEBUG_TOOLBAR} >> list-cutter/.env \
-          && echo POSTGRES_HOST=${POSTGRES_HOST} >> list-cutter/.env \
-          && echo POSTGRES_USER=${POSTGRES_USER} >> list-cutter/.env \
-          && echo POSTGRES_PASSWORD=${POSTGRES_PASSWORD} >> list-cutter/.env"
+      # - name: 'Create/Update env file on target host'
+      #   run: |
+      #     ssh target "touch list-cutter/.env \
+      #     && echo DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE} >> list-cutter/.env \
+      #     && echo EMAIL_ENABLED=${EMAIL_ENABLED} >> list-cutter/.env \
+      #     && echo ANALYTICS_ENABLED=${ANALYTICS_ENABLED} >> list-cutter/.env \
+      #     && echo DD_TRACE_ENABLED=${DD_TRACE_ENABLED} >> list-cutter/.env \
+      #     && echo ENABLE_DEBUG_TOOLBAR=${ENABLE_DEBUG_TOOLBAR} >> list-cutter/.env \
+      #     && echo POSTGRES_HOST=${POSTGRES_HOST} >> list-cutter/.env \
+      #     && echo POSTGRES_USER=${POSTGRES_USER} >> list-cutter/.env \
+      #     && echo POSTGRES_PASSWORD=${POSTGRES_PASSWORD} >> list-cutter/.env"
