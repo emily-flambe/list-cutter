@@ -2,6 +2,11 @@ name: Build and Publish Image
 
 on:
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Tag to use for the image'
+        required: true
+        default: 'latest'
 
 jobs:
   publish:
