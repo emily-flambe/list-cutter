@@ -1,4 +1,4 @@
-name: Rebuild web deployment
+name: Deploy web application
 
 description: |
   Once you are ready to redeploy the web application, you can trigger this workflow.
