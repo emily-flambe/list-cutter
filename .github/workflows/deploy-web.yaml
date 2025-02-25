@@ -93,10 +93,38 @@ jobs:
           && git reset --hard FETCH_HEAD"
 
       - name: Update .env file on target host
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.dev
+          EMAIL_ENABLED: "True"
+          ANALYTICS_ENABLED: "False"
+          DD_TRACE_ENABLED: "False"
+          ENABLE_DEBUG_TOOLBAR: "False"
+          POSTGRES_HOST: db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: list_cutter
+          POSTGRES_PORT: "5432"
+          DJANGO_SECRET_KEY: "django-insecure-b48ta14-l45z4q\$4sqarf(@5&^5xojsku0t85x0!af6+@f=bbj" #security is my passion
+          VITE_MAX_UPLOAD_SIZE: "10485760"
+          VITE_API_BASE_URL: ""
         run: |
-          ssh target "cat > list-cutter/.env <<'EOF' 
-          ${{ env.ENV_FILE }}
-          EOF"
+          ssh target "cat > list-cutter/.env <<EOF
+DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+EMAIL_ENABLED=${EMAIL_ENABLED}
+ANALYTICS_ENABLED=${ANALYTICS_ENABLED}
+DD_TRACE_ENABLED=${DD_TRACE_ENABLED}
+ENABLE_DEBUG_TOOLBAR=${ENABLE_DEBUG_TOOLBAR}
+
+POSTGRES_HOST=${POSTGRES_HOST}
+POSTGRES_USER=${POSTGRES_USER}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+POSTGRES_DB=${POSTGRES_DB}
+POSTGRES_PORT=${POSTGRES_PORT}
+
+DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+VITE_MAX_UPLOAD_SIZE=${VITE_MAX_UPLOAD_SIZE} # 10MB
+VITE_API_BASE_URL=${VITE_API_BASE_URL}
+EOF"
 
       # - name: SSH into target host and run deployment script
       #   run: |
