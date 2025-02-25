@@ -45,9 +45,9 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.instance }}" == "dev" ]; then
             echo "TARGET_HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
-            echo "ENV_FILE=${{ secrets.DEV_ENV }}" >> $GITHUB_ENV
+            echo "ENVIRONMENT=dev" >> $GITHUB_ENV
           else
-            echo "ENV_FILE=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
+            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
             if [ "${{ github.event.inputs.instance }}" == "prod-blue" ]; then
               echo "TARGET_HOST=${{ secrets.PROD_BLUE_HOST }}" >> $GITHUB_ENV
             elif [ "${{ github.event.inputs.instance }}" == "prod-green" ]; then
@@ -95,11 +95,13 @@ jobs:
       - name: 'Create/Update env file on target host'
         run: |
           ssh target "touch list-cutter/.env \
-          && echo DJANGO_SETTINGS_MODULE= >> list-cutter/.env \
-          && echo EMAIL_ENABLED= >> list-cutter/.env \
-          && echo ANALYTICS_ENABLED= >> list-cutter/.env \
-          && echo DD_TRACE_ENABLED= >> list-cutter/.env \
-          && echo ENABLE_DEBUG_TOOLBAR= >> list-cutter/.env \
-          && echo POSTGRES_HOST= >> list-cutter/.env \
-          && echo POSTGRES_USER= >> list-cutter/.env \
-          && echo POSTGRES_PASSWORD= >> list-cutter/.env"
+          && echo DJANGO_SETTINGS_MODULE=config.settings.${{ env.ENVIRONMENT }} >> list-cutter/.env \
+          && echo EMAIL_ENABLED=True >> list-cutter/.env \
+          && echo ANALYTICS_ENABLED=False >> list-cutter/.env \
+          && echo DD_TRACE_ENABLED=False >> list-cutter/.env \
+          && echo ENABLE_DEBUG_TOOLBAR=False >> list-cutter/.env \
+          && echo POSTGRES_HOST=list_cutter_db >> list-cutter/.env \
+          && echo POSTGRES_USER=postgres >> list-cutter/.env \
+          && echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> list-cutter/.env \
+          && echo POSTGRES_DB=list_cutter >> list-cutter/.env \
+          && echo POSTGRES_PORT=5432 >> list-cutter/.env"
