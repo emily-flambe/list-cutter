@@ -55,22 +55,22 @@ jobs:
             fi
           fi          
 
-      - name: Set up environment variables
-        env:
-          DJANGO_SETTINGS_MODULE: config.settings.dev
-          EMAIL_ENABLED: "True"
-          ANALYTICS_ENABLED: "False"
-          DD_TRACE_ENABLED: "False"
-          ENABLE_DEBUG_TOOLBAR: "False"
-          POSTGRES_HOST: db
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: list_cutter
-          POSTGRES_PORT: "5432"
-          DJANGO_SECRET_KEY: "django-insecure-b48ta14-l45z4q\$4sqarf(@5&^5xojsku0t85x0!af6+@f=bbj" #security is my passion
-          VITE_MAX_UPLOAD_SIZE: "10485760"
-          VITE_API_BASE_URL: ""
-        run: echo "Environment variables set"
+      # - name: Set up environment variables
+      #   env:
+      #     DJANGO_SETTINGS_MODULE: config.settings.dev
+      #     EMAIL_ENABLED: "True"
+      #     ANALYTICS_ENABLED: "False"
+      #     DD_TRACE_ENABLED: "False"
+      #     ENABLE_DEBUG_TOOLBAR: "False"
+      #     POSTGRES_HOST: db
+      #     POSTGRES_USER: postgres
+      #     POSTGRES_PASSWORD: postgres
+      #     POSTGRES_DB: list_cutter
+      #     POSTGRES_PORT: "5432"
+      #     DJANGO_SECRET_KEY: "django-insecure-b48ta14-l45z4q\$4sqarf(@5&^5xojsku0t85x0!af6+@f=bbj" #security is my passion
+      #     VITE_MAX_UPLOAD_SIZE: "10485760"
+      #     VITE_API_BASE_URL: ""
+      #   run: echo "Environment variables set"
 
       - name: Set up SSH key
         run: |
