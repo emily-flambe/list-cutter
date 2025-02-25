@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Tag to use for the image'
+        description: 'Tag to use for the image (latest or dev)'
         required: true
         default: 'latest'
         options:
@@ -20,14 +20,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-
       - name: Set up environment variables (from workflow inputs)
         id: set_env_vars
         run: |
           if [ "${{ github.event.inputs.image_tag }}" == "dev" ]; then
             echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+            echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST_DEV }}" >> $GITHUB_ENV
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_DEV }}" >> $GITHUB_ENV
           else
             echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+            echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST_PROD }}" >> $GITHUB_ENV
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_PROD }}" >> $GITHUB_ENV
           fi     
 
       - name: Set up QEMU
@@ -43,41 +46,27 @@ jobs:
           username: emilycogsdill
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Generate Docker metadata for backend
-        id: meta-backend
+      - name: Generate Docker metadata
+        id: docker-metadata
         uses: docker/metadata-action@v4
         with:
           images: emilycogsdill/list-cutter-backend
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
             type=sha
-            latest
+            ${{ github.event.inputs.image_tag }}
 
-      - name: Generate Docker metadata for frontend
-        id: meta-frontend
-        uses: docker/metadata-action@v4
-        with:
-          images: emilycogsdill/list-cutter-frontend
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha
-            latest
-
-      - name: Create .env file for frontend build
+      - name: Create .env file
         run: |
-          echo "${{ secrets.PROD_ENV }}" > .env
           echo "DJANGO_SETTINGS_MODULE=config.settings.${{ env.ENVIRONMENT }}" >> .env
           echo "EMAIL_ENABLED=True" >> .env
           echo "ANALYTICS_ENABLED=False" >> .env
           echo "DD_TRACE_ENABLED=False" >> .env
           echo "ENABLE_DEBUG_TOOLBAR=False" >> .env
-          echo "POSTGRES_HOST=list_cutter_db" >> .env
-          echo "POSTGRES_USER=postgres" >> .env
-          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
-          echo "POSTGRES_DB=list_cutter" >> .env
           echo "POSTGRES_PORT=5432" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }}" >> .env
+          echo "POSTGRES_HOST=${{ env.POSTGRES_HOST }}" >> .env
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v3
@@ -86,8 +75,9 @@ jobs:
           target: frontend-prod
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: |
+            ${{ steps.docker-metadata.outputs.tags }}
+          labels: ${{ steps.docker-metadata.outputs.labels }}
 
       - name: Build and push backend image
         uses: docker/build-push-action@v3
@@ -96,5 +86,6 @@ jobs:
           target: backend-prod
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
+          tags: |
+            ${{ steps.docker-metadata.outputs.tags }}
+          labels: ${{ steps.docker-metadata.outputs.labels }}
