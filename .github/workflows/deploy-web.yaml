@@ -26,6 +26,10 @@ on:
           - dev
           - prod-blue
           - prod-green
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'dev'
 
 jobs:
   deploy-rebuild:
@@ -90,7 +94,7 @@ jobs:
           && ssh-add github \
           && cd list-cutter \
           && git fetch origin \
-          && git reset --hard origin/${{ github.head_ref }}"
+          && git reset --hard origin/${{ github.event.inputs.branch }}"
 
       - name: SSH into target host and run deployment script
         run: |
