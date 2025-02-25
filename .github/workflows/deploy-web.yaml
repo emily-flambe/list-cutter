@@ -93,7 +93,27 @@ jobs:
           && git reset --hard FETCH_HEAD"
 
       - name: 'Create/Update env file on target host'
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.dev
+          EMAIL_ENABLED: "True"
+          ANALYTICS_ENABLED: "False"
+          DD_TRACE_ENABLED: "False"
+          ENABLE_DEBUG_TOOLBAR: "False"
+          POSTGRES_HOST: db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: list_cutter
+          POSTGRES_PORT: "5432"
+          DJANGO_SECRET_KEY: "django-insecure-b48ta14-l45z4q\$4sqarf(@5&^5xojsku0t85x0!af6+@f=bbj" #security is my passion
+          VITE_MAX_UPLOAD_SIZE: "10485760"
+          VITE_API_BASE_URL: ""
         run: |
           ssh target "touch list-cutter/.env \
-          && echo FOO=\"value\" >> list-cutter/.env \
-          && echo BAR=\"value2\" >> list-cutter/.env"
+          && echo DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE} >> list-cutter/.env \
+          && echo EMAIL_ENABLED=${EMAIL_ENABLED} >> list-cutter/.env \
+          && echo ANALYTICS_ENABLED=${ANALYTICS_ENABLED} >> list-cutter/.env \
+          && echo DD_TRACE_ENABLED=${DD_TRACE_ENABLED} >> list-cutter/.env \
+          && echo ENABLE_DEBUG_TOOLBAR=${ENABLE_DEBUG_TOOLBAR} >> list-cutter/.env \
+          && echo POSTGRES_HOST=${POSTGRES_HOST} >> list-cutter/.env \
+          && echo POSTGRES_USER=${POSTGRES_USER} >> list-cutter/.env \
+          && echo POSTGRES_PASSWORD=${POSTGRES_PASSWORD} >> list-cutter/.env"
