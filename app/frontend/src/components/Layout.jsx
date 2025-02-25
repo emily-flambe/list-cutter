@@ -25,15 +25,19 @@ const Layout = ({ children }) => {
     const message = (() => {
       switch (location.pathname) {
         case '/':
-          return "Hello! I am Cutty, the friendly CUTTLEFISH. (not an octopus)";
+          return token 
+            ? "Welcome back! I missed you! I'm your BEST FRIEND, CUTTY (the cuttlefish)" 
+            : "Hello! I am Cutty, the friendly CUTTLEFISH. (not an octopus)";
         case '/upload':
           return "It looks like you are trying to cut a list! Would you like some help with that?";
         case '/register':
           return "Act like you've been here before!";
         case '/login':
-          return "Welcome back! I missed you! I'm your BEST FRIEND, CUTTY (the cuttlefish)";
+          return "Have we met?";
         case '/faq':
-          return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.5rem' } }; // Scary style
+          return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.5rem' } };
+        case '/logout':
+          return { text: "THIS GOD WON'T FORGIVE YOU.", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.75rem' } };
         default:
           return "";
       }
