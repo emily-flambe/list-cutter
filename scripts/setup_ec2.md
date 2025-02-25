@@ -1,6 +1,7 @@
 # I should make this into a script... maybe later
 
 ```bash
+sudo yum install postgresql15 -y
 
 sudo yum update -y && sudo yum install -y docker && sudo service docker start && sudo usermod -aG docker ec2-user
 
