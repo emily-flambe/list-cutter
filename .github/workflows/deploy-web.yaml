@@ -41,7 +41,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up environment variables (from workflow inputs)
-        id: set_hosts
+        id: set_env_vars
         run: |
           if [ "${{ github.event.inputs.instance }}" == "dev" ]; then
             echo "TARGET_HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
