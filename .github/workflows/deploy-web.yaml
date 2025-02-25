@@ -92,24 +92,8 @@ jobs:
           && git fetch origin ${{ github.event.inputs.branch }} \
           && git reset --hard FETCH_HEAD"
 
-      - name: Update .env file on target host
-        env:
-          DJANGO_SETTINGS_MODULE: config.settings.dev
-          EMAIL_ENABLED: "True"
-          ANALYTICS_ENABLED: "False"
-          DD_TRACE_ENABLED: "False"
-          ENABLE_DEBUG_TOOLBAR: "False"
-          POSTGRES_HOST: db
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: list_cutter
-          POSTGRES_PORT: "5432"
+      - name: 'Create/Update env file on target host'
         run: |
-          ssh target "cat > list-cutter/.env <<EOF
-DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-EMAIL_ENABLED=${EMAIL_ENABLED}
-EOF"
-
-      # - name: SSH into target host and run deployment script
-      #   run: |
-      #     ssh target "cd list-cutter && bash ./scripts/deploy.sh image_tag=${{ github.event.inputs.image_tag }}"
+          ssh target "touch list-cutter/.env \
+          && echo FOO=\"value\" >> list-cutter/.env \
+          && echo BAR=\"value2\" >> list-cutter/.env"
