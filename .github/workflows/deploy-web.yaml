@@ -93,13 +93,8 @@ jobs:
           ssh target "eval \"\$(ssh-agent -s)\" \
           && ssh-add github \
           && cd list-cutter \
-          && git fetch origin \
-          && if git show-ref --verify --quiet refs/remotes/origin/${{ github.event.inputs.branch }}; then \
-              git reset --hard origin/${{ github.event.inputs.branch }}; \
-            else \
-              echo 'Branch origin/${{ github.event.inputs.branch }} does not exist'; \
-            fi"
-
+          && git fetch origin ${{ github.event.inputs.branch }} \
+          && git reset --hard FETCH_HEAD"
 
       - name: SSH into target host and run deployment script
         run: |
