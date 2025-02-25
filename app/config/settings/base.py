@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "django_vite",
     # Apps in this project
     "list_cutter",
+    "accounts",
 ]
 
 MIDDLEWARE = [
@@ -169,7 +170,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Redirect to home page after login/logout
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'
 
 ##############################
 # FILE UPLOAD SETTINGS

@@ -16,7 +16,7 @@ if [ "$IMAGE_TAG" == "dev" ]; then
 elif [ "$IMAGE_TAG" == "latest" ]; then
   DOCKER_COMPOSE_FILE="docker-compose.web-latest.yml"
 else
-  echo "Invalid IMAGE_TAG. Use 'dev' or 'latest'."
+  echo "Invalid IMAGE_TAG. Use 'dev' or 'latest'. Current value: $IMAGE_TAG"
   exit 1
 fi
 
