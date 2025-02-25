@@ -20,7 +20,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-
       - name: Set up environment variables (from workflow inputs)
         id: set_env_vars
         run: |
@@ -63,9 +62,9 @@ jobs:
           echo "ANALYTICS_ENABLED=False" >> .env
           echo "DD_TRACE_ENABLED=False" >> .env
           echo "ENABLE_DEBUG_TOOLBAR=False" >> .env
-          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-          echo "POSTGRES_DB=list_cutter" >> .env
           echo "POSTGRES_PORT=5432" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
           echo "POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }}" >> .env
           echo "POSTGRES_HOST=${{ env.POSTGRES_HOST }}" >> .env
 
