@@ -22,14 +22,24 @@ const Layout = ({ children }) => {
 
   // Determine the message based on the current path
   const getCuttlefishMessage = () => {
-    switch (location.pathname) {
-      case '/':
-        return "Hello! I am Cutty, the friendly CUTTLEFISH. (not an octopus)";
-      case '/upload':
-        return "It looks like you are trying to cut a list! Would you like some help with that?";
-      default:
-        return "";
-    }
+    const message = (() => {
+      switch (location.pathname) {
+        case '/':
+          return "Hello! I am Cutty, the friendly CUTTLEFISH. (not an octopus)";
+        case '/upload':
+          return "It looks like you are trying to cut a list! Would you like some help with that?";
+        case '/register':
+          return "Act like you've been here before!";
+        case '/login':
+          return "Welcome back! I missed you! I'm your BEST FRIEND, CUTTY (the cuttlefish)";
+        case '/faq':
+          return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.5rem' } }; // Scary style
+        default:
+          return "";
+      }
+    })();
+
+    return typeof message === 'string' ? { text: message, style: {} } : message;
   };
 
   return (
@@ -77,8 +87,8 @@ const Layout = ({ children }) => {
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 'auto', mb: 5 }}>
           <img src={cuttlefishLogo} alt="Cuttlefish Logo" style={{ maxWidth: '200px' }} />
-          <Typography variant="caption" sx={{ textAlign: 'center', mt: -1 }}>
-            {getCuttlefishMessage()}
+          <Typography variant="caption" sx={{ textAlign: 'center', mt: -1, ...getCuttlefishMessage().style }}>
+            {getCuttlefishMessage().text}
           </Typography>
         </Box>
       </Drawer>
