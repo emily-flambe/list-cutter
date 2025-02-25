@@ -12,12 +12,12 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Docker image tag for deployment'
+        description: 'Docker image tag (dev or latest. NOTHING SHOWOFFY.)'
         required: true
-        default: 'latest'
+        default: 'dev'
         options:
-          - latest
           - dev
+          - latest
       instance:
         description: 'Instance (dev, prod-blue, prod-green)'
         required: true
@@ -26,6 +26,10 @@ on:
           - dev
           - prod-blue
           - prod-green
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'dev'
 
 jobs:
   deploy-rebuild:
@@ -89,8 +93,8 @@ jobs:
           ssh target "eval \"\$(ssh-agent -s)\" \
           && ssh-add github \
           && cd list-cutter \
-          && git fetch origin \
-          && git reset --hard origin/${{ github.ref }}"
+          && git fetch origin ${{ github.event.inputs.branch }} \
+          && git reset --hard FETCH_HEAD"
 
       - name: SSH into target host and run deployment script
         run: |
