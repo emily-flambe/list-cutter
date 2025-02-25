@@ -108,4 +108,4 @@ jobs:
 
       - name: SSH into target host and run deployment script
         run: |
-          ssh target "cd list-cutter && bash ./scripts/deploy.sh image_tag=${{ github.event.inputs.image_tag }}"          
+          ssh target "cd list-cutter && bash ./scripts/deploy.sh ${{ github.event.inputs.image_tag }}"          
