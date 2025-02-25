@@ -1,13 +1,5 @@
 name: Deploy web application
 
-description: |
-  Once you are ready to redeploy the web application, you can trigger this workflow.
-  It will pull the latest images from Docker Hub and deploy them to the target host.  
-  Just select the image tag you want to deploy (probably `latest` or `dev` unless you are doing something showoffy)
-  and the instance you want to deploy to (dev, prod-blue, prod-green).
-  **CUTE EVENTUAL TODO (LATER, I AM BUSY): Automate full prod deployment by deploying to prod-blue, waiting to make sure it's working,
-  and then deploying to prod-green.
-
 on:
   workflow_dispatch:
     inputs:
