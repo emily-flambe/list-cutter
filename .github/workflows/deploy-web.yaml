@@ -90,7 +90,7 @@ jobs:
           && ssh-add github \
           && cd list-cutter \
           && git fetch origin \
-          && git reset --hard origin/${{ github.ref }}"
+          && git reset --hard origin/${{ github.head_ref }}"
 
       - name: SSH into target host and run deployment script
         run: |
