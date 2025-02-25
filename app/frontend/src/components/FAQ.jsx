@@ -1,4 +1,6 @@
 import { Typography, Box } from '@mui/material';
+import isThisACRM from '../assets/isthisacrm.jpg';
+
 
 const FAQ = () => {
   return (
@@ -10,7 +12,7 @@ const FAQ = () => {
       textAlign: 'left'
     }}>
       <img 
-        src="src/assets/isthisacrm.jpg"
+        src={isThisACRM}
         alt="Is this a CRM?" 
         style={{ width: '100%', borderRadius: '8px' }}
       />

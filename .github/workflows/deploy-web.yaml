@@ -94,7 +94,8 @@ jobs:
 
       - name: 'Create/Update env file on target host'
         run: |
-          ssh target "touch list-cutter/.env \
+          ssh target "rm -f list-cutter/.env \
+          && touch list-cutter/.env \
           && echo DJANGO_SETTINGS_MODULE=config.settings.${{ env.ENVIRONMENT }} >> list-cutter/.env \
           && echo EMAIL_ENABLED=True >> list-cutter/.env \
           && echo ANALYTICS_ENABLED=False >> list-cutter/.env \
