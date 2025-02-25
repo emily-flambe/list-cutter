@@ -4,9 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Tag for the Docker images (e.g. v1.0.0)'
+        description: 'Tag to use for the image'
         required: true
         default: 'latest'
+        options:
+          - dev
+          - latest
 
 jobs:
   publish:
@@ -15,6 +18,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+
+      - name: Set up environment variables (from workflow inputs)
+        id: set_env_vars
+        run: |
+          if [ "${{ github.event.inputs.image_tag }}" == "dev" ]; then
+            echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+          else
+            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+          fi     
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -31,7 +44,17 @@ jobs:
 
       - name: Create .env file for frontend build
         run: |
-          printf '%b' "${{ secrets.PROD_ENV }}" > .env
+          echo "${{ secrets.PROD_ENV }}" > .env
+          echo "DJANGO_SETTINGS_MODULE=config.settings.${{ env.ENVIRONMENT }}" >> .env
+          echo "EMAIL_ENABLED=True" >> .env
+          echo "ANALYTICS_ENABLED=False" >> .env
+          echo "DD_TRACE_ENABLED=False" >> .env
+          echo "ENABLE_DEBUG_TOOLBAR=False" >> .env
+          echo "POSTGRES_HOST=list_cutter_db" >> .env
+          echo "POSTGRES_USER=postgres" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "POSTGRES_DB=list_cutter" >> .env
+          echo "POSTGRES_PORT=5432" >> .env
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v3
