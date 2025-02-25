@@ -12,12 +12,12 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Docker image tag for deployment'
+        description: 'Docker image tag (dev or latest. NOTHING SHOWOFFY.)'
         required: true
-        default: 'latest'
+        default: 'dev'
         options:
-          - latest
           - dev
+          - latest
       instance:
         description: 'Instance (dev, prod-blue, prod-green)'
         required: true
@@ -94,7 +94,11 @@ jobs:
           && ssh-add github \
           && cd list-cutter \
           && git fetch origin \
-          && git reset --hard origin/${{ github.event.inputs.branch }}"
+          && if git show-ref --verify --quiet refs/remotes/origin/ec/account-management; then \
+               git reset --hard origin/ec/account-management; \
+             else \
+               echo 'Branch origin/ec/account-management does not exist'; \
+             fi"
 
       - name: SSH into target host and run deployment script
         run: |
