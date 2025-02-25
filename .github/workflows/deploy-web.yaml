@@ -15,6 +15,9 @@ on:
         description: 'Docker image tag for deployment'
         required: true
         default: 'latest'
+        options:
+          - latest
+          - dev
       instance:
         description: 'Instance (dev, prod-blue, prod-green)'
         required: true
@@ -33,6 +36,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up environment variables (from workflow inputs)
+        id: set_hosts
+        run: |
+          if [ "${{ github.event.inputs.instance }}" == "dev" ]; then
+            echo "BASTION_HOST=${{ secrets.DEV_BASTION_HOST }}" >> $GITHUB_ENV
+            echo "TARGET_HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
+            echo "ENV=${{ secrets.DEV_ENV }}" >> $GITHUB_ENV
+          else
+            echo "BASTION_HOST=${{ secrets.BASTION_HOST }}" >> $GITHUB_ENV
+            echo "ENV=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
+            if [ "${{ github.event.inputs.instance }}" == "prod-blue" ]; then
+              echo "TARGET_HOST=${{ secrets.PROD_BLUE_HOST }}" >> $GITHUB_ENV
+            elif [ "${{ github.event.inputs.instance }}" == "prod-green" ]; then
+              echo "TARGET_HOST=${{ secrets.PROD_GREEN_HOST }}" >> $GITHUB_ENV
+            fi
+          fi          
+
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
@@ -43,12 +63,12 @@ jobs:
         run: |
           cat <<EOF >> ~/.ssh/config
           Host bastion
-            HostName "${{ secrets.BASTION_HOST }}"
+            HostName "${{ env.BASTION_HOST }}"
             User ec2-user
             IdentityFile ~/.ssh/id_rsa
 
           Host target
-            HostName "${{ secrets.PROD_TARGET_HOST }}"
+            HostName "${{ env.TARGET_HOST }}"
             User ec2-user
             IdentityFile ~/.ssh/id_rsa
             ProxyJump bastion
@@ -56,36 +76,15 @@ jobs:
 
       - name: Preload known hosts for bastion
         run: |
-          ssh-keyscan -H "${{ secrets.BASTION_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ env.BASTION_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Preload target host key via bastion
         run: |
-          if [ "${{ github.event.inputs.instance }}" == "dev" ]; then
-            ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.DEV_BASTION_HOST }} "ssh-keyscan -H '${{ secrets.DEV_HOST }}'" >> ~/.ssh/known_hosts
-          elif [ "${{ github.event.inputs.instance }}" == "prod-blue" ]; then
-            ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.BASTION_HOST }} "ssh-keyscan -H '${{ secrets.PROD_BLUE_HOST }}'" >> ~/.ssh/known_hosts
-          elif [ "${{ github.event.inputs.instance }}" == "prod-green" ]; then
-            ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.BASTION_HOST }} "ssh-keyscan -H '${{ secrets.PROD_GREEN_HOST }}'" >> ~/.ssh/known_hosts
-          fi
-
-      - name: Set target host
-        id: set_target_host
-        run: |
-          if [ "${{ github.event.inputs.instance }}" == "dev" ]; then
-            echo "TARGET_HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
-          elif [ "${{ github.event.inputs.instance }}" == "prod-blue" ]; then
-            echo "TARGET_HOST=${{ secrets.PROD_BLUE_HOST }}" >> $GITHUB_ENV
-          elif [ "${{ github.event.inputs.instance }}" == "prod-green" ]; then
-            echo "TARGET_HOST=${{ secrets.PROD_GREEN_HOST }}" >> $GITHUB_ENV
-          fi
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ env.BASTION_HOST }} "ssh-keyscan -H '${{ secrets.DEV_HOST }}'" >> ~/.ssh/known_hosts
 
       - name: Update .env file on target host # Prod-blue and prod-green use the same .env file
         run: |
-          if [ "${{ github.event.inputs.instance }}" == "dev" ]; then
-            ssh target "printf '%b' \"${{ secrets.DEV_ENV }}\" > list-cutter/.env"
-          elif [ "${{ github.event.inputs.instance }}" == "prod-blue" ] || [ "${{ github.event.inputs.instance }}" == "prod-green" ]; then
-            ssh target "printf '%b' \"${{ secrets.PROD_ENV }}\" > list-cutter/.env"
-          fi
+          ssh target "printf '%b' \"${{ env.ENV }}\" > list-cutter/.env"
 
       - name: SSH into target host and pull changes from branch where this workflow was triggered
         run: |
@@ -97,8 +96,4 @@ jobs:
 
       - name: SSH into target host and run deployment script
         run: |
-          if [ "${{ github.event.inputs.instance }}" == "dev" ]; then
-            ssh target "cd list-cutter && bash ./scripts/deploy-dev.sh"
-          else
-            ssh target "cd list-cutter && bash ./scripts/deploy.sh"
-          fi
+          ssh target "cd list-cutter && bash ./scripts/deploy.sh image_tag=${{ github.event.inputs.image_tag }}"
