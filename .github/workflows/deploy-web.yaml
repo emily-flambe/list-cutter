@@ -1,5 +1,13 @@
 name: Deploy web application
 
+description: |
+  Once you are ready to redeploy the web application, you can trigger this workflow.
+  It will pull the latest images from Docker Hub and deploy them to the target host.  
+  Just select the image tag you want to deploy (probably `latest` or `dev` unless you are doing something showoffy)
+  and the instance you want to deploy to (dev, prod-blue, prod-green).
+  **CUTE EVENTUAL TODO (LATER, I AM BUSY): Automate full prod deployment by deploying to prod-blue, waiting to make sure it's working,
+  and then deploying to prod-green.
+
 on:
   workflow_dispatch:
     inputs:
@@ -37,9 +45,9 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.instance }}" == "dev" ]; then
             echo "TARGET_HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
-            echo "ENV_FILE=${{ secrets.DEV_ENV }}" >> $GITHUB_ENV
+            echo "ENV=${{ secrets.DEV_ENV }}" >> $GITHUB_ENV
           else
-            echo "ENV_FILE=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
+            echo "ENV=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
             if [ "${{ github.event.inputs.instance }}" == "prod-blue" ]; then
               echo "TARGET_HOST=${{ secrets.PROD_BLUE_HOST }}" >> $GITHUB_ENV
             elif [ "${{ github.event.inputs.instance }}" == "prod-green" ]; then
@@ -76,6 +84,10 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.BASTION_HOST }} "ssh-keyscan -H '${{ secrets.DEV_HOST }}'" >> ~/.ssh/known_hosts
 
+      - name: Update .env file on target host # Prod-blue and prod-green use the same .env file
+        run: |
+          ssh target "printf '%b' \"${{ env.ENV }}\" > list-cutter/.env"
+
       - name: SSH into target host and pull changes from branch where this workflow was triggered
         run: |
           ssh target "eval \"\$(ssh-agent -s)\" \
@@ -83,3 +95,7 @@ jobs:
           && cd list-cutter \
           && git fetch origin ${{ github.event.inputs.branch }} \
           && git reset --hard FETCH_HEAD"
+
+      - name: SSH into target host and run deployment script
+        run: |
+          ssh target "cd list-cutter && bash ./scripts/deploy.sh image_tag=${{ github.event.inputs.image_tag }}"

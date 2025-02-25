@@ -1,4 +1,4 @@
-name: Build and Publish Docker Images
+name: Build and Publish Image
 
 on:
   workflow_dispatch:
@@ -7,27 +7,15 @@ on:
         description: 'Tag to use for the image'
         required: true
         default: 'latest'
-        options:
-          - latest
-          - dev
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
+    
       - name: Checkout repository
         uses: actions/checkout@v3
-
-
-      - name: Set up environment variables (from workflow inputs)
-        id: set_env_vars
-        run: |
-          if [ "${{ github.event.inputs.image_tag }}" == "dev" ]; then
-            echo "ENVIRONMENT=dev" >> $GITHUB_ENV
-          else
-            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
-          fi     
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -42,19 +30,31 @@ jobs:
           username: emilycogsdill
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      - name: Generate Docker metadata for backend
+        id: meta-backend
+        uses: docker/metadata-action@v4
+        with:
+          images: emilycogsdill/list-cutter-backend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+            latest
+
+      - name: Generate Docker metadata for frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v4
+        with:
+          images: emilycogsdill/list-cutter-frontend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+            latest
+
       - name: Create .env file for frontend build
         run: |
-          echo "${{ secrets.PROD_ENV }}" > .env
-          echo "DJANGO_SETTINGS_MODULE=config.settings.${{ env.ENVIRONMENT }}" >> .env
-          echo "EMAIL_ENABLED=True" >> .env
-          echo "ANALYTICS_ENABLED=False" >> .env
-          echo "DD_TRACE_ENABLED=False" >> .env
-          echo "ENABLE_DEBUG_TOOLBAR=False" >> .env
-          echo "POSTGRES_HOST=list_cutter_db" >> .env
-          echo "POSTGRES_USER=postgres" >> .env
-          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
-          echo "POSTGRES_DB=list_cutter" >> .env
-          echo "POSTGRES_PORT=5432" >> .env
+          printf '%b' "${{ secrets.PROD_ENV }}" > .env            
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v3
@@ -63,7 +63,8 @@ jobs:
           target: frontend-prod
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: emilycogsdill/list-cutter-frontend:${{ github.event.inputs.image_tag }}
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
 
       - name: Build and push backend image
         uses: docker/build-push-action@v3
@@ -72,4 +73,5 @@ jobs:
           target: backend-prod
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: emilycogsdill/list-cutter-backend:${{ github.event.inputs.image_tag }}
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
