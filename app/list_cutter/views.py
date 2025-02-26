@@ -1,14 +1,22 @@
 import os
 import logging
+from django.conf import settings
+from django.http import FileResponse
 from django.http import HttpResponse
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
 
 from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where
+from .models import UploadedFile 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, 'uploads')
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def list_cutter_home(request):
     """Simple home page response."""
@@ -61,3 +69,64 @@ def export_csv(request):
         # TODO: Implement database query handling in the future.
         # For now, raise an error since the frontend should only send CSV files.
         raise NotImplementedError("Database table querying is not yet supported.")
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser])
+def upload_file(request):
+    """Handles file uploads, enforces file size limit, and saves metadata in the database."""
+
+    # Ensure a file is provided
+    if 'file' not in request.FILES:
+        return Response({'error': 'No file uploaded'}, status=400)
+
+    file = request.FILES['file']
+
+    # Get max file size from environment variables (default: 10MB)
+    MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", 10 * 1024 * 1024))
+
+    # Enforce file size limit
+    if file.size > MAX_FILE_SIZE:
+        return Response(
+            {'error': f'File size exceeds {(MAX_FILE_SIZE / (1024 * 1024)):.2f}MB limit.'},
+            status=400
+        )
+
+    try:
+        # Save file to disk
+        file_path = save_uploaded_file(file)
+
+        # Store file metadata in the database
+        uploaded_file = UploadedFile.objects.create(
+            user=request.user,
+            file_name=file.name,
+            file_path=file_path
+        )
+
+        return Response(
+            {'message': 'File uploaded successfully', 'file_id': uploaded_file.id},
+            status=200
+        )
+
+    except Exception as e:
+        logger.error(f"File upload failed: {str(e)}")
+        return Response({'error': 'File upload failed. Please try again.'}, status=500)
+
+
+@api_view(['GET'])
+def list_uploaded_files(request):
+    """Lists all uploaded files."""
+    files = os.listdir(UPLOAD_DIR)
+    file_urls = [f"/api/download/{file}" for file in files]  # Generate URLs for frontend
+    return Response({'files': files, 'file_urls': file_urls}, status=200)
+
+@api_view(['GET'])
+def download_file(request, filename):
+    """Handles file downloads."""
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    
+    if not os.path.exists(file_path):
+        return Response({'error': 'File not found'}, status=404)
+
+    return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=filename)
