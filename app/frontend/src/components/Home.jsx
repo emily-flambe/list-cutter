@@ -1,9 +1,10 @@
 import { Typography, Box, Link } from '@mui/material';
 import importantImage from '../assets/important.jpg';
-import { useState } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
 
 const Home = () => {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const { token, user, setUser } = useContext(AuthContext);
 
   return (
     <Box sx={{ 
@@ -47,7 +48,7 @@ const Home = () => {
         </Link>
       </Box>
 
-      {loggedIn && (
+      {token && (
         <Box sx={{ mt: 3, textAlign: 'center' }}>
           <img 
             src={importantImage}

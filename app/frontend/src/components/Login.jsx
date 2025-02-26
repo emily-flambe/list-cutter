@@ -24,7 +24,7 @@ const Login = () => {
     setError(null);
     try {
       const response = await axios.post(`${API_BASE_URL}/api/accounts/login/`, credentials);
-      login(response.data.access, credentials.username);
+      login(response.data.access, credentials.username, response.data.refresh);
       navigate('/');
     } catch (err) {
       setError('Invalid credentials');

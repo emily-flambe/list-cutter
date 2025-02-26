@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = (newToken, username, refreshToken) => {
     localStorage.setItem('authToken', newToken);
-    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem('refreshToken', refreshToken); // Store refresh token
     setToken(newToken);
     fetchUserData(newToken);
   };
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
   const refreshToken = async () => {
     console.log('Attempting to refresh token...'); // Log when the refresh attempt starts
     try {
-      const refreshTokenValue = localStorage.getItem('refreshToken');
+      const refreshTokenValue = localStorage.getItem('refreshToken'); // Retrieve refresh token
       console.log('Using refresh token:', refreshTokenValue); // Log the refresh token being used
 
       // Log the request details
