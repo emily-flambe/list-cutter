@@ -59,6 +59,12 @@ const Layout = ({ children }) => {
             : "Hello! I am Cutty, the friendly CUTTLEFISH. (not an octopus)";
         case '/csv_cutter':
           return "It looks like you are trying to cut a list! Would you like some help with that?";
+        case '/file_upload':
+          return "Think twice before giving your files to a stranger!";
+        case '/manage_files':
+          return "I can't be managed. But your files can be!";
+        case '/import_people':
+          return "Wait a minute. IS this a CRM?";
         case '/register':
           return "Act like you've been here before!";
         case '/login':
