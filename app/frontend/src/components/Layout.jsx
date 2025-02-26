@@ -1,5 +1,5 @@
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
-import { Home, Upload, PersonAdd, Login, Logout, Help } from '@mui/icons-material';
+import { Home, Upload, PersonAdd, Login, Logout, Help, FilePresent } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext } from 'react';
@@ -13,9 +13,9 @@ const Layout = ({ children }) => {
 
   const menuItems = [
     { text: 'About', icon: <Home />, path: '/' },
-    { text: 'CSV Cutter', icon: <Upload />, path: '/csvcutter' },
-    { text: 'My Files', icon: <FilePresent />, path: '/myfiles' },
-    ...(token ? [] : [{ text: 'Create Account', icon: <Login />, path: '/register' }]),
+    { text: 'CSV Cutter', icon: <Upload />, path: '/csv_cutter' },
+    { text: 'My Files', icon: <FilePresent />, path: '/my_files' },
+    ...(token ? [] : [{ text: 'Create Account', icon: <PersonAdd />, path: '/register' }]),
     ...(token ? [] : [{ text: 'Login', icon: <Login />, path: '/login' }]),
     ...(token ? [{ text: 'Logout', icon: <Logout />, path: '/logout' }] : []),
     { text: 'FAQ', icon: <Help />, path: '/faq' },
