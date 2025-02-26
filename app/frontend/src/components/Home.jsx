@@ -1,6 +1,11 @@
 import { Typography, Box, Link } from '@mui/material';
+import importantImage from '../assets/important.jpg';
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
 
 const Home = () => {
+  const { token, user, setUser } = useContext(AuthContext);
+
   return (
     <Box sx={{ 
       bgcolor: 'var(--secondary-bg)',
@@ -42,6 +47,16 @@ const Home = () => {
           source code on GitHub
         </Link>
       </Box>
+
+      {token && (
+        <Box sx={{ mt: 3, textAlign: 'center' }}>
+          <img 
+            src={importantImage}
+            alt="Important" 
+            style={{ width: '80%', maxWidth: '400px', borderRadius: '8px' }} 
+          />
+        </Box>
+      )}
     </Box>
   );
 };

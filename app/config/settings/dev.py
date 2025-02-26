@@ -32,37 +32,20 @@ DATABASES = {
     }
 }
 
-# When we do dev work, we should be using cta-tech.dev
-
-# Come up with a better name here.
-#   This domain is the one we use for GWorkspace
-GWORKSPACE_DOMAIN = "cta-tech.app"
-
-# techallies.org
-GCP_ORGANIZATION_ID = "organizations/966966434935"
-GCP_PARTNER_FOLDER = "folders/578009676262"
-
-GWORKSPACE_ADMIN_EMAIL = f"admin@{GWORKSPACE_DOMAIN}"
-GWORKSPACE_SERVICE_ACCOUNT_CREDS = "/tmp/keys/cta-tech-admin.json"
-
-# cta-tech.dev
-# GCP_ORGANIZATION_ID = "organizations/294735925352"
-
-#########################################################
-# Google Workspace Configurations
-#########################################################
-
-GOOGLE_WORKSPACE_SPECIAL_GROUPS = [
-    # This will be a group with just a single segment
-    "administrators@cta-tech.app",
-    "1password-users@cta-tech.app",
-    "2sv-temp-exempt@cta-tech.app",
-]
-
-###TODO: REMOVE THIS AFTER FIGURING OUT HOW TO USE ADMIN-52@CTA-GCI-338019.IAM.GSERVICEACCOUNT.COM TO RUN COMPOSER COMMANDS, OR SOMETHING ELSE I DUNNO. ALSO REPLACE REFERENCES TO THESE SETTINGS
-#########################################################
-# Google Composer Configurations
-#########################################################
-
-COMPOSER_SERVICE_ACCOUNT_CREDS = "/tmp/keys/cta-dev-composer.json"
-COMPOSER_SERVICE_ACCOUNT_EMAIL = "composer@dev3869c056.iam.gserviceaccount.com"
+# Set more generous throttling rates for development
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '1000/minute',  # Increase the rate for anonymous users
+        'user': '2000/minute',   # Increase the rate for authenticated users
+    },
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Use JWT!
+    ],
+}
