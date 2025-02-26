@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import axios from "axios";
+import api from '../api';
 import {
   Box,
   Button,
   Checkbox,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   List,
@@ -103,7 +102,7 @@ const CSVCutter = () => {
     formData.append("file", file);
 
     try {
-      const response = await axios.post(
+      const response = await api.post(
         `/api/list_cutter/csv_cutter/`,
         formData,
         {
@@ -155,7 +154,7 @@ const CSVCutter = () => {
 
     try {
       const exportUrl = `/api/export_csv/`;
-      const response = await axios.post(
+      const response = await api.post(
         exportUrl,
         { columns: selectedColumns, file_path: filePath, filters },
         { responseType: "blob" }

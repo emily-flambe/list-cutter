@@ -1,6 +1,6 @@
 // frontend/src/context/AuthContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 export const AuthContext = createContext();
 
@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserData = async (token) => {
     try {
-      const response = await axios.get(`/api/accounts/user/`, {
+      const response = await api.get(`/api/accounts/user/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
         try {
           // Retry fetching user data with the new token
           const newToken = localStorage.getItem('authToken');
-          const response = await axios.get(`/api/accounts/user/`, {
+          const response = await api.get(`/api/accounts/user/`, {
             headers: {
               Authorization: `Bearer ${newToken}`,
             },
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Sending request to refresh token at:', `/api/accounts/token/refresh/`);
       
       // Form the request
-      const response = await axios.post(
+      const response = await api.post(
         `/api/accounts/token/refresh/`,
         { refresh: refreshTokenValue }, // Data to send
         { headers: { 'Content-Type': 'application/json' } } // Headers

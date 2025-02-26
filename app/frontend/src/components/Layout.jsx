@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import axios from 'axios';
+import api from '../api';
 
 const DRAWER_WIDTH = 240;
 
@@ -17,7 +17,7 @@ const Layout = ({ children }) => {
     const fetchUserData = async () => {
       if (token) {
         try {
-          const response = await axios.get(`/api/accounts/user/`, {
+          const response = await api.get(`/api/accounts/user/`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },

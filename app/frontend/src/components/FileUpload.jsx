@@ -1,5 +1,5 @@
 import { useState, useRef, useContext } from "react";
-import axios from "axios";
+import api from '../api';
 import { AuthContext } from '../context/AuthContext';
 
 const FileUpload = () => {
@@ -45,7 +45,7 @@ const FileUpload = () => {
     formData.append("file", file);
 
     try {
-      const response = await axios.post(`/api/list_cutter/upload/`, formData, {
+      const response = await api.post(`/api/list_cutter/upload/`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           "Authorization": `Bearer ${token}`, // Send JWT token

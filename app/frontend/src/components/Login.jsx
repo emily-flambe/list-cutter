@@ -1,6 +1,6 @@
 // frontend/src/pages/Login.jsx
 import React, { useState, useContext } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { AuthContext } from '../context/AuthContext';
 import { Box, Typography, TextField, Button, Alert, Link } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
@@ -21,7 +21,7 @@ const Login = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post(`/api/accounts/login/`, credentials);
+      const response = await api.post(`/api/accounts/login/`, credentials);
       login(response.data.access, credentials.username, response.data.refresh);
       navigate('/');
     } catch (err) {

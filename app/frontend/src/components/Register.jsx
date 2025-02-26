@@ -1,6 +1,6 @@
 // frontend/src/pages/Register.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 import {
   Box,
   Typography,
@@ -31,7 +31,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
+      const response = await api.post(
         `/api/accounts/register/`,
         formData
       );
