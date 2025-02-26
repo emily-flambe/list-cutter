@@ -86,7 +86,7 @@ jobs:
 
       - name: Preload target host key via bastion
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.BASTION_HOST }} "ssh-keyscan -H '${{ secrets.DEV_HOST }}'" >> ~/.ssh/known_hosts
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.BASTION_HOST }} "ssh-keyscan -H '${{ env.TARGET_HOST }}'" >> ~/.ssh/known_hosts
 
       - name: 'Create/Update env file on target host'
         run: |
