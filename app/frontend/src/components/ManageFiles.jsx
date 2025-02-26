@@ -79,6 +79,20 @@ const ManageFiles = () => {
     }
   };
 
+  const deleteFile = async (fileId) => {
+    if (window.confirm("Are you sure you want to delete this file?")) {
+      try {
+        await api.delete(`/api/list_cutter/delete/${fileId}/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setFiles(files.filter(file => file.id !== fileId)); // Update the state to remove the deleted file
+      } catch (error) {
+        console.error("Delete error:", error);
+        alert("Failed to delete the file.");
+      }
+    }
+  };
+
   return (
     <Box sx={{ textAlign: 'center', marginTop: '50px' }}>
       <Typography variant="h3">Manage Files</Typography>
@@ -123,7 +137,7 @@ const ManageFiles = () => {
                   </Button>
                 </TableCell>
                 <TableCell>
-                  <Button variant="contained" color="error" onClick={() => alert('Delete functionality not implemented yet.')}>
+                  <Button variant="contained" color="error" onClick={() => deleteFile(file.id)}>
                     Delete
                   </Button>
                 </TableCell>
@@ -131,7 +145,7 @@ const ManageFiles = () => {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={3}>No files uploaded.</TableCell>
+              <TableCell colSpan={4}>No files found.</TableCell>
             </TableRow>
           )}
         </TableBody>

@@ -149,3 +149,31 @@ def download_file(request, filename):
         return Response({'error': 'File not found'}, status=404)
 
     return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=filename)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_file(request, file_id):
+    """Handles file deletion."""
+    logger.info(f"Received DELETE request to delete file with ID: {file_id} from user: {request.user.username}")
+
+    try:
+        uploaded_file = UploadedFile.objects.get(id=file_id, user=request.user)
+        file_path = uploaded_file.file_path  # Get the file path from the database
+        logger.info(f"File path: {file_path}")
+
+        # Check if the file exists before attempting to delete
+        if not os.path.exists(file_path):
+            logger.warning(f"File not found on server: {file_path}")
+            return Response({'error': 'File not found on the server.'}, status=404)
+
+        logger.info(f"Attempting to delete file at: {file_path}")
+        os.remove(file_path)  # Remove the file from the filesystem
+        uploaded_file.delete()  # Delete the record from the database
+        logger.info(f"File deleted successfully: {file_path}")
+        return Response({'message': 'File deleted successfully.'}, status=204)
+    except UploadedFile.DoesNotExist:
+        logger.error(f"File with ID {file_id} not found for user: {request.user.username}")
+        return Response({'error': 'File not found.'}, status=404)
+    except Exception as e:
+        logger.error(f"Error deleting file: {str(e)}")
+        return Response({'error': str(e)}, status=500)

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import list_cutter_home, upload_file_for_csv_cutter, export_csv, upload_file, list_uploaded_files, download_file
+from .views import list_cutter_home, upload_file_for_csv_cutter, export_csv, upload_file, list_uploaded_files, download_file, delete_file
 
 urlpatterns = [
     path("", list_cutter_home, name="list_cutter_home"),
@@ -8,6 +8,7 @@ urlpatterns = [
     path("upload/", upload_file, name="upload_file"),
     path("list_uploaded_files/", list_uploaded_files, name="list_uploaded_files"),
     path("download/<str:filename>/", download_file, name="download_file"),
+    path("delete/<int:file_id>/", delete_file, name="delete_file"),
 ]
 
 
