@@ -116,11 +116,29 @@ def upload_file(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def list_uploaded_files(request):
-    """Lists all uploaded files."""
-    files = os.listdir(UPLOAD_DIR)
-    file_urls = [f"/api/download/{file}" for file in files]  # Generate URLs for frontend
-    return Response({'files': files, 'file_urls': file_urls}, status=200)
+    """Lists all uploaded files associated with the logged-in user."""
+    # Fetch UploadedFile objects for the logged-in user
+    uploaded_files = UploadedFile.objects.filter(user=request.user)
+
+    # Prepare the response data, filtering to include only the most recent uploaded_at for each file_name
+    recent_files = {}
+    for uploaded_file in uploaded_files:
+        if uploaded_file.file_name not in recent_files or uploaded_file.uploaded_at > recent_files[uploaded_file.file_name].uploaded_at:
+            recent_files[uploaded_file.file_name] = uploaded_file
+
+    files_data = [
+        {
+            'id': uploaded_file.id,
+            'file_name': uploaded_file.file_name,
+            'file_path': uploaded_file.file_path,
+            'uploaded_at': uploaded_file.uploaded_at,
+        }
+        for uploaded_file in recent_files.values()
+    ]
+
+    return Response({'files': files_data}, status=200)
 
 @api_view(['GET'])
 def download_file(request, filename):
