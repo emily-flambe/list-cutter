@@ -88,14 +88,6 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.BASTION_HOST }} "ssh-keyscan -H '${{ secrets.DEV_HOST }}'" >> ~/.ssh/known_hosts
 
-      - name: SSH into target host and pull changes from branch where this workflow was triggered
-        run: |
-          ssh target "eval \"\$(ssh-agent -s)\" \
-          && ssh-add github \
-          && cd list-cutter \
-          && git fetch origin ${{ github.event.inputs.branch }} \
-          && git reset --hard FETCH_HEAD"
-
       - name: 'Create/Update env file on target host'
         run: |
           ssh target "rm -f list-cutter/.env \
@@ -111,6 +103,13 @@ jobs:
           && echo "POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }}" >> list-cutter/.env \
           && echo "POSTGRES_HOST=${{ env.POSTGRES_HOST }}" >> list-cutter/.env"
 
+      - name: SSH into target host and pull changes from branch where this workflow was triggered
+        run: |
+          ssh target "eval \"\$(ssh-agent -s)\" \
+          && ssh-add github \
+          && cd list-cutter \
+          && git fetch origin ${{ github.event.inputs.branch }} \
+          && git reset --hard FETCH_HEAD"
 
       - name: SSH into target host and run deployment script
         run: |
