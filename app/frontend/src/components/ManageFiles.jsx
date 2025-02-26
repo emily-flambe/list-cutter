@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Typography, Box, List, ListItem, ListItemText, CircularProgress, Table, TableBody, TableCell, TableRow, Button, TableHead } from '@mui/material';
+import { Typography, Box, List, ListItem, ListItemText, CircularProgress, Table, TableBody, TableCell, TableRow, Button, TableHead, TextField } from '@mui/material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 
@@ -12,6 +12,7 @@ const ManageFiles = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: 'file_name', direction: 'ascending' });
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchUploadedFiles = async () => {
@@ -45,6 +46,10 @@ const ManageFiles = () => {
     return 0;
   });
 
+  const filteredFiles = sortedFiles.filter(file => 
+    file.file_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const requestSort = (key) => {
     let direction = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -56,10 +61,20 @@ const ManageFiles = () => {
   return (
     <Box sx={{ textAlign: 'center', marginTop: '50px' }}>
       <Typography variant="h3">Manage Files</Typography>
-      <p><Typography variant="body2" style={{ fontStyle: 'italic', marginBottom: '10px' }}>
-        Click on any column heading to sort files 💁‍♀️
-      </Typography></p>
-      
+      <br/><br/>
+      <Box sx={{ textAlign: 'left', marginBottom: '20px' }}>
+        <TextField
+          variant="outlined"
+          placeholder="Search by filename"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </Box>
+      <Box sx={{ textAlign: 'left', marginBottom: '10px' }}>
+        <Typography variant="body2" style={{ fontStyle: 'italic' }}>
+          Click on any column heading to sort files 💁‍♀️
+        </Typography>
+      </Box>
       <Table sx={{ marginTop: '20px' }}>
         <TableHead>
           <TableRow>
@@ -70,19 +85,25 @@ const ManageFiles = () => {
               <Typography variant="h6" fontWeight="bold">Uploaded At {sortConfig.key === 'uploaded_at' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</Typography>
             </TableCell>
             <TableCell>
-              <Typography variant="h6" fontWeight="bold">Actions</Typography>
+            </TableCell>
+            <TableCell>
             </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {sortedFiles.length > 0 ? (
-            sortedFiles.map(file => (
+          {filteredFiles.length > 0 ? (
+            filteredFiles.map(file => (
               <TableRow key={file.id}>
                 <TableCell>{file.file_name}</TableCell>
                 <TableCell>{file.uploaded_at.slice(0, 16).replace('T', ' ')}</TableCell>
                 <TableCell>
                   <Button variant="contained" color="primary" onClick={() => alert('Download functionality not implemented yet.')}>
                     Download
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button variant="contained" color="error" onClick={() => alert('Delete functionality not implemented yet.')}>
+                    Delete
                   </Button>
                 </TableCell>
               </TableRow>

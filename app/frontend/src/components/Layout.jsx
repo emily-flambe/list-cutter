@@ -1,5 +1,5 @@
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
-import { Home, Upload, PersonAdd, Login, Logout, Help, FilePresent, ContentCut } from '@mui/icons-material';
+import { Home, UploadFile, Login, Logout, Help, Folder, ContentCut } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext, useEffect, useState } from 'react';
@@ -42,8 +42,8 @@ const Layout = ({ children }) => {
     ...(token ? [] : [{ text: 'Login', icon: <Login />, path: '/login' }]),
     { text: 'CSV Cutter', icon: <ContentCut />, path: '/csv_cutter' },
     // SECRET MENU. MEMBERS ONLY. also no boys allowed
-    ...(token ? [{ text: 'Upload Files', icon: <Logout />, path: '/file_upload' }] : []),
-    ...(token ? [{ text: 'Manage Files', icon: <Logout />, path: '/manage_files' }] : []),
+    ...(token ? [{ text: 'Upload Files', icon: <UploadFile />, path: '/file_upload' }] : []),
+    ...(token ? [{ text: 'Manage Files', icon: <Folder />, path: '/manage_files' }] : []),
     // ok back to the regular menu
     { text: 'FAQ', icon: <Help />, path: '/faq' },
     { text: 'About', icon: <Home />, path: '/' },
