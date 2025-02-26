@@ -46,11 +46,20 @@ jobs:
           username: emilycogsdill
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Generate Docker metadata
-        id: docker-metadata
+      - name: Generate Docker metadata (backend)
+        id: docker-metadata-backend
         uses: docker/metadata-action@v4
         with:
           images: emilycogsdill/list-cutter-backend
+          tags: |
+            type=sha
+            ${{ github.event.inputs.image_tag }}
+
+      - name: Generate Docker metadata (frontend)
+        id: docker-metadata-frontend
+        uses: docker/metadata-action@v4
+        with:
+          images: emilycogsdill/list-cutter-frontend
           tags: |
             type=sha
             ${{ github.event.inputs.image_tag }}
@@ -76,8 +85,8 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ steps.docker-metadata.outputs.tags }}
-          labels: ${{ steps.docker-metadata.outputs.labels }}
+            ${{ steps.docker-metadata-frontend.outputs.tags }}
+          labels: ${{ steps.docker-metadata-frontend.outputs.labels }}
 
       - name: Build and push backend image
         uses: docker/build-push-action@v3
@@ -87,5 +96,5 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ steps.docker-metadata.outputs.tags }}
-          labels: ${{ steps.docker-metadata.outputs.labels }}
+            ${{ steps.docker-metadata-backend.outputs.tags }}
+          labels: ${{ steps.docker-metadata-backend.outputs.labels }}
