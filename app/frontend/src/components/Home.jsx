@@ -1,4 +1,5 @@
 import { Typography, Box, Link } from '@mui/material';
+import importantImage from '../assets/important.jpg';
 
 const Home = () => {
   return (
@@ -41,6 +42,14 @@ const Home = () => {
         >
           source code on GitHub
         </Link>
+      </Box>
+
+      <Box sx={{ mt: 3, textAlign: 'center' }}>
+        <img 
+          src={importantImage}
+          alt="Important" 
+          style={{ width: '80%', maxWidth: '400px', borderRadius: '8px' }} 
+        />
       </Box>
     </Box>
   );
