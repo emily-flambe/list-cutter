@@ -10,10 +10,11 @@ export const AuthProvider = ({ children }) => {
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const login = (newToken, username) => {
+  const login = (newToken, username, refreshToken) => {
     localStorage.setItem('authToken', newToken);
+    localStorage.setItem('refreshToken', refreshToken);
     setToken(newToken);
-    fetchUserData(newToken); // Fetch user data on login
+    fetchUserData(newToken);
   };
 
   const logout = () => {
@@ -32,12 +33,27 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data); // Set user data
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        await refreshToken(); // Attempt to refresh the token
-        fetchUserData(localStorage.getItem('authToken')); // Retry fetching user data
-      } else {
         console.error('Failed to fetch user data:', error);
-        setUser(null); // Reset user if fetching fails
+        console.log('Attempting to refresh token...'); // Log refresh attempt
+        await refreshToken(); // Attempt to refresh the token
+        try {
+          // Retry fetching user data with the new token
+          const newToken = localStorage.getItem('authToken');
+          const response = await axios.get(`${API_BASE_URL}/api/accounts/user/`, {
+            headers: {
+              Authorization: `Bearer ${newToken}`,
+            },
+          });
+          setUser(response.data); // Set user data
+        } catch (retryError) {
+          console.error('Failed to fetch user data after refreshing token:', retryError);
+          console.error('Request payload:', { token }); // Log the request payload
+          setUser(null); // Reset user if fetching fails
+        }
+        return; // Stop further execution
       }
+      console.error('Failed to fetch user data:', error);
+      setUser(null); // Reset user if fetching fails
     }
   };
 
@@ -47,10 +63,16 @@ export const AuthProvider = ({ children }) => {
       const refreshTokenValue = localStorage.getItem('refreshToken');
       console.log('Using refresh token:', refreshTokenValue); // Log the refresh token being used
 
-      const response = await axios.post(`${API_BASE_URL}/api/accounts/token/refresh/`, {
-        refresh: refreshTokenValue, // Store refresh token in local storage
-      });
+      // Log the request details
+      console.log('Sending request to refresh token at:', `${API_BASE_URL}/api/accounts/token/refresh/`);
       
+      // Form the request
+      const response = await axios.post(
+        `${API_BASE_URL}/api/accounts/token/refresh/`,
+        { refresh: refreshTokenValue }, // Data to send
+        { headers: { 'Content-Type': 'application/json' } } // Headers
+      );
+
       console.log('Token refresh response:', response.data); // Log the response from the server
 
       const newAccessToken = response.data.access;

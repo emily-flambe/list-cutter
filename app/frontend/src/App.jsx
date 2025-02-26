@@ -7,6 +7,7 @@ import FileUpload from './components/FileUpload';
 import Register from './components/Register';
 import Login from './components/Login';
 import Logout from './components/LogoutConfirmation';
+import ManageFiles from './components/ManageFiles';
 import FAQ from './components/FAQ';
 import './index.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -44,6 +45,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/csv_cutter" element={<CSVCutter />} />
             <Route path="/file_upload" element={<FileUpload />} />
+            <Route path="/manage_files" element={<ManageFiles />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />

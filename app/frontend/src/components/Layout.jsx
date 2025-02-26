@@ -2,7 +2,7 @@ import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText
 import { Home, Upload, PersonAdd, Login, Logout, Help, FilePresent, ContentCut } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 
@@ -12,6 +12,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Set in your .env file
 const Layout = ({ children }) => {
   const location = useLocation();
   const { token, user, setUser } = useContext(AuthContext);
+  const [loadingUser, setLoadingUser] = useState(true); // Add loading state
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -26,7 +27,11 @@ const Layout = ({ children }) => {
         } catch (error) {
           console.error("Failed to fetch user data:", error);
           setUser(null); // Reset user state on error
+        } finally {
+          setLoadingUser(false); // Set loading to false after fetching
         }
+      } else {
+        setLoadingUser(false); // Set loading to false if no token
       }
     };
 
@@ -39,7 +44,7 @@ const Layout = ({ children }) => {
     { text: 'CSV Cutter', icon: <ContentCut />, path: '/csv_cutter' },
     // SECRET MENU. MEMBERS ONLY. also no boys allowed
     ...(token ? [{ text: 'Upload Files', icon: <Logout />, path: '/file_upload' }] : []),
-    ...(token ? [{ text: 'Manage Files', icon: <Logout />, path: '/my_files' }] : []),
+    ...(token ? [{ text: 'Manage Files', icon: <Logout />, path: '/manage_files' }] : []),
     // ok back to the regular menu
     { text: 'FAQ', icon: <Help />, path: '/faq' },
     { text: 'About', icon: <Home />, path: '/' },
@@ -89,7 +94,7 @@ const Layout = ({ children }) => {
       >
         <Box sx={{ overflow: 'auto', mt: 8 }}>
           <Typography variant="body2" sx={{ padding: 2 }}>
-            {token ? <>Hello, <strong>{user ? user.username : 'Unknown User'}</strong>! Thank you for visiting this web site!</> : 'You are not logged in :/'}
+            {loadingUser ? 'Loading...' : (token ? <>Hello, <strong>{user ? user.username : 'Unknown User'}</strong>! Thank you for visiting this web site!</> : 'You are not logged in :/')}
           </Typography>
           <List>
             {menuItems.map((item) => (

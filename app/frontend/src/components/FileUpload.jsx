@@ -12,6 +12,17 @@ const FileUpload = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const fileInputRef = useRef(null);
 
+  // Check if user is logged in
+  if (!token) {
+    setError("You must be logged in to access this page. How did you even get here???");
+    return (
+      <div>
+        <h2>You may NOT Upload a File</h2>
+        {error && <p>{error}</p>}
+      </div>
+    );
+  }
+
   // Handle file selection
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
