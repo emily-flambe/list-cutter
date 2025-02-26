@@ -58,6 +58,27 @@ const ManageFiles = () => {
     setSortConfig({ key, direction });
   };
 
+  const downloadFile = async (fileName) => {
+    try {
+      const response = await api.get(`/api/list_cutter/download/${fileName}/`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob', // Important for handling binary data
+      });
+
+      // Create a URL for the file and trigger the download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName); // Set the file name for download
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Failed to download the file.");
+    }
+  };
+
   return (
     <Box sx={{ textAlign: 'center', marginTop: '50px' }}>
       <Typography variant="h3">Manage Files</Typography>
@@ -97,7 +118,7 @@ const ManageFiles = () => {
                 <TableCell>{file.file_name}</TableCell>
                 <TableCell>{file.uploaded_at.slice(0, 16).replace('T', ' ')}</TableCell>
                 <TableCell>
-                  <Button variant="contained" color="primary" onClick={() => alert('Download functionality not implemented yet.')}>
+                  <Button variant="contained" color="primary" onClick={() => downloadFile(file.file_name)}>
                     Download
                   </Button>
                 </TableCell>
