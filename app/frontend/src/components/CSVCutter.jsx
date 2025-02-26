@@ -19,7 +19,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE) || 10 * 1024 * 1024;
 const MAX_FILE_SIZE_MB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(2);
 
-const FileUpload = () => {
+const CSVCutter = () => {
   const [file, setFile] = useState(null);
   const [fileInfo, setFileInfo] = useState("");
   const [isFileValid, setIsFileValid] = useState(false);
@@ -105,7 +105,7 @@ const FileUpload = () => {
 
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/upload/`,
+        `${API_BASE_URL}/api/csv_cutter/`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -354,4 +354,4 @@ const FileUpload = () => {
   );
 };
 
-export default FileUpload;
+export default CSVCutter;

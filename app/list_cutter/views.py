@@ -17,7 +17,7 @@ def list_cutter_home(request):
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser])
-def upload_file(request):
+def upload_file_for_csv_cutter(request):
     """Handles CSV upload, enforces file size limit, and returns column names."""
     if 'file' not in request.FILES:
         return Response({'error': 'No file uploaded'}, status=400)

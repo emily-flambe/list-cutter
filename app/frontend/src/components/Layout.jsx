@@ -13,7 +13,8 @@ const Layout = ({ children }) => {
 
   const menuItems = [
     { text: 'About', icon: <Home />, path: '/' },
-    { text: 'CSV Cutter', icon: <Upload />, path: '/upload' },
+    { text: 'CSV Cutter', icon: <Upload />, path: '/csvcutter' },
+    { text: 'My Files', icon: <FilePresent />, path: '/myfiles' },
     ...(token ? [] : [{ text: 'Create Account', icon: <Login />, path: '/register' }]),
     ...(token ? [] : [{ text: 'Login', icon: <Login />, path: '/login' }]),
     ...(token ? [{ text: 'Logout', icon: <Logout />, path: '/logout' }] : []),
@@ -28,7 +29,7 @@ const Layout = ({ children }) => {
           return token 
             ? "Welcome back! I missed you! I'm your BEST FRIEND, CUTTY (the cuttlefish)" 
             : "Hello! I am Cutty, the friendly CUTTLEFISH. (not an octopus)";
-        case '/upload':
+        case '/csv_cutter':
           return "It looks like you are trying to cut a list! Would you like some help with that?";
         case '/register':
           return "Act like you've been here before!";
