@@ -3,6 +3,7 @@ import { CssBaseline } from '@mui/material';
 import Layout from './components/Layout';
 import Home from './components/Home';
 import CSVCutter from './components/CSVCutter';
+import FileUpload from './components/FileUpload';
 import Register from './components/Register';
 import Login from './components/Login';
 import Logout from './components/LogoutConfirmation';
@@ -42,6 +43,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/csv_cutter" element={<CSVCutter />} />
+            <Route path="/file_upload" element={<FileUpload />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />

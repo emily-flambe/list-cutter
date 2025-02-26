@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import json
 import os
 from pathlib import Path
+from datetime import timedelta
 
 def get_env_variable(var_name, default=None):
     """Get the environment variable or return exception"""
@@ -69,6 +70,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "rest_framework",
     "corsheaders",
+    "rest_framework_simplejwt",
     ## Third-party apps
     "adminplus",
     "django_vite",
@@ -82,7 +84,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    # "django.middleware.csrf.CsrfViewMiddleware", -- disabling because the list_cutter API is public and none of this is sensitive data, so we don't need to worry about CSRF
+    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -149,19 +151,22 @@ if os.path.exists(VITE_OUTPUT_DIR):
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
     ],
-    "DEFAULT_THROTTLE_RATES": {
+    'DEFAULT_THROTTLE_RATES': {
         'anon': '5/minute',
         'user': '10/minute',    },
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Use JWT!
+    ],
 }
 
 
@@ -172,6 +177,14 @@ CORS_ALLOW_CREDENTIALS = True
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 
+# Configure JWT settings
+from datetime import timedelta
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "AUTH_HEADER_TYPES": ("Bearer",),  # Ensure Bearer is recognized
+}
+
 ##############################
 # FILE UPLOAD SETTINGS
 ##############################
@@ -180,3 +193,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),  # Ensure it's "Bearer", not "Token"
+    "AUTH_COOKIE": "access_token",  # Allow token in a cookie
+    "AUTH_COOKIE_HTTP_ONLY": True,
+    "AUTH_COOKIE_SECURE": False,  # Set to True if using HTTPS
+}
