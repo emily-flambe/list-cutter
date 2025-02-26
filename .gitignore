@@ -175,3 +175,5 @@ generated/
 
 # Media files
 media/
+app/config/media/
+app/config/media/uploads/
