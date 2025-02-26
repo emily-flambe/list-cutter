@@ -6,6 +6,8 @@ This is deployed to the public internet!
 
 👉 https://list-cutter.emilyflam.be 👈
 
+The site is hosted on AWS EC2. AWS sure has a lot of _things_ in it, so I'd like to put it all in terraform, but I'm a busy woman, so... later.
+
 ## Local use
 
 From the root directory, run:
