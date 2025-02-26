@@ -93,7 +93,7 @@ const Layout = ({ children }) => {
       >
         <Box sx={{ overflow: 'auto', mt: 8 }}>
           <Typography variant="body2" sx={{ padding: 2 }}>
-            {loadingUser ? 'Loading...' : (token ? <>Hello, <strong>{user ? user.username : 'Unknown User'}</strong>! Thank you for visiting this web site!</> : <>You are not logged in :/<br />Log in to see all the COOL SECRET FEATURES.</>)}
+            {loadingUser ? 'Loading...' : (token ? <>Hello, <strong>{user ? user.username : 'Unknown User'}</strong>! Thank you for visiting this web site!</> : <>You are not logged in :/<br />Log in to see all the EXCLUSIVE FEATURES.</>)}
           </Typography>
           <List>
             {menuItems.map((item) => (
