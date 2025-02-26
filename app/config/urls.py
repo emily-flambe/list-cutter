@@ -10,8 +10,7 @@ admin.autodiscover()
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/", include("list_cutter.urls")),
-    path("accounts/", include("accounts.urls")),
+    path("api/list_cutter/", include("list_cutter.urls")),
     path("api/accounts/", include("accounts.urls")),
     # Must be last to accomodate the SPA catchall
     path("", include("list_cutter.urls")),

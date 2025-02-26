@@ -2,19 +2,40 @@ import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText
 import { Home, Upload, PersonAdd, Login, Logout, Help, FilePresent, ContentCut } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import axios from 'axios';
 
 const DRAWER_WIDTH = 240;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Set in your .env file
 
 const Layout = ({ children }) => {
   const location = useLocation();
-  const { token, user } = useContext(AuthContext);
+  const { token, user, setUser } = useContext(AuthContext);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (token) {
+        try {
+          const response = await axios.get(`${API_BASE_URL}/api/accounts/user/`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          setUser(response.data); // Update user state
+        } catch (error) {
+          console.error("Failed to fetch user data:", error);
+          setUser(null); // Reset user state on error
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [token]); // Fetch user data whenever the token changes
 
   const menuItems = [
     ...(token ? [{ text: 'Logout', icon: <Logout />, path: '/logout' }] : []),
     ...(token ? [] : [{ text: 'Login', icon: <Login />, path: '/login' }]),
-    ...(token ? [] : [{ text: 'Create Account', icon: <PersonAdd />, path: '/register' }]),
     { text: 'CSV Cutter', icon: <ContentCut />, path: '/csv_cutter' },
     // SECRET MENU. MEMBERS ONLY. also no boys allowed
     ...(token ? [{ text: 'Upload Files', icon: <Logout />, path: '/file_upload' }] : []),

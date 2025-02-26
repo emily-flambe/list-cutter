@@ -36,7 +36,7 @@ const FileUpload = () => {
     formData.append("file", file);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/upload/`, formData, {
+      const response = await axios.post(`${API_BASE_URL}/api/list_cutter/upload/`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           "Authorization": `Bearer ${token}`, // Send JWT token

@@ -31,3 +31,21 @@ DATABASES = {
         "PASSWORD": get_env_variable("POSTGRES_PASSWORD"),
     }
 }
+
+# Set more generous throttling rates for development
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '1000/minute',  # Increase the rate for anonymous users
+        'user': '2000/minute',   # Increase the rate for authenticated users
+    },
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Use JWT!
+    ],
+}

@@ -105,7 +105,7 @@ const CSVCutter = () => {
 
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/csv_cutter/`,
+        `${API_BASE_URL}/api/list_cutter/csv_cutter/`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },

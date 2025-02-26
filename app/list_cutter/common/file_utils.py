@@ -19,17 +19,11 @@ MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", 10 * 1024 * 1024))
 
 def save_uploaded_file(file):
     """Saves an uploaded file to the UPLOAD_DIR after validating its size."""
+    logger.debug(f"Saving file: {file.name}, size: {file.size}")
     if file.size > MAX_FILE_SIZE:
         raise ValueError(f'File size exceeds {(MAX_FILE_SIZE / (1024 * 1024)):.2f}MB limit')
     
     file_path = os.path.join(UPLOAD_DIR, file.name)
-
-    # Ensure unique filenames
-    counter = 1
-    while os.path.exists(file_path):
-        file_name, file_ext = os.path.splitext(file.name)
-        file_path = os.path.join(UPLOAD_DIR, f"{file_name}_{counter}{file_ext}")
-        counter += 1
 
     with open(file_path, 'wb+') as destination:
         for chunk in file.chunks():
@@ -37,12 +31,13 @@ def save_uploaded_file(file):
 
     # print full path
     logger.debug(f"Saved file to: {file_path}, upload directory: {UPLOAD_DIR}")
-    return os.path.basename(file_path)  # Return just filename for frontend
+    return file_path
 
 
 def get_csv_columns(file_path):
     """Reads a CSV file and returns its column names."""
     try:
+        logger.debug(f"Getting columns for file: {file_path}")
         df = pd.read_csv(file_path)
         return df.columns.tolist()
     except Exception as e:

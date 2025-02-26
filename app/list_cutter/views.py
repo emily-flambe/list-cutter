@@ -33,6 +33,7 @@ def upload_file_for_csv_cutter(request):
     file = request.FILES['file']
 
     try:
+        logger.info(f"Uploading file: {file.name}, size: {file.size}")
         file_path = save_uploaded_file(file)
         columns = get_csv_columns(file_path)
         return Response({'columns': columns, 'file_path': file_path}, status=200)
@@ -94,7 +95,7 @@ def upload_file(request):
         )
 
     try:
-        # Save file to disk
+        # Save file path to disk. This will be the full path to the file.
         file_path = save_uploaded_file(file)
 
         # Store file metadata in the database
