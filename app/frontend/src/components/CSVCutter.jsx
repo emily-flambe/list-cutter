@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import axios from "axios";
+import api from '../api';
 import {
   Box,
   Button,
   Checkbox,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   List,
@@ -15,7 +14,6 @@ import {
 } from '@mui/material';
 import { Upload as UploadIcon } from '@mui/icons-material';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE) || 10 * 1024 * 1024;
 const MAX_FILE_SIZE_MB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(2);
 
@@ -104,8 +102,8 @@ const CSVCutter = () => {
     formData.append("file", file);
 
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/list_cutter/csv_cutter/`,
+      const response = await api.post(
+        `/api/list_cutter/csv_cutter/`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -155,8 +153,8 @@ const CSVCutter = () => {
     }
 
     try {
-      const exportUrl = `${API_BASE_URL}/api/export_csv/`;
-      const response = await axios.post(
+      const exportUrl = `/api/export_csv/`;
+      const response = await api.post(
         exportUrl,
         { columns: selectedColumns, file_path: filePath, filters },
         { responseType: "blob" }

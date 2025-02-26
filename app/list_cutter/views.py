@@ -116,11 +116,29 @@ def upload_file(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def list_uploaded_files(request):
-    """Lists all uploaded files."""
-    files = os.listdir(UPLOAD_DIR)
-    file_urls = [f"/api/download/{file}" for file in files]  # Generate URLs for frontend
-    return Response({'files': files, 'file_urls': file_urls}, status=200)
+    """Lists all uploaded files associated with the logged-in user."""
+    # Fetch UploadedFile objects for the logged-in user
+    uploaded_files = UploadedFile.objects.filter(user=request.user)
+
+    # Prepare the response data, filtering to include only the most recent uploaded_at for each file_name
+    recent_files = {}
+    for uploaded_file in uploaded_files:
+        if uploaded_file.file_name not in recent_files or uploaded_file.uploaded_at > recent_files[uploaded_file.file_name].uploaded_at:
+            recent_files[uploaded_file.file_name] = uploaded_file
+
+    files_data = [
+        {
+            'id': uploaded_file.id,
+            'file_name': uploaded_file.file_name,
+            'file_path': uploaded_file.file_path,
+            'uploaded_at': uploaded_file.uploaded_at,
+        }
+        for uploaded_file in recent_files.values()
+    ]
+
+    return Response({'files': files_data}, status=200)
 
 @api_view(['GET'])
 def download_file(request, filename):
@@ -131,3 +149,31 @@ def download_file(request, filename):
         return Response({'error': 'File not found'}, status=404)
 
     return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=filename)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_file(request, file_id):
+    """Handles file deletion."""
+    logger.info(f"Received DELETE request to delete file with ID: {file_id} from user: {request.user.username}")
+
+    try:
+        uploaded_file = UploadedFile.objects.get(id=file_id, user=request.user)
+        file_path = uploaded_file.file_path  # Get the file path from the database
+        logger.info(f"File path: {file_path}")
+
+        # Check if the file exists before attempting to delete
+        if not os.path.exists(file_path):
+            logger.warning(f"File not found on server: {file_path}")
+            return Response({'error': 'File not found on the server.'}, status=404)
+
+        logger.info(f"Attempting to delete file at: {file_path}")
+        os.remove(file_path)  # Remove the file from the filesystem
+        uploaded_file.delete()  # Delete the record from the database
+        logger.info(f"File deleted successfully: {file_path}")
+        return Response({'message': 'File deleted successfully.'}, status=204)
+    except UploadedFile.DoesNotExist:
+        logger.error(f"File with ID {file_id} not found for user: {request.user.username}")
+        return Response({'error': 'File not found.'}, status=404)
+    except Exception as e:
+        logger.error(f"Error deleting file: {str(e)}")
+        return Response({'error': str(e)}, status=500)

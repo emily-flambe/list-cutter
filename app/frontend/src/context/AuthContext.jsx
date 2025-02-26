@@ -1,14 +1,12 @@
 // frontend/src/context/AuthContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('authToken'));
   const [user, setUser] = useState(null);
-
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const login = (newToken, username, refreshToken) => {
     localStorage.setItem('authToken', newToken);
@@ -25,7 +23,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserData = async (token) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/accounts/user/`, {
+      const response = await api.get(`/api/accounts/user/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -39,7 +37,7 @@ export const AuthProvider = ({ children }) => {
         try {
           // Retry fetching user data with the new token
           const newToken = localStorage.getItem('authToken');
-          const response = await axios.get(`${API_BASE_URL}/api/accounts/user/`, {
+          const response = await api.get(`/api/accounts/user/`, {
             headers: {
               Authorization: `Bearer ${newToken}`,
             },
@@ -64,11 +62,11 @@ export const AuthProvider = ({ children }) => {
       console.log('Using refresh token:', refreshTokenValue); // Log the refresh token being used
 
       // Log the request details
-      console.log('Sending request to refresh token at:', `${API_BASE_URL}/api/accounts/token/refresh/`);
+      console.log('Sending request to refresh token at:', `/api/accounts/token/refresh/`);
       
       // Form the request
-      const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/token/refresh/`,
+      const response = await api.post(
+        `/api/accounts/token/refresh/`,
         { refresh: refreshTokenValue }, // Data to send
         { headers: { 'Content-Type': 'application/json' } } // Headers
       );

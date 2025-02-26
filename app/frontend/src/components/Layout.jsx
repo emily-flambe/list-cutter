@@ -1,13 +1,12 @@
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
-import { Home, Upload, PersonAdd, Login, Logout, Help, FilePresent, ContentCut } from '@mui/icons-material';
+import { Home, UploadFile, Login, Logout, Help, Folder, ContentCut } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import axios from 'axios';
+import api from '../api';
 
 const DRAWER_WIDTH = 240;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Set in your .env file
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -18,7 +17,7 @@ const Layout = ({ children }) => {
     const fetchUserData = async () => {
       if (token) {
         try {
-          const response = await axios.get(`${API_BASE_URL}/api/accounts/user/`, {
+          const response = await api.get(`/api/accounts/user/`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -43,8 +42,8 @@ const Layout = ({ children }) => {
     ...(token ? [] : [{ text: 'Login', icon: <Login />, path: '/login' }]),
     { text: 'CSV Cutter', icon: <ContentCut />, path: '/csv_cutter' },
     // SECRET MENU. MEMBERS ONLY. also no boys allowed
-    ...(token ? [{ text: 'Upload Files', icon: <Logout />, path: '/file_upload' }] : []),
-    ...(token ? [{ text: 'Manage Files', icon: <Logout />, path: '/manage_files' }] : []),
+    ...(token ? [{ text: 'Upload Files', icon: <UploadFile />, path: '/file_upload' }] : []),
+    ...(token ? [{ text: 'Manage Files', icon: <Folder />, path: '/manage_files' }] : []),
     // ok back to the regular menu
     { text: 'FAQ', icon: <Help />, path: '/faq' },
     { text: 'About', icon: <Home />, path: '/' },
@@ -60,6 +59,12 @@ const Layout = ({ children }) => {
             : "Hello! I am Cutty, the friendly CUTTLEFISH. (not an octopus)";
         case '/csv_cutter':
           return "It looks like you are trying to cut a list! Would you like some help with that?";
+        case '/file_upload':
+          return "Think twice before giving your files to a stranger!";
+        case '/manage_files':
+          return "I can't be managed. But your files can be!";
+        case '/import_people':
+          return "Wait a minute. IS this a CRM?";
         case '/register':
           return "Act like you've been here before!";
         case '/login':
@@ -94,7 +99,7 @@ const Layout = ({ children }) => {
       >
         <Box sx={{ overflow: 'auto', mt: 8 }}>
           <Typography variant="body2" sx={{ padding: 2 }}>
-            {loadingUser ? 'Loading...' : (token ? <>Hello, <strong>{user ? user.username : 'Unknown User'}</strong>! Thank you for visiting this web site!</> : 'You are not logged in :/')}
+            {loadingUser ? 'Loading...' : (token ? <>Hello, <strong>{user ? user.username : 'Unknown User'}</strong>! Thank you for visiting this web site!</> : <>You are not logged in :/<br />Log in to see all the EXCLUSIVE FEATURES.</>)}
           </Typography>
           <List>
             {menuItems.map((item) => (

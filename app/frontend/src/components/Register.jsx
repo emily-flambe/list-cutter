@@ -1,6 +1,6 @@
 // frontend/src/pages/Register.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api';
 import {
   Box,
   Typography,
@@ -8,8 +8,6 @@ import {
   Button,
   Alert,
 } from '@mui/material';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -33,8 +31,8 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/register/`,
+      const response = await api.post(
+        `/api/accounts/register/`,
         formData
       );
       setSuccessMessage(response.data.detail);
