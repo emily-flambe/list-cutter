@@ -62,7 +62,7 @@ frontend:
 
 # Get a shell to the DB container. PW will be in the .env file
 db:
-	docker compose -f docker-compose.local.yml exec db psql -Upostgres
+	docker compose -f docker-compose.local.yml exec db psql -Upostgres -d list_cutter
 
 black:
 	docker compose -f docker-compose.local.yml exec backend bash -c "cd .. && poetry run black --config pyproject.toml . $(c)"

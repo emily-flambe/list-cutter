@@ -11,7 +11,6 @@ logging.basicConfig(level=logging.DEBUG)  # Set global log level to DEBUG
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Ensure your specific logger is also at DEBUG level
 
-
 UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, 'uploads')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -22,13 +21,24 @@ def save_uploaded_file(file):
     """Saves an uploaded file to the UPLOAD_DIR after validating its size."""
     if file.size > MAX_FILE_SIZE:
         raise ValueError(f'File size exceeds {(MAX_FILE_SIZE / (1024 * 1024)):.2f}MB limit')
-
+    
     file_path = os.path.join(UPLOAD_DIR, file.name)
+
+    # Ensure unique filenames
+    counter = 1
+    while os.path.exists(file_path):
+        file_name, file_ext = os.path.splitext(file.name)
+        file_path = os.path.join(UPLOAD_DIR, f"{file_name}_{counter}{file_ext}")
+        counter += 1
+
     with open(file_path, 'wb+') as destination:
         for chunk in file.chunks():
             destination.write(chunk)
 
-    return file_path
+    # print full path
+    logger.debug(f"Saved file to: {file_path}, upload directory: {UPLOAD_DIR}")
+    return os.path.basename(file_path)  # Return just filename for frontend
+
 
 def get_csv_columns(file_path):
     """Reads a CSV file and returns its column names."""
