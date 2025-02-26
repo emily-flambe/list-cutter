@@ -101,8 +101,8 @@ jobs:
           && echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> list-cutter/.env \
           && echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> list-cutter/.env \
           && echo "POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }}" >> list-cutter/.env \
-          && echo "POSTGRES_HOST=${{ env.POSTGRES_HOST }}" >> list-cutter/.env" \
-          && echo "VITE_MAX_UPLOAD_SIZE=10485760" >> list-cutter/.env 
+          && echo "POSTGRES_HOST=${{ env.POSTGRES_HOST }}" >> list-cutter/.env \
+          && echo "VITE_MAX_UPLOAD_SIZE=10485760" >> list-cutter/.env"
 
       - name: SSH into target host and pull changes from branch where this workflow was triggered
         run: |
