@@ -5,8 +5,6 @@ import { AuthContext } from '../context/AuthContext';
 import { Box, Typography, TextField, Button, Alert, Link } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate(); // Get the navigate function
@@ -23,7 +21,7 @@ const Login = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/accounts/login/`, credentials);
+      const response = await axios.post(`/api/accounts/login/`, credentials);
       login(response.data.access, credentials.username, response.data.refresh);
       navigate('/');
     } catch (err) {

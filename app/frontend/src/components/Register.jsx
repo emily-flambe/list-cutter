@@ -9,8 +9,6 @@ import {
   Alert,
 } from '@mui/material';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 const Register = () => {
   const [formData, setFormData] = useState({
     username: '',
@@ -34,7 +32,7 @@ const Register = () => {
 
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/register/`,
+        `/api/accounts/register/`,
         formData
       );
       setSuccessMessage(response.data.detail);
