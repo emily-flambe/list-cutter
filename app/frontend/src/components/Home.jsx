@@ -1,7 +1,10 @@
 import { Typography, Box, Link } from '@mui/material';
 import importantImage from '../assets/important.jpg';
+import { useState } from 'react';
 
 const Home = () => {
+  const [loggedIn, setLoggedIn] = useState(false);
+
   return (
     <Box sx={{ 
       bgcolor: 'var(--secondary-bg)',
@@ -44,13 +47,15 @@ const Home = () => {
         </Link>
       </Box>
 
-      <Box sx={{ mt: 3, textAlign: 'center' }}>
-        <img 
-          src={importantImage}
-          alt="Important" 
-          style={{ width: '80%', maxWidth: '400px', borderRadius: '8px' }} 
-        />
-      </Box>
+      {loggedIn && (
+        <Box sx={{ mt: 3, textAlign: 'center' }}>
+          <img 
+            src={importantImage}
+            alt="Important" 
+            style={{ width: '80%', maxWidth: '400px', borderRadius: '8px' }} 
+          />
+        </Box>
+      )}
     </Box>
   );
 };
