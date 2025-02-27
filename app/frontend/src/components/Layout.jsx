@@ -1,10 +1,11 @@
-import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
-import { Home, UploadFile, Login, Logout, Help, Folder, ContentCut } from '@mui/icons-material';
+import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Collapse } from '@mui/material';
+import { Home, UploadFile, Login, Logout, Help, Folder, ContentCut, List as ListIcon } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api';
+import React from 'react';
 
 const DRAWER_WIDTH = 240;
 
@@ -12,6 +13,7 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const { token, user, setUser } = useContext(AuthContext);
   const [loadingUser, setLoadingUser] = useState(true); // Add loading state
+  const [openFiles, setOpenFiles] = useState(false); // Add state for toggling Files group
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -41,11 +43,8 @@ const Layout = ({ children }) => {
     ...(token ? [{ text: 'Logout', icon: <Logout />, path: '/logout' }] : []),
     ...(token ? [] : [{ text: 'Login', icon: <Login />, path: '/login' }]),
     { text: 'CSV Cutter', icon: <ContentCut />, path: '/csv_cutter' },
-    // SECRET MENU. MEMBERS ONLY. also no boys allowed
-    ...(token ? [{ text: 'Upload Files', icon: <UploadFile />, path: '/file_upload' }] : []),
-    ...(token ? [{ text: 'Manage Files', icon: <Folder />, path: '/manage_files' }] : []),
-    // ok back to the regular menu
-    { text: 'FAQ', icon: <Help />, path: '/faq' },
+    ...(token ? [{ text: openFiles ? 'Files (collapse)' : 'Files (expand)', icon: <ListIcon />, isGroup: true }] : []),
+    ...(token ? [{ text: 'FAQ', icon: <Help />, path: '/faq' }] : []),
     { text: 'About', icon: <Home />, path: '/' },
   ];
 
@@ -97,30 +96,57 @@ const Layout = ({ children }) => {
           },
         }}
       >
-        <Box sx={{ overflow: 'auto', mt: 8 }}>
+        <Box sx={{ overflow: 'auto', mt: 4 }}>
           <Typography variant="body2" sx={{ padding: 2 }}>
             {loadingUser ? 'Loading...' : (token ? <>Hello, <strong>{user ? user.username : 'Unknown User'}</strong>! Thank you for visiting this web site!</> : <>You are not logged in :/<br />Log in to see all the EXCLUSIVE FEATURES.</>)}
           </Typography>
           <List>
             {menuItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  selected={location.pathname === item.path}
-                  sx={{
-                    '&.Mui-selected': {
-                      backgroundColor: '#7795ee',
-                      '&:hover': {
-                        backgroundColor: '#5894ff',
-                      },
-                    },
-                  }}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
+              <React.Fragment key={item.text}>
+                {item.isGroup ? (
+                  <>
+                    <ListItem button onClick={() => setOpenFiles(!openFiles)}>
+                      <ListItemIcon>{item.icon}</ListItemIcon>
+                      <ListItemText primary={item.text} />
+                    </ListItem>
+                    <Collapse in={openFiles} timeout="auto" unmountOnExit>
+                      <List component="div" disablePadding>
+                        <ListItem key="upload" disablePadding>
+                          <ListItemButton component={Link} to="/file_upload">
+                            <ListItemIcon><UploadFile /></ListItemIcon>
+                            <ListItemText primary="Upload" />
+                          </ListItemButton>
+                        </ListItem>
+                        <ListItem key="manage" disablePadding>
+                          <ListItemButton component={Link} to="/manage_files">
+                            <ListItemIcon><Folder /></ListItemIcon>
+                            <ListItemText primary="Manage" />
+                          </ListItemButton>
+                        </ListItem>
+                      </List>
+                    </Collapse>
+                  </>
+                ) : (
+                  <ListItem key={item.text} disablePadding>
+                    <ListItemButton
+                      component={Link}
+                      to={item.path}
+                      selected={location.pathname === item.path}
+                      sx={{
+                        '&.Mui-selected': {
+                          backgroundColor: '#7795ee',
+                          '&:hover': {
+                            backgroundColor: '#5894ff',
+                          },
+                        },
+                      }}
+                    >
+                      <ListItemIcon>{item.icon}</ListItemIcon>
+                      <ListItemText primary={item.text} />
+                    </ListItemButton>
+                  </ListItem>
+                )}
+              </React.Fragment>
             ))}
           </List>
         </Box>

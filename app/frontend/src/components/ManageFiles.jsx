@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Typography, Box, List, ListItem, ListItemText, CircularProgress, Table, TableBody, TableCell, TableRow, Button, TableHead, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Typography, Box, List, ListItem, ListItemText, CircularProgress, Table, TableBody, TableCell, TableRow, Button, TableHead, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, Chip, InputLabel, FormControl } from '@mui/material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 
@@ -16,6 +16,8 @@ const ManageFiles = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedFileId, setSelectedFileId] = useState(null);
   const [newTag, setNewTag] = useState("");
+  const [selectedSystemTags, setSelectedSystemTags] = useState([]);
+  const [selectedUserTags, setSelectedUserTags] = useState([]);
 
   useEffect(() => {
     const fetchSavedFiles = async () => {
@@ -49,8 +51,13 @@ const ManageFiles = () => {
     return 0;
   });
 
+  const uniqueSystemTags = [...new Set(files.flatMap(file => file.system_tags || []))];
+  const uniqueUserTags = [...new Set(files.flatMap(file => file.user_tags || []))];
+
   const filteredFiles = sortedFiles.filter(file => 
-    file.file_name.toLowerCase().includes(searchQuery.toLowerCase())
+    file.file_name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    (selectedSystemTags.length === 0 || file.system_tags?.some(tag => selectedSystemTags.includes(tag))) &&
+    (selectedUserTags.length === 0 || file.user_tags?.some(tag => selectedUserTags.includes(tag)))
   );
 
   const requestSort = (key) => {
@@ -129,81 +136,136 @@ const ManageFiles = () => {
   };
 
   return (
-    <Box sx={{ textAlign: 'center', marginTop: '50px' }}>
+    <Box sx={{ textAlign: 'left', marginTop: '50px' }}>
       <Typography variant="h3">Manage Files</Typography>
       <br/><br/>
-      <Box sx={{ textAlign: 'left', marginBottom: '20px' }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', marginBottom: '10px' }}>
         <TextField
           variant="outlined"
           placeholder="Search by filename"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ marginRight: '10px' }}
         />
+        <FormControl sx={{ marginRight: '10px', minWidth: 200 }}>
+          <InputLabel>System Tags</InputLabel>
+          <Select
+            multiple
+            value={selectedSystemTags}
+            onChange={(e) => setSelectedSystemTags(e.target.value)}
+            renderValue={(selected) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                {selected.map((value) => (
+                  <Chip key={value} label={value} sx={{ margin: 0.5 }} />
+                ))}
+              </Box>
+            )}
+          >
+            {uniqueSystemTags.map((tag) => (
+              <MenuItem key={tag} value={tag}>
+                <Typography variant="body2" color="text.secondary">{tag}</Typography>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>User Tags</InputLabel>
+          <Select
+            multiple
+            value={selectedUserTags}
+            onChange={(e) => setSelectedUserTags(e.target.value)}
+            renderValue={(selected) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                {selected.map((value) => (
+                  <Chip key={value} label={value} sx={{ margin: 0.5 }} />
+                ))}
+              </Box>
+            )}
+          >
+            {uniqueUserTags.map((tag) => (
+              <MenuItem key={tag} value={tag}>
+                <Typography variant="body2" color="text.secondary">{tag}</Typography>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
       <Box sx={{ textAlign: 'left', marginBottom: '10px' }}>
         <Typography variant="body2" style={{ fontStyle: 'italic' }}>
           Click on any column heading to sort files 💁‍♀️
         </Typography>
       </Box>
-      <Table sx={{ marginTop: '20px' }}>
-        <TableHead>
-          <TableRow>
-            <TableCell onClick={() => requestSort('file_name')} style={{ cursor: 'pointer' }}>
-              <Typography variant="h6" fontWeight="bold">File Name {sortConfig.key === 'file_name' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</Typography>
-            </TableCell>
-            <TableCell onClick={() => requestSort('uploaded_at')} style={{ cursor: 'pointer' }}>
-              <Typography variant="h6" fontWeight="bold">Uploaded At {sortConfig.key === 'uploaded_at' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</Typography>
-            </TableCell>         
-            <TableCell onClick={() => requestSort('system_tags')} style={{ cursor: 'pointer' }}>
-              <Typography variant="h6" fontWeight="bold">System Tags {sortConfig.key === 'system_tags' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</Typography>
-            </TableCell>
-            <TableCell onClick={() => requestSort('user_tags')} style={{ cursor: 'pointer' }}>
-              <Typography variant="h6" fontWeight="bold">User Tags {sortConfig.key === 'user_tags' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</Typography>
-            </TableCell>
-            <TableCell onClick={() => requestSort('user_tags')} style={{ cursor: 'pointer' }}>
-              <Typography variant="h6" fontWeight="bold">Metadata {sortConfig.key === 'user_tags' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</Typography>
-            </TableCell>
-            <TableCell>
-            </TableCell>
-            <TableCell>
-            </TableCell>
-            <TableCell>
-            </TableCell>   
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filteredFiles.length > 0 ? (
-            filteredFiles.map(file => (
-              <TableRow key={file.id}>
-                <TableCell>{file.file_name}</TableCell>
-                <TableCell>{file.uploaded_at.slice(0, 16).replace('T', ' ')}</TableCell>
-                <TableCell>{file.system_tags ? file.system_tags.join(', ') : ''}</TableCell>
-                <TableCell>{file.user_tags ? file.user_tags.join(', ') : ''}</TableCell>
-                <TableCell>{file.metadata ? JSON.stringify(JSON.parse(file.metadata), null, 2) : ''}</TableCell>
-                <TableCell>
-                  <Button variant="contained" color="primary" onClick={() => handleAddTagClick(file.id)}>
-                    Add Tag
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Button variant="contained" color="primary" onClick={() => downloadFile(file.file_name)}>
-                    Download
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Button variant="contained" color="error" onClick={() => deleteFile(file.id)}>
-                    Delete
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
+      <Box sx={{ overflowX: 'auto' }}>
+        <Table sx={{ minWidth: 800 }}>
+          <TableHead>
             <TableRow>
-              <TableCell colSpan={5}>No files found.</TableCell>
+              <TableCell onClick={() => requestSort('file_name')} style={{ cursor: 'pointer' }}>
+                <Typography variant="h6" fontWeight="bold" fontSize="0.9rem">
+                  File Name {sortConfig.key === 'file_name' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                </Typography>
+              </TableCell>
+              <TableCell onClick={() => requestSort('uploaded_at')} style={{ cursor: 'pointer' }}>
+                <Typography variant="h6" fontWeight="bold" fontSize="0.9rem">
+                  Uploaded At {sortConfig.key === 'uploaded_at' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                </Typography>
+              </TableCell>         
+              <TableCell onClick={() => requestSort('system_tags')} style={{ cursor: 'pointer' }}>
+                <Typography variant="h6" fontWeight="bold" fontSize="0.9rem">
+                  System Tags {sortConfig.key === 'system_tags' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                </Typography>
+              </TableCell>
+              <TableCell onClick={() => requestSort('user_tags')} style={{ cursor: 'pointer' }}>
+                <Typography variant="h6" fontWeight="bold" fontSize="0.9rem">
+                  User Tags {sortConfig.key === 'user_tags' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                </Typography>
+              </TableCell>
+              <TableCell onClick={() => requestSort('user_tags')} style={{ cursor: 'pointer' }}>
+                <Typography variant="h6" fontWeight="bold" fontSize="0.9rem">
+                  Metadata {sortConfig.key === 'user_tags' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                </Typography>
+              </TableCell>
+              <TableCell>
+              </TableCell>
+              <TableCell>
+              </TableCell>
+              <TableCell>
+              </TableCell>   
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHead>
+          <TableBody>
+            {filteredFiles.length > 0 ? (
+              filteredFiles.map(file => (
+                <TableRow key={file.id}>
+                  <TableCell className="table-cell" style={{ padding: '4px 8px', minWidth: '150px' }}>{file.file_name}</TableCell>
+                  <TableCell className="table-cell" style={{ padding: '4px 8px', minWidth: '150px' }}>{file.uploaded_at.slice(0, 16).replace('T', ' ')}</TableCell>
+                  <TableCell className="table-cell" style={{ padding: '4px 8px', minWidth: '150px' }}>{file.system_tags ? file.system_tags.join(', ') : ''}</TableCell>
+                  <TableCell className="table-cell" style={{ padding: '4px 8px', minWidth: '150px' }}>{file.user_tags ? file.user_tags.join(', ') : ''}</TableCell>
+                  <TableCell className="table-cell" style={{ padding: '4px 8px', minWidth: '150px' }}>{file.metadata ? JSON.stringify(JSON.parse(file.metadata), null, 2) : ''}</TableCell>
+                  <TableCell>
+                    <Button variant="contained" color="primary" onClick={() => handleAddTagClick(file.id)}>
+                      Add Tag
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="contained" color="primary" onClick={() => downloadFile(file.file_name)}>
+                      Download
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="contained" color="error" onClick={() => deleteFile(file.id)}>
+                      Delete
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="table-cell" style={{ padding: '4px 8px', minWidth: '150px' }}>No files found.</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Box>
       <Dialog open={openDialog} onClose={handleDialogClose}>
         <DialogTitle>Add Tag</DialogTitle>
         <DialogContent>

@@ -13,6 +13,8 @@ import {
 } from '@mui/material';
 import { Upload as UploadIcon } from '@mui/icons-material';
 import api from '../api';
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
 
 const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE) || 10 * 1024 * 1024;
 const MAX_FILE_SIZE_MB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(2);
@@ -32,9 +34,11 @@ const CSVCutter = () => {
   const [showSaveField, setShowSaveField] = useState(false);
   const [filename, setFilename] = useState("");
   const fileInputRef = useRef(null);
+  const token = useContext(AuthContext);
 
   useEffect(() => {
     console.log("Updated File Info:", fileInfo);
+    console.log("Token:", token);
   }, [fileInfo]);
 
   const handleFileChange = (event) => {
@@ -247,7 +251,9 @@ const CSVCutter = () => {
           CSV Cutter
         </Typography>
         <Typography variant="body2" sx={{ color: 'var(--primary-text)', mb: 2 }}>
-          Upload a CSV and apply filters to generate the file you <span style={{ fontStyle: 'italic' }}>know</span> it can be - if only someone would simply <span style={{ fontStyle: 'italic' }}>cut it</span>.
+          Upload a CSV and apply filters to generate the file you <span style={{ fontStyle: 'italic' }}>know</span> it can be - if only someone would <span style={{ fontStyle: 'italic' }}>cut it</span>.
+          <br /> 
+          <br />You can do a lot more if you create an account and log in! Seriously!
         </Typography>
         <Typography variant="caption" sx={{ color: 'var(--primary-text)' }}>
           Max file size: {MAX_FILE_SIZE_MB}MB
@@ -356,12 +362,18 @@ const CSVCutter = () => {
                 >
                   Download CSV
                 </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => setShowSaveField(!showSaveField)}
-                >
-                  Save to My Files
-                </Button>
+                {token.token !== null ? (
+                  <Button
+                    variant="contained"
+                    onClick={() => setShowSaveField(!showSaveField)}
+                  >
+                    Save to My Files
+                  </Button>
+                ) : (
+                  <Typography variant="body2" color="textSecondary">
+                    Log in to save this file to your account.
+                  </Typography>
+                )}
               </Box>
             )}
 
