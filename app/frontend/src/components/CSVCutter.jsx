@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import api from '../api';
 import {
   Box,
   Button,
@@ -13,6 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Upload as UploadIcon } from '@mui/icons-material';
+import api from '../api';
 
 const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE) || 10 * 1024 * 1024;
 const MAX_FILE_SIZE_MB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(2);
@@ -29,6 +29,8 @@ const CSVCutter = () => {
   const [downloadUrl, setDownloadUrl] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showSaveField, setShowSaveField] = useState(false);
+  const [filename, setFilename] = useState("");
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -37,10 +39,8 @@ const CSVCutter = () => {
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
-
-    // Reset states on new file selection
     setFile(selectedFile);
-    setRowCount(0); // Reset row count
+    setRowCount(0);
     setFileInfo(selectedFile ? `${selectedFile.name} (${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)` : "");
 
     // Validate file type and size
@@ -55,14 +55,13 @@ const CSVCutter = () => {
         setIsFileValid(false);
         return;
       }
-      setErrorMessage(""); // Clear any previous error messages
-      setIsFileValid(true); // Set file as valid
+      setErrorMessage("");
+      setIsFileValid(true);
 
-      // Read the file to count rows
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target.result;
-        const rows = text.split('\n').length - 1; // Subtract 1 for header row
+        const rows = text.split('\n').length - 1;
         setRowCount(rows);
         setFileInfo(`${selectedFile.name} (${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)`);
       };
@@ -71,7 +70,6 @@ const CSVCutter = () => {
       setIsFileValid(false);
     }
 
-    // Reset other states
     setColumns([]);
     setSelectedColumns([]);
     setFilters({});
@@ -86,13 +84,11 @@ const CSVCutter = () => {
       return;
     }
 
-    // Validate file type again before upload
     if (!file.name.toLowerCase().endsWith(".csv")) {
       setErrorMessage("Invalid file type. Please upload a CSV file.");
       return;
     }
 
-    // Prevent upload if file size exceeds limit
     if (file.size > MAX_FILE_SIZE) {
       setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit.`);
       return;
@@ -110,21 +106,14 @@ const CSVCutter = () => {
         }
       );
 
-      // Expecting response.data to contain { columns: [...], file_path: "..." }
       setColumns(response.data.columns);
       setFilePath(response.data.file_path || "");
-      setErrorMessage(""); // Clear error if successful
-
-      // Use the row count calculated during file selection
-      // setRowCount(csvData); // Remove this line
+      setErrorMessage("");
 
       // Set file info with the original row count
       setFileInfo(`${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
-
     } catch (error) {
       console.error("Error uploading file:", error);
-
-      // Backend file size enforcement message
       if (error.response && error.response.status === 400 && error.response.data.error.includes("File size exceeds")) {
         setErrorMessage(error.response.data.error);
       } else {
@@ -144,9 +133,9 @@ const CSVCutter = () => {
     setFilters((prev) => ({ ...prev, [column]: value }));
   };
 
-  const handleExport = async () => {
+  const handleCutList = async () => {
     if (selectedColumns.length === 0) {
-      return alert("Please select at least one column to export.");
+      return alert("Please select at least one column to cut.");
     }
     if (!filePath) {
       return alert("File path is not available.");
@@ -163,9 +152,32 @@ const CSVCutter = () => {
       const blob = new Blob([response.data], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       setDownloadUrl(url);
+      setShowSaveField(false);
+      setFilename(`${file.name.split('.csv')[0]}_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.csv`);
     } catch (error) {
       console.error("Error exporting CSV:", error);
       alert("Error exporting CSV");
+    }
+  };
+
+  const handleSaveToMyFiles = async () => {
+    if (!filename) {
+      alert("Please provide a filename.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("filename", filename);
+
+    try {
+      await api.post(`/api/list_cutter/save_generated_file/`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setShowPopup(true);
+    } catch (error) {
+      console.error("Error saving file:", error);
+      alert("Error saving file. Please try again.");
     }
   };
 
@@ -188,7 +200,7 @@ const CSVCutter = () => {
 
   const handlePopupKeepGoing = () => {
     setShowPopup(false);
-    setDownloadUrl(""); // Clear the download URL to hide the download section
+    setDownloadUrl("");
   };
 
   const handlePopupNo = () => {
@@ -199,15 +211,15 @@ const CSVCutter = () => {
     <Box sx={{ 
       display: 'flex', 
       justifyContent: 'center', 
-      bgcolor: 'var(--primary-bg)', // Background is maintained for consistency
-      width: '100%', // Ensure the Box takes full width
+      bgcolor: 'var(--primary-bg)',
+      width: '100%',
     }}>
       <Box sx={{ 
         p: 3, 
         bgcolor: 'var(--secondary-bg)', 
         borderRadius: 2, 
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
-        width: '100%', // Allow it to stretch to full width
+        width: '100%',
       }}>
         <Typography 
         variant="h3" 
@@ -216,10 +228,10 @@ const CSVCutter = () => {
         gutterBottom sx={{ color: 'var(--primary-text)' }}>
           CSV Cutter
         </Typography>
-        <Typography variant="body2" sx={{ color: 'var(--secondary-text)', mb: 2 }}>
+        <Typography variant="body2" sx={{ color: 'var(--primary-text)', mb: 2 }}>
           Upload a CSV and apply filters to generate the file you <span style={{ fontStyle: 'italic' }}>know</span> it can be - if only someone would simply <span style={{ fontStyle: 'italic' }}>cut it</span>.
         </Typography>
-        <Typography variant="caption" sx={{ color: 'var(--secondary-text)' }}>
+        <Typography variant="caption" sx={{ color: 'var(--primary-text)' }}>
           Max file size: {MAX_FILE_SIZE_MB}MB
         </Typography>
         
@@ -308,31 +320,55 @@ const CSVCutter = () => {
             
             <Button
               variant="contained"
-              onClick={handleExport}
+              onClick={handleCutList}
               sx={{ mt: 2 }}
             >
-              Export Filtered CSV
+              Cut List
             </Button>
-          </Box>
-        )}
 
-        {downloadUrl && (
-          <Box sx={{ mt: 3 }}>
-            <Button
-              variant="contained"
-              color="success"
-              component="a"
-              href={downloadUrl}
-              download="filtered.csv"
-              onClick={handleDownloadClick}
-            >
-              Download CSV
-            </Button>
+            {downloadUrl && (
+              <Box sx={{ mt: 3, display: 'flex', alignItems: 'center' }}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  component="a"
+                  href={downloadUrl}
+                  download="filtered.csv"
+                  sx={{ mr: 2 }}
+                >
+                  Download CSV
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => setShowSaveField(!showSaveField)}
+                >
+                  Save to My Files
+                </Button>
+              </Box>
+            )}
+
+            {showSaveField && (
+              <Box sx={{ mt: 2 }}>
+                <TextField
+                  label="Filename"
+                  value={filename}
+                  onChange={(e) => setFilename(e.target.value)}
+                  fullWidth
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleSaveToMyFiles}
+                  sx={{ mt: 2 }}
+                >
+                  Save
+                </Button>
+              </Box>
+            )}
           </Box>
         )}
 
         <Dialog open={showPopup} onClose={() => setShowPopup(false)}>
-          <DialogTitle>Great job! What would you like to do next?</DialogTitle>
+        <DialogTitle sx={{ color: 'var(--secondary-text)' }}>Great job! What would you like to do next?</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
               <Button variant="contained" onClick={handlePopupStartOver}>
