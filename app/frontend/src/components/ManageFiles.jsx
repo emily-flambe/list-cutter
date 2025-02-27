@@ -15,7 +15,7 @@ const ManageFiles = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    const fetchUploadedFiles = async () => {
+    const fetchSavedFiles = async () => {
       try {
         const response = await api.get('/api/list_cutter/list_uploaded_files/', {
           headers: { Authorization: `Bearer ${token}` },
@@ -29,7 +29,7 @@ const ManageFiles = () => {
     };
 
     if (token) {
-      fetchUploadedFiles();
+      fetchSavedFiles();
     } else {
       setLoading(false);
       setError("You must be logged in to view uploaded files.");

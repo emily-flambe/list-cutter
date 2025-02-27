@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
 
 from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where
-from .models import UploadedFile 
+from .models import SavedFile 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -99,7 +99,7 @@ def upload_file(request):
         file_path = save_uploaded_file(file)
 
         # Store file metadata in the database
-        uploaded_file = UploadedFile.objects.create(
+        uploaded_file = SavedFile.objects.create(
             user=request.user,
             file_name=file.name,
             file_path=file_path
@@ -119,8 +119,8 @@ def upload_file(request):
 @permission_classes([IsAuthenticated])
 def list_uploaded_files(request):
     """Lists all uploaded files associated with the logged-in user."""
-    # Fetch UploadedFile objects for the logged-in user
-    uploaded_files = UploadedFile.objects.filter(user=request.user)
+    # Fetch SavedFile objects for the logged-in user
+    uploaded_files = SavedFile.objects.filter(user=request.user)
 
     # Prepare the response data, filtering to include only the most recent uploaded_at for each file_name
     recent_files = {}
@@ -157,7 +157,7 @@ def delete_file(request, file_id):
     logger.info(f"Received DELETE request to delete file with ID: {file_id} from user: {request.user.username}")
 
     try:
-        uploaded_file = UploadedFile.objects.get(id=file_id, user=request.user)
+        uploaded_file = SavedFile.objects.get(id=file_id, user=request.user)
         file_path = uploaded_file.file_path  # Get the file path from the database
         logger.info(f"File path: {file_path}")
 
@@ -171,7 +171,7 @@ def delete_file(request, file_id):
         uploaded_file.delete()  # Delete the record from the database
         logger.info(f"File deleted successfully: {file_path}")
         return Response({'message': 'File deleted successfully.'}, status=204)
-    except UploadedFile.DoesNotExist:
+    except SavedFile.DoesNotExist:
         logger.error(f"File with ID {file_id} not found for user: {request.user.username}")
         return Response({'error': 'File not found.'}, status=404)
     except Exception as e:
@@ -197,8 +197,8 @@ def save_file(request):
             for chunk in file.chunks():
                 destination.write(chunk)
 
-        # Create an UploadedFile object in the database
-        uploaded_file = UploadedFile.objects.create(
+        # Create an SavedFile object in the database
+        uploaded_file = SavedFile.objects.create(
             user=request.user,
             file_name=filename,
             file_path=file_path
