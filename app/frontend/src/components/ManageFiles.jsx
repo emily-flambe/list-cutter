@@ -163,6 +163,8 @@ const ManageFiles = () => {
             <TableCell>
             </TableCell>
             <TableCell>
+            </TableCell>
+            <TableCell>
             </TableCell>   
           </TableRow>
         </TableHead>
