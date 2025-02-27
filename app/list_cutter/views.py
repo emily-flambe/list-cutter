@@ -8,9 +8,10 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
+from django.utils import timezone
 
 from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where
-from .models import UploadedFile 
+from .models import SavedFile 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -99,14 +100,15 @@ def upload_file(request):
         file_path = save_uploaded_file(file)
 
         # Store file metadata in the database
-        uploaded_file = UploadedFile.objects.create(
+        saved_file = SavedFile.objects.create(
             user=request.user,
-            file_name=file.name,
-            file_path=file_path
+            file_path=file_path,
+            system_tags=['uploaded'],
+            uploaded_at=timezone.now()
         )
 
         return Response(
-            {'message': 'File uploaded successfully', 'file_id': uploaded_file.id},
+            {'message': 'File uploaded successfully', 'file_id': saved_file.id},
             status=200
         )
 
@@ -119,8 +121,8 @@ def upload_file(request):
 @permission_classes([IsAuthenticated])
 def list_uploaded_files(request):
     """Lists all uploaded files associated with the logged-in user."""
-    # Fetch UploadedFile objects for the logged-in user
-    uploaded_files = UploadedFile.objects.filter(user=request.user)
+    # Fetch SavedFile objects for the logged-in user
+    uploaded_files = SavedFile.objects.filter(user=request.user)
 
     # Prepare the response data, filtering to include only the most recent uploaded_at for each file_name
     recent_files = {}
@@ -134,6 +136,8 @@ def list_uploaded_files(request):
             'file_name': uploaded_file.file_name,
             'file_path': uploaded_file.file_path,
             'uploaded_at': uploaded_file.uploaded_at,
+            'system_tags': uploaded_file.system_tags,
+            'user_tags': uploaded_file.user_tags,
         }
         for uploaded_file in recent_files.values()
     ]
@@ -157,7 +161,7 @@ def delete_file(request, file_id):
     logger.info(f"Received DELETE request to delete file with ID: {file_id} from user: {request.user.username}")
 
     try:
-        uploaded_file = UploadedFile.objects.get(id=file_id, user=request.user)
+        uploaded_file = SavedFile.objects.get(id=file_id, user=request.user)
         file_path = uploaded_file.file_path  # Get the file path from the database
         logger.info(f"File path: {file_path}")
 
@@ -171,7 +175,7 @@ def delete_file(request, file_id):
         uploaded_file.delete()  # Delete the record from the database
         logger.info(f"File deleted successfully: {file_path}")
         return Response({'message': 'File deleted successfully.'}, status=204)
-    except UploadedFile.DoesNotExist:
+    except SavedFile.DoesNotExist:
         logger.error(f"File with ID {file_id} not found for user: {request.user.username}")
         return Response({'error': 'File not found.'}, status=404)
     except Exception as e:
@@ -180,8 +184,8 @@ def delete_file(request, file_id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def save_file(request):
-    """Saves the uploaded file to the server and creates a database record."""
+def save_generated_file(request):
+    """Saves the generated file to the server and creates a database record."""
     if 'file' not in request.FILES or 'filename' not in request.data:
         return JsonResponse({'error': 'No file or filename provided.'}, status=400)
 
@@ -197,13 +201,31 @@ def save_file(request):
             for chunk in file.chunks():
                 destination.write(chunk)
 
-        # Create an UploadedFile object in the database
-        uploaded_file = UploadedFile.objects.create(
+        # Store file metadata in the database
+        saved_file = SavedFile.objects.create(
             user=request.user,
-            file_name=filename,
-            file_path=file_path
+            file_path=file_path,
+            system_tags=['generated'],
+            uploaded_at=timezone.now()
         )
 
-        return JsonResponse({'message': 'File saved successfully.', 'file_path': file_path, 'file_id': uploaded_file.id}, status=201)
+        return JsonResponse({'message': 'File saved successfully.', 'file_path': file_path, 'file_id': saved_file.id}, status=201)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_tags(request, file_id):
+    """Updates user tags for a specific file."""
+    try:
+        uploaded_file = SavedFile.objects.get(id=file_id, user=request.user)
+        user_tags = request.data.get('user_tags', [])
+        # Ensure user_tags is a list before concatenation
+        uploaded_file.user_tags = list(uploaded_file.user_tags) if uploaded_file.user_tags else []
+        uploaded_file.user_tags = list(set(uploaded_file.user_tags + user_tags))  # Avoid duplicates
+        uploaded_file.save()
+        return Response({'message': 'Tags updated successfully.'}, status=200)
+    except SavedFile.DoesNotExist:
+        return Response({'error': 'File not found.'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)

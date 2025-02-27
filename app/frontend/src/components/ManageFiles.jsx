@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Typography, Box, List, ListItem, ListItemText, CircularProgress, Table, TableBody, TableCell, TableRow, Button, TableHead, TextField } from '@mui/material';
+import { Typography, Box, List, ListItem, ListItemText, CircularProgress, Table, TableBody, TableCell, TableRow, Button, TableHead, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 
@@ -13,9 +13,12 @@ const ManageFiles = () => {
   const [error, setError] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: 'file_name', direction: 'ascending' });
   const [searchQuery, setSearchQuery] = useState("");
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedFileId, setSelectedFileId] = useState(null);
+  const [newTag, setNewTag] = useState("");
 
   useEffect(() => {
-    const fetchUploadedFiles = async () => {
+    const fetchSavedFiles = async () => {
       try {
         const response = await api.get('/api/list_cutter/list_uploaded_files/', {
           headers: { Authorization: `Bearer ${token}` },
@@ -29,7 +32,7 @@ const ManageFiles = () => {
     };
 
     if (token) {
-      fetchUploadedFiles();
+      fetchSavedFiles();
     } else {
       setLoading(false);
       setError("You must be logged in to view uploaded files.");
@@ -93,6 +96,38 @@ const ManageFiles = () => {
     }
   };
 
+  const handleAddTagClick = (fileId) => {
+    setSelectedFileId(fileId);
+    setOpenDialog(true);
+  };
+
+  const handleDialogClose = () => {
+    setOpenDialog(false);
+    setNewTag("");
+  };
+
+  const handleAddTag = async () => {
+    if (!newTag) return;
+
+    try {
+      await api.patch(`/api/list_cutter/update_tags/${selectedFileId}/`, {
+        user_tags: [newTag] // Assuming you want to replace the tags with the new one
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setFiles(files.map(file => 
+        file.id === selectedFileId ? { 
+          ...file, 
+          user_tags: Array.isArray(file.user_tags) ? [...file.user_tags, newTag] : [newTag] // Ensure user_tags is an array
+        } : file
+      ));
+      handleDialogClose();
+    } catch (error) {
+      console.error("Error adding tag:", error);
+      alert("Failed to add the tag.");
+    }
+  };
+
   return (
     <Box sx={{ textAlign: 'center', marginTop: '50px' }}>
       <Typography variant="h3">Manage Files</Typography>
@@ -118,11 +153,17 @@ const ManageFiles = () => {
             </TableCell>
             <TableCell onClick={() => requestSort('uploaded_at')} style={{ cursor: 'pointer' }}>
               <Typography variant="h6" fontWeight="bold">Uploaded At {sortConfig.key === 'uploaded_at' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</Typography>
+            </TableCell>         
+            <TableCell onClick={() => requestSort('system_tags')} style={{ cursor: 'pointer' }}>
+              <Typography variant="h6" fontWeight="bold">System Tags {sortConfig.key === 'system_tags' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</Typography>
+            </TableCell>
+            <TableCell onClick={() => requestSort('user_tags')} style={{ cursor: 'pointer' }}>
+              <Typography variant="h6" fontWeight="bold">User Tags {sortConfig.key === 'user_tags' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</Typography>
             </TableCell>
             <TableCell>
             </TableCell>
             <TableCell>
-            </TableCell>
+            </TableCell>   
           </TableRow>
         </TableHead>
         <TableBody>
@@ -131,6 +172,13 @@ const ManageFiles = () => {
               <TableRow key={file.id}>
                 <TableCell>{file.file_name}</TableCell>
                 <TableCell>{file.uploaded_at.slice(0, 16).replace('T', ' ')}</TableCell>
+                <TableCell>{file.system_tags ? file.system_tags.join(', ') : ''}</TableCell>
+                <TableCell>{file.user_tags ? file.user_tags.join(', ') : ''}</TableCell>
+                <TableCell>
+                  <Button variant="contained" color="primary" onClick={() => handleAddTagClick(file.id)}>
+                    Add Tag
+                  </Button>
+                </TableCell>
                 <TableCell>
                   <Button variant="contained" color="primary" onClick={() => downloadFile(file.file_name)}>
                     Download
@@ -150,6 +198,29 @@ const ManageFiles = () => {
           )}
         </TableBody>
       </Table>
+      <Dialog open={openDialog} onClose={handleDialogClose}>
+        <DialogTitle>Add Tag</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Tag Name"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleAddTag} color="primary">
+            Add Tag
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

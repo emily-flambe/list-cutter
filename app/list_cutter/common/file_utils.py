@@ -11,8 +11,13 @@ logging.basicConfig(level=logging.DEBUG)  # Set global log level to DEBUG
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Ensure your specific logger is also at DEBUG level
 
+# Define both directories
 UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, 'uploads')
+GENERATED_DIR = os.path.join(settings.MEDIA_ROOT, 'generated')
+
+# Create both directories
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(GENERATED_DIR, exist_ok=True)
 
 # Load file size limit from environment variables (default 10MB)
 MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", 10 * 1024 * 1024))
@@ -33,6 +38,12 @@ def save_uploaded_file(file):
     logger.debug(f"Saved file to: {file_path}, upload directory: {UPLOAD_DIR}")
     return file_path
 
+def save_generated_file(file_name, content):
+    """Saves a generated file to the GENERATED_DIR."""
+    file_path = os.path.join(GENERATED_DIR, file_name)
+    with open(file_path, 'w') as f:
+        f.write(content)
+    return file_path
 
 def get_csv_columns(file_path):
     """Reads a CSV file and returns its column names."""
