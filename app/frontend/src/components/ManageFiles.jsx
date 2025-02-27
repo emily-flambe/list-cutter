@@ -267,7 +267,7 @@ const ManageFiles = () => {
         </Table>
       </Box>
       <Dialog open={openDialog} onClose={handleDialogClose}>
-        <DialogTitle>Add Tag</DialogTitle>
+        <DialogTitle sx={{ color: 'text.secondary' }}>Add Tag</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -278,6 +278,9 @@ const ManageFiles = () => {
             variant="outlined"
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
+            InputProps={{
+              style: { color: 'rgba(0, 0, 0, 0.54)' }
+            }}
           />
         </DialogContent>
         <DialogActions>
