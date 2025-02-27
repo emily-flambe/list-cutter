@@ -153,7 +153,7 @@ const CSVCutter = () => {
     }
 
     try {
-      const exportUrl = `/api/export_csv/`;
+      const exportUrl = `/api/list_cutter/export_csv/`;
       const response = await api.post(
         exportUrl,
         { columns: selectedColumns, file_path: filePath, filters },
