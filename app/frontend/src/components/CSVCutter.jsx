@@ -171,7 +171,7 @@ const CSVCutter = () => {
     formData.append("filename", filename);
 
     try {
-      await api.post(`/api/list_cutter/save_file/`, formData, {
+      await api.post(`/api/list_cutter/save_generated_file/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setShowPopup(true);
