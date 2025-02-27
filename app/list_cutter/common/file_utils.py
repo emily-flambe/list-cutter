@@ -170,6 +170,7 @@ def read_file_data(file_path):
 
     file_data = {
         'name': os.path.basename(file_path),
+        'file_path': file_path,
         'size': os.path.getsize(file_path),
         'type': 'text/csv',  # Adjust this based on your file type
         'content': content,

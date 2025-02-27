@@ -10,8 +10,6 @@ import {
   ListItem,
   TextField,
   Typography,
-  Select,
-  MenuItem,
 } from '@mui/material';
 import { Upload as UploadIcon } from '@mui/icons-material';
 import api from '../api';
@@ -37,27 +35,11 @@ const CSVCutter = () => {
   const [filename, setFilename] = useState("");
   const fileInputRef = useRef(null);
   const token = useContext(AuthContext);
-  const [savedFiles, setSavedFiles] = useState([]);
-  const [selectedSavedFile, setSelectedSavedFile] = useState("");
 
   useEffect(() => {
     console.log("Updated File Info:", fileInfo);
     console.log("Token:", token);
-    const fetchSavedFiles = async () => {
-      try {
-        const response = await api.get('/api/list_cutter/list_saved_files/', {
-          headers: {
-            Authorization: `Bearer ${token.token}`
-          }
-        });
-        setSavedFiles(response.data.files);
-        console.log("Fetched saved files:", response.data.files);
-      } catch (error) {
-        console.error("Error fetching saved files:", error);
-      }
-    };
-    fetchSavedFiles();
-  }, [token]);
+  }, [fileInfo]);
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -100,67 +82,24 @@ const CSVCutter = () => {
     setShowPopup(false);
   };
 
-  const handleSavedFileChange = async (event) => {
-    const selectedFilePath = event.target.value || "";
-    setSelectedSavedFile(selectedFilePath);
-    setFile(null); // Clear the uploaded file state when a saved file is selected
-
-    if (selectedFilePath) {
-      try {
-        const response = await api.get(`/api/list_cutter/fetch_saved_file/?file_path=${encodeURIComponent(selectedFilePath)}`, {
-          headers: {
-            Authorization: `Bearer ${token.token}`
-          }
-        });
-        
-        // Assuming the response contains the file data you need
-        const fileData = response.data;
-        setFileInfo(`${fileData.name} (${(fileData.size / (1024 * 1024)).toFixed(2)} MB)`);
-        setRowCount(fileData.rowCount);
-        setColumns(fileData.columns);
-        setFilePath(fileData.filePath);
-        console.log("File path after fetching saved file:", fileData.filePath);
-        setIsFileValid(true);
-        setErrorMessage("");
-      } catch (error) {
-        console.error("Error fetching saved file:", error);
-        setErrorMessage("Error fetching saved file. Please try again.");
-      }
-    }
-  };
-
   const handleUpload = async () => {
-    const selectedFilePath = selectedSavedFile; // Get the selected saved file path
+    if (!file) {
+      setErrorMessage("Please select a file.");
+      return;
+    }
 
-    if (!file && !selectedFilePath) {
-        setErrorMessage("Please select a file.");
-        return;
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      setErrorMessage("Invalid file type. Please upload a CSV file.");
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit.`);
+      return;
     }
 
     const formData = new FormData();
-
-    // If a saved file is selected, use that instead of the uploaded file
-    if (selectedFilePath) {
-        // Here you would typically need to handle the file upload differently
-        // For now, we will just log the selected file path
-        console.log("Using saved file path:", selectedFilePath);
-        // You may need to adjust this based on your backend requirements
-        // For example, you might need to send a request to get the file data
-    } else {
-        // Use the uploaded file
-        if (!file.name.toLowerCase().endsWith(".csv")) {
-            setErrorMessage("Invalid file type. Please upload a CSV file.");
-            return;
-        }
-
-        // Simulate file size check
-        if (file.size > MAX_FILE_SIZE) {
-            setErrorMessage(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit.`);
-            return;
-        }
-
-        formData.append("file", file); // Append the uploaded file
-    }
+    formData.append("file", file);
 
     try {
       const response = await api.post(
@@ -173,15 +112,14 @@ const CSVCutter = () => {
 
       setColumns(response.data.columns);
       setFilePath(response.data.file_path || "");
-      console.log("File path after upload:", response.data.file_path);
       setErrorMessage("");
 
       // Set file info with the original row count
       setFileInfo(`${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
     } catch (error) {
       console.error("Error uploading file:", error);
-      if (error.response && error.response.status === 400) {
-        setErrorMessage(error.response.data.error || "Error uploading file. Please try again.");
+      if (error.response && error.response.status === 400 && error.response.data.error.includes("File size exceeds")) {
+        setErrorMessage(error.response.data.error);
       } else {
         setErrorMessage("Error uploading file. Please try again.");
       }
@@ -200,7 +138,6 @@ const CSVCutter = () => {
   };
 
   const handleCutList = async () => {
-    console.log("Current filePath:", filePath);
     if (selectedColumns.length === 0) {
       return alert("Please select at least one column to cut.");
     }
@@ -313,73 +250,34 @@ const CSVCutter = () => {
         gutterBottom sx={{ color: 'var(--primary-text)' }}>
           CSV Cutter
         </Typography>
-        {token.token === null ? (
-          <Typography variant="body2" sx={{ color: 'var(--primary-text)', mb: 2 }}>
-            Upload a CSV and apply filters to generate the file you <span style={{ fontStyle: 'italic' }}>know</span> it can be - if only someone would <span style={{ fontStyle: 'italic' }}>cut it</span>.
-            <br /> 
-            <br />You can do a lot more if you create an account and log in! Seriously!
-          </Typography>
-        ) : (
-          <Typography variant="body2" sx={{ color: 'var(--primary-text)', mb: 2 }}>
-            Select a file from the dropdown below, or <a href="/file_upload" style={{ textDecoration: 'underline' }}>upload one</a> if you haven't already.
-          </Typography>
-        )}
+        <Typography variant="body2" sx={{ color: 'var(--primary-text)', mb: 2 }}>
+          Upload a CSV and apply filters to generate the file you <span style={{ fontStyle: 'italic' }}>know</span> it can be - if only someone would <span style={{ fontStyle: 'italic' }}>cut it</span>.
+          <br /> 
+          <br />You can do a lot more if you create an account and log in! Seriously!
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'var(--primary-text)' }}>
+          Max file size: {MAX_FILE_SIZE_MB}MB
+        </Typography>
         
         <Box sx={{ my: 2 }}>
-          {token.token === null ? (
-            <>
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleFileChange}
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                id="csv-file-input"
-              />
-              <label htmlFor="csv-file-input">
-                <Button
-                  variant="contained"
-                  component="span"
-                  startIcon={<UploadIcon />}
-                  sx={{ mr: 2 }}
-                >
-                  Upload Temporary File
-                </Button>
-              </label>
-            </>
-          ) : (
-            <>
-              <Box sx={{ my: 2 }}>
-                <Select
-                  value={selectedSavedFile}
-                  onChange={handleSavedFileChange}
-                  displayEmpty
-                  sx={{ mr: 2 }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: {
-                        '& .MuiMenuItem-root': {
-                          color: 'var(--secondary-text)',
-                        },
-                      },
-                    },
-                    MenuListProps: {
-                      'aria-hidden': false,
-                    },
-                  }}
-                >
-                  <MenuItem value="" disabled>Select a saved file</MenuItem>
-                  {savedFiles.length > 0 ? (
-                    savedFiles.map((file, index) => (
-                      <MenuItem key={index} value={file.file_path}>{file.file_name}</MenuItem>
-                    ))
-                  ) : (
-                    <MenuItem disabled>No saved files available</MenuItem>
-                  )}
-                </Select>
-              </Box>
-            </>
-          )}
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFileChange}
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            id="csv-file-input"
+          />
+          <label htmlFor="csv-file-input">
+            <Button
+              variant="contained"
+              component="span"
+              startIcon={<UploadIcon />}
+              sx={{ mr: 2 }}
+            >
+              Choose File
+            </Button>
+          </label>
 
           {isFileValid && (
             <Button
@@ -413,7 +311,7 @@ const CSVCutter = () => {
         {columns.length > 0 && (
           <Box sx={{ mt: 3 }}>
             <Typography variant="body2" sx={{ color: '#00ccf0', fontWeight: 'bold', mb: 2 }}>
-              {token.token === null ? "🦑 File uploaded successfully 🦑" : "🦑 File loaded successfully 🦑"}
+            🦑 File uploaded successfully 🦑
             </Typography>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }} gutterBottom>
               Select Columns & Filters:
@@ -473,7 +371,7 @@ const CSVCutter = () => {
                   </Button>
                 ) : (
                   <Typography variant="body2" color="textSecondary">
-                    Log in to save the generated file to your account. Then you can cut EVEN MORE LISTS.
+                    Log in to save this file to your account.
                   </Typography>
                 )}
               </Box>

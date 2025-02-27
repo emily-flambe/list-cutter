@@ -42,7 +42,8 @@ const Layout = ({ children }) => {
   const menuItems = [
     ...(token ? [{ text: 'Logout', icon: <Logout />, path: '/logout' }] : []),
     ...(token ? [] : [{ text: 'Login', icon: <Login />, path: '/login' }]),
-    { text: 'CSV Cutter', icon: <ContentCut />, path: '/csv_cutter' },
+    ...(token ? [] : [{ text: 'CSV Cutter', icon: <ContentCut />, path: '/csv_cutter' }]),
+    ...(token ? [{ text: 'CSV Cutter ++', icon: <ContentCut />, path: '/csv_cutter_plus' }] : []),
     ...(token ? [{ text: openFiles ? 'Files (collapse)' : 'Files (expand)', icon: <ListIcon />, isGroup: true }] : []),
     ...(token ? [{ text: 'FAQ', icon: <Help />, path: '/faq' }] : []),
     { text: 'About', icon: <Home />, path: '/' },
