@@ -170,14 +170,32 @@ const CSVCutter = () => {
     formData.append("file", file);
     formData.append("filename", filename);
 
+    // Create metadata object
+    const metadata = {
+        generated_file_details: {
+            source_file: file.name,
+            columns: selectedColumns,
+            column_filters: {}
+        }
+    };
+
+    // Populate column_filters with the filters applied
+    selectedColumns.forEach(col => {
+        metadata.generated_file_details.column_filters[col] = filters[col] || null;
+    });
+
+    // Append metadata as a JSON string
+    formData.append("metadata", JSON.stringify(metadata));
+
+    console.log(formData);
     try {
-      await api.post(`/api/list_cutter/save_generated_file/`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setShowPopup(true);
+        await api.post(`/api/list_cutter/save_generated_file/`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        setShowPopup(true);
     } catch (error) {
-      console.error("Error saving file:", error);
-      alert("Error saving file. Please try again.");
+        console.error("Error saving file:", error);
+        alert("Error saving file. Please try again.");
     }
   };
 

@@ -111,7 +111,7 @@ const ManageFiles = () => {
 
     try {
       await api.patch(`/api/list_cutter/update_tags/${selectedFileId}/`, {
-        user_tags: [newTag] // Assuming you want to replace the tags with the new one
+        user_tags: [newTag]
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -160,6 +160,9 @@ const ManageFiles = () => {
             <TableCell onClick={() => requestSort('user_tags')} style={{ cursor: 'pointer' }}>
               <Typography variant="h6" fontWeight="bold">User Tags {sortConfig.key === 'user_tags' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</Typography>
             </TableCell>
+            <TableCell onClick={() => requestSort('user_tags')} style={{ cursor: 'pointer' }}>
+              <Typography variant="h6" fontWeight="bold">Metadata {sortConfig.key === 'user_tags' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}</Typography>
+            </TableCell>
             <TableCell>
             </TableCell>
             <TableCell>
@@ -176,6 +179,7 @@ const ManageFiles = () => {
                 <TableCell>{file.uploaded_at.slice(0, 16).replace('T', ' ')}</TableCell>
                 <TableCell>{file.system_tags ? file.system_tags.join(', ') : ''}</TableCell>
                 <TableCell>{file.user_tags ? file.user_tags.join(', ') : ''}</TableCell>
+                <TableCell>{file.metadata ? JSON.stringify(JSON.parse(file.metadata), null, 2) : ''}</TableCell>
                 <TableCell>
                   <Button variant="contained" color="primary" onClick={() => handleAddTagClick(file.id)}>
                     Add Tag
@@ -195,7 +199,7 @@ const ManageFiles = () => {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={4}>No files found.</TableCell>
+              <TableCell colSpan={5}>No files found.</TableCell>
             </TableRow>
           )}
         </TableBody>

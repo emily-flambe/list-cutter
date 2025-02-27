@@ -138,6 +138,7 @@ def list_uploaded_files(request):
             'uploaded_at': uploaded_file.uploaded_at,
             'system_tags': uploaded_file.system_tags,
             'user_tags': uploaded_file.user_tags,
+            'metadata': uploaded_file.metadata
         }
         for uploaded_file in recent_files.values()
     ]
@@ -191,6 +192,7 @@ def save_generated_file(request):
 
     file = request.FILES['file']
     filename = request.data['filename']
+    metadata = request.data['metadata']
 
     # Construct the full file path
     file_path = os.path.join(UPLOAD_DIR, filename)
@@ -206,7 +208,8 @@ def save_generated_file(request):
             user=request.user,
             file_path=file_path,
             system_tags=['generated'],
-            uploaded_at=timezone.now()
+            uploaded_at=timezone.now(),
+            metadata=metadata
         )
 
         return JsonResponse({'message': 'File saved successfully.', 'file_path': file_path, 'file_id': saved_file.id}, status=201)
