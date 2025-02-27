@@ -1,11 +1,11 @@
 import { useState, useRef, useContext } from "react";
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
+import { Box, Button, Typography, Alert, TextField } from '@mui/material';
 
 const FileUpload = () => {
   const { token } = useContext(AuthContext);
   const [file, setFile] = useState(null);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const fileInputRef = useRef(null);
@@ -14,10 +14,10 @@ const FileUpload = () => {
   if (!token) {
     setError("You must be logged in to access this page. How did you even get here???");
     return (
-      <div>
-        <h2>You may NOT Upload a File</h2>
-        {error && <p>{error}</p>}
-      </div>
+      <Box sx={{ textAlign: 'center', mt: 4 }}>
+        <Typography variant="h4">You may NOT Upload a File</Typography>
+        {error && <Alert severity="error">{error}</Alert>}
+      </Box>
     );
   }
 
@@ -25,7 +25,6 @@ const FileUpload = () => {
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
     setFile(selectedFile);
-    setMessage("");
     setError("");
   };
 
@@ -33,11 +32,6 @@ const FileUpload = () => {
   const handleUpload = async () => {
     if (!file) {
       setError("Please select a file first.");
-      return;
-    }
-
-    if (!token) {
-      setError("You must be logged in to upload files.");
       return;
     }
 
@@ -59,16 +53,29 @@ const FileUpload = () => {
       console.error("Upload error:", error);
       setError(error.response?.data?.error || "Upload failed. Try again.");
     }
-    
   };
 
   return (
-    <div>
-      <h2>Upload a File</h2>
-      {successMessage && <p>{successMessage}</p>}
-      <input type="file" onChange={handleFileChange} ref={fileInputRef} />
-      <button onClick={handleUpload} disabled={!file}>Upload</button>
-    </div>
+    <Box sx={{ textAlign: 'center', mt: 4 }}>
+      <Typography variant="h4">Upload a File</Typography>
+      {successMessage && <Typography variant="body1" color="success.main">{successMessage}</Typography>}
+      <TextField
+        type="file"
+        inputRef={fileInputRef}
+        onChange={handleFileChange}
+        sx={{ display: 'none' }}
+        id="file-upload"
+      />
+      <label htmlFor="file-upload">
+        <Button variant="contained" component="span" sx={{ ml: 2, mt: 4 }}>
+          Choose File
+        </Button>
+      </label>
+      <Button onClick={handleUpload} disabled={!file} variant="contained" sx={{ ml: 2, mt: 4 }}>
+        Upload
+      </Button>
+      {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+    </Box>
   );
 };
 

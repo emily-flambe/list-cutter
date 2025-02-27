@@ -13,6 +13,8 @@ import {
 } from '@mui/material';
 import { Upload as UploadIcon } from '@mui/icons-material';
 import api from '../api';
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
 
 const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE) || 10 * 1024 * 1024;
 const MAX_FILE_SIZE_MB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(2);
@@ -32,9 +34,11 @@ const CSVCutter = () => {
   const [showSaveField, setShowSaveField] = useState(false);
   const [filename, setFilename] = useState("");
   const fileInputRef = useRef(null);
+  const token = useContext(AuthContext);
 
   useEffect(() => {
     console.log("Updated File Info:", fileInfo);
+    console.log("Token:", token);
   }, [fileInfo]);
 
   const handleFileChange = (event) => {
@@ -170,14 +174,32 @@ const CSVCutter = () => {
     formData.append("file", file);
     formData.append("filename", filename);
 
+    // Create metadata object
+    const metadata = {
+        generated_file_details: {
+            source_file: file.name,
+            columns: selectedColumns,
+            column_filters: {}
+        }
+    };
+
+    // Populate column_filters with the filters applied
+    selectedColumns.forEach(col => {
+        metadata.generated_file_details.column_filters[col] = filters[col] || null;
+    });
+
+    // Append metadata as a JSON string
+    formData.append("metadata", JSON.stringify(metadata));
+
+    console.log(formData);
     try {
-      await api.post(`/api/list_cutter/save_generated_file/`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setShowPopup(true);
+        await api.post(`/api/list_cutter/save_generated_file/`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        setShowPopup(true);
     } catch (error) {
-      console.error("Error saving file:", error);
-      alert("Error saving file. Please try again.");
+        console.error("Error saving file:", error);
+        alert("Error saving file. Please try again.");
     }
   };
 
@@ -229,7 +251,9 @@ const CSVCutter = () => {
           CSV Cutter
         </Typography>
         <Typography variant="body2" sx={{ color: 'var(--primary-text)', mb: 2 }}>
-          Upload a CSV and apply filters to generate the file you <span style={{ fontStyle: 'italic' }}>know</span> it can be - if only someone would simply <span style={{ fontStyle: 'italic' }}>cut it</span>.
+          Upload a CSV and apply filters to generate the file you <span style={{ fontStyle: 'italic' }}>know</span> it can be - if only someone would <span style={{ fontStyle: 'italic' }}>cut it</span>.
+          <br /> 
+          <br />You can do a lot more if you create an account and log in! Seriously!
         </Typography>
         <Typography variant="caption" sx={{ color: 'var(--primary-text)' }}>
           Max file size: {MAX_FILE_SIZE_MB}MB
@@ -338,12 +362,18 @@ const CSVCutter = () => {
                 >
                   Download CSV
                 </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => setShowSaveField(!showSaveField)}
-                >
-                  Save to My Files
-                </Button>
+                {token.token !== null ? (
+                  <Button
+                    variant="contained"
+                    onClick={() => setShowSaveField(!showSaveField)}
+                  >
+                    Save to My Files
+                  </Button>
+                ) : (
+                  <Typography variant="body2" color="textSecondary">
+                    Log in to save this file to your account.
+                  </Typography>
+                )}
               </Box>
             )}
 
