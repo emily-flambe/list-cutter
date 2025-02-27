@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
 from django.utils import timezone
 
-from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where
+from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where, file_exists, read_file_data
 from .models import SavedFile 
 
 logger = logging.getLogger(__name__)
@@ -119,7 +119,7 @@ def upload_file(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def list_uploaded_files(request):
+def list_saved_files(request):
     """Lists all uploaded files associated with the logged-in user."""
     # Fetch SavedFile objects for the logged-in user
     uploaded_files = SavedFile.objects.filter(user=request.user)
@@ -232,3 +232,21 @@ def update_tags(request, file_id):
         return Response({'error': 'File not found.'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def fetch_saved_file(request):
+    """Fetches a saved file's data based on the provided file path."""
+    file_path = request.query_params.get('file_path')
+
+    if not file_path:
+        return Response({'error': 'File path is required.'}, status=400)
+
+    try:
+        file_data = read_file_data(file_path)
+        return Response(file_data, status=200)
+    except FileNotFoundError as e:
+        return Response({'error': str(e)}, status=404)
+    except Exception as e:
+        logger.error(f"Error fetching file: {str(e)}")
+        return Response({'error': 'Error fetching file data.'}, status=500)

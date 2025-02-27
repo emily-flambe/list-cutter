@@ -155,3 +155,34 @@ def filter_csv_with_where(file_path, selected_columns, where_clauses: Dict[str, 
                 output_rows.append([row[col] for col in selected_columns])
 
     return "\n".join([",".join(row) for row in output_rows])
+
+def file_exists(file_path):
+    """Checks if a file exists at the given path."""
+    return os.path.exists(file_path)
+
+def read_file_data(file_path):
+    """Reads a file and returns its content, size, and metadata."""
+    if not file_exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with open(file_path, 'rb') as file:
+        content = file.read()
+
+    file_data = {
+        'name': os.path.basename(file_path),
+        'size': os.path.getsize(file_path),
+        'type': 'text/csv',  # Adjust this based on your file type
+        'content': content,
+        'rowCount': 0,  # Placeholder for row count
+        'columns': []    # Placeholder for columns
+    }
+
+    # Optionally, implement logic to read CSV and populate rowCount and columns
+    try:
+        df = pd.read_csv(file_path)
+        file_data['rowCount'] = df.shape[0]  # Number of rows
+        file_data['columns'] = df.columns.tolist()  # Column names
+    except Exception as e:
+        logger.warning(f"Could not read CSV for metadata: {str(e)}")
+
+    return file_data

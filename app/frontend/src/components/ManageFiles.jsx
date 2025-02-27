@@ -22,7 +22,7 @@ const ManageFiles = () => {
   useEffect(() => {
     const fetchSavedFiles = async () => {
       try {
-        const response = await api.get('/api/list_cutter/list_uploaded_files/', {
+        const response = await api.get('/api/list_cutter/list_saved_files/', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFiles(response.data.files);
