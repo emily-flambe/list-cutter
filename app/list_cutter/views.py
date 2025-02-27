@@ -1,7 +1,7 @@
 import os
 import logging
 from django.conf import settings
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 from django.http import HttpResponse
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser
@@ -177,3 +177,33 @@ def delete_file(request, file_id):
     except Exception as e:
         logger.error(f"Error deleting file: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_file(request):
+    """Saves the uploaded file to the server and creates a database record."""
+    if 'file' not in request.FILES or 'filename' not in request.data:
+        return JsonResponse({'error': 'No file or filename provided.'}, status=400)
+
+    file = request.FILES['file']
+    filename = request.data['filename']
+
+    # Construct the full file path
+    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    try:
+        # Save the file to the specified path
+        with open(file_path, 'wb+') as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
+
+        # Create an UploadedFile object in the database
+        uploaded_file = UploadedFile.objects.create(
+            user=request.user,
+            file_name=filename,
+            file_path=file_path
+        )
+
+        return JsonResponse({'message': 'File saved successfully.', 'file_path': file_path, 'file_id': uploaded_file.id}, status=201)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
