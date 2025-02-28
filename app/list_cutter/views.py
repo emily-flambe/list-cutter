@@ -9,9 +9,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
 from django.utils import timezone
+import uuid
 
-from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where, file_exists, read_file_data
-from .models import SavedFile 
+from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where, read_file_data
+from .models import SavedFile
+from .graph_models import SavedFileNode
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -103,12 +105,21 @@ def upload_file(request):
         saved_file = SavedFile.objects.create(
             user=request.user,
             file_path=file_path,
+            file_id=uuid.uuid4(),
             system_tags=['uploaded'],
             uploaded_at=timezone.now()
         )
 
+        # Create a SavedFileNode with the same file_id as the SavedFile object
+        SavedFileNode.objects.create(
+            file_id=saved_file.file_id,
+            file_name=saved_file.file_name,
+            file_path=saved_file.file_path,
+            metadata=saved_file.metadata
+        )
+
         return Response(
-            {'message': 'File uploaded successfully', 'file_id': saved_file.id},
+            {'message': 'File uploaded successfully', 'file_id': saved_file.file_id},
             status=200
         )
 
@@ -203,16 +214,32 @@ def save_generated_file(request):
             for chunk in file.chunks():
                 destination.write(chunk)
 
+
         # Store file metadata in the database
         saved_file = SavedFile.objects.create(
             user=request.user,
             file_path=file_path,
+            file_id=uuid.uuid4(),
             system_tags=['generated'],
             uploaded_at=timezone.now(),
             metadata=metadata
         )
 
-        return JsonResponse({'message': 'File saved successfully.', 'file_path': file_path, 'file_id': saved_file.id}, status=201)
+        # Create a SavedFileNode and establish a CUT_FROM relationship
+        saved_file_node = SavedFileNode.objects.create(
+            file_id=saved_file.file_id,
+            file_name=filename,
+            # Add other necessary fields for SavedFileNode if required
+        )
+        saved_file_node.cut_from.add(saved_file)  # Assuming cut_from is a ManyToManyField
+
+        # Update the original file to establish a CUT_TO relationship
+        original_file_id = request.data.get('original_file_id')  # Assuming the original file ID is passed in the request
+        if original_file_id:
+            original_file_node = SavedFileNode.objects.get(file_id=original_file_id)
+            original_file_node.cut_to.add(saved_file_node)  # Assuming cut_to is a ManyToManyField
+
+        return JsonResponse({'message': 'File saved successfully.', 'file_path': file_path, 'file_id': saved_file.file_id}, status=201)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
@@ -250,3 +277,34 @@ def fetch_saved_file(request):
     except Exception as e:
         logger.error(f"Error fetching file: {str(e)}")
         return Response({'error': 'Error fetching file data.'}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def file_lineage(request, file_id):
+    """Fetches the full lineage of a file based on its ID using a Cypher query."""
+    try:
+        # Cypher query to fetch the file and its ancestors and descendants
+        query = """
+        MATCH (file:SavedFileNode {file_id: $file_id})
+        OPTIONAL MATCH (file)<-[:CUT_FROM]-(ancestor)
+        OPTIONAL MATCH (file)-[:CUT_TO]->(descendant)
+        RETURN file, collect(ancestor) AS ancestors, collect(descendant) AS descendants
+        """
+        
+        # Execute the query
+        result = SavedFileNode.cypher(query, file_id=file_id)
+
+        # Prepare the lineage response
+        lineage = [{'file_id': result[0]['file']['file_id'], 'file_name': result[0]['file']['file_name']}]
+        
+        # Add ancestors to lineage
+        for ancestor in result[0]['ancestors']:
+            lineage.append({'file_id': ancestor['file_id'], 'file_name': ancestor['file_name']})
+
+        # Add descendants to lineage
+        for descendant in result[0]['descendants']:
+            lineage.append({'file_id': descendant['file_id'], 'file_name': descendant['file_name']})
+
+        return Response({'lineage': lineage}, status=200)
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
