@@ -176,6 +176,7 @@ def read_file_data(file_id):
 
     file_data = {
         'name': os.path.basename(file_path),
+        'file_id': file_id,
         'file_path': file_path,
         'size': os.path.getsize(file_path),
         'type': 'text/csv',  # Adjust this based on your file type

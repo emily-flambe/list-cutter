@@ -236,7 +236,7 @@ const CSVCutterPlus = () => {
           CSV Cutter
         </Typography>
         <Typography variant="body2" sx={{ color: 'var(--primary-text)', mb: 2 }}>
-          Select a file from the dropdown below.
+          Select a file from the dropdown below. Don't see it? Upload one <a href="/file_upload">here</a>.
         </Typography>
         
         <Box sx={{ my: 2 }}>
@@ -282,7 +282,7 @@ const CSVCutterPlus = () => {
         {columns.length > 0 && (
           <Box sx={{ mt: 3 }}>
             <Typography variant="body2" sx={{ color: '#00ccf0', fontWeight: 'bold', mb: 2 }}>
-              File loaded successfully
+              🦑 File loaded successfully 🦑
             </Typography>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }} gutterBottom>
               Select Columns & Filters:
@@ -368,16 +368,16 @@ const CSVCutterPlus = () => {
           </DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-              <Button variant="contained" onClick={handlePopupStartOver}>
+              <Button variant="contained" onClick={handlePopupStartOver} sx={{ mx: 1 }}>
                 START OVER
               </Button>
-              <Button variant="contained" onClick={handlePopupKeepGoing}>
+              <Button variant="contained" onClick={handlePopupKeepGoing} sx={{ mx: 1 }}>
                 KEEP GOING
               </Button>
-              <Button variant="contained" onClick={handleViewFiles}>
+              <Button variant="contained" onClick={handleViewFiles} sx={{ mx: 1 }}>
                 VIEW FILES
               </Button>
-              <Button variant="contained" color="error" onClick={handlePopupNo}>
+              <Button variant="contained" color="error" onClick={handlePopupNo} sx={{ mx: 1 }}>
                 DO NOT
               </Button>
             </Box>

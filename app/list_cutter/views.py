@@ -246,7 +246,8 @@ def save_generated_file(request):
         # Establish CUT_FROM and CUT_TO relationships
         if original_file_id:
             original_file_node = SavedFileNode.nodes.get(file_id=original_file_id)
-            saved_file_node.CUT_FROM.connect(original_file_node)
+            # This syntax looks wrong (to me), but it's correct! CUT_FROM is a RelationshipFrom and CUT_TO is a RelationshipTo. Graph models, idk man
+            original_file_node.CUT_FROM.connect(saved_file_node)
             original_file_node.CUT_TO.connect(saved_file_node)
             logger.info("Relationships updated successfully.")
         else:

@@ -35,6 +35,9 @@ const FileUpload = () => {
       return;
     }
 
+    // Set the success message to indicate upload is in progress
+    setSuccessMessage("Upload in progress...");
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -49,20 +52,32 @@ const FileUpload = () => {
       setFile(null);
       fileInputRef.current.value = "";
     } catch (error) {
-        console.log("Request data being sent:");
-        // Iterating through FormData entries to log the data
-        for (let [key, value] of formData.entries()) {
-          console.log(`${key}:`, value);
-        }
+      console.log("Request data being sent:");
+      // Iterating through FormData entries to log the data
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
       console.error("Upload error:", error);
       setError(error.response?.data?.error || "Upload failed. Try again.");
     }
   };
 
   return (
-    <Box sx={{ textAlign: 'center', mt: 4 }}>
+    <Box sx={{ textAlign: 'left', mt: 4 }}>
       <Typography variant="h4">Upload a File</Typography>
-      {successMessage && <Typography variant="body1" color="success.main">{successMessage}</Typography>}
+      <br />
+      <Typography variant="body1">
+        Upload files in order to <a href="/csv_cutter_plus">cut lists</a> with them!
+        <br />You can manage your files <a href="/manage_files">on this page</a>.
+      </Typography>
+      {successMessage && (
+        <Typography
+          variant="body1"
+          color={successMessage === "Upload in progress..." ? "text.secondary" : "success.main"}
+        >
+          {successMessage}
+        </Typography>
+      )}
       <TextField
         type="file"
         inputRef={fileInputRef}
