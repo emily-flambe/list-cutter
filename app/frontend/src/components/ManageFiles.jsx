@@ -206,7 +206,7 @@ const ManageFiles = () => {
               </TableCell>
               <TableCell onClick={() => requestSort('uploaded_at')} style={{ cursor: 'pointer' }}>
                 <Typography variant="h6" fontWeight="bold" fontSize="0.9rem">
-                  Uploaded At {sortConfig.key === 'uploaded_at' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                  Created At {sortConfig.key === 'uploaded_at' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
                 </Typography>
               </TableCell>         
               <TableCell onClick={() => requestSort('system_tags')} style={{ cursor: 'pointer' }}>

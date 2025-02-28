@@ -8,11 +8,14 @@ services:
     environment:
       - COMMIT_INFO_GIT_SHA=${GIT_SHA:-}
       - DJANGO_SETTINGS_MODULE=config.settings.dev
+      - NEO4J_URI=bolt://host.docker.internal:7687
     env_file: .env
     volumes:
       - ./app:/app
     ports:
       - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       db:
         condition: service_healthy

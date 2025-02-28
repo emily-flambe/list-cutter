@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const CSVCutterPlus = () => {
   const [fileInfo, setFileInfo] = useState("");
@@ -31,7 +32,9 @@ const CSVCutterPlus = () => {
   const [savedFiles, setSavedFiles] = useState([]);
   const [selectedSavedFile, setSelectedSavedFile] = useState("");
   const [sourceFileName, setSourceFileName] = useState("");
+  const [originalFileId, setOriginalFileId] = useState("");
   const token = useContext(AuthContext);
+  const navigate = useNavigate();
 
   // On mount, load saved files for the logged-in user.
   useEffect(() => {
@@ -51,19 +54,22 @@ const CSVCutterPlus = () => {
 
   // When a saved file is selected, fetch its details.
   const handleSavedFileChange = async (event) => {
-    const selectedFilePath = event.target.value || "";
-    setSelectedSavedFile(selectedFilePath);
+    const selectedFileID = event.target.value || "";
+    setSelectedSavedFile(selectedFileID);
     
-    if (selectedFilePath) {
+    if (selectedFileID) {
       try {
+        console.log("Selected file ID:", selectedFileID);
         const response = await api.get(
-          `/api/list_cutter/fetch_saved_file/?file_path=${encodeURIComponent(selectedFilePath)}`,
+          `/api/list_cutter/fetch_saved_file/?file_id=${encodeURIComponent(selectedFileID)}`,
           { headers: { Authorization: `Bearer ${token.token}` } }
         );
         const fileData = response.data;
         console.log(fileData);
         // Use the proper keys from your API response:
         setSourceFileName(fileData.file_name);
+        setOriginalFileId(fileData.file_id);
+        console.log("Original file ID:", fileData.file_id);
         setFileInfo(`${fileData.file_name} (${(fileData.size / (1024 * 1024)).toFixed(2)} MB)`);
         setRowCount(fileData.rowCount);
         setColumns(fileData.columns);
@@ -112,7 +118,9 @@ const CSVCutterPlus = () => {
       setShowSaveField(false);
       // Use a fallback name if sourceFileName is undefined.
       const baseName = sourceFileName ? sourceFileName.split('.csv')[0] : "filtered_file";
-      setFilename(`${baseName}_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.csv`);
+      const date = new Date();
+      const formattedDate = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}${date.getSeconds().toString().padStart(2, '0')}`;
+      setFilename(`${baseName}_filtered_${formattedDate}.csv`);
     } catch (error) {
       console.error("Error exporting CSV:", error);
       alert("Error exporting CSV");
@@ -141,13 +149,14 @@ const CSVCutterPlus = () => {
       const formData = new FormData();
       formData.append("file", fileToUpload);
       formData.append("filename", filename);
-  
+    
       // Build metadata using the saved file's name if available
       const metadata = {
         generated_file_details: {
           source_file: sourceFileName || "generated_file",
           columns: selectedColumns,
-          column_filters: {}
+          column_filters: {},
+          original_file_id: originalFileId
         }
       };
   
@@ -156,6 +165,15 @@ const CSVCutterPlus = () => {
       });
   
       formData.append("metadata", JSON.stringify(metadata));
+      
+      if (originalFileId) {
+        formData.append("original_file_id", originalFileId);
+      }
+  
+      // Log the formData entries
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
   
       await api.post(`/api/list_cutter/save_generated_file/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -191,6 +209,11 @@ const CSVCutterPlus = () => {
     alert(">:[");
   };
 
+  // Function to handle navigation
+  const handleViewFiles = () => {
+    navigate('/manage_files');
+  };
+
   return (
     <Box sx={{ 
       display: 'flex', 
@@ -213,7 +236,7 @@ const CSVCutterPlus = () => {
           CSV Cutter
         </Typography>
         <Typography variant="body2" sx={{ color: 'var(--primary-text)', mb: 2 }}>
-          Select a file from the dropdown below.
+          Select a file from the dropdown below. Don't see it? Upload one <a href="/file_upload">here</a>.
         </Typography>
         
         <Box sx={{ my: 2 }}>
@@ -230,7 +253,7 @@ const CSVCutterPlus = () => {
             <MenuItem value="" disabled>Select a saved file</MenuItem>
             {savedFiles.length > 0 ? (
               savedFiles.map((file, index) => (
-                <MenuItem key={index} value={file.file_path}>{file.file_name}</MenuItem>
+                <MenuItem key={index} value={file.file_id}>{file.file_name}</MenuItem>
               ))
             ) : (
               <MenuItem disabled>No saved files available</MenuItem>
@@ -259,7 +282,7 @@ const CSVCutterPlus = () => {
         {columns.length > 0 && (
           <Box sx={{ mt: 3 }}>
             <Typography variant="body2" sx={{ color: '#00ccf0', fontWeight: 'bold', mb: 2 }}>
-              File loaded successfully
+              🦑 File loaded successfully 🦑
             </Typography>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }} gutterBottom>
               Select Columns & Filters:
@@ -345,13 +368,16 @@ const CSVCutterPlus = () => {
           </DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-              <Button variant="contained" onClick={handlePopupStartOver}>
+              <Button variant="contained" onClick={handlePopupStartOver} sx={{ mx: 1 }}>
                 START OVER
               </Button>
-              <Button variant="contained" onClick={handlePopupKeepGoing}>
+              <Button variant="contained" onClick={handlePopupKeepGoing} sx={{ mx: 1 }}>
                 KEEP GOING
               </Button>
-              <Button variant="contained" color="error" onClick={handlePopupNo}>
+              <Button variant="contained" onClick={handleViewFiles} sx={{ mx: 1 }}>
+                VIEW FILES
+              </Button>
+              <Button variant="contained" color="error" onClick={handlePopupNo} sx={{ mx: 1 }}>
                 DO NOT
               </Button>
             </Box>
