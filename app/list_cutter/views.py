@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
 from django.utils import timezone
 import uuid
-
+import json
 from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where, read_file_data
 from .models import SavedFile
 from .graph_models import SavedFileNode
@@ -80,7 +80,7 @@ def export_csv(request):
 @parser_classes([MultiPartParser])
 def upload_file(request):
     """Handles file uploads, enforces file size limit, and saves metadata in the database."""
-
+    logger.info("Uploading file: %s", request.FILES)
     # Ensure a file is provided
     if 'file' not in request.FILES:
         return Response({'error': 'No file uploaded'}, status=400)
@@ -100,31 +100,44 @@ def upload_file(request):
     try:
         # Save file path to disk. This will be the full path to the file.
         file_path = save_uploaded_file(file)
-
+        logger.info("File path: %s", file_path)
         # Store file metadata in the database
+        
         saved_file = SavedFile.objects.create(
             user=request.user,
             file_path=file_path,
+            file_name=file.name,
             file_id=uuid.uuid4(),
             system_tags=['uploaded'],
             uploaded_at=timezone.now()
         )
-
+        logger.info("")
+        logger.info("Saved file: %s", saved_file)
+        logger.info(f"File name: {saved_file.file_name}")
+        logger.info(f"File path: {saved_file.file_path}")
+        logger.info(f"File id: {saved_file.file_id}")
+        logger.info(f"System tags: {saved_file.system_tags}")
+        logger.info(f"Uploaded at: {saved_file.uploaded_at}")
         # Create a SavedFileNode with the same file_id as the SavedFile object
-        SavedFileNode.objects.create(
+        saved_file_node = SavedFileNode(
             file_id=saved_file.file_id,
             file_name=saved_file.file_name,
             file_path=saved_file.file_path,
-            metadata=saved_file.metadata
+            metadata=json.dumps(saved_file.metadata) if saved_file.metadata else ""
         )
-
+        saved_file_node.save()
+        logger.info("Saved file node: %s", saved_file_node)
+        logger.info("Saved file node: %s", saved_file_node.file_id)
+        logger.info("Saved file node: %s", saved_file_node.file_name)
+        logger.info("Saved file node: %s", saved_file_node.file_path)
+        logger.info("Saved file node: %s", saved_file_node.metadata)
         return Response(
             {'message': 'File uploaded successfully', 'file_id': saved_file.file_id},
             status=200
         )
 
     except Exception as e:
-        logger.error(f"File upload failed: {str(e)}")
+        logger.error("File upload failed: %s", str(e))
         return Response({'error': 'File upload failed. Please try again.'}, status=500)
 
 

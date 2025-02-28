@@ -41,7 +41,6 @@ const FileUpload = () => {
     try {
       const response = await api.post(`/api/list_cutter/upload/`, formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
           "Authorization": `Bearer ${token}`, // Send JWT token
         },
       });
@@ -50,6 +49,11 @@ const FileUpload = () => {
       setFile(null);
       fileInputRef.current.value = "";
     } catch (error) {
+        console.log("Request data being sent:");
+        // Iterating through FormData entries to log the data
+        for (let [key, value] of formData.entries()) {
+          console.log(`${key}:`, value);
+        }
       console.error("Upload error:", error);
       setError(error.response?.data?.error || "Upload failed. Try again.");
     }
