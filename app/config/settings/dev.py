@@ -50,4 +50,4 @@ REST_FRAMEWORK = {
     ],
 }
 
-neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@neo4j:7687'
+neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@{NEO4J_HOST}:7687'
