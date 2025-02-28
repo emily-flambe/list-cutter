@@ -6,6 +6,7 @@ import re
 import csv
 from typing import Dict
 import logging
+from list_cutter.models import SavedFile
 
 logging.basicConfig(level=logging.DEBUG)  # Set global log level to DEBUG
 logger = logging.getLogger(__name__)
@@ -160,13 +161,18 @@ def file_exists(file_path):
     """Checks if a file exists at the given path."""
     return os.path.exists(file_path)
 
-def read_file_data(file_path):
+def read_file_data(file_id):
     """Reads a file and returns its content, size, and metadata."""
+    # Look up file_id from database
+    file_path = SavedFile.objects.get(file_id=file_id).file_path
     if not file_exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with open(file_path, 'rb') as file:
         content = file.read()
+    
+    # Look up file_id from database
+    file_id = SavedFile.objects.get(file_path=file_path).file_id
 
     file_data = {
         'name': os.path.basename(file_path),

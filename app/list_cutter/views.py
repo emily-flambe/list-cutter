@@ -111,13 +111,8 @@ def upload_file(request):
             system_tags=['uploaded'],
             uploaded_at=timezone.now()
         )
-        logger.info("")
         logger.info("Saved file: %s", saved_file)
-        logger.info(f"File name: {saved_file.file_name}")
-        logger.info(f"File path: {saved_file.file_path}")
-        logger.info(f"File id: {saved_file.file_id}")
-        logger.info(f"System tags: {saved_file.system_tags}")
-        logger.info(f"Uploaded at: {saved_file.uploaded_at}")
+
         # Create a SavedFileNode with the same file_id as the SavedFile object
         saved_file_node = SavedFileNode(
             file_id=saved_file.file_id,
@@ -127,10 +122,7 @@ def upload_file(request):
         )
         saved_file_node.save()
         logger.info("Saved file node: %s", saved_file_node)
-        logger.info("Saved file node: %s", saved_file_node.file_id)
-        logger.info("Saved file node: %s", saved_file_node.file_name)
-        logger.info("Saved file node: %s", saved_file_node.file_path)
-        logger.info("Saved file node: %s", saved_file_node.metadata)
+
         return Response(
             {'message': 'File uploaded successfully', 'file_id': saved_file.file_id},
             status=200
@@ -157,6 +149,7 @@ def list_saved_files(request):
     files_data = [
         {
             'id': uploaded_file.id,
+            'file_id': getattr(uploaded_file, 'file_id', None),
             'file_name': uploaded_file.file_name,
             'file_path': uploaded_file.file_path,
             'uploaded_at': uploaded_file.uploaded_at,
@@ -214,9 +207,11 @@ def save_generated_file(request):
     if 'file' not in request.FILES or 'filename' not in request.data:
         return JsonResponse({'error': 'No file or filename provided.'}, status=400)
 
+    logger.info(f"Request data: {request.data}")
     file = request.FILES['file']
     filename = request.data['filename']
     metadata = request.data['metadata']
+    original_file_id = request.data.get('original_file_id')
 
     # Construct the full file path
     file_path = os.path.join(UPLOAD_DIR, filename)
@@ -227,7 +222,6 @@ def save_generated_file(request):
             for chunk in file.chunks():
                 destination.write(chunk)
 
-
         # Store file metadata in the database
         saved_file = SavedFile.objects.create(
             user=request.user,
@@ -237,20 +231,26 @@ def save_generated_file(request):
             uploaded_at=timezone.now(),
             metadata=metadata
         )
+        logger.info("Saved file: %s", saved_file)
 
         # Create a SavedFileNode and establish a CUT_FROM relationship
-        saved_file_node = SavedFileNode.objects.create(
+        saved_file_node = SavedFileNode(
             file_id=saved_file.file_id,
             file_name=filename,
-            # Add other necessary fields for SavedFileNode if required
+            file_path=file_path,
+            metadata=metadata
         )
-        saved_file_node.cut_from.add(saved_file)  # Assuming cut_from is a ManyToManyField
-
-        # Update the original file to establish a CUT_TO relationship
-        original_file_id = request.data.get('original_file_id')  # Assuming the original file ID is passed in the request
+        saved_file_node.save()
+        logger.info("Saved file node: %s", saved_file_node)
+        logger.info("Updating relationships...")
+        # Establish CUT_FROM and CUT_TO relationships
         if original_file_id:
-            original_file_node = SavedFileNode.objects.get(file_id=original_file_id)
-            original_file_node.cut_to.add(saved_file_node)  # Assuming cut_to is a ManyToManyField
+            original_file_node = SavedFileNode.nodes.get(file_id=original_file_id)
+            saved_file_node.CUT_FROM.connect(original_file_node)
+            original_file_node.CUT_TO.connect(saved_file_node)
+            logger.info("Relationships updated successfully.")
+        else:
+            return JsonResponse({'error': 'Original file ID must be included in the request.'}, status=400)
 
         return JsonResponse({'message': 'File saved successfully.', 'file_path': file_path, 'file_id': saved_file.file_id}, status=201)
     except Exception as e:
@@ -277,13 +277,13 @@ def update_tags(request, file_id):
 @permission_classes([IsAuthenticated])
 def fetch_saved_file(request):
     """Fetches a saved file's data based on the provided file path."""
-    file_path = request.query_params.get('file_path')
+    file_id = request.query_params.get('file_id')
 
-    if not file_path:
-        return Response({'error': 'File path is required.'}, status=400)
+    if not file_id:
+        return Response({'error': 'File_id is required.'}, status=400)
 
     try:
-        file_data = read_file_data(file_path)
+        file_data = read_file_data(file_id)
         return Response(file_data, status=200)
     except FileNotFoundError as e:
         return Response({'error': str(e)}, status=404)

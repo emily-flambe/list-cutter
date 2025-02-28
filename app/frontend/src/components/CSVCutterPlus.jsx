@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const CSVCutterPlus = () => {
   const [fileInfo, setFileInfo] = useState("");
@@ -32,8 +32,9 @@ const CSVCutterPlus = () => {
   const [savedFiles, setSavedFiles] = useState([]);
   const [selectedSavedFile, setSelectedSavedFile] = useState("");
   const [sourceFileName, setSourceFileName] = useState("");
+  const [originalFileId, setOriginalFileId] = useState("");
   const token = useContext(AuthContext);
-  const history = useHistory();
+  const navigate = useNavigate();
 
   // On mount, load saved files for the logged-in user.
   useEffect(() => {
@@ -53,19 +54,22 @@ const CSVCutterPlus = () => {
 
   // When a saved file is selected, fetch its details.
   const handleSavedFileChange = async (event) => {
-    const selectedFilePath = event.target.value || "";
-    setSelectedSavedFile(selectedFilePath);
+    const selectedFileID = event.target.value || "";
+    setSelectedSavedFile(selectedFileID);
     
-    if (selectedFilePath) {
+    if (selectedFileID) {
       try {
+        console.log("Selected file ID:", selectedFileID);
         const response = await api.get(
-          `/api/list_cutter/fetch_saved_file/?file_path=${encodeURIComponent(selectedFilePath)}`,
+          `/api/list_cutter/fetch_saved_file/?file_id=${encodeURIComponent(selectedFileID)}`,
           { headers: { Authorization: `Bearer ${token.token}` } }
         );
         const fileData = response.data;
         console.log(fileData);
         // Use the proper keys from your API response:
         setSourceFileName(fileData.file_name);
+        setOriginalFileId(fileData.file_id);
+        console.log("Original file ID:", fileData.file_id);
         setFileInfo(`${fileData.file_name} (${(fileData.size / (1024 * 1024)).toFixed(2)} MB)`);
         setRowCount(fileData.rowCount);
         setColumns(fileData.columns);
@@ -145,13 +149,14 @@ const CSVCutterPlus = () => {
       const formData = new FormData();
       formData.append("file", fileToUpload);
       formData.append("filename", filename);
-  
+    
       // Build metadata using the saved file's name if available
       const metadata = {
         generated_file_details: {
           source_file: sourceFileName || "generated_file",
           columns: selectedColumns,
-          column_filters: {}
+          column_filters: {},
+          original_file_id: originalFileId
         }
       };
   
@@ -160,6 +165,15 @@ const CSVCutterPlus = () => {
       });
   
       formData.append("metadata", JSON.stringify(metadata));
+      
+      if (originalFileId) {
+        formData.append("original_file_id", originalFileId);
+      }
+  
+      // Log the formData entries
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
   
       await api.post(`/api/list_cutter/save_generated_file/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -197,7 +211,7 @@ const CSVCutterPlus = () => {
 
   // Function to handle navigation
   const handleViewFiles = () => {
-    history.push('/manage_files');
+    navigate('/manage_files');
   };
 
   return (
@@ -239,7 +253,7 @@ const CSVCutterPlus = () => {
             <MenuItem value="" disabled>Select a saved file</MenuItem>
             {savedFiles.length > 0 ? (
               savedFiles.map((file, index) => (
-                <MenuItem key={index} value={file.file_path}>{file.file_name}</MenuItem>
+                <MenuItem key={index} value={file.file_id}>{file.file_name}</MenuItem>
               ))
             ) : (
               <MenuItem disabled>No saved files available</MenuItem>
