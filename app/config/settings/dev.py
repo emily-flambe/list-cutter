@@ -1,4 +1,9 @@
 from .base import *
+import os
+from neomodel import config as neomodel_config
+
+NEO4J_PASSWORD = os.environ.get('NEO4J_PASSWORD', 'default_password')
+neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@{NEO4J_HOST}:7687'
 
 ENVIRONMENT = "dev"
 ENABLE_DEBUGGER = False
@@ -49,5 +54,3 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',  # Use JWT!
     ],
 }
-
-neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@{NEO4J_HOST}:7687'
