@@ -6,9 +6,9 @@ from django.contrib.postgres.fields import ArrayField
 
 class SavedFile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    file_id = models.CharField(max_length=255, unique=True)  # New field for file ID
-    file_name = models.CharField(max_length=255)
-    file_path = models.CharField(max_length=500, null=False, blank=False)  # Relative file path
+    file_id = models.CharField(max_length=255, unique=True)
+    file_name = models.CharField(max_length=255, unique=True)
+    file_path = models.CharField(max_length=500, null=False, blank=False, unique=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     system_tags = ArrayField(models.CharField(max_length=255), null=True, blank=True)
     user_tags = ArrayField(models.CharField(max_length=255), null=True, blank=True)

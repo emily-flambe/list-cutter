@@ -47,6 +47,9 @@ const FileUpload = () => {
           "Authorization": `Bearer ${token}`, // Send JWT token
         },
       });
+      console.log("Response from upload:", response.data);
+      console.log("File name:", file.name);
+      console.log("File path:", file.path);
 
       setSuccessMessage("🦑 File uploaded successfully 🦑");
       setFile(null);

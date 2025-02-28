@@ -29,8 +29,9 @@ def save_uploaded_file(file):
     if file.size > MAX_FILE_SIZE:
         raise ValueError(f'File size exceeds {(MAX_FILE_SIZE / (1024 * 1024)):.2f}MB limit')
     
-    file_path = os.path.join(UPLOAD_DIR, file.name)
-
+    # Set a unique file name
+    file_name, file_path = set_file_name(file.name, UPLOAD_DIR)
+    #logger.debug(f"File name: {file_name}, file path: {file_path}")
     with open(file_path, 'wb+') as destination:
         for chunk in file.chunks():
             destination.write(chunk)
@@ -177,6 +178,7 @@ def read_file_data(file_id):
     file_data = {
         'name': os.path.basename(file_path),
         'file_id': file_id,
+        'file_name': os.path.basename(file_path),
         'file_path': file_path,
         'size': os.path.getsize(file_path),
         'type': 'text/csv',  # Adjust this based on your file type
@@ -194,3 +196,17 @@ def read_file_data(file_id):
         logger.warning(f"Could not read CSV for metadata: {str(e)}")
 
     return file_data
+
+def set_file_name(file_name, directory):
+    """Sets a unique file name in the specified directory by incrementing if necessary."""
+    base_name, extension = os.path.splitext(file_name)
+    counter = 1
+    new_file_name = file_name
+    new_file_path = os.path.join(directory, new_file_name)
+    
+    while os.path.exists(new_file_path):
+        new_file_name = f"{base_name}_{counter}{extension}"
+        new_file_path = os.path.join(directory, new_file_name)
+        counter += 1
+    
+    return new_file_name, new_file_path

@@ -28,7 +28,7 @@ const CSVCutterPlus = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [showSaveField, setShowSaveField] = useState(false);
-  const [filename, setFilename] = useState("");
+  const [fileName, setFilename] = useState("");
   const [savedFiles, setSavedFiles] = useState([]);
   const [selectedSavedFile, setSelectedSavedFile] = useState("");
   const [sourceFileName, setSourceFileName] = useState("");
@@ -70,7 +70,7 @@ const CSVCutterPlus = () => {
         setSourceFileName(fileData.file_name);
         setOriginalFileId(fileData.file_id);
         console.log("Original file ID:", fileData.file_id);
-        setFileInfo(`${fileData.file_name} (${(fileData.size / (1024 * 1024)).toFixed(2)} MB)`);
+        setFileInfo(`${fileData.fileName} (${(fileData.size / (1024 * 1024)).toFixed(2)} MB)`);
         setRowCount(fileData.rowCount);
         setColumns(fileData.columns);
         setFilePath(fileData.file_path); // Use file_path, not fileData.filePath
@@ -95,7 +95,7 @@ const CSVCutterPlus = () => {
   };
 
   // "Cut List" now uses the saved file details. Note that instead of using file.name (which was null),
-  // we use sourceFileName to generate the output filename.
+  // we use sourceFileName to generate the output file_name.
   const handleCutList = async () => {
     if (selectedColumns.length === 0) {
       return alert("Please select at least one column to cut.");
@@ -128,8 +128,9 @@ const CSVCutterPlus = () => {
   };
   
   const handleSaveToMyFiles = async () => {
-    if (!filename) {
-      alert("Please provide a filename.");
+    console.log("Saving to my files...");
+    if (!fileName) {
+      alert("Please provide a file name.");
       return;
     }
   
@@ -141,15 +142,16 @@ const CSVCutterPlus = () => {
         { columns: selectedColumns, file_path: filePath, filters },
         { responseType: "blob" }
       );
-  
+      console.log("Exported CSV blob:", response.data);
       const blob = new Blob([response.data], { type: "text/csv" });
-      // Create a File object from the blob with the provided filename
-      const fileToUpload = new File([blob], filename, { type: "text/csv" });
+      // Create a File object from the blob with the provided file_name
+      const fileToUpload = new File([blob], fileName, { type: "text/csv" });
   
       const formData = new FormData();
       formData.append("file", fileToUpload);
-      formData.append("filename", filename);
-    
+      console.log("File to upload:", fileToUpload);
+      formData.append("file_name", fileName);
+      console.log("File name:", fileName);
       // Build metadata using the saved file's name if available
       const metadata = {
         generated_file_details: {
@@ -178,6 +180,7 @@ const CSVCutterPlus = () => {
       await api.post(`/api/list_cutter/save_generated_file/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      console.log("File saved successfully.");
       setShowPopup(true);
     } catch (error) {
       console.error("Error saving file:", error);
@@ -346,7 +349,7 @@ const CSVCutterPlus = () => {
               <Box sx={{ mt: 2 }}>
                 <TextField
                   label="Filename"
-                  value={filename}
+                  value={fileName}
                   onChange={(e) => setFilename(e.target.value)}
                   fullWidth
                 />

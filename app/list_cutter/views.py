@@ -11,7 +11,7 @@ from rest_framework.decorators import permission_classes
 from django.utils import timezone
 import uuid
 import json
-from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where, read_file_data
+from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where, read_file_data, set_file_name
 from .models import SavedFile
 from .graph_models import SavedFileNode
 
@@ -86,6 +86,8 @@ def upload_file(request):
         return Response({'error': 'No file uploaded'}, status=400)
 
     file = request.FILES['file']
+    # print file path to console
+    logger.info("Uploaded file: %s", file)
 
     # Get max file size from environment variables (default: 10MB)
     MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", 10 * 1024 * 1024))
@@ -98,15 +100,15 @@ def upload_file(request):
         )
 
     try:
+        file_name, file_path = set_file_name(file.name, UPLOAD_DIR)
         # Save file path to disk. This will be the full path to the file.
         file_path = save_uploaded_file(file)
-        logger.info("File path: %s", file_path)
-        # Store file metadata in the database
-        
+
+        # Save file metadata in the database
         saved_file = SavedFile.objects.create(
             user=request.user,
             file_path=file_path,
-            file_name=file.name,
+            file_name=file_name,
             file_id=uuid.uuid4(),
             system_tags=['uploaded'],
             uploaded_at=timezone.now()
@@ -123,8 +125,15 @@ def upload_file(request):
         saved_file_node.save()
         logger.info("Saved file node: %s", saved_file_node)
 
+        response_data = {
+            'message': 'File uploaded successfully',
+            'file_id': saved_file.file_id,
+            'file_name': saved_file.file_name,
+            'file_path': saved_file.file_path
+        }
+        logger.info("Response data: %s", response_data)
         return Response(
-            {'message': 'File uploaded successfully', 'file_id': saved_file.file_id},
+            {'message': 'File uploaded successfully', 'file_id': saved_file.file_id, 'file_name': saved_file.file_name, 'file_path': saved_file.file_path},
             status=200
         )
 
@@ -148,7 +157,6 @@ def list_saved_files(request):
 
     files_data = [
         {
-            'id': uploaded_file.id,
             'file_id': getattr(uploaded_file, 'file_id', None),
             'file_name': uploaded_file.file_name,
             'file_path': uploaded_file.file_path,
@@ -179,7 +187,7 @@ def delete_file(request, file_id):
     logger.info(f"Received DELETE request to delete file with ID: {file_id} from user: {request.user.username}")
 
     try:
-        uploaded_file = SavedFile.objects.get(id=file_id, user=request.user)
+        uploaded_file = SavedFile.objects.get(file_id=file_id, user=request.user)
         file_path = uploaded_file.file_path  # Get the file path from the database
         logger.info(f"File path: {file_path}")
 
@@ -204,20 +212,19 @@ def delete_file(request, file_id):
 @permission_classes([IsAuthenticated])
 def save_generated_file(request):
     """Saves the generated file to the server and creates a database record."""
-    if 'file' not in request.FILES or 'filename' not in request.data:
+    if 'file' not in request.FILES or 'file_name' not in request.data:
         return JsonResponse({'error': 'No file or filename provided.'}, status=400)
 
     logger.info(f"Request data: {request.data}")
     file = request.FILES['file']
-    filename = request.data['filename']
+    file_name = request.data['file_name']
     metadata = request.data['metadata']
     original_file_id = request.data.get('original_file_id')
 
-    # Construct the full file path
-    file_path = os.path.join(UPLOAD_DIR, filename)
+    # Update file_name and file_path to ensure uniqueness
+    file_name, file_path = set_file_name(file_name, UPLOAD_DIR)
 
     try:
-        # Save the file to the specified path
         with open(file_path, 'wb+') as destination:
             for chunk in file.chunks():
                 destination.write(chunk)
@@ -225,6 +232,7 @@ def save_generated_file(request):
         # Store file metadata in the database
         saved_file = SavedFile.objects.create(
             user=request.user,
+            file_name=file_name,
             file_path=file_path,
             file_id=uuid.uuid4(),
             system_tags=['generated'],
@@ -236,7 +244,7 @@ def save_generated_file(request):
         # Create a SavedFileNode and establish a CUT_FROM relationship
         saved_file_node = SavedFileNode(
             file_id=saved_file.file_id,
-            file_name=filename,
+            file_name=file_name,
             file_path=file_path,
             metadata=metadata
         )
@@ -262,7 +270,7 @@ def save_generated_file(request):
 def update_tags(request, file_id):
     """Updates user tags for a specific file."""
     try:
-        uploaded_file = SavedFile.objects.get(id=file_id, user=request.user)
+        uploaded_file = SavedFile.objects.get(file_id=file_id, user=request.user)
         user_tags = request.data.get('user_tags', [])
         # Ensure user_tags is a list before concatenation
         uploaded_file.user_tags = list(uploaded_file.user_tags) if uploaded_file.user_tags else []
@@ -278,6 +286,7 @@ def update_tags(request, file_id):
 @permission_classes([IsAuthenticated])
 def fetch_saved_file(request):
     """Fetches a saved file's data based on the provided file path."""
+    logger.info("Fetching saved file with file_id: %s", request.query_params.get('file_id'))
     file_id = request.query_params.get('file_id')
 
     if not file_id:
