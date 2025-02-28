@@ -7,9 +7,9 @@ class SavedFileNode(StructuredNode):
     file_path = StringProperty(required=True)
     metadata = StringProperty(required=True)
 
-    # Relationship indicating that this file was created from another file.
-    # If file B is derived from file A, then file B will have a "created_from" relationship to A.
-    created_from = RelationshipFrom('SavedFileNode', 'CREATED_FROM')
+    # Relationships indicating that this file was cut from or to another file.
+    CUT_FROM = RelationshipFrom('SavedFileNode', 'CUT_FROM')
+    CUT_TO = RelationshipTo('SavedFileNode', 'CUT_TO')
     
     def __str__(self):
         return f"{self.file_name} ({self.file_path})"
