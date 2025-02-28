@@ -16,6 +16,7 @@ import {
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { getNewToken } from '../auth';
 
 const CSVCutterPlus = () => {
   const [fileInfo, setFileInfo] = useState("");
@@ -36,19 +37,20 @@ const CSVCutterPlus = () => {
   const token = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const fetchSavedFiles = async () => {
+    try {
+      const response = await api.get('/api/list_cutter/list_saved_files/', {
+        headers: { Authorization: `Bearer ${token.token}` }
+      });
+      setSavedFiles(response.data.files);
+    } catch (error) {
+      console.error("Error fetching saved files:", error);
+      setErrorMessage("Error fetching saved files.");
+    }
+  };
+
   // On mount, load saved files for the logged-in user.
   useEffect(() => {
-    const fetchSavedFiles = async () => {
-      try {
-        const response = await api.get('/api/list_cutter/list_saved_files/', {
-          headers: { Authorization: `Bearer ${token.token}` }
-        });
-        setSavedFiles(response.data.files);
-      } catch (error) {
-        console.error("Error fetching saved files:", error);
-        setErrorMessage("Error fetching saved files.");
-      }
-    };
     fetchSavedFiles();
   }, [token]);
 
@@ -128,6 +130,14 @@ const CSVCutterPlus = () => {
   };
   
   const handleSaveToMyFiles = async () => {
+    // Refresh the token before making the save request
+    console.log("Refreshing token...");
+    const newToken = await getNewToken();
+    console.log("New token:", newToken);
+    if (!newToken) {
+      setError("Failed to refresh token. Please log in again.");
+      return;
+    }
     console.log("Saving to my files...");
     if (!fileName) {
       alert("Please provide a file name.");
@@ -201,6 +211,9 @@ const CSVCutterPlus = () => {
     setShowPopup(false);
     setSelectedSavedFile("");
     setSourceFileName("");
+    
+    // Re-fetch the saved files
+    fetchSavedFiles();
   };
 
   const handlePopupKeepGoing = () => {
