@@ -70,6 +70,7 @@ const FileUpload = () => {
         Upload files in order to <a href="/csv_cutter_plus">cut lists</a> with them!
         <br />You can manage your files <a href="/manage_files">on this page</a>.
       </Typography>
+      <br />
       {successMessage && (
         <Typography
           variant="body1"
