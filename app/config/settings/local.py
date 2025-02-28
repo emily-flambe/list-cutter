@@ -3,7 +3,7 @@ import os
 from neomodel import config as neomodel_config
 
 NEO4J_PASSWORD = os.environ.get('NEO4J_PASSWORD', 'default_password')
-neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@host.docker.internal:7687'
+neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@host.docker.internal:7686' # 7687 is the default port for Neo4j but I have my reasons
 
 ENVIRONMENT = "dev"
 ENABLE_DEBUGGER = False
