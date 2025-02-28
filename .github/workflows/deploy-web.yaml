@@ -48,10 +48,14 @@ jobs:
             echo "ENVIRONMENT=dev" >> $GITHUB_ENV
             echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST_DEV }}" >> $GITHUB_ENV
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_DEV }}" >> $GITHUB_ENV
+            echo "NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD_DEV }}" >> $GITHUB_ENV
+            echo "NEO4J_HOST=${{ secrets.NEO4J_HOST_DEV }}" >> $GITHUB_ENV
           else
             echo "ENVIRONMENT=prod" >> $GITHUB_ENV
             echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST_PROD }}" >> $GITHUB_ENV
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_PROD }}" >> $GITHUB_ENV
+            echo "NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD_PROD }}" >> $GITHUB_ENV
+            echo "NEO4J_HOST=${{ secrets.NEO4J_HOST_PROD }}" >> $GITHUB_ENV
             if [ "${{ github.event.inputs.instance }}" == "prod-blue" ]; then
               echo "TARGET_HOST=${{ secrets.PROD_BLUE_HOST }}" >> $GITHUB_ENV
             elif [ "${{ github.event.inputs.instance }}" == "prod-green" ]; then
@@ -88,6 +92,14 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.BASTION_HOST }} "ssh-keyscan -H '${{ env.TARGET_HOST }}'" >> ~/.ssh/known_hosts
 
+      - name: SSH into target host and pull changes from branch where this workflow was triggered
+        run: |
+          ssh target "eval \"\$(ssh-agent -s)\" \
+          && ssh-add github \
+          && cd list-cutter \
+          && git fetch origin ${{ github.event.inputs.branch }} \
+          && git reset --hard FETCH_HEAD"
+
       - name: 'Create/Update env file on target host'
         run: |
           ssh target "rm -f list-cutter/.env || true \
@@ -102,15 +114,10 @@ jobs:
           && echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> list-cutter/.env \
           && echo "POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }}" >> list-cutter/.env \
           && echo "POSTGRES_HOST=${{ env.POSTGRES_HOST }}" >> list-cutter/.env \
-          && echo "VITE_MAX_UPLOAD_SIZE=10485760" >> list-cutter/.env"
+          && echo "VITE_MAX_UPLOAD_SIZE=10485760" >> list-cutter/.env \
+          && echo "NEO4J_PASSWORD=${{ env.NEO4J_PASSWORD }}" >> list-cutter/.env \
+          && echo "NEO4J_HOST=${{ env.NEO4J_HOST }}" >> list-cutter/.env"
 
-      - name: SSH into target host and pull changes from branch where this workflow was triggered
-        run: |
-          ssh target "eval \"\$(ssh-agent -s)\" \
-          && ssh-add github \
-          && cd list-cutter \
-          && git fetch origin ${{ github.event.inputs.branch }} \
-          && git reset --hard FETCH_HEAD"
 
       - name: SSH into target host and run deployment script
         run: |

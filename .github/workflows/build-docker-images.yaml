@@ -27,10 +27,14 @@ jobs:
             echo "ENVIRONMENT=dev" >> $GITHUB_ENV
             echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST_DEV }}" >> $GITHUB_ENV
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_DEV }}" >> $GITHUB_ENV
+            echo "NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD_DEV }}" >> $GITHUB_ENV
+            echo "NEO4J_HOST=${{ secrets.NEO4J_HOST_DEV }}" >> $GITHUB_ENV
           else
             echo "ENVIRONMENT=prod" >> $GITHUB_ENV
             echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST_PROD }}" >> $GITHUB_ENV
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD_PROD }}" >> $GITHUB_ENV
+            echo "NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD_PROD }}" >> $GITHUB_ENV
+            echo "NEO4J_HOST=${{ secrets.NEO4J_HOST_PROD }}" >> $GITHUB_ENV
           fi     
 
       - name: Set up QEMU
@@ -76,6 +80,8 @@ jobs:
           echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
           echo "POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }}" >> .env
           echo "POSTGRES_HOST=${{ env.POSTGRES_HOST }}" >> .env
+          echo "NEO4J_PASSWORD=${{ env.NEO4J_PASSWORD }}" >> .env
+          echo "NEO4J_HOST=${{ env.NEO4J_HOST }}" >> .env
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v3

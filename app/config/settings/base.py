@@ -218,3 +218,14 @@ LOGGING = {
         },
     },
 }
+
+# Neo4j settings
+from neomodel import config as neomodel_config
+
+NEOMODEL_SIGNALS = False  # optional, depending on your use-case
+
+NEO4J_PASSWORD = get_env_variable("NEO4J_PASSWORD", "password")
+NEO4J_HOST = get_env_variable("NEO4J_HOST", "HOST_NOT_SET__RIP")
+# Local connection (like, from my computer)
+neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@host.docker.internal:7687'
+

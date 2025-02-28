@@ -22,7 +22,7 @@ const ManageFiles = () => {
   useEffect(() => {
     const fetchSavedFiles = async () => {
       try {
-        const response = await api.get('/api/list_cutter/list_uploaded_files/', {
+        const response = await api.get('/api/list_cutter/list_saved_files/', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFiles(response.data.files);
@@ -206,7 +206,7 @@ const ManageFiles = () => {
               </TableCell>
               <TableCell onClick={() => requestSort('uploaded_at')} style={{ cursor: 'pointer' }}>
                 <Typography variant="h6" fontWeight="bold" fontSize="0.9rem">
-                  Uploaded At {sortConfig.key === 'uploaded_at' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
+                  Created At {sortConfig.key === 'uploaded_at' && (sortConfig.direction === 'ascending' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />)}
                 </Typography>
               </TableCell>         
               <TableCell onClick={() => requestSort('system_tags')} style={{ cursor: 'pointer' }}>

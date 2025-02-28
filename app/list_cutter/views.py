@@ -9,9 +9,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes
 from django.utils import timezone
-
-from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where
-from .models import SavedFile 
+import uuid
+import json
+from .common.file_utils import save_uploaded_file, get_csv_columns, filter_csv_with_where, read_file_data
+from .models import SavedFile
+from .graph_models import SavedFileNode
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -78,7 +80,7 @@ def export_csv(request):
 @parser_classes([MultiPartParser])
 def upload_file(request):
     """Handles file uploads, enforces file size limit, and saves metadata in the database."""
-
+    logger.info("Uploading file: %s", request.FILES)
     # Ensure a file is provided
     if 'file' not in request.FILES:
         return Response({'error': 'No file uploaded'}, status=400)
@@ -98,28 +100,42 @@ def upload_file(request):
     try:
         # Save file path to disk. This will be the full path to the file.
         file_path = save_uploaded_file(file)
-
+        logger.info("File path: %s", file_path)
         # Store file metadata in the database
+        
         saved_file = SavedFile.objects.create(
             user=request.user,
             file_path=file_path,
+            file_name=file.name,
+            file_id=uuid.uuid4(),
             system_tags=['uploaded'],
             uploaded_at=timezone.now()
         )
+        logger.info("Saved file: %s", saved_file)
+
+        # Create a SavedFileNode with the same file_id as the SavedFile object
+        saved_file_node = SavedFileNode(
+            file_id=saved_file.file_id,
+            file_name=saved_file.file_name,
+            file_path=saved_file.file_path,
+            metadata=json.dumps(saved_file.metadata) if saved_file.metadata else ""
+        )
+        saved_file_node.save()
+        logger.info("Saved file node: %s", saved_file_node)
 
         return Response(
-            {'message': 'File uploaded successfully', 'file_id': saved_file.id},
+            {'message': 'File uploaded successfully', 'file_id': saved_file.file_id},
             status=200
         )
 
     except Exception as e:
-        logger.error(f"File upload failed: {str(e)}")
+        logger.error("File upload failed: %s", str(e))
         return Response({'error': 'File upload failed. Please try again.'}, status=500)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def list_uploaded_files(request):
+def list_saved_files(request):
     """Lists all uploaded files associated with the logged-in user."""
     # Fetch SavedFile objects for the logged-in user
     uploaded_files = SavedFile.objects.filter(user=request.user)
@@ -133,6 +149,7 @@ def list_uploaded_files(request):
     files_data = [
         {
             'id': uploaded_file.id,
+            'file_id': getattr(uploaded_file, 'file_id', None),
             'file_name': uploaded_file.file_name,
             'file_path': uploaded_file.file_path,
             'uploaded_at': uploaded_file.uploaded_at,
@@ -190,9 +207,11 @@ def save_generated_file(request):
     if 'file' not in request.FILES or 'filename' not in request.data:
         return JsonResponse({'error': 'No file or filename provided.'}, status=400)
 
+    logger.info(f"Request data: {request.data}")
     file = request.FILES['file']
     filename = request.data['filename']
     metadata = request.data['metadata']
+    original_file_id = request.data.get('original_file_id')
 
     # Construct the full file path
     file_path = os.path.join(UPLOAD_DIR, filename)
@@ -207,12 +226,34 @@ def save_generated_file(request):
         saved_file = SavedFile.objects.create(
             user=request.user,
             file_path=file_path,
+            file_id=uuid.uuid4(),
             system_tags=['generated'],
             uploaded_at=timezone.now(),
             metadata=metadata
         )
+        logger.info("Saved file: %s", saved_file)
 
-        return JsonResponse({'message': 'File saved successfully.', 'file_path': file_path, 'file_id': saved_file.id}, status=201)
+        # Create a SavedFileNode and establish a CUT_FROM relationship
+        saved_file_node = SavedFileNode(
+            file_id=saved_file.file_id,
+            file_name=filename,
+            file_path=file_path,
+            metadata=metadata
+        )
+        saved_file_node.save()
+        logger.info("Saved file node: %s", saved_file_node)
+        logger.info("Updating relationships...")
+        # Establish CUT_FROM and CUT_TO relationships
+        if original_file_id:
+            original_file_node = SavedFileNode.nodes.get(file_id=original_file_id)
+            # This syntax looks wrong (to me), but it's correct! CUT_FROM is a RelationshipFrom and CUT_TO is a RelationshipTo. Graph models, idk man
+            original_file_node.CUT_FROM.connect(saved_file_node)
+            original_file_node.CUT_TO.connect(saved_file_node)
+            logger.info("Relationships updated successfully.")
+        else:
+            return JsonResponse({'error': 'Original file ID must be included in the request.'}, status=400)
+
+        return JsonResponse({'message': 'File saved successfully.', 'file_path': file_path, 'file_id': saved_file.file_id}, status=201)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
@@ -232,3 +273,52 @@ def update_tags(request, file_id):
         return Response({'error': 'File not found.'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def fetch_saved_file(request):
+    """Fetches a saved file's data based on the provided file path."""
+    file_id = request.query_params.get('file_id')
+
+    if not file_id:
+        return Response({'error': 'File_id is required.'}, status=400)
+
+    try:
+        file_data = read_file_data(file_id)
+        return Response(file_data, status=200)
+    except FileNotFoundError as e:
+        return Response({'error': str(e)}, status=404)
+    except Exception as e:
+        logger.error(f"Error fetching file: {str(e)}")
+        return Response({'error': 'Error fetching file data.'}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def file_lineage(request, file_id):
+    """Fetches the full lineage of a file based on its ID using a Cypher query."""
+    try:
+        # Cypher query to fetch the file and its ancestors and descendants
+        query = """
+        MATCH (file:SavedFileNode {file_id: $file_id})
+        OPTIONAL MATCH (file)<-[:CUT_FROM]-(ancestor)
+        OPTIONAL MATCH (file)-[:CUT_TO]->(descendant)
+        RETURN file, collect(ancestor) AS ancestors, collect(descendant) AS descendants
+        """
+        
+        # Execute the query
+        result = SavedFileNode.cypher(query, file_id=file_id)
+
+        # Prepare the lineage response
+        lineage = [{'file_id': result[0]['file']['file_id'], 'file_name': result[0]['file']['file_name']}]
+        
+        # Add ancestors to lineage
+        for ancestor in result[0]['ancestors']:
+            lineage.append({'file_id': ancestor['file_id'], 'file_name': ancestor['file_name']})
+
+        # Add descendants to lineage
+        for descendant in result[0]['descendants']:
+            lineage.append({'file_id': descendant['file_id'], 'file_name': descendant['file_name']})
+
+        return Response({'lineage': lineage}, status=200)
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
