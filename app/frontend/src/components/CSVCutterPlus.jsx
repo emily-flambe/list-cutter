@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
+import { useHistory } from 'react-router-dom';
 
 const CSVCutterPlus = () => {
   const [fileInfo, setFileInfo] = useState("");
@@ -32,6 +33,7 @@ const CSVCutterPlus = () => {
   const [selectedSavedFile, setSelectedSavedFile] = useState("");
   const [sourceFileName, setSourceFileName] = useState("");
   const token = useContext(AuthContext);
+  const history = useHistory();
 
   // On mount, load saved files for the logged-in user.
   useEffect(() => {
@@ -112,7 +114,9 @@ const CSVCutterPlus = () => {
       setShowSaveField(false);
       // Use a fallback name if sourceFileName is undefined.
       const baseName = sourceFileName ? sourceFileName.split('.csv')[0] : "filtered_file";
-      setFilename(`${baseName}_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.csv`);
+      const date = new Date();
+      const formattedDate = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}${date.getSeconds().toString().padStart(2, '0')}`;
+      setFilename(`${baseName}_filtered_${formattedDate}.csv`);
     } catch (error) {
       console.error("Error exporting CSV:", error);
       alert("Error exporting CSV");
@@ -189,6 +193,11 @@ const CSVCutterPlus = () => {
 
   const handlePopupNo = () => {
     alert(">:[");
+  };
+
+  // Function to handle navigation
+  const handleViewFiles = () => {
+    history.push('/manage_files');
   };
 
   return (
@@ -350,6 +359,9 @@ const CSVCutterPlus = () => {
               </Button>
               <Button variant="contained" onClick={handlePopupKeepGoing}>
                 KEEP GOING
+              </Button>
+              <Button variant="contained" onClick={handleViewFiles}>
+                VIEW FILES
               </Button>
               <Button variant="contained" color="error" onClick={handlePopupNo}>
                 DO NOT
