@@ -1,18 +1,23 @@
 import React, { useEffect, useState, useContext } from 'react';
+import { Box, Typography, MenuItem, Select, Button, CircularProgress, Paper } from '@mui/material';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Box, Typography, MenuItem, Select, Button, CircularProgress } from '@mui/material';
-import { ArcherContainer, ArcherElement } from 'react-archer';
+import CytoscapeComponent from 'react-cytoscapejs';
+import cytoscape from 'cytoscape';
+import dagre from 'cytoscape-dagre';
 
-const FileLineageArcher = () => {
+// Register dagre layout
+cytoscape.use(dagre);
+
+const FileLineageCytoscape = () => {
   const { token } = useContext(AuthContext);
   const [files, setFiles] = useState([]);
   const [selectedFileId, setSelectedFileId] = useState('');
-  const [lineage, setLineage] = useState(null);
+  const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Fetch saved files on mount.
+  // Fetch list of saved files when component mounts.
   useEffect(() => {
     const fetchFiles = async () => {
       try {
@@ -38,67 +43,48 @@ const FileLineageArcher = () => {
       const response = await api.get(`/api/list_cutter/fetch_file_lineage/${selectedFileId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setLineage(response.data);
+      setGraphData(response.data);
       setError('');
     } catch (err) {
       console.error('Error fetching file lineage:', err);
       setError('Failed to fetch file lineage.');
-      setLineage(null);
+      setGraphData({ nodes: [], edges: [] });
     }
     setLoading(false);
   };
 
-  // Render the lineage chain using ArcherContainer with overall edgePadding and larger offset values.
-  const renderLineageChain = () => {
-    if (!lineage || !lineage.nodes || lineage.nodes.length === 0) return null;
+  // Transform graphData into Cytoscape elements.
+  // Deduplicate edges: if multiple edges have the same (source, target) pair, only add one.
+  const getElements = () => {
+    // Map nodes
+    const nodeElements = graphData.nodes.map((node) => ({
+      data: { id: node.file_id, label: node.file_name },
+    }));
 
-    return (
-      <ArcherContainer strokeColor="var(--primary-text)" edgePadding={30}>
-        <Box sx={{ display: 'flex', alignItems: 'center', overflowX: 'auto', p: 2 }}>
-          {lineage.nodes.map((node, index) => (
-            <ArcherElement
-              key={node.file_id}
-              id={node.file_id}
-              relations={
-                index < lineage.nodes.length - 1
-                  ? [
-                      {
-                        targetId: lineage.nodes[index + 1].file_id,
-                        targetAnchor: 'left',
-                        sourceAnchor: 'right',
-                        // Increase the offset to push the arrow further from the box border.
-                        offset: { x: 30, y: 0 },
-                        style: { strokeColor: 'var(--primary-text)', strokeWidth: 2 },
-                      },
-                    ]
-                  : []
-              }
-            >
-              <Box
-                sx={{
-                  p: 2,
-                  m: 2,
-                  minWidth: 150,
-                  border: '1px solid var(--navbar-bg)',
-                  borderRadius: 1,
-                  backgroundColor: node.file_id === selectedFileId ? 'var(--accent)' : 'var(--secondary-bg)',
-                  color: 'var(--primary-text)',
-                  textAlign: 'center',
-                }}
-              >
-                <Typography variant="body1">{node.file_name}</Typography>
-              </Box>
-            </ArcherElement>
-          ))}
-        </Box>
-      </ArcherContainer>
-    );
+    // Deduplicate edges.
+    const seenEdges = new Set();
+    const edgeElements = graphData.edges.reduce((acc, edge) => {
+      // For our UI, we want arrows to represent CUT_TO.
+      // So if the edge is CUT_FROM, we swap source and target.
+      const source = edge.type === 'CUT_FROM' ? edge.target : edge.source;
+      const target = edge.type === 'CUT_FROM' ? edge.source : edge.target;
+      const key = `${source}->${target}`;
+      if (!seenEdges.has(key)) {
+        seenEdges.add(key);
+        acc.push({ data: { id: `edge-${key}`, source, target } });
+      }
+      return acc;
+    }, []);
+
+    return [...nodeElements, ...edgeElements];
   };
+
+  const elements = getElements();
 
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        File Lineage Archer Visualization
+        File Lineage Graph Visualization
       </Typography>
       {error && <Typography color="error">{error}</Typography>}
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
@@ -123,16 +109,67 @@ const FileLineageArcher = () => {
         </Button>
       </Box>
       {loading && <CircularProgress />}
-      {lineage && (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Lineage Chain:
-          </Typography>
-          {renderLineageChain()}
+      {!loading && elements.length > 0 && (
+        <Box sx={{ height: 600, border: '1px solid var(--navbar-bg)', mb: 2 }}>
+          <CytoscapeComponent
+            elements={elements}
+            style={{ width: '100%', height: '100%' }}
+            layout={{
+              name: 'dagre',
+              rankDir: 'TB', // Top-to-bottom. Change to 'LR' for left-to-right.
+              nodeSep: 50,
+              edgeSep: 10,
+              rankSep: 100,
+            }}
+            stylesheet={[
+              {
+                selector: 'node',
+                style: {
+                  'background-color': 'var(--secondary-bg)',
+                  label: 'data(label)',
+                  color: 'var(--primary-text)',
+                  'text-valign': 'center',
+                  'text-halign': 'center',
+                  'border-color': 'var(--navbar-bg)',
+                  'border-width': 1,
+                  shape: 'roundrectangle',
+                  'font-size': '12px',
+                },
+              },
+              {
+                selector: 'edge',
+                style: {
+                  width: 2,
+                  'line-color': 'var(--primary-text)',
+                  'target-arrow-color': 'var(--primary-text)',
+                  'target-arrow-shape': 'triangle',
+                  'curve-style': 'bezier',
+                },
+              },
+              {
+                selector: `node[id = "${selectedFileId}"]`,
+                style: {
+                  'background-color': 'var(--accent)',
+                  'font-weight': 'bold',
+                },
+              },
+            ]}
+          />
         </Box>
+      )}
+      {/* Display the raw JSON response for verification */}
+      {graphData && (graphData.nodes.length > 0 || graphData.edges.length > 0) && (
+        <Paper sx={{ p: 2, backgroundColor: 'var(--primary-bg)', color: 'var(--primary-text)' }}>
+          <Typography variant="h6" gutterBottom>
+            Raw JSON Response:
+          </Typography>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>
+            {JSON.stringify(graphData, null, 2)}
+          </pre>
+        </Paper>
       )}
     </Box>
   );
 };
 
-export default FileLineageArcher;
+export default FileLineageCytoscape;
