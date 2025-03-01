@@ -40,4 +40,4 @@ class Command(BaseCommand):
             for dir in dirs:
                 dir_path = os.path.join(root, dir)
                 shutil.rmtree(dir_path)
-        self.stdout.write(self.style.SUCCESS("All files and folders deleted from MEDIA_ROOT.")) 
+        self.stdout.write(self.style.SUCCESS(f"All files and folders deleted from MEDIA_ROOT: {media_root}.")) 
