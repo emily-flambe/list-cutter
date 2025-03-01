@@ -59,6 +59,10 @@ const Layout = ({ children }) => {
             : "Hello! I am Cutty, the friendly CUTTLEFISH. (not an octopus)";
         case '/csv_cutter':
           return "It looks like you are trying to cut a list! Would you like some help with that?";
+        case '/csv_cutter_plus':
+          return "It looks like you are trying to cut a list! Would you like some help with that?";
+        case '/file_lineage':
+          return "Wow, is this a FAMILY TREE for FILES? (the answer is yes)";
         case '/file_upload':
           return "Think twice before giving your files to a stranger!";
         case '/manage_files':
