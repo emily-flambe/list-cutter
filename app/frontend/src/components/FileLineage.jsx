@@ -12,7 +12,7 @@ const FileLineageArcher = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Fetch list of saved files when component mounts
+  // Fetch saved files on mount.
   useEffect(() => {
     const fetchFiles = async () => {
       try {
@@ -48,12 +48,12 @@ const FileLineageArcher = () => {
     setLoading(false);
   };
 
-  // For simplicity, assume lineage.nodes is an ordered array representing a chain
+  // Render the lineage chain using ArcherContainer with overall edgePadding and larger offset values.
   const renderLineageChain = () => {
     if (!lineage || !lineage.nodes || lineage.nodes.length === 0) return null;
 
     return (
-      <ArcherContainer strokeColor="gray">
+      <ArcherContainer strokeColor="var(--primary-text)" edgePadding={30}>
         <Box sx={{ display: 'flex', alignItems: 'center', overflowX: 'auto', p: 2 }}>
           {lineage.nodes.map((node, index) => (
             <ArcherElement
@@ -66,7 +66,9 @@ const FileLineageArcher = () => {
                         targetId: lineage.nodes[index + 1].file_id,
                         targetAnchor: 'left',
                         sourceAnchor: 'right',
-                        style: { strokeColor: 'gray', strokeWidth: 2 },
+                        // Increase the offset to push the arrow further from the box border.
+                        offset: { x: 30, y: 0 },
+                        style: { strokeColor: 'var(--primary-text)', strokeWidth: 2 },
                       },
                     ]
                   : []
@@ -74,12 +76,13 @@ const FileLineageArcher = () => {
             >
               <Box
                 sx={{
-                  p: 1,
-                  m: 1,
+                  p: 2,
+                  m: 2,
                   minWidth: 150,
-                  border: '1px solid #ccc',
+                  border: '1px solid var(--navbar-bg)',
                   borderRadius: 1,
-                  backgroundColor: node.file_id === selectedFileId ? 'yellow' : 'lightgray',
+                  backgroundColor: node.file_id === selectedFileId ? 'var(--accent)' : 'var(--secondary-bg)',
+                  color: 'var(--primary-text)',
                   textAlign: 'center',
                 }}
               >
@@ -102,7 +105,12 @@ const FileLineageArcher = () => {
         <Select
           value={selectedFileId}
           onChange={(e) => setSelectedFileId(e.target.value)}
-          sx={{ minWidth: 200, mr: 2 }}
+          sx={{
+            minWidth: 200,
+            mr: 2,
+            backgroundColor: 'var(--primary-bg)',
+            color: 'var(--primary-text)',
+          }}
         >
           {files.map((file) => (
             <MenuItem key={file.file_id} value={file.file_id}>
