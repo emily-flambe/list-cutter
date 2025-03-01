@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Box, Typography, MenuItem, Select, Button, CircularProgress, Paper } from '@mui/material';
+import { Box, Typography, MenuItem, Select, Button, CircularProgress } from '@mui/material';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
 import CytoscapeComponent from 'react-cytoscapejs';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 
-// Register dagre layout
+// Register the dagre layout extension
 cytoscape.use(dagre);
 
 const FileLineageCytoscape = () => {
@@ -17,7 +17,7 @@ const FileLineageCytoscape = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Fetch list of saved files when component mounts.
+  // Fetch saved files on mount.
   useEffect(() => {
     const fetchFiles = async () => {
       try {
@@ -53,19 +53,25 @@ const FileLineageCytoscape = () => {
     setLoading(false);
   };
 
-  // Transform graphData into Cytoscape elements.
-  // Deduplicate edges: if multiple edges have the same (source, target) pair, only add one.
+  // Compute node dimensions based on file_name.
+  // We'll use 7px per character with some extra padding,
+  // with a minimum width of 80px and a fixed height of 30px.
   const getElements = () => {
-    // Map nodes
-    const nodeElements = graphData.nodes.map((node) => ({
-      data: { id: node.file_id, label: node.file_name },
-    }));
+    const nodeElements = graphData.nodes.map((node) => {
+      const computedWidth = Math.max(80, node.file_name.length * 7 + 16);
+      return {
+        data: {
+          id: node.file_id,
+          label: node.file_name,
+          width: computedWidth,
+          height: 30,
+        },
+      };
+    });
 
-    // Deduplicate edges.
+    // Deduplicate edges and transform CUT_FROM edges so arrows point from parent to child.
     const seenEdges = new Set();
     const edgeElements = graphData.edges.reduce((acc, edge) => {
-      // For our UI, we want arrows to represent CUT_TO.
-      // So if the edge is CUT_FROM, we swap source and target.
       const source = edge.type === 'CUT_FROM' ? edge.target : edge.source;
       const target = edge.type === 'CUT_FROM' ? edge.source : edge.target;
       const key = `${source}->${target}`;
@@ -116,10 +122,10 @@ const FileLineageCytoscape = () => {
             style={{ width: '100%', height: '100%' }}
             layout={{
               name: 'dagre',
-              rankDir: 'TB', // Top-to-bottom. Change to 'LR' for left-to-right.
-              nodeSep: 50,
-              edgeSep: 10,
-              rankSep: 100,
+              rankDir: 'TB', // top-to-bottom; try 'LR' for left-to-right if desired
+              nodeSep: 70,
+              edgeSep: 20,
+              rankSep: 120,
             }}
             stylesheet={[
               {
@@ -127,13 +133,16 @@ const FileLineageCytoscape = () => {
                 style: {
                   'background-color': 'var(--secondary-bg)',
                   label: 'data(label)',
-                  color: 'var(--primary-text)',
                   'text-valign': 'center',
                   'text-halign': 'center',
+                  color: 'var(--primary-text)',
                   'border-color': 'var(--navbar-bg)',
                   'border-width': 1,
                   shape: 'roundrectangle',
                   'font-size': '12px',
+                  width: 'data(width)',
+                  height: 'data(height)',
+                  padding: '4px',
                 },
               },
               {
@@ -147,26 +156,18 @@ const FileLineageCytoscape = () => {
                 },
               },
               {
-                selector: `node[id = "${selectedFileId}"]`,
+                // Match the node whose data.id equals the selectedFileId.
+                selector: `node[data.id = "${selectedFileId}"]`,
                 style: {
-                  'background-color': 'var(--accent)',
+                  'background-color': 'var(--action)', // Use the action color from your theme.
+                  'border-width': 2,
+                  'border-color': 'var(--accent)',
                   'font-weight': 'bold',
                 },
               },
             ]}
           />
         </Box>
-      )}
-      {/* Display the raw JSON response for verification */}
-      {graphData && (graphData.nodes.length > 0 || graphData.edges.length > 0) && (
-        <Paper sx={{ p: 2, backgroundColor: 'var(--primary-bg)', color: 'var(--primary-text)' }}>
-          <Typography variant="h6" gutterBottom>
-            Raw JSON Response:
-          </Typography>
-          <pre style={{ whiteSpace: 'pre-wrap' }}>
-            {JSON.stringify(graphData, null, 2)}
-          </pre>
-        </Paper>
       )}
     </Box>
   );
