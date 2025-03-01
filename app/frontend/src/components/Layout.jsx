@@ -1,5 +1,5 @@
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Collapse } from '@mui/material';
-import { Home, UploadFile, Login, Logout, Help, Folder, ContentCut, List as ListIcon } from '@mui/icons-material';
+import { Home, UploadFile, Login, Logout, Help, Folder, ContentCut, List as ListIcon, AccountTree } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext, useEffect, useState } from 'react';
@@ -130,7 +130,7 @@ const Layout = ({ children }) => {
                         </ListItem>
                         <ListItem key="file_lineage" disablePadding>
                           <ListItemButton component={Link} to="/file_lineage">
-                            <ListItemIcon><List /></ListItemIcon>
+                            <ListItemIcon><AccountTree /></ListItemIcon>
                             <ListItemText primary="Lineage" />
                           </ListItemButton>
                         </ListItem>
