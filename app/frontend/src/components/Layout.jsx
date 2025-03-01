@@ -59,6 +59,10 @@ const Layout = ({ children }) => {
             : "Hello! I am Cutty, the friendly CUTTLEFISH. (not an octopus)";
         case '/csv_cutter':
           return "It looks like you are trying to cut a list! Would you like some help with that?";
+        case '/csv_cutter_plus':
+          return "It looks like you are trying to cut a list! Would you like some help with that?";
+        case '/file_lineage':
+          return "Wow, is this a FAMILY TREE for FILES? (the answer is yes)";
         case '/file_upload':
           return "Think twice before giving your files to a stranger!";
         case '/manage_files':
@@ -122,6 +126,12 @@ const Layout = ({ children }) => {
                           <ListItemButton component={Link} to="/manage_files">
                             <ListItemIcon><Folder /></ListItemIcon>
                             <ListItemText primary="Manage" />
+                          </ListItemButton>
+                        </ListItem>
+                        <ListItem key="file_lineage" disablePadding>
+                          <ListItemButton component={Link} to="/file_lineage">
+                            <ListItemIcon><List /></ListItemIcon>
+                            <ListItemText primary="Lineage" />
                           </ListItemButton>
                         </ListItem>
                       </List>

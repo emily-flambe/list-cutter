@@ -9,6 +9,9 @@ export default defineConfig({
   },
   publicDir: "public",
   plugins: [react()],
+  optimizeDeps: {
+    include: ['react-archer']
+  },
   server: {
     host: '0.0.0.0',
     port: 5173,
