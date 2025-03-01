@@ -135,7 +135,7 @@ const CSVCutterPlus = () => {
     const newToken = await getNewToken();
     console.log("New token:", newToken);
     if (!newToken) {
-      setError("Failed to refresh token. Please log in again.");
+      setErrorMessage("Failed to refresh token. Please log in again.");
       return;
     }
     console.log("Saving to my files...");
