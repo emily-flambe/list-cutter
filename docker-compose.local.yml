@@ -7,8 +7,7 @@ services:
       target: backend
     environment:
       - COMMIT_INFO_GIT_SHA=${GIT_SHA:-}
-      - DJANGO_SETTINGS_MODULE=config.settings.dev
-      - NEO4J_URI=bolt://host.docker.internal:7687
+      - DJANGO_SETTINGS_MODULE=config.settings.local
     env_file: .env
     volumes:
       - ./app:/app

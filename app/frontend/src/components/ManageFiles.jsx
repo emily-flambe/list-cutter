@@ -90,12 +90,17 @@ const ManageFiles = () => {
   };
 
   const deleteFile = async (fileId) => {
+    console.log("Deleting file:", fileId);
     if (window.confirm("Are you sure you want to delete this file?")) {
       try {
         await api.delete(`/api/list_cutter/delete/${fileId}/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setFiles(files.filter(file => file.id !== fileId)); // Update the state to remove the deleted file
+        // Re-fetch the list of files after deletion
+        const response = await api.get('/api/list_cutter/list_saved_files/', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setFiles(response.data.files);
       } catch (error) {
         console.error("Delete error:", error);
         alert("Failed to delete the file.");
@@ -104,6 +109,7 @@ const ManageFiles = () => {
   };
 
   const handleAddTagClick = (fileId) => {
+    console.log("Adding tag to file:", fileId);
     setSelectedFileId(fileId);
     setOpenDialog(true);
   };
@@ -123,7 +129,7 @@ const ManageFiles = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setFiles(files.map(file => 
-        file.id === selectedFileId ? { 
+        file.file_id === selectedFileId ? { 
           ...file, 
           user_tags: Array.isArray(file.user_tags) ? [...file.user_tags, newTag] : [newTag] // Ensure user_tags is an array
         } : file
@@ -235,14 +241,14 @@ const ManageFiles = () => {
           <TableBody>
             {filteredFiles.length > 0 ? (
               filteredFiles.map(file => (
-                <TableRow key={file.id}>
+                <TableRow key={file.file_id}>
                   <TableCell className="table-cell" style={{ padding: '4px 8px', minWidth: '150px' }}>{file.file_name}</TableCell>
                   <TableCell className="table-cell" style={{ padding: '4px 8px', minWidth: '150px' }}>{file.uploaded_at.slice(0, 16).replace('T', ' ')}</TableCell>
                   <TableCell className="table-cell" style={{ padding: '4px 8px', minWidth: '150px' }}>{file.system_tags ? file.system_tags.join(', ') : ''}</TableCell>
                   <TableCell className="table-cell" style={{ padding: '4px 8px', minWidth: '150px' }}>{file.user_tags ? file.user_tags.join(', ') : ''}</TableCell>
                   <TableCell className="table-cell" style={{ padding: '4px 8px', minWidth: '150px' }}>{file.metadata ? JSON.stringify(JSON.parse(file.metadata), null, 2) : ''}</TableCell>
                   <TableCell>
-                    <Button variant="contained" color="primary" onClick={() => handleAddTagClick(file.id)}>
+                    <Button variant="contained" color="primary" onClick={() => handleAddTagClick(file.file_id)}>
                       Add Tag
                     </Button>
                   </TableCell>
@@ -252,7 +258,7 @@ const ManageFiles = () => {
                     </Button>
                   </TableCell>
                   <TableCell>
-                    <Button variant="contained" color="error" onClick={() => deleteFile(file.id)}>
+                    <Button variant="contained" color="error" onClick={() => deleteFile(file.file_id)}>
                       Delete
                     </Button>
                   </TableCell>

@@ -2,6 +2,7 @@ import { useState, useRef, useContext } from "react";
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
 import { Box, Button, Typography, Alert, TextField } from '@mui/material';
+import { getNewToken } from '../auth';
 
 const FileUpload = () => {
   const { token } = useContext(AuthContext);
@@ -42,11 +43,21 @@ const FileUpload = () => {
     formData.append("file", file);
 
     try {
+      // Refresh the token before making the upload request
+      const newToken = await getNewToken();
+      if (!newToken) {
+        setError("Failed to refresh token. Please log in again.");
+        return;
+      }
+
       const response = await api.post(`/api/list_cutter/upload/`, formData, {
         headers: {
-          "Authorization": `Bearer ${token}`, // Send JWT token
+          "Authorization": `Bearer ${newToken}`, // Use the refreshed token
         },
       });
+      console.log("Response from upload:", response.data);
+      console.log("File name:", file.name);
+      console.log("File path:", file.path);
 
       setSuccessMessage("🦑 File uploaded successfully 🦑");
       setFile(null);

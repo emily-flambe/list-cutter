@@ -41,7 +41,7 @@ sudo usermod -aG docker ec2-user
 
 To Attach an EBS Volume for data persistence:
 
-Step 1: Launch an EC2 instance and attach an EBS volume to it.
+Step 1: Create an EBS volume and attach it to your EC2 instance. Name the volume `/dev/sdf`.
 Step 2: SSH into your EC2 instance, then format and mount the EBS volume. For example:
 ```bash 
 sudo mkfs -t ext4 /dev/sdf
@@ -69,7 +69,8 @@ Reboot the instance:
 sudo reboot
 ```
 
-Verify that the volume is mounted:
+Verify that the volume is mounted. (Look for `/dev/xvdf` mounted on `/mnt/neo4j-data`.)
+
 ```bash
 df -h
 ```
