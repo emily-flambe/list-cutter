@@ -284,10 +284,8 @@ def update_tags(request, file_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def fetch_saved_file(request):
+def fetch_saved_file(request, file_id):
     """Fetches a saved file's data based on the provided file path."""
-    logger.info("Fetching saved file with file_id: %s", request.query_params.get('file_id'))
-    file_id = request.query_params.get('file_id')
 
     if not file_id:
         return Response({'error': 'File_id is required.'}, status=400)
