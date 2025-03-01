@@ -7,6 +7,7 @@ import CSVCutterPlus from './components/CSVCutterPlus';
 import FileLineage from './components/FileLineage';
 import FileUpload from './components/FileUpload';
 import Register from './components/Register';
+import LoadPersonRecords from './components/LoadPersonRecords';
 import Login from './components/Login';
 import Logout from './components/LogoutConfirmation';
 import ManageFiles from './components/ManageFiles';
@@ -47,13 +48,14 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/csv_cutter" element={<CSVCutter />} />
             <Route path="/csv_cutter_plus" element={<CSVCutterPlus />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/file_lineage" element={<FileLineage />} />
             <Route path="/file_upload" element={<FileUpload />} />
-            <Route path="/manage_files" element={<ManageFiles />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/load_person_records" element={<LoadPersonRecords />} />
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
-            <Route path="/faq" element={<FAQ />} />
+            <Route path="/manage_files" element={<ManageFiles />} />
+            <Route path="/register" element={<Register />} />
           </Routes>
         </Layout>
       </BrowserRouter>

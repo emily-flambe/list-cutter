@@ -11,7 +11,7 @@ urlpatterns = [
     path("delete/<str:file_id>/", delete_file, name="delete_file"),
     path("save_generated_file/", save_generated_file, name="save_generated_file"),
     path("update_tags/<int:file_id>/", update_tags, name="update_tags"),
-    path("fetch_saved_file/", fetch_saved_file, name="fetch_saved_file"),
+    path("fetch_saved_file/<str:file_id>/", fetch_saved_file, name="fetch_saved_file"),
     path("fetch_file_lineage/<str:file_id>/", fetch_file_lineage, name="fetch_file_lineage"),
 ]
 

@@ -63,7 +63,7 @@ const CSVCutterPlus = () => {
       try {
         console.log("Selected file ID:", selectedFileID);
         const response = await api.get(
-          `/api/list_cutter/fetch_saved_file/?file_id=${encodeURIComponent(selectedFileID)}`,
+          `/api/list_cutter/fetch_saved_file/${encodeURIComponent(selectedFileID)}`,
           { headers: { Authorization: `Bearer ${token.token}` } }
         );
         const fileData = response.data;
@@ -94,6 +94,14 @@ const CSVCutterPlus = () => {
 
   const handleFilterChange = (column, value) => {
     setFilters(prev => ({ ...prev, [column]: value }));
+  };
+
+  const handleSelectAllColumns = (event) => {
+    if (event.target.checked) {
+      setSelectedColumns(columns);
+    } else {
+      setSelectedColumns([]);
+    }
   };
 
   // "Cut List" now uses the saved file details. Note that instead of using file.name (which was null),
@@ -133,7 +141,6 @@ const CSVCutterPlus = () => {
     // Refresh the token before making the save request
     console.log("Refreshing token...");
     const newToken = await getNewToken();
-    console.log("New token:", newToken);
     if (!newToken) {
       setErrorMessage("Failed to refresh token. Please log in again.");
       return;
@@ -186,6 +193,13 @@ const CSVCutterPlus = () => {
       for (let [key, value] of formData.entries()) {
         console.log(`${key}:`, value);
       }
+
+      console.log("Refreshing token...");
+      const newToken = await getNewToken();
+      if (!newToken) {
+        setErrorMessage("Failed to refresh token. Please log in again.");
+        return;
+      }
   
       await api.post(`/api/list_cutter/save_generated_file/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -211,7 +225,8 @@ const CSVCutterPlus = () => {
     setShowPopup(false);
     setSelectedSavedFile("");
     setSourceFileName("");
-    
+    setShowSaveField(false);
+
     // Re-fetch the saved files
     fetchSavedFiles();
   };
@@ -306,6 +321,13 @@ const CSVCutterPlus = () => {
             <Typography variant="body2" sx={{ mb: 2 }}>
               Filters use SQL WHERE clause syntax (e.g., "&gt;10", "&lt;=20", "!=15", "LIKE '%text%'", "IN (1,2,3)")
             </Typography>
+            
+            <Checkbox
+              checked={selectedColumns.length === columns.length}
+              onChange={handleSelectAllColumns}
+              indeterminate={selectedColumns.length > 0 && selectedColumns.length < columns.length}
+            />
+            <Typography sx={{ display: 'inline', ml: 1 }}>Select/Deselect All</Typography>
             
             <List>
               {columns.map((col, index) => (

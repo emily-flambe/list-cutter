@@ -1,5 +1,5 @@
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Collapse } from '@mui/material';
-import { Home, UploadFile, Login, Logout, Help, Folder, ContentCut, List as ListIcon, AccountTree } from '@mui/icons-material';
+import { Home, UploadFile, Login, Logout, Help, Folder, ContentCut, List as ListIcon, AccountTree, Person as PersonIcon } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext, useEffect, useState } from 'react';
@@ -14,6 +14,7 @@ const Layout = ({ children }) => {
   const { token, user, setUser } = useContext(AuthContext);
   const [loadingUser, setLoadingUser] = useState(true); // Add loading state
   const [openFiles, setOpenFiles] = useState(false); // Add state for toggling Files group
+  const [openPeople, setOpenPeople] = useState(false); // Add state for toggling People group
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -43,8 +44,9 @@ const Layout = ({ children }) => {
     ...(token ? [{ text: 'Logout', icon: <Logout />, path: '/logout' }] : []),
     ...(token ? [] : [{ text: 'Login', icon: <Login />, path: '/login' }]),
     ...(token ? [] : [{ text: 'CSV Cutter', icon: <ContentCut />, path: '/csv_cutter' }]),
-    ...(token ? [{ text: 'CSV Cutter ++', icon: <ContentCut />, path: '/csv_cutter_plus' }] : []),
-    ...(token ? [{ text: openFiles ? 'Files (collapse)' : 'Files (expand)', icon: <ListIcon />, isGroup: true }] : []),
+    ...(token ? [{ text: 'CSV Cutter PLUS', icon: <ContentCut />, path: '/csv_cutter_plus' }] : []),
+    ...(token ? [{ text: openFiles ? 'Files (-)' : 'Files (+)', icon: <ListIcon />, isGroup: true }] : []),
+    ...(token ? [{ text: openPeople ? 'People (-)' : 'People (+)', icon: <ListIcon />, isGroup: true }] : []),
     ...(token ? [{ text: 'FAQ', icon: <Help />, path: '/faq' }] : []),
     { text: 'About', icon: <Home />, path: '/' },
   ];
@@ -110,32 +112,71 @@ const Layout = ({ children }) => {
               <React.Fragment key={item.text}>
                 {item.isGroup ? (
                   <>
-                    <ListItem button onClick={() => setOpenFiles(!openFiles)}>
+                    <ListItem 
+                      button 
+                      onClick={() => {
+                        if (item.text.includes('Files')) {
+                          setOpenFiles(!openFiles);
+                        } else if (item.text.includes('People')) {
+                          setOpenPeople(!openPeople);
+                        }
+                      }}
+                    >
                       <ListItemIcon>{item.icon}</ListItemIcon>
                       <ListItemText primary={item.text} />
                     </ListItem>
-                    <Collapse in={openFiles} timeout="auto" unmountOnExit>
-                      <List component="div" disablePadding>
-                        <ListItem key="upload" disablePadding>
-                          <ListItemButton component={Link} to="/file_upload">
-                            <ListItemIcon><UploadFile /></ListItemIcon>
-                            <ListItemText primary="Upload" />
-                          </ListItemButton>
-                        </ListItem>
-                        <ListItem key="manage" disablePadding>
-                          <ListItemButton component={Link} to="/manage_files">
-                            <ListItemIcon><Folder /></ListItemIcon>
-                            <ListItemText primary="Manage" />
-                          </ListItemButton>
-                        </ListItem>
-                        <ListItem key="file_lineage" disablePadding>
-                          <ListItemButton component={Link} to="/file_lineage">
-                            <ListItemIcon><AccountTree /></ListItemIcon>
-                            <ListItemText primary="Lineage" />
-                          </ListItemButton>
-                        </ListItem>
-                      </List>
-                    </Collapse>
+                    {item.text.includes('Files') && (
+                      <Collapse in={openFiles} timeout="auto" unmountOnExit>
+                        <List component="div" disablePadding>
+                          <ListItem key="upload" disablePadding>
+                            <ListItemButton 
+                              component={Link} 
+                              to="/file_upload" 
+                              sx={{ paddingLeft: 4 }}
+                            >
+                              <ListItemIcon><UploadFile /></ListItemIcon>
+                              <ListItemText primary="Upload" />
+                            </ListItemButton>
+                          </ListItem>
+                          <ListItem key="manage" disablePadding>
+                            <ListItemButton 
+                              component={Link} 
+                              to="/manage_files" 
+                              sx={{ paddingLeft: 4 }}
+                            >
+                              <ListItemIcon><Folder /></ListItemIcon>
+                              <ListItemText primary="Manage" />
+                            </ListItemButton>
+                          </ListItem>
+                          <ListItem key="file_lineage" disablePadding>
+                            <ListItemButton 
+                              component={Link} 
+                              to="/file_lineage" 
+                              sx={{ paddingLeft: 4 }}
+                            >
+                              <ListItemIcon><AccountTree /></ListItemIcon>
+                              <ListItemText primary="Lineage" />
+                            </ListItemButton>
+                          </ListItem>
+                        </List>
+                      </Collapse>
+                    )}
+                    {item.text.includes('People') && (
+                      <Collapse in={openPeople} timeout="auto" unmountOnExit>
+                        <List component="div" disablePadding>
+                          <ListItem key="load_person_records" disablePadding>
+                            <ListItemButton 
+                              component={Link} 
+                              to="/load_person_records" 
+                              sx={{ paddingLeft: 4 }}
+                            >
+                              <ListItemIcon><PersonIcon /></ListItemIcon>
+                              <ListItemText primary="Load Person Records" />
+                            </ListItemButton>
+                          </ListItem>
+                        </List>
+                      </Collapse>
+                    )}
                   </>
                 ) : (
                   <ListItem key={item.text} disablePadding>
