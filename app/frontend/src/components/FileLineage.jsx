@@ -118,19 +118,27 @@ const FileLineageCytoscape = () => {
         <Select
           value={selectedFileId}
           onChange={(e) => setSelectedFileId(e.target.value)}
-          sx={{
-            minWidth: 200,
-            mr: 2,
-            backgroundColor: computedColors.primaryText, // yes I know this is scuffed CSS lol don't @ me
-            color: computedColors.secondaryText,
+          displayEmpty
+          renderValue={(value) => {
+            if (value === "") {
+              return <span style={{ color: computedColors.primaryText }}>Select a saved file</span>;
+            }
+            const file = files.find(file => file.file_id === value);
+            return <span style={{ color: computedColors.primaryText }}>{file?.file_name}</span>;
+          }}
+          sx={{ minWidth: 200, mr: 2 }}
+          MenuProps={{
+            PaperProps: {
+              sx: { '& .MuiMenuItem-root': { color: computedColors.secondaryText } }
+            },
+            MenuListProps: { 'aria-hidden': false }
           }}
         >
+          <MenuItem value="" disabled>
+            Select a saved file
+          </MenuItem>
           {files.map((file) => (
-            <MenuItem
-              key={file.file_id}
-              value={file.file_id}
-              sx={{ color: computedColors.secondaryText }}
-            >
+            <MenuItem key={file.file_id} value={file.file_id}>
               {file.file_name}
             </MenuItem>
           ))}
