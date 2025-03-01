@@ -6,6 +6,8 @@ services:
       - COMMIT_INFO_GIT_SHA=${GIT_SHA:-}
       - DJANGO_SETTINGS_MODULE=config.settings.prod
     env_file: .env
+    volumes:
+      - /mnt/user-files:/app/media
     ports:
       - "8000:8000"
     depends_on:

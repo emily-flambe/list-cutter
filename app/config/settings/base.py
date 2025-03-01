@@ -181,9 +181,8 @@ LOGOUT_REDIRECT_URL = '/login/'
 # FILE UPLOAD SETTINGS
 ##############################
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+BASE_DIR = Path(__file__).resolve().parent.parent.parent # this resolves to app/
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media') # app/media - needs to match where the volume is mounted in docker-compose.yml
 MEDIA_URL = '/media/'
 
 SIMPLE_JWT = {

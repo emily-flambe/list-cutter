@@ -47,26 +47,7 @@ Step 2: SSH into your EC2 instance, then format and mount the EBS volume. For ex
 sudo mkfs -t ext4 /dev/sdf
 sudo mkdir /mnt/neo4j-data
 sudo mount /dev/sdf /mnt/neo4j-data
-```
-Step 3: Ensure the volume is mounted automatically on reboot by adding an entry in /etc/fstab.
-```bash
-sudo vim /etc/fstab
-```
-
-Add the following line:
-```bash
-/dev/sdf /mnt/neo4j-data ext4 defaults,nofail 0 2
-```
-
-Mount the volume:
-
-```bash
-sudo mount -a
-```
-
-Reboot the instance:
-```bash
-sudo reboot
+echo '/dev/sdf /mnt/neo4j-data ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
 ```
 
 Verify that the volume is mounted. (Look for `/dev/xvdf` mounted on `/mnt/neo4j-data`.)
@@ -96,3 +77,18 @@ ssh -i admin.pem -L 7474:$NEO4J_HOST:7474 ec2-user@$BASTION_HOST
 ```
 
 Then access the Neo4j browser at http://localhost:7474 . EASY MONEY.
+
+
+## setting up EBS volume for file uploads
+
+```bash
+sudo mkfs -t ext4 /dev/sdg
+sudo mkdir /mnt/user-files
+sudo mount /dev/sdg /mnt/user-files
+echo '/dev/sdg /mnt/user-files ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
+```
+
+```bash
+sudo vim /etc/fstab
+```
+
