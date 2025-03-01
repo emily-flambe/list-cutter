@@ -45,7 +45,7 @@ WORKDIR /app/frontend
 ENV NODE_OPTIONS="--max-old-space-size=512"
 
 COPY app/frontend/package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 COPY app/frontend/ ./
 COPY .env .env
 
