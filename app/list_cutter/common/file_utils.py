@@ -17,8 +17,13 @@ UPLOAD_DIR = os.path.join(settings.MEDIA_ROOT, 'uploads')
 GENERATED_DIR = os.path.join(settings.MEDIA_ROOT, 'generated')
 
 # Create both directories
+logger.debug(f"Creating upload directory: {UPLOAD_DIR}")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+logger.debug(f"Upload directory created: {UPLOAD_DIR}")
+
+logger.debug(f"Creating generated directory: {GENERATED_DIR}")
 os.makedirs(GENERATED_DIR, exist_ok=True)
+logger.debug(f"Generated directory created: {GENERATED_DIR}")
 
 # Load file size limit from environment variables (default 10MB)
 MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", 10 * 1024 * 1024))
@@ -29,6 +34,9 @@ def save_uploaded_file(file):
     if file.size > MAX_FILE_SIZE:
         raise ValueError(f'File size exceeds {(MAX_FILE_SIZE / (1024 * 1024)):.2f}MB limit')
     
+    # Ensure the upload directory exists
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
     # Set a unique file name
     file_name, file_path = set_file_name(file.name, UPLOAD_DIR)
     #logger.debug(f"File name: {file_name}, file path: {file_path}")
@@ -42,6 +50,9 @@ def save_uploaded_file(file):
 
 def save_generated_file(file_name, content):
     """Saves a generated file to the GENERATED_DIR."""
+    # Ensure the generated directory exists
+    os.makedirs(GENERATED_DIR, exist_ok=True)
+
     file_path = os.path.join(GENERATED_DIR, file_name)
     with open(file_path, 'w') as f:
         f.write(content)
