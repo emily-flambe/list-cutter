@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { Box, Typography, MenuItem, Select, Button, CircularProgress } from '@mui/material';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
@@ -16,6 +16,22 @@ const FileLineageCytoscape = () => {
   const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Compute CSS variable values from the root.
+  const computedColors = useMemo(() => {
+    const computedStyles = window.getComputedStyle(document.documentElement);
+    return {
+      primaryBg: computedStyles.getPropertyValue('--primary-bg').trim(),
+      navbarBg: computedStyles.getPropertyValue('--navbar-bg').trim(),
+      secondaryBg: computedStyles.getPropertyValue('--secondary-bg').trim(),
+      primaryText: computedStyles.getPropertyValue('--primary-text').trim(),
+      secondaryText: computedStyles.getPropertyValue('--secondary-text').trim(),
+      accent: computedStyles.getPropertyValue('--accent').trim(),
+      action: computedStyles.getPropertyValue('--action').trim(),
+      secondary: computedStyles.getPropertyValue('--secondary').trim(),
+      secondaryText: computedStyles.getPropertyValue('--secondary-text').trim(),
+    };
+  }, []);
 
   // Fetch saved files on mount.
   useEffect(() => {
@@ -53,13 +69,11 @@ const FileLineageCytoscape = () => {
     setLoading(false);
   };
 
-  // Compute node dimensions based on file_name.
-  // We'll use 7px per character with some extra padding,
-  // with a minimum width of 80px and a fixed height of 30px.
+  // Build Cytoscape elements.
   const getElements = () => {
     const nodeElements = graphData.nodes.map((node) => {
       const computedWidth = Math.max(80, node.file_name.length * 7 + 16);
-      return {
+      const element = {
         data: {
           id: node.file_id,
           label: node.file_name,
@@ -67,9 +81,13 @@ const FileLineageCytoscape = () => {
           height: 30,
         },
       };
+      if (node.file_id === selectedFileId) {
+        element.classes = 'selected';
+      }
+      return element;
     });
 
-    // Deduplicate edges and transform CUT_FROM edges so arrows point from parent to child.
+    // Deduplicate edges and flip CUT_FROM edges.
     const seenEdges = new Set();
     const edgeElements = graphData.edges.reduce((acc, edge) => {
       const source = edge.type === 'CUT_FROM' ? edge.target : edge.source;
@@ -90,8 +108,12 @@ const FileLineageCytoscape = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        File Lineage Graph Visualization
+        File Lineage
       </Typography>
+      <Typography variant="subtitle1" gutterBottom>
+        Select a file to see its lineage.
+      </Typography>
+      <br />
       {error && <Typography color="error">{error}</Typography>}
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
         <Select
@@ -100,12 +122,16 @@ const FileLineageCytoscape = () => {
           sx={{
             minWidth: 200,
             mr: 2,
-            backgroundColor: 'var(--primary-bg)',
-            color: 'var(--primary-text)',
+            backgroundColor: computedColors.primaryText, // yes I know this is scuffed CSS lol don't @ me
+            color: computedColors.secondaryText,
           }}
         >
           {files.map((file) => (
-            <MenuItem key={file.file_id} value={file.file_id}>
+            <MenuItem
+              key={file.file_id}
+              value={file.file_id}
+              sx={{ color: computedColors.secondaryText }}
+            >
               {file.file_name}
             </MenuItem>
           ))}
@@ -116,13 +142,13 @@ const FileLineageCytoscape = () => {
       </Box>
       {loading && <CircularProgress />}
       {!loading && elements.length > 0 && (
-        <Box sx={{ height: 600, border: '1px solid var(--navbar-bg)', mb: 2 }}>
+        <Box sx={{ height: 600, border: `1px solid ${computedColors.navbarBg}`, mb: 2 }}>
           <CytoscapeComponent
             elements={elements}
             style={{ width: '100%', height: '100%' }}
             layout={{
               name: 'dagre',
-              rankDir: 'TB', // top-to-bottom; try 'LR' for left-to-right if desired
+              rankDir: 'TB',
               nodeSep: 70,
               edgeSep: 20,
               rankSep: 120,
@@ -131,12 +157,12 @@ const FileLineageCytoscape = () => {
               {
                 selector: 'node',
                 style: {
-                  'background-color': 'var(--secondary-bg)',
+                  'background-color': computedColors.secondaryBg,
                   label: 'data(label)',
                   'text-valign': 'center',
                   'text-halign': 'center',
-                  color: 'var(--primary-text)',
-                  'border-color': 'var(--navbar-bg)',
+                  color: computedColors.primaryText,
+                  'border-color': computedColors.navbarBg,
                   'border-width': 1,
                   shape: 'roundrectangle',
                   'font-size': '12px',
@@ -149,20 +175,21 @@ const FileLineageCytoscape = () => {
                 selector: 'edge',
                 style: {
                   width: 2,
-                  'line-color': 'var(--primary-text)',
-                  'target-arrow-color': 'var(--primary-text)',
+                  'line-color': computedColors.primaryText,
+                  'target-arrow-color': computedColors.primaryText,
                   'target-arrow-shape': 'triangle',
                   'curve-style': 'bezier',
                 },
               },
               {
-                // Match the node whose data.id equals the selectedFileId.
-                selector: `node[data.id = "${selectedFileId}"]`,
+                // Style for the selected node.
+                selector: `node#${selectedFileId}`,
                 style: {
-                  'background-color': 'var(--action)', // Use the action color from your theme.
+                  'background-color': computedColors.action,
                   'border-width': 2,
-                  'border-color': 'var(--accent)',
+                  'border-color': computedColors.accent,
                   'font-weight': 'bold',
+                  color: computedColors.secondaryText,
                 },
               },
             ]}
