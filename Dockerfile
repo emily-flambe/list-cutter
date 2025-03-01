@@ -30,7 +30,7 @@ WORKDIR /app/frontend
 # RUN apk add --no-cache python3 make g++
 
 COPY app/frontend/package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 COPY app/frontend/ ./
 COPY .env .env
 
@@ -41,11 +41,10 @@ CMD ["sh", "-c", "npm run dev -- --host"]
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 
-# Limit Node memory usage if building on small EC2
-ENV NODE_OPTIONS="--max-old-space-size=512"
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 COPY app/frontend/package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 COPY app/frontend/ ./
 COPY .env .env
 

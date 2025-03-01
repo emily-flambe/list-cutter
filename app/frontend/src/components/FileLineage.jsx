@@ -29,7 +29,6 @@ const FileLineageCytoscape = () => {
       accent: computedStyles.getPropertyValue('--accent').trim(),
       action: computedStyles.getPropertyValue('--action').trim(),
       secondary: computedStyles.getPropertyValue('--secondary').trim(),
-      secondaryText: computedStyles.getPropertyValue('--secondary-text').trim(),
     };
   }, []);
 
