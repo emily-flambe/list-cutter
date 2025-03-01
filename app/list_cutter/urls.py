@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import list_cutter_home, upload_file_for_csv_cutter, export_csv, upload_file, list_saved_files, download_file, delete_file, save_generated_file, update_tags, fetch_saved_file
+from .views import list_cutter_home, upload_file_for_csv_cutter, export_csv, upload_file, list_saved_files, download_file, delete_file, save_generated_file, update_tags, fetch_saved_file, fetch_file_lineage
 
 urlpatterns = [
     path("", list_cutter_home, name="list_cutter_home"),
@@ -12,6 +12,7 @@ urlpatterns = [
     path("save_generated_file/", save_generated_file, name="save_generated_file"),
     path("update_tags/<int:file_id>/", update_tags, name="update_tags"),
     path("fetch_saved_file/", fetch_saved_file, name="fetch_saved_file"),
+    path("fetch_file_lineage/<str:file_id>/", fetch_file_lineage, name="fetch_file_lineage"),
 ]
 
 

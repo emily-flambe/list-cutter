@@ -1,48 +1,85 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { useParams } from 'react-router-dom';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Box, Typography, List, ListItem } from '@mui/material';
+import { Box, Typography, MenuItem, Select, Button, CircularProgress } from '@mui/material';
 
-const FileLineage = () => {
-  const { fileId } = useParams(); // Get the file ID from the URL parameters
+const FileLineageMinimal = () => {
   const { token } = useContext(AuthContext);
-  const [lineage, setLineage] = useState([]);
-  const [error, setError] = useState("");
+  const [files, setFiles] = useState([]);
+  const [selectedFileId, setSelectedFileId] = useState('');
+  const [lineage, setLineage] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
+  // Fetch list of saved files when component mounts
   useEffect(() => {
-    const fetchLineage = async () => {
+    const fetchFiles = async () => {
       try {
-        const response = await api.get(`/api/list_cutter/file_lineage/${fileId}/`, {
+        const response = await api.get('/api/list_cutter/list_saved_files/', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setLineage(response.data.lineage);
+        setFiles(response.data.files);
+        if (response.data.files.length > 0) {
+          setSelectedFileId(response.data.files[0].file_id);
+        }
       } catch (err) {
-        console.error("Error fetching file lineage:", err);
-        setError("Failed to fetch file lineage.");
+        console.error('Error fetching saved files:', err);
+        setError('Failed to fetch saved files.');
       }
     };
+    fetchFiles();
+  }, [token]);
 
-    fetchLineage();
-  }, [fileId, token]);
+  const handleFetchLineage = async () => {
+    if (!selectedFileId) return;
+    setLoading(true);
+    try {
+      const response = await api.get(`/api/list_cutter/fetch_file_lineage/${selectedFileId}/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setLineage(response.data);
+      setError('');
+    } catch (err) {
+      console.error('Error fetching file lineage:', err);
+      setError('Failed to fetch file lineage.');
+      setLineage(null);
+    }
+    setLoading(false);
+  };
 
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        File Lineage for File ID: {fileId}
+        File Lineage Minimal
       </Typography>
       {error && <Typography color="error">{error}</Typography>}
-      <List>
-        {lineage.map((file) => (
-          <ListItem key={file.file_id}>
-            <Typography>
-              File ID: {file.file_id} - File Name: {file.file_name}
-            </Typography>
-          </ListItem>
+      <Select
+        value={selectedFileId}
+        onChange={(e) => {
+          const newSelectedFileId = e.target.value;
+          setSelectedFileId(newSelectedFileId);
+          console.log('Selected File ID:', newSelectedFileId);
+        }}
+        sx={{ minWidth: 200, mb: 2 }}
+      >
+        {files.map((file) => (
+          <MenuItem key={file.file_id} value={file.file_id}>
+            {file.file_name}
+          </MenuItem>
         ))}
-      </List>
+      </Select>
+      <Button variant="contained" onClick={handleFetchLineage}>
+        Fetch Lineage
+      </Button>
+      {loading && <CircularProgress sx={{ mt: 2 }} />}
+      {lineage && (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="h6">Lineage Data:</Typography>
+          <pre>{JSON.stringify(lineage, null, 2)}</pre>
+        </Box>
+      )}
     </Box>
   );
 };
 
-export default FileLineage; 
+export default FileLineageMinimal;

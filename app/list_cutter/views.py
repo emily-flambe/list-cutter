@@ -301,33 +301,44 @@ def fetch_saved_file(request):
         logger.error(f"Error fetching file: {str(e)}")
         return Response({'error': 'Error fetching file data.'}, status=500)
 
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def file_lineage(request, file_id):
-    """Fetches the full lineage of a file based on its ID using a Cypher query."""
+def fetch_file_lineage(request, file_id):
+    from neomodel import db
+    
+    logger.info(f"Fetching file lineage for file_id: {file_id}")
+    
     try:
-        # Cypher query to fetch the file and its ancestors and descendants
         query = """
-        MATCH (file:SavedFileNode {file_id: $file_id})
-        OPTIONAL MATCH (file)<-[:CUT_FROM]-(ancestor)
-        OPTIONAL MATCH (file)-[:CUT_TO]->(descendant)
-        RETURN file, collect(ancestor) AS ancestors, collect(descendant) AS descendants
+        MATCH p = (ancestor:SavedFileNode)-[:CUT_TO*]->(file:SavedFileNode {file_id: $file_id})
+        RETURN nodes(p) AS chain, relationships(p) AS rels
+        UNION
+        MATCH p = (ancestor:SavedFileNode)-[:CUT_FROM*]->(file:SavedFileNode {file_id: $file_id})
+        RETURN nodes(p) AS chain, relationships(p) AS rels
         """
+        # Run the query using the global db connection.
+        results, meta = db.cypher_query(query, {"file_id": file_id})
         
-        # Execute the query
-        result = SavedFileNode.cypher(query, file_id=file_id)
+        nodes = {}
+        edges = []
+        # Each row in results is a tuple (chain, rels)
+        for row in results:
+            chain, rels = row
+            for node in chain:
+                nodes[node['file_id']] = {
+                    'file_id': node['file_id'],
+                    'file_name': node.get('file_name', '')
+                }
+            for rel in rels:
+                edges.append({
+                    'source': rel.start_node['file_id'],
+                    'target': rel.end_node['file_id'],
+                    'type': rel.__class__.__name__  # adjust as needed
+                })
 
-        # Prepare the lineage response
-        lineage = [{'file_id': result[0]['file']['file_id'], 'file_name': result[0]['file']['file_name']}]
-        
-        # Add ancestors to lineage
-        for ancestor in result[0]['ancestors']:
-            lineage.append({'file_id': ancestor['file_id'], 'file_name': ancestor['file_name']})
-
-        # Add descendants to lineage
-        for descendant in result[0]['descendants']:
-            lineage.append({'file_id': descendant['file_id'], 'file_name': descendant['file_name']})
-
-        return Response({'lineage': lineage}, status=200)
+        return Response({'nodes': list(nodes.values()), 'edges': edges}, status=200)
     except Exception as e:
+        logger.exception("Error fetching file lineage:")
         return Response({'error': str(e)}, status=400)

@@ -124,6 +124,12 @@ const Layout = ({ children }) => {
                             <ListItemText primary="Manage" />
                           </ListItemButton>
                         </ListItem>
+                        <ListItem key="file_lineage" disablePadding>
+                          <ListItemButton component={Link} to="/file_lineage">
+                            <ListItemIcon><List /></ListItemIcon>
+                            <ListItemText primary="Lineage" />
+                          </ListItemButton>
+                        </ListItem>
                       </List>
                     </Collapse>
                   </>
