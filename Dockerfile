@@ -30,7 +30,7 @@ WORKDIR /app/frontend
 # RUN apk add --no-cache python3 make g++
 
 COPY app/frontend/package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 COPY app/frontend/ ./
 COPY .env .env
 
