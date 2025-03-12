@@ -17,7 +17,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      db:
+      web-db:
         condition: service_healthy
     command: ["sh", "-c", "/app/scripts/setup.sh && python manage.py runserver 0.0.0.0:8000"]
     healthcheck:
@@ -32,7 +32,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  frontend-dev:
+  frontend:
     container_name: list_cutter_frontend
     build:
       context: .
@@ -48,7 +48,7 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-      db:
+      web-db:
         condition: service_healthy
     logging:
       driver: "json-file"
@@ -56,30 +56,19 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  db:
-    image: postgres:15
+  web-db:
+    image: postgres:17
     container_name: list_cutter_db
+    restart: always
     env_file: .env
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - web-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
 volumes:
-  db-data:
+  web-db-data:
   user-files:
