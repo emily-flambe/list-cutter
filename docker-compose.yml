@@ -4,7 +4,7 @@ services:
     build:
       dockerfile: Dockerfile
       context: .
-    env_file: .env
+    env_file: .env.new
     volumes:
       - ./app:/app
     ports:
@@ -17,7 +17,7 @@ services:
   web-db:
     image: postgres:15
     container_name: list_cutter_db
-    env_file: .env
+    env_file: .env.new
     ports:
       - "5432:5432"
     volumes:

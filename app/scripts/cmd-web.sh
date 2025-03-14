@@ -19,4 +19,9 @@ GUNICORN_ARGS=("-c" "config/gunicorn.py" "config.wsgi")
 
 # Run the app
 # ddtrace-run gunicorn "${GUNICORN_ARGS[@]}"
-gunicorn "${GUNICORN_ARGS[@]}"
+gunicorn "${GUNICORN_ARGS[@]}" &
+
+# Start frontend dev server
+cd frontend
+npm install
+npm run dev
