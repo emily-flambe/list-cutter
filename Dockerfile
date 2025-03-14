@@ -1,70 +1,43 @@
-# ===== Stage 1: Base (shared code) =====
-FROM python:3.12.8-slim-bookworm AS base
+# Use an official Python image
+FROM python:3.12.8-slim-bookworm
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
-# Combine apt-get commands
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     git \
+    nodejs \
+    npm \
     curl \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && apt-get clean
 
+# Install Poetry for dependency management
 RUN pip install --upgrade pip && pip install poetry
 
-COPY app/pyproject.toml app/poetry.lock ./
+# Install Node.js and npm for Vite frontend
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs
+
+# Copy project dependencies
+COPY app/pyproject.toml .
+COPY app/poetry.lock .
+
+# Install Python dependencies
 RUN poetry config virtualenvs.create false && poetry install --no-root
 
+# Copy entire project
 COPY app/ /app/
 
-# ===== Stage 2: Backend Dev =====
-FROM base AS backend
-EXPOSE 8000
-CMD ["sh", "-c", "/app/scripts/setup.sh && python manage.py runserver 0.0.0.0:8000"]
-
-# ===== Stage 3: Frontend Dev =====
-FROM node:20-alpine AS frontend-dev
+# Install frontend dependencies
 WORKDIR /app/frontend
+RUN npm install
 
-# Optional: if you need native deps, add them
-# RUN apk add --no-cache python3 make g++
+# Expose ports
+EXPOSE 8000 5173
 
-COPY app/frontend/package*.json ./
-RUN npm ci --legacy-peer-deps
-COPY app/frontend/ ./
-COPY .env .env
-
-EXPOSE 5173
-CMD ["sh", "-c", "npm run dev -- --host"]
-
-# ===== Stage 4: Frontend Production Builder =====
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app/frontend
-
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-
-COPY app/frontend/package*.json ./
-RUN npm ci --legacy-peer-deps
-COPY app/frontend/ ./
-COPY .env .env
-
-RUN npm run build
-
-# ===== Stage 5: Frontend Production (Nginx) =====
-FROM nginx:alpine AS frontend-prod
-
-# Copy the built files from the builder stage
-COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
-
-COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-# Nginx starts automatically. No need for CMD.
-
-# ===== Stage 6: Production Backend (Django) =====
-FROM base AS backend-prod
-# If django-vite or WhiteNoise needs the built assets, copy them in:
-# COPY --from=frontend-builder /app/frontend/public /app/static/js/app/public
-
-EXPOSE 8000
-CMD ["sh", "-c", "/app/scripts/setup.sh && python manage.py runserver 0.0.0.0:8000"]
+# Start both Django and Vite servers
+CMD ["sh", "-c", "cd /app && python manage.py runserver 0.0.0.0:8000 & cd /app/frontend && npm run dev"]

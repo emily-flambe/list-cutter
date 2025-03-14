@@ -116,14 +116,14 @@ def upload_file(request):
         logger.info("Saved file: %s", saved_file)
 
         # Create a SavedFileNode with the same file_id as the SavedFile object
-        saved_file_node = SavedFileNode(
-            file_id=saved_file.file_id,
-            file_name=saved_file.file_name,
-            file_path=saved_file.file_path,
-            metadata=json.dumps(saved_file.metadata) if saved_file.metadata else ""
-        )
-        saved_file_node.save()
-        logger.info("Saved file node: %s", saved_file_node)
+        #saved_file_node = SavedFileNode(
+        #    file_id=saved_file.file_id,
+        #    file_name=saved_file.file_name,
+        #    file_path=saved_file.file_path,
+        #    metadata=json.dumps(saved_file.metadata) if saved_file.metadata else ""
+        #)
+        #saved_file_node.save()
+        #logger.info("Saved file node: %s", saved_file_node)
 
         response_data = {
             'message': 'File uploaded successfully',

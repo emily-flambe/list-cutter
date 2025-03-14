@@ -2,24 +2,24 @@
 
 A simple web app to cut lists, written with a Django backend and a React frontend.
 
-This is deployed to the public internet!
-
-👉 https://list-cutter.emilyflam.be 👈
-
-The site is hosted on AWS EC2. AWS sure has a lot of _things_ in it, so I'd like to put it all in terraform, but I'm a busy woman, so... later.
-
-## Local use
-
-From the root directory, run:
+# How to run locally
 
 ```bash
 make build
 make up
 ```
 
-Then open http://localhost:5173 in your browser.
+Then open http://localhost:5173 in your browser. You're done :tada:
 
-## CSV List Cutter
+## Web deployment?
+
+This ~~is~~ **was** deployed to the public internet! But then I ran out of AWS Free Tier credits, so I pulled it down. Maybe it will come back someday.
+
+If and when it comes back, you can access it at:
+
+👉 https://list-cutter.emilyflam.be 👈
+
+## CSV List Cutter BASIC (No account needed)
 
 After uploading a CSV, select the columns to keep.
 
@@ -32,21 +32,13 @@ Columns can be filtered using SQL-like conditions, for example:
 
 The list cutter applies these conditions while streaming the CSV into a new CSV, which you can download, if that sparks joy.
 
-## Type checking and query validation
+## CSV List Cutter PRO (Account needed)
 
-~~There is none! Deal with it.~~ Coming soon 👼
-
-## Other file types
-
-Coming soon 👼 (on a cosmic timescale)
+If you create an account and log in, you can save files in your own personal little file manager, including files you cut from other files! Wow.
 
 ## Planned features
 
-- [ ] Type checking and query validation
-- [ ] Other file types
-- [ ] Download the filtered CSV
-- [ ] Login/auth
-- [ ] idk a lot, look at the Github issues lol
+Check out the Github issues.
 
 ## Contributing
 

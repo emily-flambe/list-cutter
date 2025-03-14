@@ -1,85 +1,27 @@
 services:
-  backend:
-    container_name: list_cutter_backend
-    volumes:
-      - user-files:/app/media/
-      - ./app:/app
+  web:
+    container_name: list_cutter_web
     build:
-      context: .
       dockerfile: Dockerfile
-      target: backend
-    environment:
-      - COMMIT_INFO_GIT_SHA=${GIT_SHA:-}
-      - DJANGO_SETTINGS_MODULE=config.settings.local
+      context: .
     env_file: .env
+    volumes:
+      - ./app:/app
     ports:
       - "8000:8000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      db:
-        condition: service_healthy
-    command: ["sh", "-c", "/app/scripts/setup.sh && python manage.py runserver 0.0.0.0:8000"]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  frontend-dev:
-    container_name: list_cutter_frontend
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: frontend-dev
-    working_dir: /app/frontend
-    command: ["sh", "-c", "npm run dev -- --host"]
-    env_file: .env
-    volumes:
-      - ./app/frontend:/app/frontend
-    ports:
       - "5173:5173"
     depends_on:
-      backend:
-        condition: service_healthy
-      db:
-        condition: service_healthy
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - web-db
+    command: ["sh", "-c", "/app/scripts/cmd-web.sh --init-db"]
 
-  db:
+  web-db:
     image: postgres:15
     container_name: list_cutter_db
     env_file: .env
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
 volumes:
   db-data:
-  user-files:

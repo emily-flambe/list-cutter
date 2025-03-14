@@ -2,12 +2,12 @@ import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { Box, Typography, MenuItem, Select, Button, CircularProgress } from '@mui/material';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import CytoscapeComponent from 'react-cytoscapejs';
-import cytoscape from 'cytoscape';
-import dagre from 'cytoscape-dagre';
+// import CytoscapeComponent from 'react-cytoscapejs';
+// import cytoscape from 'cytoscape';
+// import dagre from 'cytoscape-dagre';
 
 // Register the dagre layout extension
-cytoscape.use(dagre);
+// cytoscape.use(dagre);
 
 const FileLineageCytoscape = () => {
   const { token } = useContext(AuthContext);
@@ -150,7 +150,7 @@ const FileLineageCytoscape = () => {
       {loading && <CircularProgress />}
       {!loading && elements.length > 0 && (
         <Box sx={{ height: 600, border: `1px solid ${computedColors.navbarBg}`, mb: 2 }}>
-          <CytoscapeComponent
+          {/* <CytoscapeComponent
             elements={elements}
             style={{ width: '100%', height: '100%' }}
             layout={{
@@ -200,7 +200,7 @@ const FileLineageCytoscape = () => {
                 },
               },
             ]}
-          />
+          /> */}
         </Box>
       )}
     </Box>
