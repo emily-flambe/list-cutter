@@ -1,0 +1,30 @@
+{
+  "name": "list-cutter-frontend",
+  "compatibility_date": "2024-12-01",
+  "pages_build_output_dir": "dist",
+  "node_compat": true,
+  "build": {
+    "command": "npm run build",
+    "cwd": ".",
+    "watch_dir": "src"
+  },
+  "dev": {
+    "command": "npm run dev",
+    "port": 8788
+  },
+  "env": {
+    "ENVIRONMENT": "development"
+  },
+  "deployment": {
+    "production": {
+      "env": {
+        "ENVIRONMENT": "production"
+      }
+    },
+    "preview": {
+      "env": {
+        "ENVIRONMENT": "preview"
+      }
+    }
+  }
+}
