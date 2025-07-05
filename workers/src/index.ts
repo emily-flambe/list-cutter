@@ -15,6 +15,7 @@ import { handleDeleteFile } from './routes/list_cutter/delete';
 import { handleSaveGeneratedFile } from './routes/list_cutter/save_generated_file';
 import { handleFetchSavedFile } from './routes/list_cutter/fetch_saved_file';
 import { handleUpdateTags } from './routes/list_cutter/update_tags';
+import { handleFetchFileLineage } from './routes/list_cutter/fetch_file_lineage';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -90,6 +91,16 @@ export default {
           });
         } else {
           response = await handleUpdateTags(request, env, fileId);
+        }
+      } else if (pathname.startsWith('/api/list_cutter/fetch_file_lineage/') && method === 'GET') {
+        const fileId = pathname.split('/').pop();
+        if (!fileId) {
+          response = new Response(JSON.stringify({ error: 'No file ID provided' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } else {
+          response = await handleFetchFileLineage(request, env, fileId);
         }
       } else {
         response = new Response(JSON.stringify({ error: 'Not found' }), {

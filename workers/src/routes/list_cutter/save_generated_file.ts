@@ -3,6 +3,7 @@ import { requireAuth } from '../../middleware/auth';
 import { validateFileUpload, generateFileId, sanitizeFileName } from '../../utils/validators';
 import { saveFileToR2 } from '../../services/storage/r2';
 import { createSavedFile } from '../../models/saved_file';
+import { createFileRelationship } from '../../models/file_lineage';
 import { ApiError } from '../../middleware/error';
 
 
@@ -68,6 +69,11 @@ export async function handleSaveGeneratedFile(
         content_type: file.type
       }
     });
+
+    // Create file relationship if this was generated from another file
+    if (originalFileId) {
+      await createFileRelationship(env, originalFileId, savedFile.file_id, 'CUT_FROM');
+    }
 
     return new Response(JSON.stringify({
       message: 'File saved successfully',

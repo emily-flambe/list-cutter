@@ -23,9 +23,23 @@ CREATE TABLE IF NOT EXISTS saved_files (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- File relationships table for lineage tracking
+CREATE TABLE IF NOT EXISTS file_relationships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_file_id TEXT NOT NULL,
+    target_file_id TEXT NOT NULL,
+    relationship_type TEXT NOT NULL, -- 'CUT_FROM', 'DERIVED_FROM', etc.
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (source_file_id) REFERENCES saved_files(file_id) ON DELETE CASCADE,
+    FOREIGN KEY (target_file_id) REFERENCES saved_files(file_id) ON DELETE CASCADE
+);
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_saved_files_user_id ON saved_files(user_id);
 CREATE INDEX IF NOT EXISTS idx_saved_files_file_name ON saved_files(file_name);
 CREATE INDEX IF NOT EXISTS idx_saved_files_uploaded_at ON saved_files(uploaded_at);
+CREATE INDEX IF NOT EXISTS idx_file_relationships_source ON file_relationships(source_file_id);
+CREATE INDEX IF NOT EXISTS idx_file_relationships_target ON file_relationships(target_file_id);
+CREATE INDEX IF NOT EXISTS idx_file_relationships_type ON file_relationships(relationship_type);
