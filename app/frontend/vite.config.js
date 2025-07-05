@@ -1,14 +1,36 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { cloudflareDevProxyVitePlugin } from '@cloudflare/vite-plugin'
 
 // https://vite.dev/config/
 export default defineConfig({
   build: {
     manifest: true,
     outDir: "dist",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          mui: ['@mui/material', '@mui/icons-material'],
+          router: ['react-router-dom'],
+          utils: ['axios']
+        }
+      }
+    }
   },
   publicDir: "public",
-  plugins: [react()],
+  plugins: [
+    react(),
+    cloudflareDevProxyVitePlugin({
+      proxyOptions: {
+        '/api': {
+          target: 'http://0.0.0.0:8000',
+          changeOrigin: true,
+          secure: false,
+        }
+      }
+    })
+  ],
   optimizeDeps: {
     include: ['react-archer']
   },
@@ -22,13 +44,6 @@ export default defineConfig({
     },
     watch: {
       usePolling: true,
-    },
-    proxy: {
-      '/api': {
-        target: 'http://0.0.0.0:8000',
-        changeOrigin: true,
-        secure: false,
-      }
     }
   }
 })
