@@ -9,6 +9,12 @@ import { handleRegister } from './routes/accounts/register';
 import { handleLogin } from './routes/accounts/login';
 import { handleRefresh } from './routes/accounts/refresh';
 import { handleGetUser } from './routes/accounts/user';
+import { handleUpload } from './routes/list_cutter/upload';
+import { handleListSavedFiles } from './routes/list_cutter/list_files';
+import { handleDeleteFile } from './routes/list_cutter/delete';
+import { handleSaveGeneratedFile } from './routes/list_cutter/save_generated_file';
+import { handleFetchSavedFile } from './routes/list_cutter/fetch_saved_file';
+import { handleUpdateTags } from './routes/list_cutter/update_tags';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -49,6 +55,42 @@ export default {
         response = await handleRefresh(request, env);
       } else if (pathname === '/api/accounts/user' && method === 'GET') {
         response = await handleGetUser(request, env);
+      } else if (pathname === '/api/list_cutter/upload' && method === 'POST') {
+        response = await handleUpload(request, env);
+      } else if (pathname === '/api/list_cutter/list_saved_files' && method === 'GET') {
+        response = await handleListSavedFiles(request, env);
+      } else if (pathname.startsWith('/api/list_cutter/delete/') && method === 'DELETE') {
+        const fileId = pathname.split('/').pop();
+        if (!fileId) {
+          response = new Response(JSON.stringify({ error: 'No file ID provided' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } else {
+          response = await handleDeleteFile(request, env, fileId);
+        }
+      } else if (pathname === '/api/list_cutter/save_generated_file' && method === 'POST') {
+        response = await handleSaveGeneratedFile(request, env);
+      } else if (pathname.startsWith('/api/list_cutter/fetch_saved_file/') && method === 'GET') {
+        const fileId = pathname.split('/').pop();
+        if (!fileId) {
+          response = new Response(JSON.stringify({ error: 'No file ID provided' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } else {
+          response = await handleFetchSavedFile(request, env, fileId);
+        }
+      } else if (pathname.startsWith('/api/list_cutter/update_tags/') && method === 'PATCH') {
+        const fileId = pathname.split('/').pop();
+        if (!fileId) {
+          response = new Response(JSON.stringify({ error: 'No file ID provided' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } else {
+          response = await handleUpdateTags(request, env, fileId);
+        }
       } else {
         response = new Response(JSON.stringify({ error: 'Not found' }), {
           status: 404,

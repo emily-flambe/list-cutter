@@ -34,5 +34,6 @@ module.exports = {
     console: 'readonly',
     R2Bucket: 'readonly',
     D1Database: 'readonly',
+    R2ObjectBody: 'readonly',
   },
 };
