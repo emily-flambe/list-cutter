@@ -64,7 +64,7 @@ export interface FileLineage {
   }>;
 }
 
-export interface JWTPayload {
+export interface UserJWTPayload {
   id: string;
   username: string;
   iat: number;

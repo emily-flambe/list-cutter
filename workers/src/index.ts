@@ -5,6 +5,10 @@ import { handleHome } from './routes/home';
 import { handleCsvCutterUpload } from './routes/list_cutter/csv_cutter';
 import { handleExportCsv } from './routes/list_cutter/export_csv';
 import { handleDownload } from './routes/list_cutter/download';
+import { handleRegister } from './routes/accounts/register';
+import { handleLogin } from './routes/accounts/login';
+import { handleRefresh } from './routes/accounts/refresh';
+import { handleGetUser } from './routes/accounts/user';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -37,6 +41,14 @@ export default {
         } else {
           response = await handleDownload(request, env, filename);
         }
+      } else if (pathname === '/api/accounts/register' && method === 'POST') {
+        response = await handleRegister(request, env);
+      } else if (pathname === '/api/accounts/login' && method === 'POST') {
+        response = await handleLogin(request, env);
+      } else if (pathname === '/api/accounts/token/refresh' && method === 'POST') {
+        response = await handleRefresh(request, env);
+      } else if (pathname === '/api/accounts/user' && method === 'GET') {
+        response = await handleGetUser(request, env);
       } else {
         response = new Response(JSON.stringify({ error: 'Not found' }), {
           status: 404,
