@@ -1,6 +1,5 @@
-import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+import { SignJWT, jwtVerify } from 'jose';
 import type { UserJWTPayload, User, TokenPair, Env, RefreshTokenData, BlacklistedToken } from '../../types';
-import { ApiError } from '../../middleware/error';
 
 const JWT_ALGORITHM = 'HS256';
 
@@ -69,7 +68,7 @@ export async function generateTokenPair(
     {
       user_id: user.id,
       username: user.username,
-      email: user.email,
+      ...(user.email ? { email: user.email } : {}),
       token_type: 'access'
     },
     env.JWT_SECRET,
@@ -80,7 +79,7 @@ export async function generateTokenPair(
     {
       user_id: user.id,
       username: user.username,
-      email: user.email,
+      ...(user.email ? { email: user.email } : {}),
       token_type: 'refresh'
     },
     env.JWT_SECRET,
@@ -145,7 +144,7 @@ export async function refreshAccessToken(
   const user: User = {
     id: tokenData.user_id,
     username: tokenData.username,
-    email: payload.email || '',
+    ...(payload.email ? { email: payload.email } : {}),
     created_at: new Date().toISOString()
   };
   
@@ -194,7 +193,7 @@ function parseExpiresIn(expiresIn: string): number {
   if (!match) throw new Error('Invalid expiresIn format');
   
   const [, value, unit] = match;
-  const num = parseInt(value);
+  const num = parseInt(value || '0');
   
   switch (unit) {
     case 's': return num;
@@ -211,7 +210,7 @@ export async function signJWT(user: User, secret: string): Promise<string> {
     {
       user_id: user.id,
       username: user.username,
-      email: user.email,
+      ...(user.email ? { email: user.email } : {}),
       token_type: 'access'
     },
     secret,
@@ -230,7 +229,7 @@ export async function refreshJWT(token: string, secret: string): Promise<string 
   const user: User = {
     id: payload.user_id,
     username: payload.username,
-    email: payload.email || '',
+    ...(payload.email ? { email: payload.email } : {}),
     created_at: new Date().toISOString()
   };
 

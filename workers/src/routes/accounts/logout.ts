@@ -1,6 +1,5 @@
 import type { Env } from '../../types';
 import { blacklistToken } from '../../services/auth/jwt';
-import { verifyAuth } from '../../middleware/auth';
 import { ApiError } from '../../middleware/error';
 
 interface LogoutRequest {

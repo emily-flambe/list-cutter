@@ -48,7 +48,7 @@ export async function createSavedFile(
 
 export async function getSavedFilesByUser(
   env: Env,
-  userId: string
+  userId: number
 ): Promise<SavedFile[]> {
   try {
     // Get distinct files by name, showing only the most recent upload
@@ -63,7 +63,7 @@ export async function getSavedFilesByUser(
 
     return result.results.map(row => ({
       file_id: row.file_id as string,
-      user_id: row.user_id as string,
+      user_id: row.user_id as number,
       file_name: row.file_name as string,
       file_path: row.file_path as string,
       uploaded_at: row.uploaded_at as string,
@@ -80,7 +80,7 @@ export async function getSavedFilesByUser(
 export async function getSavedFileById(
   env: Env,
   fileId: string,
-  userId: string
+  userId: number
 ): Promise<SavedFile | null> {
   try {
     const result = await env.DB.prepare(`
@@ -96,7 +96,7 @@ export async function getSavedFileById(
 
     return {
       file_id: result.file_id as string,
-      user_id: result.user_id as string,
+      user_id: result.user_id as number,
       file_name: result.file_name as string,
       file_path: result.file_path as string,
       uploaded_at: result.uploaded_at as string,
@@ -113,7 +113,7 @@ export async function getSavedFileById(
 export async function deleteSavedFile(
   env: Env,
   fileId: string,
-  userId: string
+  userId: number
 ): Promise<boolean> {
   try {
     const result = await env.DB.prepare(`
@@ -132,7 +132,7 @@ export async function deleteSavedFile(
 export async function updateSavedFileTags(
   env: Env,
   fileId: string,
-  userId: string,
+  userId: number,
   userTags: string[]
 ): Promise<SavedFile | null> {
   try {

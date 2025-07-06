@@ -13,7 +13,7 @@ export interface SecurityContext {
 export async function securityMiddleware(
   request: Request,
   env: Env,
-  ctx: ExecutionContext
+  _ctx: ExecutionContext
 ): Promise<Response | null> {
   const url = new URL(request.url);
   

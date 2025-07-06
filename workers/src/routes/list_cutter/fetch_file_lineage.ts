@@ -13,13 +13,13 @@ export async function handleFetchFileLineage(
     const user = await requireAuth(request, env);
     
     // Verify the file exists and belongs to the user
-    const savedFile = await getSavedFileById(env, fileId, user.id);
+    const savedFile = await getSavedFileById(env, fileId, user.user_id);
     if (!savedFile) {
       throw new ApiError(404, 'File not found');
     }
 
     // Get the complete lineage graph
-    const lineage = await getCompleteLineage(env, fileId, user.id);
+    const lineage = await getCompleteLineage(env, fileId, user.user_id);
 
     return new Response(JSON.stringify(lineage), {
       status: 200,

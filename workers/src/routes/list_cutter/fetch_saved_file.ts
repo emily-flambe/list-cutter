@@ -14,7 +14,7 @@ export async function handleFetchSavedFile(
     const user = await requireAuth(request, env);
     
     // Get file metadata
-    const savedFile = await getSavedFileById(env, fileId, user.id);
+    const savedFile = await getSavedFileById(env, fileId, user.user_id);
     if (!savedFile) {
       throw new ApiError(404, 'File not found');
     }

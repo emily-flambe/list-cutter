@@ -41,7 +41,7 @@ export async function handleUpload(
     
     // Save metadata to D1
     const savedFile = await createSavedFile(env, {
-      user_id: user.id,
+      user_id: user.user_id,
       file_name: fileName,
       file_path: filePath,
       system_tags: ['uploaded'],

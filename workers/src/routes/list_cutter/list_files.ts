@@ -10,7 +10,7 @@ export async function handleListSavedFiles(
   try {
     const user = await requireAuth(request, env);
     
-    const files = await getSavedFilesByUser(env, user.id);
+    const files = await getSavedFilesByUser(env, user.user_id);
 
     return new Response(JSON.stringify({ files }), {
       status: 200,

@@ -44,9 +44,14 @@ export async function verifyPassword(password: string, hashedPassword: string): 
       return false;
     }
     
-    const iterations = parseInt(parts[1]);
-    const saltBase64 = parts[2];
-    const expectedHashBase64 = parts[3];
+    const iterations = parseInt(parts[1] || '0');
+    const saltBase64 = parts[2] || '';
+    const expectedHashBase64 = parts[3] || '';
+    
+    if (!saltBase64 || !expectedHashBase64 || iterations === 0) {
+      console.error('Invalid password hash components');
+      return false;
+    }
     
     // Decode salt from base64
     const salt = new Uint8Array(atob(saltBase64).split('').map(c => c.charCodeAt(0)));

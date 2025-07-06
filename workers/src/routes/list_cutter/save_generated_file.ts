@@ -57,7 +57,7 @@ export async function handleSaveGeneratedFile(
     
     // Save metadata to D1
     const savedFile = await createSavedFile(env, {
-      user_id: user.id,
+      user_id: user.user_id,
       file_name: finalFileName,
       file_path: filePath,
       system_tags: systemTags,

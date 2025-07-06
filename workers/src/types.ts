@@ -11,7 +11,7 @@ export interface Env {
 export interface User {
   id: number;
   username: string;
-  email: string;
+  email?: string;
   created_at: string;
 }
 
@@ -24,7 +24,7 @@ export interface UserRegistration {
 
 export interface SavedFile {
   file_id: string;
-  user_id: string;
+  user_id: number;
   file_name: string;
   file_path: string;
   uploaded_at: string;
@@ -34,7 +34,7 @@ export interface SavedFile {
 }
 
 export interface SavedFileCreate {
-  user_id: string;
+  user_id: number;
   file_name: string;
   file_path: string;
   system_tags: string[];

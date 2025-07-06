@@ -21,7 +21,7 @@ export async function handleUpdateTags(
       throw new ApiError(400, 'user_tags must be an array');
     }
 
-    const updatedFile = await updateSavedFileTags(env, fileId, user.id, user_tags);
+    const updatedFile = await updateSavedFileTags(env, fileId, user.user_id, user_tags);
     if (!updatedFile) {
       throw new ApiError(404, 'File not found');
     }

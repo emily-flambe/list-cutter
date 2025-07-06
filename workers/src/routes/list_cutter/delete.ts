@@ -13,7 +13,7 @@ export async function handleDeleteFile(
     const user = await requireAuth(request, env);
     
     // Get file metadata to ensure it exists and belongs to user
-    const savedFile = await getSavedFileById(env, fileId, user.id);
+    const savedFile = await getSavedFileById(env, fileId, user.user_id);
     if (!savedFile) {
       throw new ApiError(404, 'File not found');
     }
@@ -22,7 +22,7 @@ export async function handleDeleteFile(
     await deleteFileFromR2(env, savedFile.file_path);
     
     // Delete from database
-    const deleted = await deleteSavedFile(env, fileId, user.id);
+    const deleted = await deleteSavedFile(env, fileId, user.user_id);
     if (!deleted) {
       throw new ApiError(404, 'File not found');
     }

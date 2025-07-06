@@ -58,5 +58,5 @@ export function getUserContext(request: Request): UserJWTPayload | null {
     exp: 0,
     jti: '',
     token_type: 'access'
-  };
+  } as UserJWTPayload;
 }

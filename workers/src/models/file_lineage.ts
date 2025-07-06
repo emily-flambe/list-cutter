@@ -34,7 +34,7 @@ export async function createFileRelationship(
 export async function getFileLineage(
   env: Env,
   fileId: string,
-  userId: string
+  userId: number
 ): Promise<FileLineage> {
   try {
     // Get all relationships where this file is involved (as source or target)
@@ -108,7 +108,7 @@ export async function getFileLineage(
 export async function getCompleteLineage(
   env: Env,
   fileId: string,
-  userId: string,
+  userId: number,
   visited = new Set<string>()
 ): Promise<FileLineage> {
   if (visited.has(fileId)) {
