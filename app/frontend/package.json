@@ -11,8 +11,7 @@
     "workers:dev": "npm run build && wrangler dev",
     "workers:deploy": "npm run build && wrangler deploy",
     "workers:preview": "npm run build && wrangler deploy --env preview",
-    "deploy": "npm run workers:deploy",
-    "cf:deploy": "npm run build && npx wrangler deploy"
+    "deploy": "npm run workers:deploy"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
