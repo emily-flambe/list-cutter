@@ -26,7 +26,6 @@ export interface StreamingProcessorResult {
  */
 export class StreamingCSVProcessor {
   private r2Service: R2StorageService;
-  private textEncoder = new TextEncoder();
   private textDecoder = new TextDecoder();
 
   constructor(r2Service: R2StorageService) {
@@ -165,17 +164,23 @@ export class StreamingCSVProcessor {
     let lineCount = 0;
     let processedCount = 0;
     let buffer = '';
+    
+    // Capture references to instance methods and properties
+    const formatCSVLine = this.formatCSVLine.bind(this);
+    const textEncoder = new TextEncoder();
+    const textDecoder = this.textDecoder;
+    const processLine = this.processLine.bind(this);
 
     return new ReadableStream({
       start(controller) {
         if (outputFormat === 'csv' && columnIndexes.length > 0) {
           // Send CSV header
           const headerColumns = columnIndexes.map(idx => originalColumns[idx] || `column_${idx}`);
-          const headerLine = this.formatCSVLine(headerColumns) + '\n';
-          controller.enqueue(this.textEncoder.encode(headerLine));
+          const headerLine = formatCSVLine(headerColumns) + '\n';
+          controller.enqueue(textEncoder.encode(headerLine));
         } else if (outputFormat === 'json') {
           // Start JSON array
-          controller.enqueue(this.textEncoder.encode('['));
+          controller.enqueue(textEncoder.encode('['));
         }
       },
 
@@ -190,7 +195,7 @@ export class StreamingCSVProcessor {
             if (done) {
               // Process remaining buffer
               if (buffer.trim()) {
-                const processedLine = this.processLine(
+                const processedLine = processLine(
                   buffer,
                   lineCount,
                   columnIndexes,
@@ -203,21 +208,21 @@ export class StreamingCSVProcessor {
                 );
 
                 if (processedLine) {
-                  controller.enqueue(this.textEncoder.encode(processedLine));
+                  controller.enqueue(textEncoder.encode(processedLine));
                   processedCount++;
                 }
               }
 
               // Close JSON array if needed
               if (outputFormat === 'json') {
-                controller.enqueue(this.textEncoder.encode(']'));
+                controller.enqueue(textEncoder.encode(']'));
               }
 
               controller.close();
               break;
             }
 
-            buffer += this.textDecoder.decode(value, { stream: true });
+            buffer += textDecoder.decode(value, { stream: true });
 
             // Process complete lines
             const lines = buffer.split('\n');
@@ -230,7 +235,7 @@ export class StreamingCSVProcessor {
                 // Skip header row for processing
                 if (lineCount === 1) continue;
 
-                const processedLine = this.processLine(
+                const processedLine = processLine(
                   line,
                   lineCount,
                   columnIndexes,
@@ -243,7 +248,7 @@ export class StreamingCSVProcessor {
                 );
 
                 if (processedLine) {
-                  controller.enqueue(this.textEncoder.encode(processedLine));
+                  controller.enqueue(textEncoder.encode(processedLine));
                   processedCount++;
 
                   // Check if we've reached the limit
@@ -267,7 +272,7 @@ export class StreamingCSVProcessor {
    */
   private processLine(
     line: string,
-    lineNumber: number,
+    _lineNumber: number,
     columnIndexes: number[],
     whereFilters: Record<string, string>,
     offset: number,

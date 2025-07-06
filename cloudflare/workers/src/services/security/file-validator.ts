@@ -125,7 +125,7 @@ export class FileValidationService {
     // Rate limiting check
     const rateLimitCheck = await this.checkRateLimit(userId);
     if (!rateLimitCheck.allowed) {
-      errors.push(rateLimitCheck.reason);
+      errors.push(rateLimitCheck.reason || 'Rate limit exceeded');
     }
 
     // Content validation (if no critical errors so far)
