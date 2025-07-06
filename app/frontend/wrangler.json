@@ -1,5 +1,5 @@
 {
-  "name": "list-cutter-frontend",
+  "name": "cutty-frontend",
   "main": "src/worker.js",
   "compatibility_date": "2024-12-01",
   "assets": {
