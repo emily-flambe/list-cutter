@@ -16,10 +16,6 @@ These are the remaining phases to complete the migration:
 
 See the [done/](done/) folder for completed phase plans and documentation.
 
-## Legacy Planning Documents
-
-The [legacy-planning/](legacy-planning/) folder contains earlier detailed implementation plans that were superseded by the Workers-integrated approach.
-
 ## Migration Status
 
 For a complete overview of the migration progress, see [../MIGRATION_STATUS.md](../MIGRATION_STATUS.md)

@@ -75,9 +75,6 @@ docs/
 │   │   ├── phase-3-backend-migration.md
 │   │   ├── phase-4-database-migration.md
 │   │   └── phase-4-database-migration-plan-INITIAL.md
-│   └── legacy-planning/         # Earlier detailed plans for reference
-│       ├── phase-5-detailed-implementation-plan.md
-│       └── phase-6-detailed-implementation-plan.md
 └── architecture/                # (now empty, migration doc moved to done)
 
 workers/                         # Phase 3 implementation (Cloudflare Workers backend)

@@ -22,12 +22,9 @@ I have completed a comprehensive audit of the List Cutter Cloudflare migration p
 
 ### 3. Consolidated Duplicate Plans
 - Identified duplicate/earlier planning documents in docs root
-- Created `docs/plans/legacy-planning/` for historical reference
-- Moved earlier detailed plans:
-  - phase-5-detailed-implementation-plan.md → legacy-planning/
-  - phase-6-detailed-implementation-plan.md → legacy-planning/
-  - phase-4-database-migration-plan.md → done/phase-4-database-migration-plan-INITIAL.md
+- Moved phase-4-database-migration-plan.md → done/phase-4-database-migration-plan-INITIAL.md
 - Moved completed architecture migration doc to done folder
+- Removed outdated phase 5 and 6 detailed implementation plans
 
 ### 4. Created Documentation
 - **docs/MIGRATION_STATUS.md**: Comprehensive overview of all phases
@@ -60,8 +57,7 @@ docs/
 │   ├── phase-7-testing-optimization.md
 │   ├── phase-8-deployment-cutover.md
 │   ├── phase-9-cleanup.md
-│   ├── done/                   # Completed phases
-│   └── legacy-planning/        # Historical planning docs
+│   └── done/                   # Completed phases
 └── architecture/               # (now empty)
 ```
 
@@ -76,8 +72,7 @@ docs/
 
 1. **Start Phase 5**: R2 storage migration is the logical next step
 2. **Use Workers-Integrated Plans**: The plans in `docs/plans/` are aligned with the unified Workers architecture
-3. **Reference Legacy Plans**: The legacy-planning folder contains additional details if needed
-4. **Track Progress**: Update MIGRATION_STATUS.md as phases are completed
+3. **Track Progress**: Update MIGRATION_STATUS.md as phases are completed
 
 ## Git Commits Made
 
