@@ -1,28 +1,9 @@
 ## Summary
 <!-- Provide a brief description of the changes in this PR -->
 - 
-- 
-- 
 
-## Type of Change
-<!-- Please delete options that are not relevant -->
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Documentation update
-- [ ] Performance improvement
-- [ ] Code refactoring
-- [ ] Phase implementation (part of migration plan)
-
-## Related Issues
-<!-- Link to related issues using #issue_number -->
-Closes #
-
-## Changes Made
-<!-- List the main changes made in this PR -->
-- 
-- 
-- 
+## Details
+<!-- Provide details about what was implemented in this PR -->
 
 ## Testing
 <!-- Describe the tests you ran to verify your changes -->
@@ -44,6 +25,7 @@ Closes #
 - [ ] I have made corresponding changes to the documentation
 - [ ] My changes generate no new warnings
 - [ ] Any dependent changes have been merged and published
+- [ ] Any remaining follow up items have been documented in a new file in docs/plans
 
 ## Additional Notes
 <!-- Add any additional notes, concerns, or discussion points -->
