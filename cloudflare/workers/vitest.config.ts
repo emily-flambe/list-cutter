@@ -17,7 +17,8 @@ export default defineWorkersConfig({
             API_VERSION: 'v1',
             JWT_SECRET: 'test-secret',
             JWT_REFRESH_SECRET: 'test-refresh-secret'
-          }
+          },
+          modules: true
         }
       }
     },

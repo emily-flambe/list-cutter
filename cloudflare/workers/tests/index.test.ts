@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import worker from '../src/index';
 
 describe('Health Check', () => {
   it('should return healthy status', async () => {
-    const response = await fetch('http://example.com/health');
+    const request = new Request('http://localhost/health');
+    const response = await worker.fetch(request);
     expect(response.status).toBe(200);
     
     const json = await response.json();
@@ -13,7 +15,8 @@ describe('Health Check', () => {
   });
   
   it('should return 404 for unknown routes', async () => {
-    const response = await fetch('http://example.com/unknown');
+    const request = new Request('http://localhost/unknown');
+    const response = await worker.fetch(request);
     expect(response.status).toBe(404);
     
     const json = await response.json();
