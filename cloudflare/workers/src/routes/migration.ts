@@ -17,7 +17,7 @@ migrationRoutes.post('/batch', async (c) => {
       return c.json({ error: 'Invalid files array' }, 400);
     }
     
-    const r2Service = new R2StorageService(c.env.FILE_STORAGE);
+    const r2Service = new R2StorageService(c.env.FILE_STORAGE, c.env.DB);
     const migrationService = new FileMigrationService(r2Service, c.env.DB);
     
     const batchId = await migrationService.createMigrationBatch(files, metadata || {});
@@ -48,7 +48,7 @@ migrationRoutes.post('/process', async (c) => {
       return c.json({ error: 'Batch ID is required' }, 400);
     }
     
-    const r2Service = new R2StorageService(c.env.FILE_STORAGE);
+    const r2Service = new R2StorageService(c.env.FILE_STORAGE, c.env.DB);
     const migrationService = new FileMigrationService(r2Service, c.env.DB);
     
     const result = await migrationService.processMigrationBatch(batchId);
@@ -79,7 +79,7 @@ migrationRoutes.get('/progress/:batchId', async (c) => {
       return c.json({ error: 'Batch ID is required' }, 400);
     }
     
-    const r2Service = new R2StorageService(c.env.FILE_STORAGE);
+    const r2Service = new R2StorageService(c.env.FILE_STORAGE, c.env.DB);
     const migrationService = new FileMigrationService(r2Service, c.env.DB);
     
     const progress = await migrationService.getBatchProgress(batchId);
@@ -110,7 +110,7 @@ migrationRoutes.post('/rollback', async (c) => {
       return c.json({ error: 'Batch ID is required' }, 400);
     }
     
-    const r2Service = new R2StorageService(c.env.FILE_STORAGE);
+    const r2Service = new R2StorageService(c.env.FILE_STORAGE, c.env.DB);
     const migrationService = new FileMigrationService(r2Service, c.env.DB);
     
     await migrationService.rollbackMigrationBatch(batchId);
@@ -222,7 +222,7 @@ migrationRoutes.post('/verify', async (c) => {
       return c.json({ error: 'Either batchId or fileIds is required' }, 400);
     }
     
-    const r2Service = new R2StorageService(c.env.FILE_STORAGE);
+    const r2Service = new R2StorageService(c.env.FILE_STORAGE, c.env.DB);
     const migrationService = new FileMigrationService(r2Service, c.env.DB);
     
     let filesToVerify: string[] = [];
