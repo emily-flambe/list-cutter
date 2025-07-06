@@ -16,7 +16,7 @@ const mockEnv = {
 describe('Health Check', () => {
   it('should return healthy status', async () => {
     const req = new Request('http://localhost/health');
-    const res = await app.request(req, mockEnv);
+    const res = await app.request(req, { env: mockEnv } as any);
     expect(res.status).toBe(200);
     
     const json = await res.json();
@@ -28,7 +28,7 @@ describe('Health Check', () => {
   
   it('should return 404 for unknown routes', async () => {
     const req = new Request('http://localhost/unknown');
-    const res = await app.request(req, mockEnv);
+    const res = await app.request(req, { env: mockEnv } as any);
     expect(res.status).toBe(404);
     
     const json = await res.json();
