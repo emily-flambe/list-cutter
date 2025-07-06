@@ -12,6 +12,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/list_cutter/", include("list_cutter.urls")),
     path("api/accounts/", include("accounts.urls")),
+    # Phase 4 D1-compatible endpoints
+    path("api/v2/list_cutter/", include("list_cutter.urls_d1")),
     # Must be last to accomodate the SPA catchall
     path("", include("list_cutter.urls")),
 ]
