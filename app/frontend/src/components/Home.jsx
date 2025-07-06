@@ -23,7 +23,20 @@ const Home = () => {
           mb: 4,
         }}
       >
-        ALL FEATURES IN THIS APP—EVEN THOSE BASED ON REAL USE CASES—ARE ENTIRELY FICTIONAL. ALL FUNCTIONALITY IS BASIC AND IMPLEMENTED... POORLY. THE FOLLOWING APP MAY CONTAIN COARSE LANGUAGE AND DUE TO ITS CONTENT IT SHOULD NOT BE USED BY ANYONE. ▌
+        ALL FEATURES IN THIS APP—EVEN THOSE BASED ON REAL USE CASES—ARE ENTIRELY FICTIONAL. ALL FUNCTIONALITY IS BASIC AND IMPLEMENTED... POORLY. THE FOLLOWING APP MAY CONTAIN COARSE LANGUAGE AND DUE TO ITS CONTENT IT SHOULD NOT BE USED BY ANYONE. 
+        <Box
+          component="span"
+          sx={{
+            '@keyframes blink': {
+              '0%': { opacity: 1 },
+              '50%': { opacity: 0 },
+              '100%': { opacity: 1 }
+            },
+            animation: 'blink 1s infinite'
+          }}
+        >
+          ▌
+        </Box>
       </Typography>
 
       <Box sx={{ mt: 3, textAlign: 'left' }}>
