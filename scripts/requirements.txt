@@ -1,0 +1,57 @@
+# Requirements for rollback_migration.py script
+# Issue #66 File Migration Tools
+
+# CLI framework
+click>=8.0.0
+
+# Rich console output and formatting
+rich>=13.0.0
+
+# Database connections
+psycopg2-binary>=2.9.0  # PostgreSQL adapter
+sqlite3  # Built-in Python module for SQLite/D1
+
+# HTTP requests for Cloudflare R2 API
+requests>=2.25.0
+
+# Async support
+asyncio  # Built-in Python module
+
+# Data handling
+dataclasses  # Built-in Python module (Python 3.7+)
+enum  # Built-in Python module
+typing  # Built-in Python module
+
+# File system operations
+pathlib  # Built-in Python module
+
+# JSON handling
+json  # Built-in Python module
+
+# Date/time handling
+datetime  # Built-in Python module
+
+# Logging
+logging  # Built-in Python module
+
+# System operations
+os  # Built-in Python module
+sys  # Built-in Python module
+
+# Hash calculations
+hashlib  # Built-in Python module
+
+# File globbing
+glob  # Built-in Python module
+
+# Optional: Enhanced async support
+aiofiles>=0.8.0  # For async file operations (optional)
+aiohttp>=3.8.0   # For async HTTP requests (optional)
+
+# Development/testing dependencies (optional)
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+black>=22.0.0
+flake8>=5.0.0
+mypy>=1.0.0

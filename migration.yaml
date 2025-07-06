@@ -1,0 +1,462 @@
+# Migration Configuration for List Cutter File Migration Tools
+# Issue #66 - File Migration Tools Configuration
+#
+# This YAML file defines the configuration for migrating files from local storage
+# to Cloudflare R2 storage. It includes settings for database operations, file
+# handling, validation, monitoring, and error recovery.
+
+# =============================================================================
+# GENERAL CONFIGURATION
+# =============================================================================
+
+metadata:
+  name: "List Cutter File Migration"
+  version: "1.0.0"
+  description: "Migration configuration for moving files from local storage to Cloudflare R2"
+  author: "List Cutter Team"
+  created: "2024-01-01"
+  last_updated: "2024-01-01"
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+
+database:
+  # Connection settings (can be overridden by environment variables)
+  connection:
+    host: "${DB_HOST:localhost}"
+    port: "${DB_PORT:5432}"
+    name: "${DB_NAME:list_cutter_db}"
+    user: "${DB_USER:postgres}"
+    password: "${DB_PASSWORD:}"
+    schema: "${DB_SCHEMA:public}"
+    ssl_mode: "${DB_SSL_MODE:prefer}"
+  
+  # Connection pool settings
+  pool:
+    max_connections: 20
+    min_connections: 5
+    connection_timeout: 30
+    idle_timeout: 600
+    max_lifetime: 3600
+  
+  # Query settings
+  query:
+    timeout: 60
+    batch_size: 1000
+    chunk_size: 100
+
+# =============================================================================
+# R2 STORAGE CONFIGURATION
+# =============================================================================
+
+r2:
+  # Account and bucket settings
+  account:
+    id: "${R2_ACCOUNT_ID:}"
+    access_key_id: "${R2_ACCESS_KEY_ID:}"
+    secret_access_key: "${R2_SECRET_ACCESS_KEY:}"
+  
+  bucket:
+    name: "${R2_BUCKET_NAME:list-cutter-files}"
+    region: "${R2_REGION:auto}"
+    endpoint: "${R2_ENDPOINT_URL:}"
+  
+  # Upload settings
+  upload:
+    max_file_size: 104857600  # 100MB
+    multipart_threshold: 8388608  # 8MB
+    multipart_chunk_size: 8388608  # 8MB
+    max_concurrent_uploads: 5
+    timeout: 300
+    retry_attempts: 3
+    retry_delay: 5
+  
+  # Storage classes and lifecycle
+  storage:
+    default_class: "STANDARD"
+    archive_after_days: 365
+    delete_after_days: 2555  # 7 years
+  
+  # Key generation settings
+  key_generation:
+    strategy: "hierarchical"  # hierarchical, flat, hash_based
+    prefix: "migrated/"
+    date_format: "%Y/%m/%d"
+    preserve_structure: true
+    sanitize_names: true
+
+# =============================================================================
+# MIGRATION STRATEGY
+# =============================================================================
+
+migration:
+  # Batch processing
+  batch:
+    size: 100
+    parallel_batches: 2
+    max_concurrent_files: 5
+    delay_between_batches: 1  # seconds
+  
+  # File selection criteria
+  selection:
+    # Migration status filter
+    status_filter:
+      - "pending"
+      - "failed"  # retry failed migrations
+    
+    # File age criteria
+    age_criteria:
+      min_age_hours: 0
+      max_age_days: null
+    
+    # File size criteria
+    size_criteria:
+      min_size_bytes: 0
+      max_size_bytes: 104857600  # 100MB
+    
+    # File type filters
+    file_types:
+      allowed_extensions:
+        - ".csv"
+        - ".txt"
+        - ".json"
+        - ".xml"
+        - ".xlsx"
+        - ".xls"
+      blocked_extensions:
+        - ".exe"
+        - ".bat"
+        - ".sh"
+        - ".cmd"
+    
+    # Path filters
+    path_filters:
+      include_patterns:
+        - "uploads/*"
+        - "generated/*"
+      exclude_patterns:
+        - "temp/*"
+        - "cache/*"
+        - "*.tmp"
+  
+  # Migration behavior
+  behavior:
+    preserve_original_files: true
+    skip_existing_files: true
+    verify_after_upload: true
+    delete_after_migration: false
+    update_database_immediately: true
+    create_backup_before_delete: true
+  
+  # Error handling
+  error_handling:
+    max_retries: 3
+    retry_delay: 5
+    exponential_backoff: true
+    backoff_multiplier: 2
+    max_backoff_delay: 60
+    continue_on_error: true
+    fail_fast: false
+
+# =============================================================================
+# VALIDATION CONFIGURATION
+# =============================================================================
+
+validation:
+  # File integrity checks
+  integrity:
+    verify_file_existence: true
+    verify_file_size: true
+    verify_file_hash: true
+    hash_algorithm: "sha256"
+    compare_checksums: true
+  
+  # Upload validation
+  upload:
+    verify_upload_success: true
+    verify_r2_accessibility: true
+    verify_metadata_consistency: true
+    test_download_after_upload: false
+  
+  # Database validation
+  database:
+    verify_record_update: true
+    verify_migration_status: true
+    verify_batch_tracking: true
+    check_foreign_key_constraints: true
+
+# =============================================================================
+# MONITORING AND LOGGING
+# =============================================================================
+
+monitoring:
+  # Progress tracking
+  progress:
+    enable_progress_bar: true
+    update_interval: 1  # seconds
+    show_file_names: true
+    show_transfer_rates: true
+    show_eta: true
+  
+  # Metrics collection
+  metrics:
+    enabled: true
+    collection_interval: 30  # seconds
+    export_format: "json"
+    export_path: "./metrics/"
+    
+    # Collected metrics
+    collect:
+      - "files_processed"
+      - "files_successful"
+      - "files_failed"
+      - "bytes_transferred"
+      - "transfer_rate"
+      - "error_rate"
+      - "batch_completion_time"
+  
+  # Health checks
+  health:
+    enabled: true
+    check_interval: 60  # seconds
+    timeout: 10
+    
+    checks:
+      - "database_connection"
+      - "r2_connectivity"
+      - "disk_space"
+      - "memory_usage"
+      - "worker_api_health"
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+logging:
+  # Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "${LOG_LEVEL:INFO}"
+  
+  # Log output
+  output:
+    console: true
+    file: true
+    file_path: "${LOG_FILE_PATH:./logs/migration.log}"
+    max_size: 10485760  # 10MB
+    backup_count: 5
+    rotate_on_startup: false
+  
+  # Log format
+  format:
+    console: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    file: "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s"
+    timestamp_format: "%Y-%m-%d %H:%M:%S"
+  
+  # Specific loggers
+  loggers:
+    migration:
+      level: "INFO"
+      handlers: ["console", "file"]
+    
+    database:
+      level: "WARNING"
+      handlers: ["file"]
+    
+    r2:
+      level: "INFO"
+      handlers: ["console", "file"]
+    
+    validation:
+      level: "INFO"
+      handlers: ["file"]
+
+# =============================================================================
+# NOTIFICATION CONFIGURATION
+# =============================================================================
+
+notifications:
+  # Email notifications
+  email:
+    enabled: false
+    smtp_server: "${SMTP_SERVER:}"
+    smtp_port: "${SMTP_PORT:587}"
+    username: "${SMTP_USERNAME:}"
+    password: "${SMTP_PASSWORD:}"
+    from_address: "${SMTP_FROM:noreply@list-cutter.com}"
+    to_addresses:
+      - "${ALERT_EMAIL:admin@list-cutter.com}"
+    
+    # Notification triggers
+    triggers:
+      - "migration_complete"
+      - "migration_failed"
+      - "batch_failed"
+      - "critical_error"
+  
+  # Webhook notifications
+  webhook:
+    enabled: false
+    url: "${WEBHOOK_URL:}"
+    secret: "${WEBHOOK_SECRET:}"
+    timeout: 10
+    retry_attempts: 3
+    
+    # Webhook events
+    events:
+      - "migration_started"
+      - "migration_progress"
+      - "migration_complete"
+      - "migration_failed"
+      - "batch_complete"
+      - "batch_failed"
+
+# =============================================================================
+# SECURITY CONFIGURATION
+# =============================================================================
+
+security:
+  # Encryption settings
+  encryption:
+    enabled: false
+    key: "${ENCRYPTION_KEY:}"
+    algorithm: "AES-256-GCM"
+  
+  # Access control
+  access:
+    require_authentication: false
+    api_key: "${MIGRATION_API_KEY:}"
+    allowed_ips: []
+  
+  # SSL/TLS settings
+  ssl:
+    verify_certificates: true
+    cert_path: "${SSL_CERT_PATH:}"
+    key_path: "${SSL_KEY_PATH:}"
+  
+  # Security headers
+  headers:
+    user_agent: "ListCutter-Migration-Tool/1.0.0"
+    custom_headers:
+      X-Migration-Tool: "ListCutter"
+      X-Migration-Version: "1.0.0"
+
+# =============================================================================
+# PERFORMANCE CONFIGURATION
+# =============================================================================
+
+performance:
+  # Concurrency settings
+  concurrency:
+    max_workers: 5
+    thread_pool_size: 10
+    process_pool_size: 2
+  
+  # Memory management
+  memory:
+    max_memory_usage: 1073741824  # 1GB
+    chunk_size: 8388608  # 8MB
+    buffer_size: 65536  # 64KB
+  
+  # Timeout settings
+  timeouts:
+    connection_timeout: 30
+    read_timeout: 300
+    write_timeout: 300
+    total_timeout: 600
+  
+  # Rate limiting
+  rate_limit:
+    enabled: true
+    requests_per_second: 10
+    burst_size: 20
+
+# =============================================================================
+# RECOVERY CONFIGURATION
+# =============================================================================
+
+recovery:
+  # Backup settings
+  backup:
+    enabled: true
+    directory: "./backups"
+    retention_days: 30
+    compress: true
+  
+  # Checkpoint settings
+  checkpoint:
+    enabled: true
+    interval: 100  # files
+    directory: "./checkpoints"
+    auto_resume: true
+  
+  # Rollback settings
+  rollback:
+    enabled: true
+    create_rollback_script: true
+    rollback_directory: "./rollbacks"
+
+# =============================================================================
+# DEVELOPMENT AND TESTING
+# =============================================================================
+
+development:
+  # Debug settings
+  debug:
+    enabled: "${DEBUG_MODE:false}"
+    verbose_logging: false
+    save_request_responses: false
+    profile_performance: false
+  
+  # Testing settings
+  testing:
+    dry_run: "${DRY_RUN:false}"
+    test_batch_size: 10
+    test_file_pattern: "test_*"
+    mock_r2_operations: false
+    skip_database_updates: false
+  
+  # Development helpers
+  helpers:
+    auto_create_directories: true
+    generate_sample_data: false
+    cleanup_on_exit: true
+
+# =============================================================================
+# ENVIRONMENT SPECIFIC OVERRIDES
+# =============================================================================
+
+environments:
+  development:
+    migration:
+      batch:
+        size: 10
+        parallel_batches: 1
+    logging:
+      level: "DEBUG"
+    development:
+      debug:
+        enabled: true
+        verbose_logging: true
+  
+  staging:
+    migration:
+      batch:
+        size: 50
+        parallel_batches: 1
+    r2:
+      bucket:
+        name: "list-cutter-staging-files"
+  
+  production:
+    migration:
+      batch:
+        size: 100
+        parallel_batches: 2
+    logging:
+      level: "INFO"
+    notifications:
+      email:
+        enabled: true
+    security:
+      ssl:
+        verify_certificates: true

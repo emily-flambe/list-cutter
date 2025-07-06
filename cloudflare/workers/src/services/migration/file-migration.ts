@@ -248,7 +248,7 @@ export class FileMigrationService {
   /**
    * Verify migration by downloading and checking integrity
    */
-  private async verifyMigration(
+  async verifyMigration(
     fileId: string,
     userId: string,
     originalChecksum: string
@@ -497,12 +497,30 @@ export class FileMigrationService {
 
   /**
    * Read file from source location
-   * Note: This is a placeholder - actual implementation depends on source system
+   * Note: This assumes files are accessible via HTTP from the Django application
    */
   private async readSourceFile(sourcePath: string): Promise<ArrayBuffer> {
-    // This would need to be implemented based on where files are currently stored
-    // For example: local filesystem, legacy storage service, etc.
-    throw new Error(`readSourceFile not implemented for path: ${sourcePath}`);
+    try {
+      // If sourcePath is a relative path, construct full URL to Django media endpoint
+      let fileUrl = sourcePath;
+      
+      if (!sourcePath.startsWith('http')) {
+        // Assume Django media URL pattern
+        const baseUrl = process.env.DJANGO_BASE_URL || 'http://localhost:8000';
+        fileUrl = `${baseUrl}/media/${sourcePath.replace(/^\/+/, '')}`;
+      }
+      
+      const response = await fetch(fileUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+      }
+      
+      return await response.arrayBuffer();
+    } catch (error) {
+      console.error(`Failed to read source file ${sourcePath}:`, error);
+      throw new Error(`Failed to read source file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**

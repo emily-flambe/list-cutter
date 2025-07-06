@@ -1,311 +1,401 @@
-# List Cutter Deployment Scripts
+# File Migration Tools - Issue #66
 
-This directory contains all the deployment, validation, and cutover scripts for migrating List Cutter to the unified Cloudflare Workers architecture.
+This directory contains comprehensive file migration tools for migrating files from Django filesystem storage to Cloudflare R2 storage, including migration and rollback capabilities.
 
 ## Overview
 
-The deployment process follows the Phase 8 implementation plan and provides a complete production deployment and cutover solution with comprehensive validation, monitoring, and rollback capabilities.
+The migration toolkit includes:
 
-## Scripts
+1. **`migrate_to_r2.py`** - Main migration script for moving files from filesystem to R2
+2. **`rollback_migration.py`** - Comprehensive rollback script for reversing migrations
+3. **Production deployment scripts** - Scripts for deployment, validation, and cutover
 
-### 1. Production Deployment
-- **`deploy-production.sh`** - Main production deployment script
-  - Runs comprehensive pre-deployment checks
-  - Deploys to staging for validation
-  - Deploys to production with validation
-  - Includes automatic rollback on failure
+The migration script provides a robust solution for migrating files from local filesystem storage to Cloudflare R2 with comprehensive error handling, progress tracking, and rollback capabilities.
 
-### 2. Environment Validation
-- **`validate-staging.sh`** - Staging environment validation
-  - Comprehensive health checks
-  - API endpoint testing
-  - Security header validation
-  - Performance monitoring
-  
-- **`validate-production.sh`** - Production environment validation
-  - Stricter validation criteria for production
-  - Component health verification
-  - SSL/HTTPS validation
-  - Extended monitoring
+## Migration Features
 
-### 3. Cutover Execution
-- **`execute-cutover.sh`** - Complete cutover from Django to Workers
-  - Pre-cutover checklist verification
-  - Staged deployment with validation
-  - DNS configuration updates
-  - Extended monitoring and validation
-  - Automatic rollback on issues
+### Migration Script (`migrate_to_r2.py`)
+- **Batch Processing**: Process files in configurable batches (default 50 files)
+- **Real-time Progress Tracking**: Monitor migration progress with detailed reporting
+- **Automatic Retry Logic**: Retry failed migrations up to 3 times with exponential backoff
+- **Checksum Verification**: Verify file integrity using SHA-256 checksums
+- **Resumable Migrations**: Resume interrupted migrations from where they left off
+- **Dry-run Mode**: Test migrations without actually moving files
+- **Comprehensive Logging**: Detailed logging to both file and console
+- **Database Integration**: Updates PostgreSQL database with migration status and R2 keys
 
-### 4. Emergency Response
-- **`rollback-production.sh`** - Emergency production rollback
-  - Immediate rollback using Wrangler
-  - System verification after rollback
-  - Extended monitoring
-  - Notification and logging
+### Rollback Script (`rollback_migration.py`)
+- **Multiple Rollback Types**: Database-only, R2-only, batch, selective, and full rollbacks
+- **Safety Features**: Dry-run mode, explicit confirmations, and database backups
+- **Comprehensive Verification**: Verify original files exist before R2 cleanup
+- **Audit Trail**: Complete audit logs of all rollback operations
+- **Progress Tracking**: Real-time progress for large rollback operations
+- **Error Recovery**: Graceful error handling with detailed reporting
+- **Multi-database Support**: Works with both PostgreSQL and D1 databases
+- **Rich Console Output**: Beautiful console output with tables and progress bars
 
-### 5. DNS Management
-- **`setup-dns.sh`** - DNS configuration for unified Workers
-  - Configures all domain records
-  - Sets up security records (SPF, DMARC)
-  - Optimizes Cloudflare settings
-  - Verifies DNS propagation
+## Requirements
 
-### 6. Notifications
-- **`notify-deployment.sh`** - Deployment status notifications
-  - Multi-channel notifications (email, Slack, Discord, Teams)
-  - Deployment record keeping
-  - Status tracking
+### Python Dependencies
+
+The script requires the following Python packages (added to `pyproject.toml`):
+
+```toml
+"click (>=8.0.0,<9.0.0)",
+"tqdm (>=4.65.0,<5.0.0)",
+"aiohttp (>=3.8.0,<4.0.0)",
+"asyncpg (>=0.28.0,<1.0.0)"
+```
+
+### Infrastructure Requirements
+
+1. **PostgreSQL Database**: Must be accessible with credentials from Django settings
+2. **Cloudflare Workers API**: Must be deployed and accessible
+3. **File System Access**: Access to Django media files directory
+4. **Django Environment**: Django settings must be properly configured
+
+## Installation
+
+1. Install dependencies:
+```bash
+cd app
+pip install -e .
+```
+
+2. Ensure Django settings are configured properly in `DJANGO_SETTINGS_MODULE`
+
+3. Verify database connectivity and Workers API accessibility
 
 ## Usage
 
-### Prerequisites
+### Basic Migration
 
-1. **Environment Variables**:
+```bash
+python scripts/migrate_to_r2.py
+```
+
+### Dry Run (Recommended First)
+
+```bash
+python scripts/migrate_to_r2.py --dry-run
+```
+
+### Custom Batch Size
+
+```bash
+python scripts/migrate_to_r2.py --batch-size 25
+```
+
+### Verbose Output
+
+```bash
+python scripts/migrate_to_r2.py --verbose
+```
+
+### Resume Failed Migration
+
+```bash
+python scripts/migrate_to_r2.py --resume-batch <batch_id>
+```
+
+### Rollback Migration
+
+```bash
+python scripts/migrate_to_r2.py --rollback-batch <batch_id>
+```
+
+### List Migration Batches
+
+```bash
+python scripts/migrate_to_r2.py --list-batches
+```
+
+### Check Batch Status
+
+```bash
+python scripts/migrate_to_r2.py --batch-status <batch_id>
+```
+
+## Command Line Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--dry-run` | Perform analysis without actual migration | False |
+| `--batch-size` | Number of files per batch | 50 |
+| `--max-retries` | Maximum retry attempts for failed files | 3 |
+| `--api-url` | Cloudflare Workers API URL | `https://your-workers-domain.com` |
+| `--resume-batch` | Resume specific batch by ID | None |
+| `--rollback-batch` | Rollback specific batch by ID | None |
+| `--list-batches` | List all migration batches | False |
+| `--batch-status` | Show status of specific batch | None |
+| `--verbose` | Enable verbose logging | False |
+
+## Database Schema Changes
+
+The script automatically adds the following columns to the `SavedFile` table:
+
+- `r2_key TEXT` - R2 storage key for migrated files
+- `migrated_at TIMESTAMP` - Timestamp of successful migration
+- `migration_status TEXT` - Current migration status (pending, processing, completed, failed)
+- `migration_batch_id TEXT` - ID of the migration batch
+- `checksum TEXT` - SHA-256 checksum of the file
+
+Additional tracking tables are created:
+
+- `file_migration_batches` - Tracks migration batches
+- `file_migration_records` - Tracks individual file migrations
+
+## API Integration
+
+The script communicates with Cloudflare Workers via these endpoints:
+
+- `POST /api/migration/batch` - Create migration batch
+- `POST /api/migration/process` - Process migration batch
+- `GET /api/migration/progress/{batchId}` - Get batch progress
+- `POST /api/migration/rollback` - Rollback migration batch
+
+## Error Handling
+
+The script includes comprehensive error handling:
+
+1. **Database Errors**: Connection failures, query errors, schema issues
+2. **File System Errors**: Missing files, permission issues, disk space
+3. **API Errors**: Network failures, timeout, server errors
+4. **Validation Errors**: Checksum mismatches, corrupted files
+5. **Retry Logic**: Exponential backoff for transient failures
+
+## Logging
+
+Logs are written to both console and `migration.log` file:
+
+- **INFO**: General progress and status updates
+- **WARNING**: Recoverable issues (missing files, retry attempts)
+- **ERROR**: Critical failures requiring attention
+- **DEBUG**: Detailed technical information (with --verbose)
+
+## Monitoring
+
+### Progress Tracking
+
+The script provides real-time progress updates:
+
+```
+Migration Progress:
+- Total Files: 150
+- Successful: 147
+- Failed: 3
+- Batch Status: partial
+```
+
+### Batch Status
+
+Check detailed batch status:
+
+```
+Batch Status: 12345678-1234-1234-1234-123456789012
+Status: completed
+Total Files: 50
+Started: 2024-01-15 10:30:00
+Completed: 2024-01-15 10:35:00
+
+File Status Breakdown:
+  verified: 48
+  failed: 2
+```
+
+## Rollback Procedures
+
+The toolkit includes a comprehensive rollback script (`rollback_migration.py`) for reversing migration operations safely.
+
+### Quick Rollback Examples
+
+1. **Check migration status**:
    ```bash
-   export CLOUDFLARE_API_TOKEN=your_token_here
-   export CLOUDFLARE_ZONE_ID=your_zone_id_here
+   python scripts/rollback_migration.py status
    ```
 
-2. **Optional Notification Configuration**:
+2. **Preview rollback of a specific batch** (dry-run):
    ```bash
-   export NOTIFICATION_EMAIL=admin@list-cutter.com
-   export SLACK_WEBHOOK_URL=https://hooks.slack.com/...
-   export DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
-   export TEAMS_WEBHOOK_URL=https://outlook.office.com/webhook/...
+   python scripts/rollback_migration.py rollback --batch-id abc123
    ```
 
-3. **Required Tools**:
-   - `wrangler` CLI
-   - `curl`
-   - `jq`
-   - `bc`
-   - `dig`
+3. **Execute rollback of failed migrations**:
+   ```bash
+   python scripts/rollback_migration.py rollback --failed-only --confirm
+   ```
 
-### Deployment Workflow
+4. **Full migration rollback**:
+   ```bash
+   python scripts/rollback_migration.py rollback --full-rollback --confirm
+   ```
 
-#### 1. DNS Setup (One-time)
-```bash
-./scripts/setup-dns.sh
-```
+### Rollback Script Installation
 
-#### 2. Standard Production Deployment
-```bash
-./scripts/deploy-production.sh
-```
+1. Install rollback script dependencies:
+   ```bash
+   cd scripts
+   pip install -r requirements.txt
+   ```
 
-#### 3. Complete Cutover (Django → Workers)
-```bash
-./scripts/execute-cutover.sh
-```
+2. Set environment variables:
+   ```bash
+   export CLOUDFLARE_ACCOUNT_ID=your_account_id
+   export CLOUDFLARE_API_TOKEN=your_api_token
+   export R2_BUCKET_NAME=list-cutter-files
+   ```
 
-#### 4. Emergency Rollback (if needed)
-```bash
-./scripts/rollback-production.sh
-```
+3. Run rollback operations (see `ROLLBACK_MIGRATION_GUIDE.md` for complete documentation)
 
-### Validation Only
+### Legacy Rollback (migrate_to_r2.py)
 
-To run validation without deployment:
+If using the legacy migration script rollback:
 
-```bash
-# Staging validation
-./scripts/validate-staging.sh
-
-# Production validation
-./scripts/validate-production.sh
-```
-
-## Deployment Strategy
-
-### 1. Development → Staging
-- Automated deployment to staging
-- Comprehensive validation suite
-- Performance benchmarking
-- Security testing
-
-### 2. Staging → Production
-- Pre-deployment checklist verification
-- Staged production deployment
-- Real-time monitoring
-- Automatic rollback on failure
-
-### 3. Blue-Green Deployment
-- Leverages Wrangler's built-in versioning
-- Zero-downtime deployments
-- Instant rollback capability
-- Traffic monitoring
-
-## Monitoring and Validation
-
-### Health Checks
-- Basic health endpoints
-- Detailed system component checks
-- Readiness and liveness probes
-- Performance monitoring
-
-### Security Validation
-- SSL/HTTPS configuration
-- Security headers verification
-- CORS validation
-- Rate limiting verification
-
-### Performance Testing
-- Response time monitoring
-- Throughput validation
-- Error rate tracking
-- System stability testing
-
-## Error Handling and Recovery
-
-### Automatic Rollback Triggers
-- Failed health checks
-- High error rates (>5%)
-- Extended response times (>2s)
-- System component failures
-
-### Manual Rollback
-- Emergency rollback script
-- Immediate system restoration
-- Extended post-rollback monitoring
-- Incident documentation
-
-### Notification System
-- Real-time deployment status
-- Multi-channel alerts
-- Deployment record keeping
-- Team notifications
-
-## File Structure
-
-```
-scripts/
-├── README.md                    # This file
-├── deploy-production.sh         # Main deployment script
-├── validate-staging.sh          # Staging validation
-├── validate-production.sh       # Production validation
-├── execute-cutover.sh           # Complete cutover execution
-├── rollback-production.sh       # Emergency rollback
-├── setup-dns.sh                 # DNS configuration
-├── notify-deployment.sh         # Notification system
-└── deployments/                 # Deployment records (auto-created)
-    ├── cutover_success_*.txt    # Cutover records
-    ├── rollback_*.txt           # Rollback records
-    └── dns_config_*.txt         # DNS configuration records
-```
-
-## Configuration Files
-
-### Wrangler Configuration
-The unified Worker uses environment-specific configuration in `unified-worker/wrangler.toml`:
-- Development environment
-- Staging environment
-- Production environment
-
-### Environment Variables
-Required for production deployment:
-```bash
-# Cloudflare API credentials
-CLOUDFLARE_API_TOKEN=your_api_token
-CLOUDFLARE_ZONE_ID=your_zone_id
-
-# Optional notification settings
-NOTIFICATION_EMAIL=admin@example.com
-SLACK_WEBHOOK_URL=https://hooks.slack.com/...
-```
-
-## Security Considerations
-
-### Script Security
-- All scripts validate input parameters
-- Environment variables are required, not hardcoded
-- API tokens are masked in logs
-- Comprehensive error handling
-
-### Deployment Security
-- Pre-deployment security validation
-- HTTPS enforcement
-- Security header verification
-- Rate limiting validation
-
-### Rollback Security
-- Immediate rollback capability
-- System verification after rollback
-- Audit trail maintenance
-- Incident documentation
+1. **Stop any running migrations**
+2. **Identify the batch ID** to rollback
+3. **Run rollback command**:
+   ```bash
+   python scripts/migrate_to_r2.py --rollback-batch <batch_id>
+   ```
+4. **Verify rollback** by checking file status in database
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **API Token Issues**
-   ```bash
-   # Verify token has correct permissions
-   curl -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
-     -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
-   ```
+1. **Database Connection Failed**
+   - Check PostgreSQL credentials in Django settings
+   - Verify database is running and accessible
+   - Check firewall settings
 
-2. **DNS Propagation**
-   ```bash
-   # Check DNS propagation
-   dig +short list-cutter.com
-   dig +short www.list-cutter.com
-   ```
+2. **API Communication Failed**
+   - Verify Workers API URL is correct
+   - Check API is deployed and responding
+   - Verify network connectivity
 
-3. **SSL Certificate Issues**
-   ```bash
-   # Verify SSL certificate
-   curl -I https://list-cutter.com/
-   ```
+3. **File Not Found**
+   - Check file paths in database are correct
+   - Verify file system permissions
+   - Check if files were moved or deleted
 
-4. **Worker Deployment Issues**
-   ```bash
-   # Check Wrangler configuration
-   cd unified-worker
-   wrangler whoami
-   wrangler dev --env production --dry-run
-   ```
+4. **Checksum Mismatch**
+   - May indicate file corruption
+   - Check disk integrity
+   - Verify file wasn't modified during migration
 
-### Log Files
+### Debug Mode
 
-All deployment activities are logged:
-- `cutover_YYYYMMDD_HHMMSS.log` - Complete cutover logs
-- `deployments/` directory - Deployment records
-- Console output with timestamps
+For detailed troubleshooting, run with verbose logging:
 
-### Support Contacts
+```bash
+python scripts/migrate_to_r2.py --verbose --dry-run
+```
 
-For deployment issues:
-1. Check the deployment logs
-2. Review the health check endpoints
-3. Verify environment configuration
-4. Contact the development team
+## Performance Considerations
 
-## Success Criteria
+- **Batch Size**: Larger batches are more efficient but use more memory
+- **Concurrent Uploads**: Limited by R2 and database connection limits
+- **Network Bandwidth**: Large files may require longer timeouts
+- **Database Connections**: Script uses connection pooling for efficiency
 
-### Deployment Success
-- ✅ All pre-deployment checks pass
-- ✅ Staging validation successful
-- ✅ Production deployment completes
-- ✅ Health checks return healthy status
-- ✅ All critical endpoints responsive
-- ✅ Security validation passes
+## Security Considerations
 
-### Cutover Success
-- ✅ Zero-downtime migration
-- ✅ All user data preserved
-- ✅ Performance meets requirements (<100ms response time)
-- ✅ System stability confirmed (10+ minutes monitoring)
-- ✅ Rollback capability verified
-- ✅ Team notifications sent
+- **File Access**: Ensure proper file system permissions
+- **Database Security**: Use strong credentials and SSL connections
+- **API Security**: Secure Workers API with appropriate authentication
+- **Logging**: Avoid logging sensitive information like file contents
 
-## Future Enhancements
+## Support
 
-- Integration with CI/CD pipelines
-- Automated testing integration
-- Enhanced monitoring and alerting
-- Canary deployment support
-- Advanced blue-green deployment features
+For issues or questions about the migration script:
 
----
+1. Check the migration logs for detailed error messages
+2. Review this README for common solutions
+3. Use dry-run mode to test before actual migration
+4. Monitor database and API logs for additional context
 
-*This deployment system provides production-ready deployment capabilities with comprehensive validation, monitoring, and rollback procedures for the List Cutter unified Cloudflare Workers architecture.*
+## Development Notes
+
+### Code Structure
+
+- `DatabaseManager`: Handles PostgreSQL operations
+- `FileMigrationClient`: Manages API communication
+- `FileProcessor`: Handles file operations and checksums
+- `MigrationOrchestrator`: Main coordination logic
+
+### Testing
+
+Before running in production:
+
+1. Test with small batch sizes
+2. Run dry-run analysis
+3. Verify database backup procedures
+4. Test rollback functionality
+5. Monitor resource usage
+
+### Future Enhancements
+
+- Support for different storage backends
+- Parallel processing for large deployments
+- Web UI for monitoring and management
+- Automated scheduling and monitoring
+- Integration with backup systems
+
+## Migration Validation Tools
+
+This directory also contains comprehensive validation tools for verifying file migration integrity:
+
+### Validation Script (`validate_migration.py`)
+
+A production-ready Python script that validates:
+- File integrity using SHA-256 checksums
+- Database consistency between PostgreSQL and D1
+- R2 storage accessibility
+- Workers API functionality
+- Metadata preservation
+- User association integrity
+- Batch completeness
+
+### Shell Wrapper (`validate_migration.sh`)
+
+A convenient shell wrapper that provides:
+- Environment setup and dependency management
+- Configuration file management
+- Easy command-line interface
+- Progress monitoring
+- Error handling and reporting
+
+### Usage Examples
+
+```bash
+# Setup validation environment
+./validate_migration.sh --setup-environment
+
+# Validate specific batch
+./validate_migration.sh --batch-id batch-123 --verbose
+
+# Full migration validation with human-readable output
+./validate_migration.sh --full-validation --output-format human
+
+# Generate CSV report
+./validate_migration.sh --full-validation --output-format csv --output-file results.csv
+```
+
+### Configuration
+
+Copy `validation_config.example.json` to `validation_config.json` and configure:
+- PostgreSQL connection details
+- Cloudflare D1 API credentials
+- R2 storage API credentials
+- Workers API endpoints
+- Django media root path
+
+For complete validation documentation, see `VALIDATION_README.md`.
+
+### Test Suite
+
+Run validation tests:
+```bash
+python3 test_validation.py
+```
+
+The validation tools complement the migration script by providing comprehensive verification that all files were successfully migrated with full integrity preservation.
