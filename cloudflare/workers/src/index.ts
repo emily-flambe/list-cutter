@@ -77,7 +77,7 @@ app.onError((err, c) => {
     {
       error: err.message || 'Internal Server Error',
       message: 'An unexpected error occurred',
-      ...(c.env.ENVIRONMENT === 'development' && { stack: err.stack }),
+      ...(c.env?.ENVIRONMENT === 'development' && { stack: err.stack }),
     },
     status as 500
   );
