@@ -1,0 +1,13 @@
+{
+  "name": "list-cutter",
+  "version": "1.0.0",
+  "description": "List Cutter - CSV Processing Tool",
+  "scripts": {
+    "build": "cd app/frontend && npm run build",
+    "dev": "cd app/frontend && npm run dev",
+    "preview": "cd app/frontend && npm run preview"
+  },
+  "workspaces": [
+    "app/frontend"
+  ]
+}
