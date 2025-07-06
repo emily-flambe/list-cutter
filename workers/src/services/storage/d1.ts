@@ -29,16 +29,19 @@ export async function createUser(
 
   // Hash password
   const hashedPassword = await hashPassword(password);
-  const userId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
 
-  // Insert user
-  await env.DB.prepare(
-    'INSERT INTO users (id, username, email, password_hash, created_at) VALUES (?, ?, ?, ?, ?)'
-  ).bind(userId, username, email || null, hashedPassword, createdAt).run();
+  // Insert user and get the ID
+  const result = await env.DB.prepare(
+    'INSERT INTO users (username, email, password_hash, created_at) VALUES (?, ?, ?, ?) RETURNING id'
+  ).bind(username, email || null, hashedPassword, createdAt).first();
+
+  if (!result) {
+    throw new ApiError(500, 'Failed to create user');
+  }
 
   return {
-    id: userId,
+    id: result.id as number,
     username,
     email: email || '',
     created_at: createdAt
@@ -66,14 +69,14 @@ export async function authenticateUser(
   }
 
   return {
-    id: user.id as string,
+    id: user.id as number,
     username: user.username as string,
     email: user.email as string || '',
     created_at: user.created_at as string
   };
 }
 
-export async function getUserById(env: Env, userId: string): Promise<User | null> {
+export async function getUserById(env: Env, userId: number): Promise<User | null> {
   const user = await env.DB.prepare(
     'SELECT id, username, email, created_at FROM users WHERE id = ?'
   ).bind(userId).first();
@@ -83,7 +86,7 @@ export async function getUserById(env: Env, userId: string): Promise<User | null
   }
 
   return {
-    id: user.id as string,
+    id: user.id as number,
     username: user.username as string,
     email: user.email as string || '',
     created_at: user.created_at as string

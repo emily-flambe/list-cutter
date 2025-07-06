@@ -2,7 +2,7 @@
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     email TEXT UNIQUE,
     password_hash TEXT NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- Saved files table
 CREATE TABLE IF NOT EXISTS saved_files (
     file_id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
     file_name TEXT NOT NULL,
     file_path TEXT NOT NULL,
     uploaded_at TEXT NOT NULL,

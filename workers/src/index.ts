@@ -1,6 +1,7 @@
 import type { Env } from './types';
 import { errorHandler } from './middleware/error';
 import { addCorsHeaders, corsHeaders } from './middleware/cors';
+import { securityMiddleware, addSecurityHeaders } from './middleware/security';
 import { handleHome } from './routes/home';
 import { handleCsvCutterUpload } from './routes/list_cutter/csv_cutter';
 import { handleExportCsv } from './routes/list_cutter/export_csv';
@@ -8,6 +9,7 @@ import { handleDownload } from './routes/list_cutter/download';
 import { handleRegister } from './routes/accounts/register';
 import { handleLogin } from './routes/accounts/login';
 import { handleRefresh } from './routes/accounts/refresh';
+import { handleLogout } from './routes/accounts/logout';
 import { handleGetUser } from './routes/accounts/user';
 import { handleUpload } from './routes/list_cutter/upload';
 import { handleListSavedFiles } from './routes/list_cutter/list_files';
@@ -18,13 +20,20 @@ import { handleUpdateTags } from './routes/list_cutter/update_tags';
 import { handleFetchFileLineage } from './routes/list_cutter/fetch_file_lineage';
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     try {
+      // Handle CORS preflight requests
       if (request.method === 'OPTIONS') {
-        return new Response(null, { 
+        return addSecurityHeaders(new Response(null, { 
           status: 204, 
           headers: corsHeaders() 
-        });
+        }), new URL(request.url).pathname);
+      }
+
+      // Apply security middleware first
+      const securityResponse = await securityMiddleware(request, env, ctx);
+      if (securityResponse) {
+        return securityResponse;
       }
 
       const url = new URL(request.url);
@@ -54,6 +63,8 @@ export default {
         response = await handleLogin(request, env);
       } else if (pathname === '/api/accounts/token/refresh' && method === 'POST') {
         response = await handleRefresh(request, env);
+      } else if (pathname === '/api/accounts/logout' && method === 'POST') {
+        response = await handleLogout(request, env);
       } else if (pathname === '/api/accounts/user' && method === 'GET') {
         response = await handleGetUser(request, env);
       } else if (pathname === '/api/list_cutter/upload' && method === 'POST') {
@@ -109,10 +120,13 @@ export default {
         });
       }
 
+      // Apply security headers and CORS to all responses
+      response = addSecurityHeaders(response, pathname);
       return addCorsHeaders(response);
     } catch (error) {
       const errorResponse = errorHandler(error);
-      return addCorsHeaders(errorResponse);
+      const secureErrorResponse = addSecurityHeaders(errorResponse, new URL(request.url).pathname);
+      return addCorsHeaders(secureErrorResponse);
     }
   },
 };

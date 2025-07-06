@@ -1,6 +1,6 @@
 import type { Env } from '../../types';
 import { authenticateUser } from '../../services/storage/d1';
-import { signJWT } from '../../services/auth/jwt';
+import { generateTokenPair } from '../../services/auth/jwt';
 import { ApiError } from '../../middleware/error';
 
 interface LoginRequest {
@@ -26,16 +26,17 @@ export async function handleLogin(
       throw new ApiError(401, 'Invalid username or password');
     }
     
-    // Generate JWT token
-    const token = await signJWT(user, env.JWT_SECRET);
+    // Generate JWT token pair
+    const tokens = await generateTokenPair(user, env);
 
     return new Response(JSON.stringify({
-      access: token,
+      message: 'Login successful',
       user: {
         id: user.id,
         username: user.username,
         email: user.email
-      }
+      },
+      ...tokens
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

@@ -1,6 +1,6 @@
 import type { Env, UserRegistration } from '../../types';
 import { createUser } from '../../services/storage/d1';
-import { signJWT } from '../../services/auth/jwt';
+import { generateTokenPair } from '../../services/auth/jwt';
 import { ApiError } from '../../middleware/error';
 
 export async function handleRegister(
@@ -18,17 +18,17 @@ export async function handleRegister(
     // Create user
     const user = await createUser(env, userData);
     
-    // Generate JWT token
-    const token = await signJWT(user, env.JWT_SECRET);
+    // Generate JWT token pair
+    const tokens = await generateTokenPair(user, env);
 
     return new Response(JSON.stringify({
-      detail: 'User created successfully',
-      token,
+      message: 'User created successfully',
       user: {
         id: user.id,
         username: user.username,
         email: user.email
-      }
+      },
+      ...tokens
     }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }

@@ -11,7 +11,7 @@ export async function handleGetUser(
     const jwtPayload = await requireAuth(request, env);
     
     // Get full user details from database
-    const user = await getUserById(env, jwtPayload.id);
+    const user = await getUserById(env, jwtPayload.user_id);
     if (!user) {
       throw new ApiError(404, 'User not found');
     }

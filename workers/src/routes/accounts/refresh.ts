@@ -1,9 +1,9 @@
 import type { Env } from '../../types';
-import { refreshJWT } from '../../services/auth/jwt';
+import { refreshAccessToken } from '../../services/auth/jwt';
 import { ApiError } from '../../middleware/error';
 
 interface RefreshRequest {
-  refresh: string;
+  refresh_token: string;
 }
 
 export async function handleRefresh(
@@ -11,19 +11,20 @@ export async function handleRefresh(
   env: Env
 ): Promise<Response> {
   try {
-    const { refresh: token } = await request.json() as RefreshRequest;
+    const { refresh_token } = await request.json() as RefreshRequest;
     
-    if (!token) {
+    if (!refresh_token) {
       throw new ApiError(400, 'Refresh token is required');
     }
 
-    const newToken = await refreshJWT(token, env.JWT_SECRET);
-    if (!newToken) {
+    const tokens = await refreshAccessToken(refresh_token, env);
+    if (!tokens) {
       throw new ApiError(401, 'Invalid or expired refresh token');
     }
 
     return new Response(JSON.stringify({
-      access: newToken
+      message: 'Token refreshed successfully',
+      ...tokens
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }

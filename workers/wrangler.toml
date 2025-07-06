@@ -12,6 +12,12 @@ name = "list-cutter-workers-staging"
 [env.production]
 name = "list-cutter-workers-prod"
 
+# KV for session/token management
+[[kv_namespaces]]
+binding = "AUTH_KV"
+preview_id = "your-preview-kv-namespace-id"
+id = "your-kv-namespace-id"
+
 [[r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "list-cutter-files"
@@ -21,6 +27,13 @@ preview_bucket_name = "list-cutter-files-preview"
 binding = "DB"
 database_name = "list-cutter-db"
 database_id = "YOUR_D1_DATABASE_ID"
+
+# Rate limiting (beta feature)
+[[unsafe.bindings]]
+name = "RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 60, period = 60 }  # 60 requests per minute
 
 [vars]
 JWT_SECRET = "your-jwt-secret-here"

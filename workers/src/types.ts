@@ -1,13 +1,15 @@
 export interface Env {
   R2_BUCKET: R2Bucket;
   DB: D1Database;
+  AUTH_KV: KVNamespace;
+  RATE_LIMITER: any; // Rate limiting binding (beta)
   JWT_SECRET: string;
   MAX_FILE_SIZE: string;
   ENVIRONMENT: string;
 }
 
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
   created_at: string;
@@ -65,8 +67,27 @@ export interface FileLineage {
 }
 
 export interface UserJWTPayload {
-  id: string;
+  user_id: number;
   username: string;
+  email?: string;
   iat: number;
   exp: number;
+  jti: string;  // JWT ID for token tracking
+  token_type: 'access' | 'refresh';
+}
+
+export interface TokenPair {
+  access_token: string;
+  refresh_token: string;
+}
+
+export interface RefreshTokenData {
+  user_id: number;
+  username: string;
+  expires_at: number;
+}
+
+export interface BlacklistedToken {
+  reason: string;
+  blacklisted_at: number;
 }
