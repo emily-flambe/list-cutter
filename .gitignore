@@ -177,3 +177,6 @@ generated/
 media/
 app/config/media/
 app/config/media/uploads/
+
+# Git worktrees
+worktrees/
