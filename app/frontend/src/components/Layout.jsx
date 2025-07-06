@@ -101,14 +101,15 @@ const Layout = ({ children }) => {
           color: '#e3f0f7',
           opacity: 0.7,
           transition: 'opacity 0.2s ease',
+          mb: 2, // Add margin bottom for padding beneath
           '&:hover': {
             opacity: 1
           }
         }}
       >
         <svg
-          width="32"
-          height="32"
+          width="24"
+          height="24"
           viewBox="0 0 24 24"
           fill="currentColor"
           xmlns="http://www.w3.org/2000/svg"
