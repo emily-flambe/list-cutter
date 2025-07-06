@@ -1,7 +1,7 @@
 {
-  "name": "list-cutter-app",
+  "name": "list-cutter-frontend",
+  "main": "src/worker.js",
   "compatibility_date": "2024-12-01",
-  "main": "src/worker-simple.js",
   "assets": {
     "directory": "dist",
     "binding": "ASSETS"
@@ -13,7 +13,17 @@
     "production": {
       "vars": {
         "ENVIRONMENT": "production"
-      }
+      },
+      "routes": [
+        {
+          "pattern": "list-cutter.emilycogsdill.com/*",
+          "zone_name": "emilycogsdill.com"
+        },
+        {
+          "pattern": "cutty.emilycogsdill.com/*",
+          "zone_name": "emilycogsdill.com"
+        }
+      ]
     },
     "preview": {
       "vars": {
