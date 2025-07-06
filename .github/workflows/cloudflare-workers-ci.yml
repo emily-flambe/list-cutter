@@ -1,0 +1,45 @@
+name: Cloudflare Workers CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'cloudflare/workers/**'
+      - '.github/workflows/cloudflare-workers-ci.yml'
+
+jobs:
+  test:
+    name: Lint, Build & Test
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./cloudflare/workers
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './cloudflare/workers/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run TypeScript type check
+        run: npm run typecheck
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
