@@ -2,6 +2,9 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     
+    // Log the domain for debugging (remove in production)
+    console.log(`Request from: ${url.hostname}`);
+    
     // Try to serve the asset directly
     const asset = await env.ASSETS.fetch(request);
     

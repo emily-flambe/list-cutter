@@ -9,11 +9,12 @@ binding = "ASSETS"
 [vars]
 ENVIRONMENT = "development"
 
-# Production environment with custom domain
+# Production environment with custom domains
 [env.production]
 vars = { ENVIRONMENT = "production" }
 routes = [
-  { pattern = "list-cutter.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+  { pattern = "list-cutter.emilycogsdill.com/*", zone_name = "emilycogsdill.com" },
+  { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
 
 # Preview environment
