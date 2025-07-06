@@ -78,7 +78,7 @@ app.get('/test-r2', async (c) => {
     return c.json({
       status: 'error',
       message: 'R2 storage test failed',
-      error: error.message
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, 500);
   }
 });
