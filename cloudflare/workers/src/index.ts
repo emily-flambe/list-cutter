@@ -5,7 +5,6 @@ import { prettyJSON } from 'hono/pretty-json';
 import { secureHeaders } from 'hono/secure-headers';
 import { timing } from 'hono/timing';
 import type { CloudflareEnv } from './types/env';
-import { R2StorageService } from './services/storage/r2-service';
 
 // Import route handlers
 // import authRoutes from '@routes/auth';
