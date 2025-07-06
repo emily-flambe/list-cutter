@@ -22,6 +22,7 @@ This document provides a comprehensive technical implementation plan for testing
 14. [Bundle Optimization](#bundle-optimization)
 15. [Testing Automation](#testing-automation)
 16. [Quality Gates](#quality-gates)
+17. [Phase 5 R2 Testing Integration](#phase-5-r2-testing-integration)
 
 ## Unified Workers Testing Architecture
 
@@ -1973,3 +1974,183 @@ The unified architecture ensures:
 - **Simplified Maintenance**: One codebase to maintain and test
 
 This comprehensive testing and optimization phase leverages the unified Workers architecture to deliver superior quality, performance, and reliability while dramatically simplifying the testing and deployment process.
+
+## Phase 5 R2 Testing Integration
+
+### Critical Dependencies from Phase 5 Follow-up
+
+**⚠️ PREREQUISITE**: Phase 7 testing effectiveness depends on completing Phase 5 follow-up tasks for comprehensive R2 testing.
+
+#### Required Phase 5 Follow-up Completions
+
+**🔴 CRITICAL - Must Complete Before Testing:**
+- **Issue #64**: Missing D1 database tables for R2 operations
+  - **Impact**: Cannot test R2StorageService without proper database schema
+  - **Status**: BLOCKS comprehensive testing - complete immediately
+
+**🟡 HIGH PRIORITY - Enhance Testing Capabilities:**
+- **Issue #65**: R2 storage monitoring and cost management
+  - **Impact**: Performance testing needs monitoring infrastructure
+  - **Benefit**: Enables real-time performance metrics during testing
+
+- **Issue #69**: Performance optimizations and caching for R2 operations
+  - **Impact**: Testing should validate optimized performance targets
+  - **Benefit**: Tests can validate caching hit rates and optimization effectiveness
+
+#### R2-Specific Testing Requirements
+
+**1. R2 Integration Testing**
+```typescript
+// tests/r2-integration.test.ts
+describe('R2 Storage Integration', () => {
+  beforeAll(async () => {
+    // Requires Issue #64 database tables
+    await setupTestDatabase();
+    await setupTestR2Bucket();
+  });
+
+  test('file upload with authentication', async () => {
+    // Tests Phase 6 auth + R2 integration
+    const response = await uploadFileWithAuth(testFile, authToken);
+    expect(response.status).toBe(200);
+    
+    // Verify database record (Issue #64)
+    const fileRecord = await db.prepare(
+      'SELECT * FROM files WHERE id = ?'
+    ).bind(response.fileId).first();
+    expect(fileRecord).toBeDefined();
+  });
+
+  test('multipart upload performance', async () => {
+    // Tests Issue #69 optimizations
+    const largeFile = generateTestFile(100 * 1024 * 1024); // 100MB
+    const startTime = Date.now();
+    
+    const response = await uploadFileMultipart(largeFile);
+    const duration = Date.now() - startTime;
+    
+    // Performance targets from Issue #69
+    expect(duration).toBeLessThan(30000); // < 30s for 100MB
+    expect(response.uploadType).toBe('multipart');
+  });
+});
+```
+
+**2. Performance Testing with R2 Monitoring**
+```typescript
+// tests/performance/r2-performance.test.ts
+describe('R2 Performance Testing', () => {
+  test('upload performance with monitoring', async () => {
+    // Requires Issue #65 monitoring infrastructure
+    const metrics = new R2PerformanceMonitor();
+    
+    const testResults = await metrics.measureOperation(async () => {
+      return await uploadTestFiles(100); // 100 concurrent uploads
+    });
+    
+    // Validate performance targets
+    expect(testResults.averageResponseTime).toBeLessThan(2000); // < 2s
+    expect(testResults.successRate).toBeGreaterThan(0.99); // 99% success
+    expect(testResults.p95ResponseTime).toBeLessThan(5000); // < 5s p95
+  });
+
+  test('cache effectiveness', async () => {
+    // Tests Issue #69 caching optimizations
+    const fileId = await uploadTestFile();
+    
+    // First download (cache miss)
+    const response1 = await downloadFile(fileId);
+    expect(response1.headers.get('X-Cache')).toBe('MISS');
+    
+    // Second download (cache hit)
+    const response2 = await downloadFile(fileId);
+    expect(response2.headers.get('X-Cache')).toBe('HIT');
+  });
+});
+```
+
+**3. Load Testing with R2 Operations**
+```typescript
+// tests/load/r2-load.test.ts
+describe('R2 Load Testing', () => {
+  test('sustained file operations under load', async () => {
+    // Requires Issue #65 monitoring for metrics collection
+    const loadTest = new R2LoadTest({
+      concurrentUploads: 50,
+      concurrentDownloads: 100,
+      duration: 300000 // 5 minutes
+    });
+    
+    const results = await loadTest.execute();
+    
+    // Validate system handles load gracefully
+    expect(results.uploadSuccessRate).toBeGreaterThan(0.95);
+    expect(results.downloadSuccessRate).toBeGreaterThan(0.99);
+    expect(results.averageUploadTime).toBeLessThan(3000);
+    expect(results.errorRate).toBeLessThan(0.01);
+  });
+});
+```
+
+**4. Security Testing for R2 Operations**
+```typescript
+// tests/security/r2-security.test.ts
+describe('R2 Security Testing', () => {
+  test('file access controls', async () => {
+    // Tests Issue #67 security measures
+    const user1File = await uploadFile(testFile, user1Token);
+    
+    // User 2 should not access User 1's file
+    const unauthorizedResponse = await downloadFile(user1File.id, user2Token);
+    expect(unauthorizedResponse.status).toBe(403);
+    
+    // Verify audit log entry (Issue #67)
+    const auditLogs = await getAuditLogs(user1File.id);
+    expect(auditLogs).toContainEqual(
+      expect.objectContaining({
+        action: 'download',
+        success: false,
+        user_id: user2.id
+      })
+    );
+  });
+});
+```
+
+#### Updated Phase 7 Testing Prerequisites
+
+**Before Starting Phase 7:**
+1. **Complete Issue #64** - Database tables (CRITICAL for testing)
+2. **Complete Issue #65** - Monitoring setup (for performance testing)
+3. **Implement Issue #69** - Performance optimizations (to test targets)
+
+**Testing Enhancements from Phase 5 Follow-up:**
+- **Comprehensive R2 testing** requires functional database schema
+- **Performance baselines** depend on monitoring infrastructure
+- **Load testing accuracy** improved with Issue #65 metrics
+- **Security validation** enhanced by Issue #67 audit logging
+
+#### Updated Phase 7 Success Criteria
+
+**R2 Integration Testing:**
+- [ ] All R2 operations tested with authentication integration
+- [ ] Database operations validated for file metadata (Issue #64)
+- [ ] Multipart upload performance meets targets (Issue #69)
+
+**Performance Testing:**
+- [ ] R2 monitoring provides real-time metrics during testing (Issue #65)
+- [ ] Caching effectiveness validated (Issue #69)
+- [ ] Load testing covers sustained R2 operations
+
+**Security Testing:**
+- [ ] File access controls comprehensively tested (Issue #67)
+- [ ] Audit logging validated for all file operations
+- [ ] Rate limiting tested for file endpoints
+
+### Testing Integration Benefits
+
+The unified Workers architecture with completed Phase 5 follow-up tasks enables:
+- **End-to-end testing** that covers authentication, file operations, and database
+- **Real-time monitoring** during all testing phases
+- **Comprehensive security validation** across the entire application stack
+- **Performance optimization validation** with measurable targets

@@ -1094,6 +1094,47 @@ export class AlertManager {
 
 ## Data Migration Execution
 
+### Phase 5 Follow-up Prerequisites ⚠️
+
+**🔴 CRITICAL DEPENDENCY**: Phase 8 deployment requires completion of Phase 5 follow-up tasks for data migration capabilities.
+
+#### Required Phase 5 Follow-up Completions
+
+**BLOCKING Phase 8 Deployment:**
+- **Issue #64**: Missing D1 database tables for R2 operations
+  - **Impact**: Cannot migrate user files without proper database schema
+  - **Status**: BLOCKS Phase 8 - must complete before any migration work
+  
+- **Issue #66**: Create data migration tools for existing files to R2 storage
+  - **Impact**: No tools to migrate Django filesystem files to R2
+  - **Status**: BLOCKS cutover - production cannot access existing user data
+
+**SUPPORTING Phase 8 Operations:**
+- **Issue #65**: R2 storage monitoring and cost management
+  - **Impact**: No visibility into production R2 operations and costs
+  - **Recommendation**: Complete before production cutover for operational safety
+
+- **Issue #68**: Disaster recovery and backup procedures for R2 storage
+  - **Impact**: No backup/recovery capabilities for production file data
+  - **Recommendation**: Complete before production cutover for business continuity
+
+#### Updated Phase 8 Prerequisites
+
+**Before Starting Phase 8:**
+1. **Complete Issue #64** - Database tables (CRITICAL)
+2. **Complete Issue #66** - Migration tools (REQUIRED)
+3. **Complete Issue #65** - Monitoring setup (RECOMMENDED)
+4. **Complete Issue #68** - Backup procedures (RECOMMENDED)
+
+**Migration Tool Integration:**
+Phase 8 will leverage the migration tools from Issue #66:
+- File migration assessment and planning scripts
+- Batch migration workers with integrity verification
+- Progress tracking and reporting systems
+- Rollback capabilities for failed migrations
+
+See [GitHub Issues #64-69](https://github.com/emily-flambe/list-cutter/issues?q=is%3Aissue+is%3Aopen+label%3Aphase-5-followup) for complete implementation details.
+
 ### Production Data Migration
 
 ```typescript

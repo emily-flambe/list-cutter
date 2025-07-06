@@ -20,6 +20,7 @@ This document provides a comprehensive technical implementation plan for migrati
 12. [Implementation Code](#implementation-code)
 13. [Testing Strategy](#testing-strategy)
 14. [Migration Checklist](#migration-checklist)
+15. [Phase 5 R2 Security Integration](#phase-5-r2-security-integration)
 
 ## Unified Workers Security Architecture
 
@@ -1395,3 +1396,126 @@ The unified Workers deployment transforms authentication and security:
 - **Global Protection**: Cloudflare's edge security everywhere
 
 This unified approach provides enterprise-grade security while dramatically simplifying the implementation and maintenance of authentication and security features.
+
+## Phase 5 R2 Security Integration
+
+### Critical Dependencies from Phase 5 Follow-up
+
+**⚠️ PREREQUISITE**: Phase 6 implementation depends on completing Phase 5 follow-up tasks for R2 security integration.
+
+#### Required Phase 5 Follow-up Completions
+
+**🔴 CRITICAL - Must Complete First:**
+- **Issue #64**: Missing D1 database tables for R2 operations
+  - Required for user-based file access controls
+  - Blocks authentication integration with R2StorageService
+  - **Status**: BLOCKS Phase 6 - complete immediately
+
+**🟡 HIGH PRIORITY - Integrate with Phase 6:**
+- **Issue #67**: Comprehensive security measures for R2 file operations
+  - File access control middleware needed for auth integration
+  - User quota management aligns with Phase 6 user management
+  - Audit logging complements Phase 6 security logging
+
+#### R2 Authentication Integration Points
+
+**1. File Access Control Middleware**
+```typescript
+// Integrates with Phase 6 JWT middleware
+export async function validateR2FileAccess(
+  c: Context,
+  fileId: string,
+  operation: 'read' | 'write' | 'delete'
+): Promise<{ authorized: boolean; user: User | null }> {
+  // Uses Phase 6 JWT validation
+  const user = await validateJWTToken(c);
+  
+  // Check file ownership using Issue #64 database tables
+  const fileRecord = await c.env.DB.prepare(`
+    SELECT user_id FROM files WHERE id = ?
+  `).bind(fileId).first();
+  
+  const authorized = fileRecord && fileRecord.user_id === user.id;
+  
+  // Log using Issue #67 audit system
+  await logFileAccess(fileId, user.id, operation, authorized);
+  
+  return { authorized, user };
+}
+```
+
+**2. Unified Security Headers**
+```typescript
+// Extends Phase 6 security headers for R2 file responses
+export function addR2SecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  
+  // Phase 6 standard security headers
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('X-Frame-Options', 'DENY');
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // R2-specific headers from Issue #67
+  headers.set('Content-Security-Policy', "default-src 'none'");
+  headers.set('X-Download-Options', 'noopen');
+  
+  return new Response(response.body, { ...response, headers });
+}
+```
+
+**3. User Quota Integration**
+```typescript
+// Integrates R2 quotas with Phase 6 user management
+export class UserQuotaService {
+  async checkUploadQuota(userId: string, fileSize: number): Promise<QuotaCheckResult> {
+    // Get user tier from Phase 6 user management
+    const user = await getUserById(userId);
+    
+    // Check against Issue #67 quota tables
+    const quota = await this.getUserQuota(userId, user.tier);
+    
+    return {
+      allowed: quota.currentStorage + fileSize <= quota.maxStorage,
+      remaining: quota.maxStorage - quota.currentStorage,
+      userTier: user.tier
+    };
+  }
+}
+```
+
+#### Implementation Sequence for Phase 6
+
+**Week 1: Complete Phase 5 Prerequisites**
+1. Complete Issue #64 (database tables) - CRITICAL
+2. Begin Issue #67 (R2 security measures)
+
+**Week 2: Integrate R2 Auth with Phase 6**
+1. Extend Phase 6 JWT middleware to support R2 file operations
+2. Implement unified file access control
+3. Add R2 operations to Phase 6 audit logging
+
+**Week 3: Complete Integration**
+1. Test end-to-end auth flow with R2 operations
+2. Validate security controls across all file operations
+3. Complete Issue #67 R2 security implementation
+
+### Updated Phase 6 Success Criteria
+
+**Authentication Integration:**
+- [ ] JWT authentication protects all R2 file operations
+- [ ] File ownership validation using D1 database (Issue #64)
+- [ ] User quota enforcement integrated with auth system
+
+**Security Integration:**
+- [ ] Unified security headers for all responses (app + files)
+- [ ] Complete audit logging for auth and file operations
+- [ ] Rate limiting covers both API and file operations
+
+**Testing Requirements:**
+- [ ] End-to-end tests cover authenticated file upload/download
+- [ ] Security tests validate file access controls
+- [ ] Performance tests include R2 operations with auth overhead
+
+### Migration Notes
+
+The unified Workers architecture greatly simplifies this integration since both authentication and file operations happen in the same Worker context. This eliminates cross-service communication and provides stronger security guarantees than a traditional microservices approach.
