@@ -27,12 +27,12 @@ MAX_FILE_SIZE = "52428800" # 50MB in bytes
 JWT_ISSUER = "list-cutter"
 JWT_AUDIENCE = "list-cutter-api"
 
-# D1 Database bindings (commented out - create your own database and update ID)
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "cutty-dev"
-# database_id = "your-database-id-here"
-# migrations_dir = "./migrations"
+# D1 Database bindings
+[[d1_databases]]
+binding = "DB"
+database_name = "list-cutter-dev"
+database_id = "fc5af020-09f2-4235-8a47-590140e8ad74"
+migrations_dir = "./migrations"
 
 # R2 Storage bindings
 [[r2_buckets]]
@@ -66,10 +66,10 @@ preview_bucket_name = "cutty-files-preview"
 name = "list-cutter-api-staging"
 vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://staging.list-cutter.com" }
 
-# [[env.staging.d1_databases]]
-# binding = "DB"
-# database_name = "cutty-staging"
-# database_id = "your-staging-database-id-here"
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "list-cutter-staging"
+database_id = "24c83d4f-09e8-4d0c-80bc-ac5c19a999cf"
 
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"
@@ -88,10 +88,10 @@ routes = [
   { pattern = "api.list-cutter.com/*", zone_name = "list-cutter.com" }
 ]
 
-# [[env.production.d1_databases]]
-# binding = "DB"
-# database_name = "cutty-production"
-# database_id = "your-production-database-id-here"
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "list-cutter-production"
+database_id = "PRODUCTION_DB_ID"
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"

@@ -25,8 +25,9 @@ preview_bucket_name = "list-cutter-files-preview"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "list-cutter-db"
-database_id = "YOUR_D1_DATABASE_ID"
+database_name = "list-cutter-dev"
+database_id = "fc5af020-09f2-4235-8a47-590140e8ad74"
+migrations_dir = "./migrations"
 
 # Rate limiting (beta feature)
 [[unsafe.bindings]]
