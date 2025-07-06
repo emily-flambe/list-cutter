@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "workers:dev": "npm run build && wrangler dev",
+    "workers:deploy": "npm run build && wrangler deploy",
+    "workers:preview": "npm run build && wrangler deploy --env preview",
+    "deploy": "npm run workers:deploy",
+    "preview:upload": "npm run build && wrangler versions upload",
+    "preview:list": "wrangler versions list"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -20,6 +26,7 @@
     "react-router-dom": "^6.28.2"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.9.0",
     "@eslint/js": "^9.17.0",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
@@ -29,6 +36,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
-    "vite": "^6.0.5"
+    "vite": "^6.0.5",
+    "wrangler": "^4.23.0"
   }
 }

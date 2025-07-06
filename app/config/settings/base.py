@@ -218,7 +218,7 @@ LOGGING = {
     },
 }
 
-# Neo4j settings
+# Neo4j settings (Legacy - Phase 3)
 from neomodel import config as neomodel_config
 
 NEOMODEL_SIGNALS = False  # optional, depending on your use-case
@@ -227,4 +227,19 @@ NEO4J_PASSWORD = get_env_variable("NEO4J_PASSWORD", "password")
 NEO4J_HOST = get_env_variable("NEO4J_HOST", "HOST_NOT_SET__RIP")
 # Local connection (like, from my computer)
 neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@host.docker.internal:7687'
+
+# D1 Database settings (Phase 4+)
+D1_DATABASE_CONFIG = {
+    'local_db_path': get_env_variable("D1_LOCAL_PATH", ".wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite"),
+    'database_name': get_env_variable("D1_DATABASE_NAME", "list-cutter-dev"),
+    'use_d1': get_env_variable("USE_D1_DATABASE", False),  # Feature flag for gradual migration
+}
+
+# Phase 4 Feature Flags
+PHASE_4_FEATURES = {
+    'use_d1_for_users': get_env_variable("USE_D1_USERS", False),
+    'use_d1_for_files': get_env_variable("USE_D1_FILES", False), 
+    'use_d1_for_persons': get_env_variable("USE_D1_PERSONS", False),
+    'use_d1_for_relationships': get_env_variable("USE_D1_RELATIONSHIPS", False),
+}
 

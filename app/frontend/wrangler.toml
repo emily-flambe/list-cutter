@@ -1,0 +1,24 @@
+name = "cutty-frontend"
+main = "src/worker.js"
+compatibility_date = "2024-12-01"
+
+# Enable versioning and gradual deployments
+[version_metadata]
+enable_versions = true
+
+# Asset configuration
+[assets]
+directory = "dist"
+binding = "ASSETS"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+
+# Production environment
+[env.production]
+vars = { ENVIRONMENT = "production" }
+routes = [
+  { pattern = "list-cutter.emilycogsdill.com/*", zone_name = "emilycogsdill.com" },
+  { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+]

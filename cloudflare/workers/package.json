@@ -1,0 +1,41 @@
+{
+  "name": "list-cutter-workers",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
+    "preview:upload": "wrangler versions upload",
+    "preview:list": "wrangler versions list",
+    "types": "wrangler types",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "build": "esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --platform=node --target=es2022",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.38",
+    "@cloudflare/workers-types": "^4.20241230.0",
+    "@types/node": "^22.10.6",
+    "@typescript-eslint/eslint-plugin": "^8.20.0",
+    "@typescript-eslint/parser": "^8.20.0",
+    "esbuild": "^0.24.2",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8",
+    "wrangler": "^3.98.0"
+  },
+  "dependencies": {
+    "hono": "^4.6.16",
+    "drizzle-orm": "^0.38.4",
+    "jose": "^5.10.0",
+    "zod": "^3.24.1"
+  }
+}

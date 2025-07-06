@@ -1,73 +1,32 @@
-# Cloudflare Migration Phase Plans
+# List Cutter Migration Plans
 
-This directory contains the comprehensive implementation plans for migrating List Cutter from Docker/AWS EC2 to Cloudflare Workers and Pages.
+This directory contains the phased migration plans for transitioning the List Cutter application from Django/PostgreSQL/Neo4j to a fully Cloudflare-native architecture.
 
-## Migration Phases
+## Active Plans (Phases 5-9)
 
-### Phase 1: Development Environment Setup
-**File**: `phase-1-environment-setup.md`  
-**Duration**: 1 day  
-**Description**: Wrangler CLI setup, TypeScript project structure, and local development environment configuration.
+These are the remaining phases to complete the migration:
 
-### Phase 2: Frontend Migration
-**File**: `phase-2-frontend-migration.md`  
-**Duration**: 2-3 days  
-**Description**: React application migration to Cloudflare Pages with build optimizations and API configuration updates.
+- **[Phase 5: R2 Storage Migration](phase-5-r2-migration.md)** - Migrate file storage to Cloudflare R2
+- **[Phase 6: Authentication & Security](phase-6-auth-security.md)** - Implement JWT auth and security features
+- **[Phase 7: Testing & Optimization](phase-7-testing-optimization.md)** - Comprehensive testing and performance optimization
+- **[Phase 8: Deployment & Cutover](phase-8-deployment-cutover.md)** - Production deployment and DNS cutover
+- **[Phase 9: Cleanup](phase-9-cleanup.md)** - Remove legacy code and finalize documentation
 
-### Phase 3: Backend Migration
-**File**: `phase-3-backend-migration.md`  
-**Duration**: 7-10 days  
-**Description**: Complete Django to TypeScript/Hono framework conversion for Cloudflare Workers.
+## Completed Plans
 
-### Phase 4: Database Migration
-**File**: `phase-4-database-migration.md`  
-**Duration**: 3-4 days  
-**Description**: PostgreSQL to Cloudflare D1 (SQLite) migration with schema conversion and data transformation.
+See the [done/](done/) folder for completed phase plans and documentation.
 
-### Phase 5: File Storage Migration
-**File**: `phase-5-r2-migration.md`  
-**Duration**: 2-3 days  
-**Description**: Local filesystem to Cloudflare R2 object storage migration with multipart upload support.
+## Migration Status
 
-### Phase 6: Authentication & Security
-**File**: `phase-6-auth-security.md`  
-**Duration**: 2-3 days  
-**Description**: JWT implementation with Workers KV, security headers, and OWASP compliance.
+For a complete overview of the migration progress, see [../MIGRATION_STATUS.md](../MIGRATION_STATUS.md)
 
-### Phase 7: Testing & Optimization
-**File**: `phase-7-testing-optimization.md`  
-**Duration**: 3-4 days  
-**Description**: Comprehensive testing strategy, performance optimization, and monitoring setup.
+## Architecture
 
-### Phase 8: Deployment & Cutover
-**File**: `phase-8-deployment-cutover.md`  
-**Duration**: 1-2 days  
-**Description**: Production deployment with blue-green strategy and traffic migration.
+The migration follows a unified Cloudflare Workers architecture where a single Worker serves both the React frontend and API backend, leveraging:
+- **D1** for database (SQLite)
+- **R2** for object storage
+- **Workers KV** for session management
+- **Static Assets** for serving the React app
 
-### Phase 9: Cleanup
-**File**: `phase-9-cleanup.md`  
-**Duration**: 1-2 days  
-**Description**: Legacy system decommissioning and operational excellence setup.
-
-## Total Timeline
-
-**Estimated Duration**: 20-28 days for complete migration
-
-## Implementation Status
-
-- [ ] Phase 1: Development Environment Setup
-- [ ] Phase 2: Frontend Migration  
-- [ ] Phase 3: Backend Migration
-- [ ] Phase 4: Database Migration
-- [ ] Phase 5: File Storage Migration
-- [ ] Phase 6: Authentication & Security
-- [ ] Phase 7: Testing & Optimization
-- [ ] Phase 8: Deployment & Cutover
-- [ ] Phase 9: Cleanup
-
-## Notes
-
-- Each phase plan includes detailed implementation steps, code examples, and validation procedures
-- Plans are designed to be executed sequentially, though some phases can be parallelized
-- All plans include rollback strategies and success criteria
-- Archived versions with additional details can be found in `../archive/`
+This approach simplifies deployment, reduces latency, and maximizes the benefits of Cloudflare's edge network.
+EOF < /dev/null

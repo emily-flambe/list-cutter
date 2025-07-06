@@ -1,0 +1,38 @@
+{
+  "name": "list-cutter-unified",
+  "version": "1.0.0",
+  "description": "Unified Cloudflare Workers application for List Cutter - serves both frontend and backend",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "npm run build:frontend && npm run build:worker",
+    "build:frontend": "cd ../app/frontend && npm run build && cp -r dist/* ../../unified-worker/public/",
+    "build:worker": "tsc && cp -r public dist/",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:staging": "npm run build && wrangler deploy --env staging",
+    "deploy:production": "npm run build && wrangler deploy --env production",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.6.8",
+    "csv-parse": "^5.5.6",
+    "csv-stringify": "^6.4.6",
+    "jose": "^5.2.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241106.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.6.3",
+    "vitest": "^1.6.0",
+    "wrangler": "^3.84.0"
+  },
+  "author": "List Cutter Team",
+  "license": "MIT"
+}
