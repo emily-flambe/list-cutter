@@ -1,8 +1,8 @@
-# Phase 5: File Storage Migration to R2
+# Phase 5: File Storage Migration to R2 - Workers-Integrated Implementation
 
 ## Overview
 
-This document provides a detailed technical implementation plan for migrating the List Cutter application's file storage from local filesystem to Cloudflare R2 object storage. The current Django application stores CSV files directly on the filesystem with metadata in PostgreSQL, which needs to be migrated to R2 with D1 database integration.
+This document provides a detailed technical implementation plan for migrating the List Cutter application's file storage from local filesystem to Cloudflare R2 object storage. Following our unified Workers architecture, R2 will be directly bound to our single Worker deployment serving both frontend and backend. The integration leverages R2's native Workers bindings for zero-latency file access, with metadata stored in D1 for a fully integrated Cloudflare stack.
 
 ## Current Architecture Analysis
 
@@ -86,6 +86,142 @@ CREATE INDEX idx_saved_files_file_id ON saved_files(file_id);
 CREATE INDEX idx_saved_files_r2_key ON saved_files(r2_key);
 ```
 
+## Workers-R2 Integration Architecture
+
+### R2 in the Unified Workers Environment
+
+With our unified Workers deployment, R2 provides seamless object storage integration:
+
+1. **Direct Binding**: R2 buckets are bound directly to the Worker through wrangler.toml
+2. **Zero Egress Fees**: Worker-to-R2 communication is free within Cloudflare
+3. **Native API**: Use R2's native JavaScript API without SDK overhead
+4. **Automatic Replication**: R2 handles global distribution automatically
+5. **Integrated Auth**: Leverage Workers' authentication for R2 access control
+
+### Unified Wrangler Configuration
+
+```toml
+# wrangler.toml
+name = "list-cutter"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+
+# R2 Storage bindings
+[[r2_buckets]]
+binding = "FILE_STORAGE"
+bucket_name = "list-cutter-files-production"
+preview_bucket_name = "list-cutter-files-preview"
+
+# Development R2 bucket
+[env.development.r2_buckets]
+[[env.development.r2_buckets]]
+binding = "FILE_STORAGE"
+bucket_name = "list-cutter-files-dev"
+
+# D1 Database (for file metadata)
+[[d1_databases]]
+binding = "DB"
+database_name = "list-cutter-production"
+database_id = "your-database-id"
+
+# Environment variables
+[vars]
+MAX_FILE_SIZE = "52428800"  # 50MB
+ALLOWED_FILE_TYPES = "text/csv,application/vnd.ms-excel,text/plain"
+FILE_RETENTION_DAYS = "90"
+```
+
+### R2 Access Pattern in Unified Workers
+
+```typescript
+// src/types/env.ts
+export interface Env {
+  DB: D1Database;
+  FILE_STORAGE: R2Bucket;
+  ASSETS: Fetcher;
+  // Other bindings...
+}
+
+// src/services/storage/r2-service.ts
+export class R2Service {
+  constructor(
+    private bucket: R2Bucket,
+    private db: D1Database
+  ) {}
+
+  async uploadFile(
+    file: File,
+    userId: string,
+    request: Request
+  ): Promise<UploadResult> {
+    const fileId = crypto.randomUUID();
+    const key = `uploads/user-${userId}/${fileId}-${file.name}`;
+    
+    // Upload to R2
+    const object = await this.bucket.put(key, file.stream(), {
+      httpMetadata: {
+        contentType: file.type,
+        contentDisposition: `attachment; filename="${file.name}"`
+      },
+      customMetadata: {
+        userId,
+        fileId,
+        originalName: file.name,
+        uploadedAt: new Date().toISOString()
+      }
+    });
+    
+    // Store metadata in D1
+    await this.db.prepare(`
+      INSERT INTO saved_files (
+        user_id, file_id, file_name, r2_key, file_size, 
+        content_type, uploaded_at, checksum
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      userId, fileId, file.name, key, file.size,
+      file.type, new Date().toISOString(), object.etag
+    ).run();
+    
+    return { fileId, key, etag: object.etag };
+  }
+
+  async downloadFile(fileId: string, userId: string): Promise<Response> {
+    // Get metadata from D1
+    const fileData = await this.db.prepare(`
+      SELECT r2_key, file_name, content_type 
+      FROM saved_files 
+      WHERE file_id = ? AND user_id = ?
+    `).bind(fileId, userId).first();
+    
+    if (!fileData) {
+      return new Response('File not found', { status: 404 });
+    }
+    
+    // Stream from R2
+    const object = await this.bucket.get(fileData.r2_key);
+    if (!object) {
+      return new Response('File not found in storage', { status: 404 });
+    }
+    
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': fileData.content_type,
+        'Content-Disposition': `attachment; filename="${fileData.file_name}"`,
+        'Cache-Control': 'private, max-age=3600'
+      }
+    });
+  }
+}
+```
+
+### Benefits of R2 with Unified Workers
+
+1. **Single Deployment**: R2, D1, and application code in one Worker
+2. **Simplified Architecture**: No separate storage service or CDN needed
+3. **Cost Efficiency**: Free bandwidth between Workers and R2
+4. **Global Performance**: R2's automatic replication with Worker's edge compute
+5. **Unified Security**: Single authentication layer for app and storage
+
 ## Implementation Plan
 
 ### 1. R2 Bucket Setup and Configuration
@@ -114,29 +250,45 @@ npx wrangler r2 bucket cors put list-cutter-files --file cors.json
 }
 ```
 
-#### 1.3 Wrangler Configuration (`wrangler.toml`)
+#### 1.3 Unified Worker Configuration
+
+Since we're using a unified Workers deployment, R2 configuration is integrated with our main wrangler.toml alongside frontend assets and D1:
+
 ```toml
-name = "list-cutter-backend"
+# wrangler.toml (complete unified configuration)
+name = "list-cutter"
 main = "src/index.ts"
-compatibility_date = "2024-01-01"
+compatibility_date = "2024-12-30"
+compatibility_flags = ["nodejs_compat"]
 
+# Frontend static assets
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# R2 Storage
 [[r2_buckets]]
-binding = "FILES_BUCKET"
+binding = "FILE_STORAGE"
 bucket_name = "list-cutter-files"
+preview_bucket_name = "list-cutter-files-preview"
 
+# D1 Database
 [[d1_databases]]
 binding = "DB"
 database_name = "list-cutter-db"
 database_id = "your-d1-database-id"
+migrations_dir = "./migrations"
 
+# Environment variables
 [vars]
-MAX_FILE_SIZE = "10485760"  # 10MB
-ALLOWED_FILE_TYPES = "text/csv,application/vnd.ms-excel"
+MAX_FILE_SIZE = "52428800"  # 50MB (increased from 10MB)
+ALLOWED_FILE_TYPES = "text/csv,application/vnd.ms-excel,text/plain"
+API_VERSION = "v1"
 ```
 
-### 2. TypeScript R2 Integration
+### 2. TypeScript R2 Integration in Unified Worker
 
-#### 2.1 R2 Service Layer (`src/services/r2Storage.ts`)
+#### 2.1 R2 Service Layer with D1 Integration (`src/services/storage/r2-storage.ts`)
 ```typescript
 export interface FileUploadOptions {
   userId: number;
@@ -1472,6 +1624,20 @@ If migration fails:
 
 ## Conclusion
 
-This comprehensive plan provides a robust approach to migrating List Cutter's file storage from local filesystem to Cloudflare R2. The implementation focuses on maintaining data integrity, ensuring security, and providing a seamless user experience during the migration process.
+This comprehensive plan provides a robust approach to migrating List Cutter's file storage from local filesystem to Cloudflare R2 within our unified Workers architecture. The integration leverages the full power of Cloudflare's platform:
 
-The use of R2's native Workers API integration, combined with proper error handling, monitoring, and validation procedures, ensures a reliable and performant file storage solution that scales with the application's needs.
+### Unified Architecture Benefits
+1. **Single Deployment Unit**: Frontend, backend, database (D1), and storage (R2) all managed through one Worker
+2. **Zero Network Latency**: Direct bindings between Worker, D1, and R2 eliminate network overhead
+3. **Simplified Development**: One wrangler.toml, one deployment command, one monitoring dashboard
+4. **Cost Optimization**: Free bandwidth between all Cloudflare services, pay only for storage and requests
+5. **Global Scale**: Automatic edge deployment with R2's global replication
+
+### Technical Advantages
+- **Native Integration**: No SDKs needed, direct R2 API access
+- **Streaming Support**: Efficient handling of large CSV files
+- **Atomic Operations**: File uploads with D1 metadata in single transactions
+- **Built-in Security**: Workers authentication extends to R2 access
+- **Performance**: Sub-millisecond access to both files and metadata
+
+The unified Workers approach transforms List Cutter into a modern, edge-first application with world-class performance and reliability, all while simplifying the development and deployment process.

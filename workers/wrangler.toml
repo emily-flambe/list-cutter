@@ -1,0 +1,28 @@
+name = "list-cutter-workers"
+main = "dist/index.js"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[env.development]
+name = "list-cutter-workers-dev"
+
+[env.staging]
+name = "list-cutter-workers-staging"
+
+[env.production]
+name = "list-cutter-workers-prod"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "list-cutter-files"
+preview_bucket_name = "list-cutter-files-preview"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "list-cutter-db"
+database_id = "YOUR_D1_DATABASE_ID"
+
+[vars]
+JWT_SECRET = "your-jwt-secret-here"
+MAX_FILE_SIZE = "10485760"
+ENVIRONMENT = "development"
