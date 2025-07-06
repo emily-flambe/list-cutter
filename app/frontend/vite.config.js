@@ -6,9 +6,21 @@ export default defineConfig({
   build: {
     manifest: true,
     outDir: "dist",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          mui: ['@mui/material', '@mui/icons-material'],
+          router: ['react-router-dom'],
+          utils: ['axios']
+        }
+      }
+    }
   },
   publicDir: "public",
-  plugins: [react()],
+  plugins: [
+    react()
+  ],
   optimizeDeps: {
     include: ['react-archer']
   },
