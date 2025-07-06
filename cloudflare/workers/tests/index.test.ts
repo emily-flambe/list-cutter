@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { env, SELF } from 'cloudflare:test';
 
 describe('Health Check', () => {
   it('should return healthy status', async () => {
-    const response = await SELF.fetch('http://example.com/health');
+    const response = await fetch('http://example.com/health');
     expect(response.status).toBe(200);
     
     const json = await response.json();
@@ -14,7 +13,7 @@ describe('Health Check', () => {
   });
   
   it('should return 404 for unknown routes', async () => {
-    const response = await SELF.fetch('http://example.com/unknown');
+    const response = await fetch('http://example.com/unknown');
     expect(response.status).toBe(404);
     
     const json = await response.json();
