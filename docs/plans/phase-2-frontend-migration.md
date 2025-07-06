@@ -4,6 +4,16 @@
 
 This document provides step-by-step instructions for migrating the List Cutter frontend from a locally-served Vite application to Cloudflare Pages. This plan is designed to be executed by a Claude agent with detailed commands and validation steps.
 
+### Architecture Decision: Pages + Workers
+
+**Why Cloudflare Pages (not Workers Sites):**
+- Uses the modern **Cloudflare Pages + Workers** architecture pattern (2024+ recommended approach)
+- **NOT** using the deprecated "Workers Sites" pattern
+- Frontend: Static React SPA served via Cloudflare Pages
+- Backend: API endpoints served via Cloudflare Workers  
+- This provides the best separation of concerns, performance, and maintainability
+- Future migration path available to "Workers with Static Assets" when it graduates from beta
+
 ## Prerequisites
 
 Before starting the migration:
