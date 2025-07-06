@@ -8,10 +8,10 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "pages:dev": "wrangler pages dev",
-    "pages:build": "npm run build && wrangler pages build",
-    "pages:deploy": "npm run build && wrangler pages deploy dist",
-    "pages:preview": "npm run build && wrangler pages deploy dist --compatibility-date=2024-12-01"
+    "workers:dev": "npm run build && wrangler dev",
+    "workers:deploy": "npm run build && wrangler deploy",
+    "workers:preview": "npm run build && wrangler deploy --env preview",
+    "deploy": "npm run workers:deploy"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

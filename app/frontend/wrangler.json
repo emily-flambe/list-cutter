@@ -1,28 +1,22 @@
 {
-  "name": "list-cutter-frontend",
+  "name": "list-cutter-app",
   "compatibility_date": "2024-12-01",
-  "pages_build_output_dir": "dist",
-  "node_compat": true,
-  "build": {
-    "command": "npm run build",
-    "cwd": ".",
-    "watch_dir": "src"
+  "main": "src/worker-simple.js",
+  "assets": {
+    "directory": "dist",
+    "binding": "ASSETS"
   },
-  "dev": {
-    "command": "npm run dev",
-    "port": 8788
-  },
-  "env": {
+  "vars": {
     "ENVIRONMENT": "development"
   },
-  "deployment": {
+  "env": {
     "production": {
-      "env": {
+      "vars": {
         "ENVIRONMENT": "production"
       }
     },
     "preview": {
-      "env": {
+      "vars": {
         "ENVIRONMENT": "preview"
       }
     }
