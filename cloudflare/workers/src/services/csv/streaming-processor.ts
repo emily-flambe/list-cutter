@@ -1,4 +1,3 @@
-import type { CloudflareEnv } from '../../types/env';
 import { R2StorageService } from '../storage/r2-service';
 
 export interface CSVProcessingOptions {
@@ -166,7 +165,6 @@ export class StreamingCSVProcessor {
     let lineCount = 0;
     let processedCount = 0;
     let buffer = '';
-    let headerSent = false;
 
     return new ReadableStream({
       start(controller) {
@@ -175,11 +173,9 @@ export class StreamingCSVProcessor {
           const headerColumns = columnIndexes.map(idx => originalColumns[idx] || `column_${idx}`);
           const headerLine = this.formatCSVLine(headerColumns) + '\n';
           controller.enqueue(this.textEncoder.encode(headerLine));
-          headerSent = true;
         } else if (outputFormat === 'json') {
           // Start JSON array
           controller.enqueue(this.textEncoder.encode('['));
-          headerSent = true;
         }
       },
 

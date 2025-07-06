@@ -1,4 +1,3 @@
-import type { CloudflareEnv } from '../../types/env';
 
 export interface FileUploadOptions {
   userId: string;
@@ -55,8 +54,6 @@ export class R2StorageService {
     fileData: ArrayBuffer | ReadableStream | Uint8Array,
     options: FileUploadOptions
   ): Promise<UploadResult> {
-    const { userId, fileId, fileName, contentType, metadata = {}, storageClass = 'Standard' } = options;
-    
     // Determine file size
     let fileSize: number;
     if (fileData instanceof ArrayBuffer) {
@@ -68,7 +65,7 @@ export class R2StorageService {
       fileSize = -1; // Unknown size, will be determined during upload
     }
 
-    const r2Key = this.generateR2Key(userId, fileId, fileName);
+    const r2Key = this.generateR2Key(options.userId, options.fileId, options.fileName);
 
     // Use multipart upload for large files or streams with unknown size
     if (fileSize > this.maxSingleUploadSize || fileSize === -1) {
@@ -234,7 +231,7 @@ export class R2StorageService {
     fileData: ArrayBuffer | ReadableStream | Uint8Array,
     uploadId: string,
     r2Key: string,
-    session: MultipartUploadSession
+    _session: MultipartUploadSession
   ): Promise<R2UploadedPart[]> {
     const uploadedParts: R2UploadedPart[] = [];
 
@@ -524,7 +521,7 @@ export class R2StorageService {
     fileId: string,
     userId: string,
     action: string,
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
   ): Promise<void> {
     try {
       await this.db

@@ -1,4 +1,3 @@
-import type { CloudflareEnv } from '../../types/env';
 import { R2StorageService } from '../storage/r2-service';
 
 export interface MigrationFile {
@@ -14,7 +13,7 @@ export interface MigrationBatch {
   batchId: string;
   files: MigrationFile[];
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'partial';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface MigrationResult {
@@ -57,7 +56,7 @@ export class FileMigrationService {
    */
   async createMigrationBatch(
     files: MigrationFile[],
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<string> {
     const batchId = crypto.randomUUID();
     
@@ -388,7 +387,7 @@ export class FileMigrationService {
     completedAt?: Date
   ): Promise<void> {
     const updates: string[] = ['status = ?'];
-    const bindings: any[] = [status];
+    const bindings: (string | Date)[] = [status];
 
     if (startedAt) {
       updates.push('started_at = ?');
@@ -443,7 +442,7 @@ export class FileMigrationService {
     errorMessage?: string
   ): Promise<void> {
     const updates: string[] = ['status = ?'];
-    const bindings: any[] = [status];
+    const bindings: (string | Date)[] = [status];
 
     if (startedAt) {
       updates.push('started_at = ?');

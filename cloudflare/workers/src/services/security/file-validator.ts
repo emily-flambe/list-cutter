@@ -1,4 +1,3 @@
-import type { CloudflareEnv } from '../../types/env';
 
 export interface FileValidationOptions {
   maxSize?: number;
@@ -233,9 +232,8 @@ export class FileValidationService {
       errors.push('Filename cannot be empty');
     }
 
-    // Character validation
-    const invalidChars = /[<>:"|?*\x00-\x1f]/;
-    if (invalidChars.test(filename)) {
+    // Character validation - check for invalid filename characters
+    if (/[<>:"|?*]/.test(filename) || filename.charCodeAt(0) <= 31) {
       errors.push('Filename contains invalid characters');
     }
 
@@ -332,7 +330,7 @@ export class FileValidationService {
       }
 
       return { threats, risk };
-    } catch (error) {
+    } catch {
       // If we can't decode the content, treat it as suspicious
       return {
         threats: ['Unable to decode file content'],
@@ -450,9 +448,12 @@ export class FileValidationService {
   sanitizeFilename(filename: string): string {
     // Remove or replace invalid characters
     let sanitized = filename
-      .replace(/[<>:"|?*\x00-\x1f]/g, '_')
+      .replace(/[<>:"|?*]/g, '_')
+      .split('')
+      .map(char => char.charCodeAt(0) <= 31 ? '_' : char)
+      .join('')
       .replace(/\.\./g, '_')
-      .replace(/[\/\\]/g, '_');
+      .replace(/[/\\]/g, '_');
 
     // Ensure it doesn't start with a dot
     if (sanitized.startsWith('.')) {
