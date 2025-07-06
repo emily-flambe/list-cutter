@@ -72,12 +72,12 @@ export default {
 function getApiOrigins(environment) {
   switch (environment) {
     case 'production':
-      return 'https://api.list-cutter.com';
+      return 'https://api.emilycogsdill.com';
     case 'staging':
-      return 'https://list-cutter-api-staging.your-account.workers.dev';
+      return 'https://list-cutter-api-staging.facf6619808dc039df729531bbb26d1d.workers.dev';
     case 'preview':
-      return 'https://list-cutter-api.your-account.workers.dev';
+      return 'https://list-cutter-api.facf6619808dc039df729531bbb26d1d.workers.dev';
     default:
-      return 'http://localhost:8787 https://list-cutter-api.your-account.workers.dev';
+      return 'http://localhost:8787 https://list-cutter-api.facf6619808dc039df729531bbb26d1d.workers.dev';
   }
 }
