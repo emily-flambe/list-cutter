@@ -23,30 +23,20 @@ const Home = () => {
           mb: 4,
         }}
       >
-        ALL FEATURES IN THIS APP—EVEN THOSE BASED ON REAL USE CASES—ARE ENTIRELY FICTIONAL. ALL FUNCTIONALITY IS BASIC AND IMPLEMENTED... POORLY. THE FOLLOWING APP MAY CONTAIN COARSE LANGUAGE AND DUE TO ITS CONTENT IT SHOULD NOT BE USED BY ANYONE. ▌
-      </Typography>
-
-      <Box sx={{ mt: 3, textAlign: 'left' }}>
-        <Link
-          href="https://github.com/emily-flambe/list-cutter"
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{ 
-            color: 'var(--action)',
-            textDecoration: 'none',
-            fontSize: '0.9em',
-            padding: '8px 0px',
-            borderRadius: '4px',
-            transition: 'all 0.2s ease',
-            '&:hover': {
-              color: 'var(--secondary)',
-              background: 'rgba(88, 148, 255, 0.1)'
-            }
+        ALL FEATURES IN THIS APP—EVEN THOSE BASED ON REAL USE CASES—ARE ENTIRELY FICTIONAL. ALL FUNCTIONALITY IS BASIC AND IMPLEMENTED... POORLY. THE FOLLOWING APP MAY CONTAIN COARSE LANGUAGE AND DUE TO ITS CONTENT IT SHOULD NOT BE USED BY ANYONE. 
+        <Box
+          component="span"
+          sx={{
+            '@keyframes blink': {
+              '0%, 49%': { opacity: 1 },
+              '50%, 100%': { opacity: 0 }
+            },
+            animation: 'blink 1s infinite'
           }}
         >
-          source code on GitHub
-        </Link>
-      </Box>
+          ▌
+        </Box>
+      </Typography>
 
       {token && (
         <Box sx={{ mt: 3, textAlign: 'center' }}>
