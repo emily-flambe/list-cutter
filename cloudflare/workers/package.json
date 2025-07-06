@@ -8,6 +8,8 @@
     "deploy": "wrangler deploy",
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy --env production",
+    "preview:upload": "wrangler versions upload",
+    "preview:list": "wrangler versions list",
     "types": "wrangler types",
     "test": "vitest",
     "test:ci": "vitest run",

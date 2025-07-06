@@ -4,6 +4,10 @@ compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
+# Enable versioning and gradual deployments
+[version_metadata]
+enable_versions = true
+
 # Development configuration
 [dev]
 port = 8788
