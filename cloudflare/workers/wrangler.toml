@@ -31,12 +31,12 @@ SECURITY_PERFORMANCE_THRESHOLD = "100"
 SECURITY_METRICS_RETENTION_DAYS = "30"
 SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
 
-# D1 Database bindings (commented out - create your own database and update ID)
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "cutty-dev"
-# database_id = "your-database-id-here"
-# migrations_dir = "./migrations"
+# D1 Database bindings
+[[d1_databases]]
+binding = "DB"
+database_name = "cutty-dev"
+database_id = "2f87e313-31ff-4298-ab18-552fa5a1ce0e"
+migrations_dir = "./migrations"
 
 # R2 Storage bindings
 [[r2_buckets]]
@@ -44,27 +44,26 @@ binding = "FILE_STORAGE"
 bucket_name = "cutty-files-dev"
 preview_bucket_name = "cutty-files-dev"
 
-# KV Namespace bindings (commented out - create your own KV namespace and update ID)
-# [[kv_namespaces]]
-# binding = "AUTH_TOKENS"
-# id = "your-kv-namespace-id-here"
-# preview_id = "your-preview-kv-namespace-id-here"
+# Security KV Namespaces
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_CONFIG"
+id = "a6973edd26304221934017997dbd147e"
+preview_id = "a6973edd26304221934017997dbd147e"
 
-# Security KV Namespaces (commented out - create your own KV namespaces and update IDs)
-# [[kv_namespaces]]
-# binding = "SECURITY_CONFIG"
-# id = "your-security-config-kv-id-here"
-# preview_id = "your-security-config-preview-kv-id-here"
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_EVENTS"
+id = "e696502dea8942a8acb47e2ac474e248"
+preview_id = "e696502dea8942a8acb47e2ac474e248"
 
-# [[kv_namespaces]]
-# binding = "SECURITY_EVENTS"
-# id = "your-security-events-kv-id-here"
-# preview_id = "your-security-events-preview-kv-id-here"
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_METRICS"
+id = "805adc47af9c4e8aa7ddf5b412ea3083"
+preview_id = "805adc47af9c4e8aa7ddf5b412ea3083"
 
-# [[kv_namespaces]]
-# binding = "SECURITY_METRICS"
-# id = "your-security-metrics-kv-id-here"
-# preview_id = "your-security-metrics-preview-kv-id-here"
+[[kv_namespaces]]
+binding = "CUTTY_QUOTA_TRACKING"
+id = "4c1a53aaab2846a3b11ee39416e6b1dd"
+preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 
 # Queue bindings (commented out - create your own queue and update name)
 # [[queues.producers]]
@@ -92,10 +91,10 @@ vars = {
   SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
 }
 
-# [[env.staging.d1_databases]]
-# binding = "DB"
-# database_name = "cutty-staging"
-# database_id = "your-staging-database-id-here"
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "cutty-staging"
+database_id = "e16924c6-be97-4012-88ac-79ff31fd5304"
 
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"
@@ -120,10 +119,10 @@ routes = [
   { pattern = "api.cutty.com/*", zone_name = "cutty.com" }
 ]
 
-# [[env.production.d1_databases]]
-# binding = "DB"
-# database_name = "cutty-production"
-# database_id = "your-production-database-id-here"
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "cutty-production"
+database_id = "0a6c6836-02e8-4f91-a37a-7eb82aa58e0f"
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"

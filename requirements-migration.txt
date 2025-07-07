@@ -1,0 +1,97 @@
+# Python dependencies for List Cutter File Migration Tools (Issue #66)
+# 
+# This requirements file contains all necessary Python packages for running
+# the file migration tools that migrate files from local storage to Cloudflare R2.
+#
+# Install with: pip install -r requirements-migration.txt
+
+# Database connectivity
+psycopg2-binary==2.9.9    # PostgreSQL adapter for Python
+sqlalchemy==2.0.23        # SQL toolkit and ORM (if using ORM patterns)
+
+# HTTP requests and API calls
+requests==2.31.0          # HTTP library for Python
+httpx==0.25.2             # Modern HTTP client with async support
+
+# Command line interface
+click==8.1.7              # Command line interface creation kit
+typer==0.9.0              # Modern CLI framework built on Click
+
+# AWS S3/R2 storage operations
+boto3==1.34.0             # AWS SDK for Python (works with R2)
+botocore==1.34.0          # Core functionality for boto3
+
+# Progress tracking and user interface
+tqdm==4.66.1              # Progress bar library
+rich==13.7.0              # Rich text and beautiful formatting
+colorama==0.4.6           # Cross-platform colored terminal text
+
+# Configuration management
+python-dotenv==1.0.0      # Load environment variables from .env file
+pyyaml==6.0.1             # YAML parser and emitter
+configparser==6.0.0       # Configuration file parser
+
+# Data validation and serialization
+pydantic==2.5.0           # Data validation using Python type hints
+marshmallow==3.20.1       # Serialization/deserialization library
+
+# Logging and monitoring
+loguru==0.7.2             # Modern logging library
+structlog==23.2.0         # Structured logging
+
+# File operations and utilities
+pathlib2==2.3.7          # Object-oriented filesystem paths (Python 2/3 compat)
+watchdog==3.0.0           # File system event monitoring
+humanize==4.8.0           # Human-readable file sizes and dates
+
+# Async operations
+asyncio==3.4.3            # Asynchronous I/O
+aiofiles==23.2.1          # File operations for async/await
+aiohttp==3.9.1            # Async HTTP client/server
+
+# Error handling and retries
+tenacity==8.2.3           # Retry library
+backoff==2.2.1            # Exponential backoff decorator
+
+# Data processing
+pandas==2.1.4             # Data manipulation and analysis (if processing CSV metadata)
+numpy==1.24.4             # Numerical computing (pandas dependency)
+
+# Security and hashing
+cryptography==41.0.8      # Cryptographic recipes and primitives
+hashlib==20081119         # Secure hash and message digest algorithms
+
+# Date/time handling
+python-dateutil==2.8.2    # Extensions to datetime module
+pytz==2023.3              # World timezone definitions
+
+# Testing (for migration validation)
+pytest==7.4.3            # Testing framework
+pytest-asyncio==0.21.1   # Async testing support
+
+# Development and debugging
+ipython==8.17.2          # Interactive Python shell
+pdbpp==0.10.3            # Enhanced Python debugger
+
+# JSON handling
+ujson==5.8.0             # Ultra fast JSON encoder/decoder
+
+# Memory profiling (optional, for performance monitoring)
+memory-profiler==0.61.0  # Memory usage profiler
+psutil==5.9.6            # System and process utilities
+
+# Cloudflare API (if direct API calls needed)
+cloudflare==2.19.0       # Cloudflare API wrapper
+
+# File type detection
+python-magic==0.4.27     # File type identification using libmagic
+
+# Concurrent processing
+concurrent-futures==3.1.1  # Backport of concurrent.futures (Python 2/3 compat)
+
+# Environment and system information
+python-decouple==3.8     # Separate configuration from code
+distro==1.8.0            # OS platform information
+
+# Lock files and atomic operations
+filelock==3.13.1         # Cross-platform file locking

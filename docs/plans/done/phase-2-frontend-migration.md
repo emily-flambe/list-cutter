@@ -91,7 +91,7 @@ Create a new file `app/frontend/wrangler.json`:
 ```json
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "list-cutter-frontend",
+  "name": "cutty-frontend",
   "compatibility_date": "2025-01-05",
   "pages_build_output_dir": "dist",
   "assets": {
@@ -108,7 +108,7 @@ Create environment configuration files for different stages:
 
 ```bash
 # app/frontend/.env.production
-VITE_API_URL=https://api.list-cutter.workers.dev
+VITE_API_URL=https://api.cutty.workers.dev
 VITE_MAX_FILE_SIZE=10485760
 VITE_APP_VERSION=1.0.0
 ```
@@ -136,7 +136,7 @@ echo ".env.production.local" >> /Users/emilycogsdill/Documents/GitHub/list-cutte
 ```javascript
 // app/frontend/src/config/api.config.js
 const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_URL || 'https://api.list-cutter.workers.dev',
+  baseURL: import.meta.env.VITE_API_URL || 'https://api.cutty.workers.dev',
   endpoints: {
     // Auth endpoints
     login: '/api/auth/login/',
@@ -276,11 +276,11 @@ const logo = new URL('./assets/cutty_logo.png', import.meta.url).href;
 # Initial deployment
 cd /Users/emilycogsdill/Documents/GitHub/list-cutter/app/frontend
 npm run build:cf
-wrangler pages deploy dist --project-name list-cutter-frontend
+wrangler pages deploy dist --project-name cutty-frontend
 
 # Set environment variables
-wrangler pages secret put VITE_API_URL --project-name list-cutter-frontend
-# Enter value when prompted: https://api.list-cutter.workers.dev
+wrangler pages secret put VITE_API_URL --project-name cutty-frontend
+# Enter value when prompted: https://api.cutty.workers.dev
 ```
 
 #### 8.2 Via Dashboard (Alternative):
@@ -296,7 +296,7 @@ wrangler pages secret put VITE_API_URL --project-name list-cutter-frontend
    Root directory: /
    ```
 5. Add environment variables:
-   - `VITE_API_URL`: `https://api.list-cutter.workers.dev`
+   - `VITE_API_URL`: `https://api.cutty.workers.dev`
    - `VITE_MAX_FILE_SIZE`: `10485760`
 
 ### Step 9: Update CORS Configuration
@@ -306,7 +306,7 @@ Ensure the Workers API allows requests from the Pages domain:
 ```javascript
 // In your Workers API code, update CORS headers
 const ALLOWED_ORIGINS = [
-  'https://list-cutter.pages.dev',
+  'https://cutty.pages.dev',
   'https://custom-domain.com', // If using custom domain
   'http://localhost:5173', // For local development
 ];
@@ -374,11 +374,11 @@ After deployment:
 
 ```bash
 # Get deployment URL
-wrangler pages deployment list --project-name list-cutter-frontend
+wrangler pages deployment list --project-name cutty-frontend
 
 # Test production endpoints
-curl https://list-cutter.pages.dev
-curl https://list-cutter.pages.dev/api/health # Should redirect to Workers
+curl https://cutty.pages.dev
+curl https://cutty.pages.dev/api/health # Should redirect to Workers
 ```
 
 ## Rollback Procedures
@@ -387,10 +387,10 @@ curl https://list-cutter.pages.dev/api/health # Should redirect to Workers
 
 ```bash
 # List deployments
-wrangler pages deployment list --project-name list-cutter-frontend
+wrangler pages deployment list --project-name cutty-frontend
 
 # Rollback to previous deployment
-wrangler pages deployment rollback <deployment-id> --project-name list-cutter-frontend
+wrangler pages deployment rollback <deployment-id> --project-name cutty-frontend
 ```
 
 ### Complete Rollback
@@ -497,17 +497,17 @@ npm run deploy
 npm run deploy:preview
 
 # Check deployment status
-wrangler pages deployment list --project-name list-cutter-frontend
+wrangler pages deployment list --project-name cutty-frontend
 
 # View logs
-wrangler pages deployment tail --project-name list-cutter-frontend
+wrangler pages deployment tail --project-name cutty-frontend
 ```
 
 ### Environment Variables Reference
 
 | Variable | Development | Production | Description |
 |----------|------------|------------|-------------|
-| VITE_API_URL | http://localhost:8787 | https://api.list-cutter.workers.dev | API endpoint |
+| VITE_API_URL | http://localhost:8787 | https://api.cutty.workers.dev | API endpoint |
 | VITE_MAX_FILE_SIZE | 10485760 | 10485760 | Max upload size in bytes |
 | VITE_APP_VERSION | dev | 1.0.0 | Application version |
 

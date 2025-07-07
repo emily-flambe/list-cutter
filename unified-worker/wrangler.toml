@@ -36,7 +36,7 @@ LOG_LEVEL = "debug"
 [[d1_databases]]
 binding = "DB"
 database_name = "cutty-dev"
-database_id = "fc5af020-09f2-4235-8a47-590140e8ad74"
+database_id = "2f87e313-31ff-4298-ab18-552fa5a1ce0e"
 migrations_dir = "./migrations"
 
 [[r2_buckets]]
@@ -91,7 +91,7 @@ routes = [
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "cutty-staging"
-database_id = "24c83d4f-09e8-4d0c-80bc-ac5c19a999cf"
+database_id = "e16924c6-be97-4012-88ac-79ff31fd5304"
 
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"
@@ -125,7 +125,7 @@ routes = [
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "cutty-production"
-database_id = "PRODUCTION_DB_ID"
+database_id = "0a6c6836-02e8-4f91-a37a-7eb82aa58e0f"
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"

@@ -41,7 +41,11 @@ CREATE TABLE list_cutter_savedfile (
 
 **Bucket Organization**:
 ```
+<<<<<<< HEAD
 cutty-files/
+=======
+cutty-files-{environment}/
+>>>>>>> origin/main
 ├── uploads/
 │   ├── user-{user_id}/
 │   │   ├── {file_id}.csv
@@ -102,15 +106,20 @@ With our unified Workers deployment, R2 provides seamless object storage integra
 
 ```toml
 # wrangler.toml
-name = "list-cutter"
+name = "cutty"
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
 
 # R2 Storage bindings
 [[r2_buckets]]
 binding = "FILE_STORAGE"
+<<<<<<< HEAD
 bucket_name = "cutty-files-prod"
 preview_bucket_name = "cutty-files-staging"
+=======
+bucket_name = "cutty-files-production"
+preview_bucket_name = "cutty-files-preview"
+>>>>>>> origin/main
 
 # Development R2 bucket
 [env.development.r2_buckets]
@@ -121,7 +130,7 @@ bucket_name = "cutty-files-dev"
 # D1 Database (for file metadata)
 [[d1_databases]]
 binding = "DB"
-database_name = "list-cutter-production"
+database_name = "cutty-production"
 database_id = "your-database-id"
 
 # Environment variables
@@ -256,7 +265,7 @@ Since we're using a unified Workers deployment, R2 configuration is integrated w
 
 ```toml
 # wrangler.toml (complete unified configuration)
-name = "list-cutter"
+name = "cutty"
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
@@ -270,12 +279,16 @@ binding = "ASSETS"
 [[r2_buckets]]
 binding = "FILE_STORAGE"
 bucket_name = "cutty-files-dev"
+<<<<<<< HEAD
 preview_bucket_name = "cutty-files-staging"
+=======
+preview_bucket_name = "cutty-files-preview"
+>>>>>>> origin/main
 
 # D1 Database
 [[d1_databases]]
 binding = "DB"
-database_name = "list-cutter-db"
+database_name = "cutty-db"
 database_id = "your-d1-database-id"
 migrations_dir = "./migrations"
 

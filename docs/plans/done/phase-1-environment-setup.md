@@ -79,7 +79,7 @@ npm init -y
 # Update package.json
 cat > package.json << 'EOF'
 {
-  "name": "list-cutter-workers",
+  "name": "cutty-workers",
   "version": "0.1.0",
   "type": "module",
   "main": "src/index.ts",
@@ -242,7 +242,7 @@ EOF
 ### Step 5.1: Create Main Wrangler Configuration
 ```bash
 cat > wrangler.toml << 'EOF'
-name = "list-cutter-api"
+name = "cutty-api"
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
@@ -264,13 +264,13 @@ ENVIRONMENT = "development"
 API_VERSION = "v1"
 CORS_ORIGIN = "http://localhost:5173"
 MAX_FILE_SIZE = "52428800" # 50MB in bytes
-JWT_ISSUER = "list-cutter"
-JWT_AUDIENCE = "list-cutter-api"
+JWT_ISSUER = "cutty"
+JWT_AUDIENCE = "cutty-api"
 
 # D1 Database bindings
 [[d1_databases]]
 binding = "DB"
-database_name = "list-cutter-dev"
+database_name = "cutty-dev"
 database_id = "PLACEHOLDER_DB_ID"
 migrations_dir = "../../migrations"
 
@@ -278,7 +278,11 @@ migrations_dir = "../../migrations"
 [[r2_buckets]]
 binding = "FILE_STORAGE"
 bucket_name = "cutty-files-dev"
+<<<<<<< HEAD
 preview_bucket_name = "cutty-files-dev"
+=======
+preview_bucket_name = "cutty-files-preview"
+>>>>>>> origin/main
 
 # KV Namespace bindings (for JWT refresh tokens)
 [[kv_namespaces]]
@@ -301,12 +305,12 @@ dataset = "list_cutter_analytics"
 
 # Staging environment
 [env.staging]
-name = "list-cutter-api-staging"
-vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://staging.list-cutter.com" }
+name = "cutty-api-staging"
+vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://staging.cutty.com" }
 
 [[env.staging.d1_databases]]
 binding = "DB"
-database_name = "list-cutter-staging"
+database_name = "cutty-staging"
 database_id = "PLACEHOLDER_STAGING_DB_ID"
 
 [[env.staging.r2_buckets]]
@@ -319,20 +323,24 @@ id = "PLACEHOLDER_STAGING_KV_ID"
 
 # Production environment
 [env.production]
-name = "list-cutter-api-production"
-vars = { ENVIRONMENT = "production", CORS_ORIGIN = "https://list-cutter.com" }
+name = "cutty-api-production"
+vars = { ENVIRONMENT = "production", CORS_ORIGIN = "https://cutty.com" }
 routes = [
-  { pattern = "api.list-cutter.com/*", zone_name = "list-cutter.com" }
+  { pattern = "api.cutty.com/*", zone_name = "cutty.com" }
 ]
 
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "list-cutter-production"
+database_name = "cutty-production"
 database_id = "PLACEHOLDER_PROD_DB_ID"
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"
+<<<<<<< HEAD
 bucket_name = "cutty-files-prod"
+=======
+bucket_name = "cutty-files-production"
+>>>>>>> origin/main
 
 [[env.production.kv_namespaces]]
 binding = "AUTH_TOKENS"
@@ -341,7 +349,7 @@ id = "PLACEHOLDER_PROD_KV_ID"
 # Service bindings for microservices architecture (future)
 # [[services]]
 # binding = "AUTH_SERVICE"
-# service = "list-cutter-auth"
+# service = "cutty-auth"
 
 # Rate limiting rules
 [[unsafe.bindings]]
@@ -614,7 +622,7 @@ EOF
 ### Step 8.1: Create D1 Database
 ```bash
 # Create development database
-wrangler d1 create list-cutter-dev
+wrangler d1 create cutty-dev
 
 # Expected output will include database_id
 # Copy the database_id and update wrangler.toml
@@ -748,10 +756,10 @@ EOF
 ### Step 8.3: Apply Initial Migration
 ```bash
 # Apply to local development database
-wrangler d1 migrations apply list-cutter-dev --local
+wrangler d1 migrations apply cutty-dev --local
 
 # Verify migration
-wrangler d1 execute list-cutter-dev --local --command "SELECT name FROM sqlite_master WHERE type='table';"
+wrangler d1 execute cutty-dev --local --command "SELECT name FROM sqlite_master WHERE type='table';"
 ```
 
 ## R2 Bucket Setup
@@ -762,7 +770,11 @@ wrangler d1 execute list-cutter-dev --local --command "SELECT name FROM sqlite_m
 wrangler r2 bucket create cutty-files-dev
 
 # Create preview bucket
+<<<<<<< HEAD
 wrangler r2 bucket create cutty-files-staging
+=======
+wrangler r2 bucket create cutty-files-preview
+>>>>>>> origin/main
 
 # List buckets to verify
 wrangler r2 bucket list

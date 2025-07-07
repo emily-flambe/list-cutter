@@ -73,7 +73,11 @@ class SavedFile(models.Model):
 
 **Bucket Structure:**
 ```
+<<<<<<< HEAD
 cutty-files/
+=======
+cutty-files-{environment}/
+>>>>>>> origin/main
 ├── uploads/
 │   └── user-{user_id}/
 │       ├── {file_id}-{timestamp}.csv
@@ -184,8 +188,8 @@ npx wrangler r2 bucket cors put cutty-files-prod --file cors-config.json
   "rules": [
     {
       "allowedOrigins": [
-        "https://list-cutter.com", 
-        "https://staging.list-cutter.com",
+        "https://cutty.com", 
+        "https://staging.cutty.com",
         "http://localhost:3000"
       ],
       "allowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
@@ -205,7 +209,7 @@ npx wrangler r2 bucket cors put cutty-files-prod --file cors-config.json
 
 **Enhanced Wrangler Configuration:**
 ```toml
-name = "list-cutter-backend"
+name = "cutty-backend"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["streams_enable_constructors"]
@@ -217,7 +221,7 @@ preview_bucket_name = "cutty-files-staging"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "list-cutter-db"
+database_name = "cutty-db"
 database_id = "your-d1-database-id"
 
 [vars]
@@ -1835,7 +1839,11 @@ export class MetricsService {
     const logEntry = {
       '@timestamp': metric.timestamp,
       level: metric.success ? 'info' : 'error',
+<<<<<<< HEAD
       service: 'cutty-files',
+=======
+      service: 'cutty-files-storage',
+>>>>>>> origin/main
       action: metric.action,
       user_id: metric.userId,
       file_id: metric.fileId,

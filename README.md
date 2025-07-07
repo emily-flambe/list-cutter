@@ -1,5 +1,7 @@
 # cutty
 
+> **Note:** While the GitHub repository is named "list-cutter", the preferred identity for all Cloudflare deployments and resources is "cutty".
+
 A simple web app to cut lists, written with a Django backend and a React frontend.
 
 # How to run locally

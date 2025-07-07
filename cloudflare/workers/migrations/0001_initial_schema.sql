@@ -28,6 +28,7 @@ CREATE TABLE files (
     file_size INTEGER NOT NULL,
     mime_type TEXT NOT NULL,
     r2_key TEXT UNIQUE NOT NULL,
+    checksum TEXT,
     upload_status TEXT DEFAULT 'pending' CHECK (upload_status IN ('pending', 'processing', 'completed', 'failed')),
     processing_error TEXT,
     row_count INTEGER,
@@ -41,8 +42,10 @@ CREATE TABLE files (
 );
 
 CREATE INDEX idx_files_user_id ON files(user_id);
+CREATE INDEX idx_files_r2_key ON files(r2_key);
 CREATE INDEX idx_files_created_at ON files(created_at);
 CREATE INDEX idx_files_status ON files(upload_status);
+CREATE INDEX idx_files_checksum ON files(checksum);
 
 -- Saved filters table
 CREATE TABLE saved_filters (
