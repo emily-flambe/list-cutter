@@ -403,7 +403,9 @@ export class QuotaEnforcementMiddleware {
     resetTime?: Date;
   }): string {
     const percentage = quotaCheck.percentageUsed.toFixed(1);
-    const resetTime = quotaCheck.resetTime ? ` Resets at ${quotaCheck.resetTime.toISOString()}` : '';
+    const resetTime = quotaCheck.resetTime && quotaCheck.resetTime instanceof Date 
+      ? ` Resets at ${quotaCheck.resetTime.toISOString()}` 
+      : '';
     
     return `Quota exceeded for ${quotaCheck.quotaType}: ${quotaCheck.currentUsage}/${quotaCheck.limit} (${percentage}% used).${resetTime}`;
   }
@@ -429,10 +431,9 @@ export class QuotaEnforcementMiddleware {
   private calculateRetryAfter(quotaCheck: {
     resetTime?: Date;
   }): number {
-    if (quotaCheck.resetTime) {
+    if (quotaCheck.resetTime && quotaCheck.resetTime instanceof Date && !isNaN(quotaCheck.resetTime.getTime())) {
       const now = new Date();
-      const resetTime = new Date(quotaCheck.resetTime);
-      const diffMinutes = Math.ceil((resetTime.getTime() - now.getTime()) / (1000 * 60));
+      const diffMinutes = Math.ceil((quotaCheck.resetTime.getTime() - now.getTime()) / (1000 * 60));
       return Math.max(1, diffMinutes);
     }
     return 60; // Default 1 hour

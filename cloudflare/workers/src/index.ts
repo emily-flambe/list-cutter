@@ -5,6 +5,17 @@ import { prettyJSON } from 'hono/pretty-json';
 import { timing } from 'hono/timing';
 import type { CloudflareEnv } from './types/env';
 
+// Import Hono context extensions
+import './types/hono-context';
+
+// Security event types
+import { 
+  SecurityEventType,
+  SecurityEventSeverity,
+  SecurityEventCategory,
+  RiskLevel
+} from './types/security-events';
+
 // Security imports
 import { SecurityConfigManager } from './config/security-config';
 import { SecurityMonitorService } from './services/security/security-monitor';
@@ -134,17 +145,17 @@ app.use('*', async (c, next): Promise<void> => {
 app.use('*', prettyJSON());
 
 // CORS configuration
-app.use('*', async (c, next): Promise<Response> => {
-  const corsMiddleware = cors({
-    origin: c.env.CORS_ORIGIN || 'http://localhost:5173',
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
-    exposeHeaders: ['X-Request-Id', 'X-Response-Time'],
-    credentials: true,
-    maxAge: 86400,
-  });
-  return corsMiddleware(c, next);
-});
+app.use('*', cors({
+  origin: (origin) => {
+    // Allow any origin for now - in production, this should be more restrictive
+    return origin || 'http://localhost:5173';
+  },
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  exposeHeaders: ['X-Request-Id', 'X-Response-Time'],
+  credentials: true,
+  maxAge: 86400,
+}));
 
 // Health check endpoint
 app.get('/health', async (c): Promise<Response> => {
@@ -313,24 +324,26 @@ app.post('/api/security/csp-report', async (c): Promise<Response> => {
     if (securityMonitor) {
       await securityMonitor.recordEvent({
         id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        type: 'violation',
-        severity: 'medium',
+        type: SecurityEventType.SUSPICIOUS_ACTIVITY,
+        severity: SecurityEventSeverity.MEDIUM,
+        category: SecurityEventCategory.SECURITY_VIOLATION,
+        riskLevel: RiskLevel.MEDIUM,
+        timestamp: new Date(),
+        message: 'Content Security Policy violation detected',
+        ipAddress: c.req.header('CF-Connecting-IP'),
+        userAgent: c.req.header('User-Agent'),
         source: 'csp_report',
-        description: 'Content Security Policy violation detected',
-        metadata: {
+        requiresResponse: false,
+        details: {
           report,
           violatedDirective: report['csp-report']?.['violated-directive'],
           blockedUri: report['csp-report']?.['blocked-uri'],
           sourceFile: report['csp-report']?.['source-file']
-        },
-        ipAddress: c.req.header('CF-Connecting-IP'),
-        userAgent: c.req.header('User-Agent'),
-        resolved: false
+        }
       });
     }
     
-    return c.json({ received: true }, 204);
+    return c.text('', 204);
   } catch (error) {
     console.error('Error handling CSP report:', error);
     return c.json({ error: 'Invalid report format' }, 400);

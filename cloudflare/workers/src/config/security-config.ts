@@ -7,6 +7,9 @@
  */
 
 export interface SecurityPolicy {
+  // Index signature to allow Record<string, unknown> conversion
+  [key: string]: unknown;
+  
   // Authentication & Authorization
   auth: {
     jwtExpirationSeconds: number;
@@ -115,7 +118,6 @@ export class SecurityConfigManager {
   private lastCacheUpdate: number = 0;
   
   private static readonly CONFIG_KEY = 'security-config';
-  private static readonly CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
   
   constructor(options: SecurityConfigOptions) {
     this.kvNamespace = options.kvNamespace;

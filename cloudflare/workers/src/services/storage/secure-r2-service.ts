@@ -88,8 +88,8 @@ export class SecureR2StorageService {
           options.fileId,
           options.userId,
           FileOperation.WRITE,
-          permissionCheck.requiredRole || 'owner',
-          permissionCheck.currentRole || 'none'
+          permissionCheck.requiredRole || FileRole.OWNER,
+          permissionCheck.currentRole || FileRole.NONE
         );
       }
 
@@ -100,7 +100,7 @@ export class SecureR2StorageService {
           options.fileId,
           options.userId,
           FileOperation.WRITE,
-          'editor',
+          FileRole.EDITOR,
           ownership.effectiveRole
         );
       }

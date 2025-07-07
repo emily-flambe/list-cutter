@@ -4,6 +4,7 @@ import { AccessControlService } from '../services/security/access-control';
 import { FileSharingService } from '../services/security/file-sharing';
 import {
   FileOperation,
+  FileRole,
   AccessControlError,
   InsufficientPermissionsError,
   FileNotFoundError,
@@ -11,6 +12,9 @@ import {
   ShareTokenExpiredError
 } from '../types/permissions';
 import type { CloudflareEnv } from '../types/env';
+
+// Import Hono context extensions
+import '../types/hono-context';
 
 export interface FileAuthOptions {
   operation: FileOperation;
@@ -117,8 +121,8 @@ export function fileAuth(options: FileAuthOptions): (c: Context<{ Bindings: Clou
               fileId,
               userId,
               options.operation,
-              permissionCheck.requiredRole || 'owner',
-              permissionCheck.currentRole || 'none'
+              permissionCheck.requiredRole || FileRole.OWNER,
+              permissionCheck.currentRole || FileRole.NONE
             );
           }
         } catch (error) {
@@ -334,7 +338,7 @@ export function rateLimitFileOperations(options: {
       .bind(userId || null, ipAddress, operation, windowStart.toISOString(), windowEnd.toISOString())
       .first();
 
-    const currentCount = rateLimitRecord?.request_count || 0;
+    const currentCount = (rateLimitRecord as { request_count?: number } | null)?.request_count || 0;
     
     if (currentCount >= options.maxRequests) {
       // Update blocked count
@@ -366,7 +370,7 @@ export function rateLimitFileOperations(options: {
         windowStart.toISOString(),
         windowEnd.toISOString(),
         currentCount + 1,
-        rateLimitRecord?.blocked_count || 0
+        (rateLimitRecord as { blocked_count?: number } | null)?.blocked_count || 0
       )
       .run();
 

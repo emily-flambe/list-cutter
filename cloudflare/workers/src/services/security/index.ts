@@ -11,6 +11,8 @@ export { ThreatResponseService } from './threat-response';
 export { ThreatIntelligenceDatabaseService } from './threat-intelligence-db';
 export { SecurityAuditService } from './security-audit';
 export { SecurityManager } from './security-manager';
+export { AuditLogger as SecurityAuditLogger } from './audit-logger';
+export { IntegratedSecurityService } from './security-service';
 
 // Type exports
 export * from '../../types/threat-intelligence';

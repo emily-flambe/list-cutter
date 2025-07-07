@@ -10,7 +10,8 @@
  */
 
 import { SecurityConfigManager } from '../../config/security-config';
-import { SecurityMonitorService, SecurityEvent } from './security-monitor';
+import { SecurityMonitorService } from './security-monitor';
+import { SecurityEvent } from '../../types/security-events';
 
 // File validation results interface
 interface FileValidationResults {

@@ -12,6 +12,12 @@
 import type { Context, Next } from 'hono';
 import { SecurityConfigManager } from '../config/security-config';
 import { SecurityMonitorService } from '../services/security/security-monitor';
+import { 
+  SecurityEventType,
+  SecurityEventSeverity,
+  SecurityEventCategory,
+  RiskLevel
+} from '../types/security-events';
 
 export interface SecurityHeadersOptions {
   configManager: SecurityConfigManager;
@@ -94,17 +100,19 @@ export class SecurityHeadersMiddleware {
         // Record performance metrics
         await this.monitor.recordEvent({
           id: crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          type: 'violation',
-          severity: 'low',
+          type: SecurityEventType.SYSTEM_MAINTENANCE,
+          severity: SecurityEventSeverity.INFO,
+          category: SecurityEventCategory.SYSTEM,
+          riskLevel: RiskLevel.NONE,
+          timestamp: new Date(),
+          message: 'Security headers applied',
           source: 'security_headers_middleware',
-          description: 'Security headers applied',
-          metadata: {
+          requiresResponse: false,
+          details: {
             path: c.req.path,
-            duration
-          },
-          resolved: true,
-          responseTime: duration
+            duration,
+            responseTime: duration
+          }
         });
       }
     }
@@ -140,7 +148,15 @@ export class SecurityHeadersMiddleware {
     c: Context,
     config: {
       contentSecurityPolicy: string;
-      strictTransportSecurity?: string;
+      strictTransportSecurity: string;
+      xFrameOptions: string;
+      xContentTypeOptions: string;
+      referrerPolicy: string;
+      permissionsPolicy: string;
+      expectCt: string;
+      crossOriginResourcePolicy: string;
+      crossOriginOpenerPolicy: string;
+      crossOriginEmbedderPolicy: string;
       enableReporting?: boolean;
       reportUri?: string;
     },

@@ -1,4 +1,4 @@
-import { SecurityAuditLogger } from './audit-logger';
+import { AuditLogger } from './audit-logger';
 import { IncidentResponseService, IncidentResponseConfig } from './incident-response';
 import { SecurityMonitoringDashboard } from './monitoring-dashboard';
 import { ComplianceManager } from './compliance-manager';
@@ -50,7 +50,7 @@ export interface SecurityServiceHealth {
  * Orchestrates all security components with optimized performance
  */
 export class IntegratedSecurityService {
-  private auditLogger: SecurityAuditLogger;
+  private auditLogger: AuditLogger;
   private incidentResponse: IncidentResponseService;
   private monitoringDashboard: SecurityMonitoringDashboard;
   private complianceManager: ComplianceManager;
@@ -77,7 +77,7 @@ export class IntegratedSecurityService {
     this.config = config;
 
     // Initialize core audit logger
-    this.auditLogger = new SecurityAuditLogger(db);
+    this.auditLogger = new AuditLogger(db);
 
     // Initialize performance optimizer
     this.performanceOptimizer = new SecurityAuditPerformanceOptimizer(

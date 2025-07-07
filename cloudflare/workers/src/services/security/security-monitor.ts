@@ -11,6 +11,13 @@
 
 import { SecurityConfigManager } from '../../config/security-config';
 import { ValidationResult } from './file-validator';
+import { 
+  SecurityEvent,
+  SecurityEventType,
+  SecurityEventSeverity,
+  SecurityEventCategory,
+  RiskLevel
+} from '../../types/security-events';
 
 // Metadata interfaces for type safety
 interface SecurityEventMetadata {
@@ -50,20 +57,7 @@ interface ThreatMetadata {
   [key: string]: unknown;
 }
 
-export interface SecurityEvent {
-  id: string;
-  timestamp: string;
-  type: 'auth' | 'file_upload' | 'rate_limit' | 'threat_detection' | 'anomaly' | 'violation';
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  source: string;
-  description: string;
-  metadata: SecurityEventMetadata;
-  userId?: string;
-  ipAddress?: string;
-  userAgent?: string;
-  resolved: boolean;
-  responseTime?: number;
-}
+// SecurityEvent is now imported from ../../types/security-events
 
 export interface SecurityMetrics {
   timestamp: string;
@@ -233,7 +227,7 @@ export class SecurityMonitorService {
     await this.updateMetrics(event);
     
     // Check for immediate alerts
-    if (event.severity === 'critical' || event.severity === 'high') {
+    if (event.severity === SecurityEventSeverity.CRITICAL || event.severity === SecurityEventSeverity.HIGH) {
       await this.checkForAlerts(event);
     }
     
@@ -256,20 +250,22 @@ export class SecurityMonitorService {
   ): Promise<void> {
     const event: SecurityEvent = {
       id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
-      type: 'auth',
-      severity: success ? 'low' : 'medium',
-      source: 'auth_service',
-      description: success ? 'Authentication successful' : 'Authentication failed',
-      metadata: {
-        success,
-        method: 'password'
-      },
+      type: success ? SecurityEventType.AUTHENTICATION_SUCCESS : SecurityEventType.AUTHENTICATION_FAILURE,
+      severity: success ? SecurityEventSeverity.INFO : SecurityEventSeverity.MEDIUM,
+      category: SecurityEventCategory.AUTHENTICATION,
+      riskLevel: success ? RiskLevel.NONE : RiskLevel.LOW,
+      timestamp: new Date(),
+      message: success ? 'Authentication successful' : 'Authentication failed',
       userId,
       ipAddress,
       userAgent,
-      resolved: success,
-      responseTime
+      source: 'auth_service',
+      requiresResponse: !success,
+      details: {
+        success,
+        method: 'password',
+        responseTime
+      }
     };
     
     await this.recordEvent(event);
@@ -289,21 +285,23 @@ export class SecurityMonitorService {
   ): Promise<void> {
     const event: SecurityEvent = {
       id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
-      type: 'file_upload',
-      severity: success ? 'low' : 'medium',
+      type: success ? SecurityEventType.FILE_UPLOADED : SecurityEventType.FILE_VALIDATION_FAILED,
+      severity: success ? SecurityEventSeverity.INFO : SecurityEventSeverity.MEDIUM,
+      category: SecurityEventCategory.FILE_ACCESS,
+      riskLevel: success ? RiskLevel.NONE : RiskLevel.LOW,
+      timestamp: new Date(),
+      message: success ? 'File upload successful' : 'File upload failed',
+      userId,
+      ipAddress,
       source: 'file_validation_service',
-      description: success ? 'File upload successful' : 'File upload failed',
-      metadata: {
+      requiresResponse: !success,
+      details: {
         filename,
         fileSize,
         success,
-        validationResults
-      },
-      userId,
-      ipAddress,
-      resolved: success,
-      responseTime
+        validationResults,
+        responseTime
+      }
     };
     
     await this.recordEvent(event);
@@ -321,20 +319,22 @@ export class SecurityMonitorService {
   ): Promise<void> {
     const event: SecurityEvent = {
       id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
-      type: 'rate_limit',
-      severity: blocked ? 'medium' : 'low',
+      type: blocked ? SecurityEventType.RATE_LIMIT_EXCEEDED : SecurityEventType.SYSTEM_ERROR,
+      severity: blocked ? SecurityEventSeverity.MEDIUM : SecurityEventSeverity.INFO,
+      category: SecurityEventCategory.SECURITY_VIOLATION,
+      riskLevel: blocked ? RiskLevel.MEDIUM : RiskLevel.NONE,
+      timestamp: new Date(),
+      message: blocked ? 'Rate limit exceeded' : 'Rate limit check passed',
+      userId,
+      ipAddress,
       source: 'rate_limit_service',
-      description: blocked ? 'Rate limit exceeded' : 'Rate limit check passed',
-      metadata: {
+      requiresResponse: blocked,
+      details: {
         blocked,
         limit,
         current,
         usage: current / limit
-      },
-      userId,
-      ipAddress,
-      resolved: !blocked
+      }
     };
     
     await this.recordEvent(event);
@@ -345,7 +345,7 @@ export class SecurityMonitorService {
    */
   async recordThreatEvent(
     threatType: string,
-    severity: SecurityEvent['severity'],
+    severity: SecurityEventSeverity,
     description: string,
     metadata: ThreatMetadata,
     userId?: string,
@@ -353,18 +353,20 @@ export class SecurityMonitorService {
   ): Promise<void> {
     const event: SecurityEvent = {
       id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
-      type: 'threat_detection',
+      type: SecurityEventType.MALICIOUS_FILE_DETECTED,
       severity,
-      source: 'threat_detection_service',
-      description,
-      metadata: {
-        threatType,
-        ...metadata
-      },
+      category: SecurityEventCategory.SECURITY_VIOLATION,
+      riskLevel: severity === SecurityEventSeverity.CRITICAL ? RiskLevel.CRITICAL : RiskLevel.HIGH,
+      timestamp: new Date(),
+      message: description,
       userId,
       ipAddress,
-      resolved: false
+      source: 'threat_detection_service',
+      requiresResponse: true,
+      details: {
+        threatType,
+        ...metadata
+      }
     };
     
     await this.recordEvent(event);
