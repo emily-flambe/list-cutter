@@ -191,7 +191,7 @@ def main():
     """Main import function"""
     if len(sys.argv) < 3:
         print("Usage: python import_to_d1.py <database_name> <data_directory> [batch_size]")
-        print("Example: python import_to_d1.py list-cutter-dev ./transformed_data 1000")
+        print("Example: python import_to_d1.py cutty-dev ./transformed_data 1000")
         sys.exit(1)
     
     database_name = sys.argv[1]

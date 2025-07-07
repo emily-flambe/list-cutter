@@ -1,5 +1,5 @@
 {
-  "name": "list-cutter-unified",
+  "name": "cutty-unified",
   "version": "1.0.0",
   "description": "Unified Cloudflare Workers application for List Cutter - serves both frontend and backend",
   "main": "dist/index.js",

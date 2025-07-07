@@ -190,8 +190,8 @@ function requiresAuth(pathname: string): boolean {
     '/api/accounts/register',
     '/api/accounts/login',
     '/api/accounts/token/refresh',
-    '/api/list_cutter/csv_cutter',
-    '/api/list_cutter/export_csv'
+    '/api/cutty/csv_cutter',
+    '/api/cutty/export_csv'
   ];
   
   // API routes require auth unless explicitly public

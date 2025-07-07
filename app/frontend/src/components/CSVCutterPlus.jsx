@@ -39,7 +39,7 @@ const CSVCutterPlus = () => {
 
   const fetchSavedFiles = async () => {
     try {
-      const response = await api.get('/api/list_cutter/list_saved_files/', {
+      const response = await api.get('/api/cutty/list_saved_files/', {
         headers: { Authorization: `Bearer ${token.token}` }
       });
       setSavedFiles(response.data.files);
@@ -63,7 +63,7 @@ const CSVCutterPlus = () => {
       try {
         console.log("Selected file ID:", selectedFileID);
         const response = await api.get(
-          `/api/list_cutter/fetch_saved_file/${encodeURIComponent(selectedFileID)}`,
+          `/api/cutty/fetch_saved_file/${encodeURIComponent(selectedFileID)}`,
           { headers: { Authorization: `Bearer ${token.token}` } }
         );
         const fileData = response.data;
@@ -115,7 +115,7 @@ const CSVCutterPlus = () => {
     }
   
     try {
-      const exportUrl = `/api/list_cutter/export_csv/`;
+      const exportUrl = `/api/cutty/export_csv/`;
       const response = await api.post(
         exportUrl,
         { columns: selectedColumns, file_path: filePath, filters },
@@ -153,7 +153,7 @@ const CSVCutterPlus = () => {
   
     try {
       // Re-run the export call to get the CSV blob
-      const exportUrl = `/api/list_cutter/export_csv/`;
+      const exportUrl = `/api/cutty/export_csv/`;
       const response = await api.post(
         exportUrl,
         { columns: selectedColumns, file_path: filePath, filters },
@@ -201,7 +201,7 @@ const CSVCutterPlus = () => {
         return;
       }
   
-      await api.post(`/api/list_cutter/save_generated_file/`, formData, {
+      await api.post(`/api/cutty/save_generated_file/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       console.log("File saved successfully.");

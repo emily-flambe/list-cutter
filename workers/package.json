@@ -1,5 +1,5 @@
 {
-  "name": "list-cutter-workers",
+  "name": "cutty-workers",
   "version": "1.0.0",
   "description": "Cloudflare Workers backend for List Cutter",
   "main": "dist/index.js",

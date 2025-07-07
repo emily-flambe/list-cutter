@@ -73,7 +73,7 @@ class SavedFile(models.Model):
 
 **Bucket Structure:**
 ```
-list-cutter-files/
+cutty-files/
 ├── uploads/
 │   └── user-{user_id}/
 │       ├── {file_id}-{timestamp}.csv
@@ -169,13 +169,13 @@ CREATE INDEX idx_file_access_logs_timestamp ON file_access_logs(timestamp);
 **Bucket Creation:**
 ```bash
 # Create production bucket
-npx wrangler r2 bucket create list-cutter-files-prod
+npx wrangler r2 bucket create cutty-files-prod
 
 # Create staging bucket for testing
-npx wrangler r2 bucket create list-cutter-files-staging
+npx wrangler r2 bucket create cutty-files-staging
 
 # Configure CORS for direct browser uploads
-npx wrangler r2 bucket cors put list-cutter-files-prod --file cors-config.json
+npx wrangler r2 bucket cors put cutty-files-prod --file cors-config.json
 ```
 
 **CORS Configuration (`cors-config.json`):**
@@ -212,8 +212,8 @@ compatibility_flags = ["streams_enable_constructors"]
 
 [[r2_buckets]]
 binding = "FILES_BUCKET"
-bucket_name = "list-cutter-files-prod"
-preview_bucket_name = "list-cutter-files-staging"
+bucket_name = "cutty-files-prod"
+preview_bucket_name = "cutty-files-staging"
 
 [[d1_databases]]
 binding = "DB"
@@ -1835,7 +1835,7 @@ export class MetricsService {
     const logEntry = {
       '@timestamp': metric.timestamp,
       level: metric.success ? 'info' : 'error',
-      service: 'list-cutter-files',
+      service: 'cutty-files',
       action: metric.action,
       user_id: metric.userId,
       file_id: metric.fileId,

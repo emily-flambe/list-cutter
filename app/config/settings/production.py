@@ -1,6 +1,6 @@
 # Production-specific CORS settings for Cloudflare Pages
 CORS_ALLOWED_ORIGINS = [
-    "https://list-cutter.emilyflam.be",  # Production domain
+    "https://cutty.emilyflam.be",  # Production domain
     "https://listcutter.com",            # Alternative domain if used
 ]
 

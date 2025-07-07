@@ -1,4 +1,4 @@
-# list-cutter
+# cutty
 
 A simple web app to cut lists, written with a Django backend and a React frontend.
 
@@ -17,7 +17,7 @@ This ~~is~~ **was** deployed to the public internet! But then I ran out of AWS F
 
 If and when it comes back, you can access it at:
 
-👉 https://list-cutter.emilyflam.be 👈
+👉 https://cutty.emilyflam.be 👈
 
 ## CSV List Cutter BASIC (No account needed)
 

@@ -32,19 +32,28 @@ export interface UploadResult {
   uploadType: 'single' | 'multipart';
 }
 
+import { QuotaManager } from '../security/quota-manager.js';
+import { QuotaOperationType, QuotaExceededError } from '../../types/quota.js';
+import { SecurityAuditLogger } from '../security/audit-logger.js';
+import { SecurityEventType } from '../../types/security-events.js';
+
 /**
- * Advanced R2 storage service with multipart upload support
+ * Advanced R2 storage service with multipart upload support and quota enforcement
  * Implements Cloudflare R2 best practices for 2025
  */
 export class R2StorageService {
   private bucket: R2Bucket;
   private db: D1Database;
+  private quotaManager?: QuotaManager;
+  private auditLogger?: SecurityAuditLogger;
   private maxSingleUploadSize = 50 * 1024 * 1024; // 50MB threshold for multipart
   private multipartChunkSize = 5 * 1024 * 1024; // 5MB minimum chunk size
 
-  constructor(bucket: R2Bucket, db: D1Database) {
+  constructor(bucket: R2Bucket, db: D1Database, quotaManager?: QuotaManager, auditLogger?: SecurityAuditLogger) {
     this.bucket = bucket;
     this.db = db;
+    this.quotaManager = quotaManager;
+    this.auditLogger = auditLogger;
   }
 
   /**
@@ -65,23 +74,62 @@ export class R2StorageService {
       fileSize = -1; // Unknown size, will be determined during upload
     }
 
+    // Check quota before upload
+    if (this.quotaManager && fileSize > 0) {
+      const quotaCheck = await this.quotaManager.checkQuota({
+        userId: options.userId,
+        operationType: QuotaOperationType.UPLOAD,
+        resourceSize: fileSize,
+        ignoreOverage: false
+      });
+
+      if (!quotaCheck.isAllowed) {
+        throw new QuotaExceededError(
+          quotaCheck.quotaType,
+          quotaCheck.currentUsage,
+          quotaCheck.limit,
+          quotaCheck.resetTime
+        );
+      }
+    }
+
     const r2Key = this.generateR2Key(options.userId, options.fileId, options.fileName);
+
+    let uploadResult: UploadResult;
 
     // Use multipart upload for large files or streams with unknown size
     if (fileSize > this.maxSingleUploadSize || fileSize === -1) {
-      return await this.multipartUpload(fileData, {
+      uploadResult = await this.multipartUpload(fileData, {
         ...options,
         r2Key,
         fileSize: fileSize > 0 ? fileSize : undefined
       });
+    } else {
+      // Single upload for smaller files
+      uploadResult = await this.singleUpload(fileData as ArrayBuffer | Uint8Array, {
+        ...options,
+        r2Key,
+        fileSize
+      });
     }
 
-    // Single upload for smaller files
-    return await this.singleUpload(fileData as ArrayBuffer | Uint8Array, {
-      ...options,
-      r2Key,
-      fileSize
-    });
+    // Update quota usage after successful upload
+    if (this.quotaManager) {
+      await this.quotaManager.updateQuotaUsage({
+        userId: options.userId,
+        operationType: QuotaOperationType.UPLOAD,
+        resourceSize: uploadResult.size,
+        metadata: {
+          fileId: uploadResult.fileId,
+          fileName: options.fileName,
+          contentType: options.contentType,
+          uploadType: uploadResult.uploadType,
+          r2Key: uploadResult.r2Key
+        }
+      });
+    }
+
+    return uploadResult;
   }
 
   /**
@@ -117,7 +165,23 @@ export class R2StorageService {
         throw new Error('Failed to upload file to R2');
       }
 
-      // Log the upload
+      // Log the upload using security audit logger
+      if (this.auditLogger) {
+        await this.auditLogger.logFileAccessEvent(
+          SecurityEventType.FILE_UPLOADED,
+          {
+            userId,
+            fileId,
+            fileName,
+            fileSize,
+            mimeType: contentType,
+            storageLocation: r2Key,
+            bytesTransferred: fileSize
+          }
+        );
+      }
+
+      // Legacy logging for backward compatibility
       await this.logFileAccess(fileId, userId, 'upload', {
         success: true,
         bytes_transferred: fileSize,
@@ -132,6 +196,26 @@ export class R2StorageService {
         uploadType: 'single'
       };
     } catch (error) {
+      // Log the failed upload using security audit logger
+      if (this.auditLogger) {
+        await this.auditLogger.logSystemEvent(
+          SecurityEventType.SYSTEM_ERROR,
+          {
+            component: 'r2-storage',
+            errorCode: 'UPLOAD_FAILED',
+            details: {
+              userId,
+              fileId,
+              fileName,
+              fileSize,
+              uploadType: 'single',
+              error: error instanceof Error ? error.message : 'Unknown error'
+            }
+          }
+        );
+      }
+
+      // Legacy logging for backward compatibility
       await this.logFileAccess(fileId, userId, 'upload', {
         success: false,
         error_message: error instanceof Error ? error.message : 'Unknown error',
@@ -191,7 +275,23 @@ export class R2StorageService {
       // Clean up session
       await this.cleanupMultipartSession(multipartUpload.uploadId);
 
-      // Log successful upload
+      // Log successful upload using security audit logger
+      if (this.auditLogger) {
+        await this.auditLogger.logFileAccessEvent(
+          SecurityEventType.FILE_UPLOADED,
+          {
+            userId,
+            fileId,
+            fileName,
+            fileSize: result.size,
+            mimeType: contentType,
+            storageLocation: r2Key,
+            bytesTransferred: result.size
+          }
+        );
+      }
+
+      // Legacy logging for backward compatibility
       await this.logFileAccess(fileId, userId, 'upload', {
         success: true,
         bytes_transferred: result.size,
@@ -214,6 +314,26 @@ export class R2StorageService {
         console.error('Failed to cleanup multipart upload:', cleanupError);
       }
 
+      // Log failed upload using security audit logger
+      if (this.auditLogger) {
+        await this.auditLogger.logSystemEvent(
+          SecurityEventType.SYSTEM_ERROR,
+          {
+            component: 'r2-storage',
+            errorCode: 'MULTIPART_UPLOAD_FAILED',
+            details: {
+              userId,
+              fileId,
+              fileName,
+              fileSize,
+              uploadType: 'multipart',
+              error: error instanceof Error ? error.message : 'Unknown error'
+            }
+          }
+        );
+      }
+
+      // Legacy logging for backward compatibility
       await this.logFileAccess(fileId, userId, 'upload', {
         success: false,
         error_message: error instanceof Error ? error.message : 'Unknown error',
@@ -335,6 +455,27 @@ export class R2StorageService {
         return null;
       }
 
+      const fileSize = fileRecord.file_size as number;
+
+      // Check quota before download
+      if (this.quotaManager && fileSize > 0) {
+        const quotaCheck = await this.quotaManager.checkQuota({
+          userId,
+          operationType: QuotaOperationType.DOWNLOAD,
+          resourceSize: fileSize,
+          ignoreOverage: false
+        });
+
+        if (!quotaCheck.isAllowed) {
+          throw new QuotaExceededError(
+            quotaCheck.quotaType,
+            quotaCheck.currentUsage,
+            quotaCheck.limit,
+            quotaCheck.resetTime
+          );
+        }
+      }
+
       const downloadOptions: R2GetOptions = {};
       if (options.range) {
         downloadOptions.range = this.parseRange(options.range);
@@ -343,7 +484,40 @@ export class R2StorageService {
       const fileObject = await this.bucket.get(fileRecord.r2_key as string, downloadOptions);
       
       if (fileObject) {
-        // Log successful download
+        // Update quota usage after successful download
+        if (this.quotaManager) {
+          await this.quotaManager.updateQuotaUsage({
+            userId,
+            operationType: QuotaOperationType.DOWNLOAD,
+            resourceSize: fileObject.size,
+            metadata: {
+              fileId,
+              fileName: fileRecord.filename as string,
+              contentType: fileRecord.mime_type as string,
+              rangeRequest: !!options.range,
+              r2Key: fileRecord.r2_key as string
+            }
+          });
+        }
+
+        // Log successful download using security audit logger
+        if (this.auditLogger) {
+          await this.auditLogger.logFileAccessEvent(
+            SecurityEventType.FILE_DOWNLOADED,
+            {
+              userId,
+              fileId,
+              fileName: fileRecord.filename as string,
+              fileSize: fileObject.size,
+              mimeType: fileRecord.mime_type as string,
+              storageLocation: fileRecord.r2_key as string,
+              bytesTransferred: fileObject.size,
+              transferDuration: Date.now() - startTime
+            }
+          );
+        }
+
+        // Legacy logging for backward compatibility
         await this.logFileAccess(fileId, userId, 'download', {
           success: true,
           bytes_transferred: fileObject.size,
@@ -354,6 +528,24 @@ export class R2StorageService {
 
       return fileObject;
     } catch (error) {
+      // Log failed download using security audit logger
+      if (this.auditLogger) {
+        await this.auditLogger.logSystemEvent(
+          SecurityEventType.SYSTEM_ERROR,
+          {
+            component: 'r2-storage',
+            errorCode: 'DOWNLOAD_FAILED',
+            details: {
+              userId,
+              fileId,
+              error: error instanceof Error ? error.message : 'Unknown error',
+              duration: Date.now() - startTime
+            }
+          }
+        );
+      }
+
+      // Legacy logging for backward compatibility
       await this.logFileAccess(fileId, userId, 'download', {
         success: false,
         error_message: error instanceof Error ? error.message : 'Unknown error',
@@ -370,7 +562,7 @@ export class R2StorageService {
     try {
       // Get file metadata
       const fileRecord = await this.db
-        .prepare('SELECT r2_key, file_size FROM files WHERE id = ? AND user_id = ?')
+        .prepare('SELECT r2_key, file_size, filename FROM files WHERE id = ? AND user_id = ?')
         .bind(fileId, userId)
         .first();
 
@@ -378,22 +570,226 @@ export class R2StorageService {
         return false;
       }
 
+      const fileSize = fileRecord.file_size as number;
+
       await this.bucket.delete(fileRecord.r2_key as string);
 
-      // Log deletion
+      // Update quota usage after successful deletion (reduce storage usage)
+      if (this.quotaManager && fileSize > 0) {
+        await this.quotaManager.updateQuotaUsage({
+          userId,
+          operationType: QuotaOperationType.DELETE,
+          resourceSize: fileSize,
+          metadata: {
+            fileId,
+            fileName: fileRecord.filename as string,
+            r2Key: fileRecord.r2_key as string
+          }
+        });
+      }
+
+      // Log deletion using security audit logger
+      if (this.auditLogger) {
+        await this.auditLogger.logFileAccessEvent(
+          SecurityEventType.FILE_DELETED,
+          {
+            userId,
+            fileId,
+            fileName: fileRecord.filename as string,
+            fileSize,
+            mimeType: 'unknown', // We don't have MIME type in the select
+            storageLocation: fileRecord.r2_key as string
+          }
+        );
+      }
+
+      // Legacy logging for backward compatibility
       await this.logFileAccess(fileId, userId, 'delete', {
         success: true,
-        bytes_transferred: fileRecord.file_size as number
+        bytes_transferred: fileSize
       });
 
       return true;
     } catch (error) {
+      // Log failed deletion using security audit logger
+      if (this.auditLogger) {
+        await this.auditLogger.logSystemEvent(
+          SecurityEventType.SYSTEM_ERROR,
+          {
+            component: 'r2-storage',
+            errorCode: 'DELETE_FAILED',
+            details: {
+              userId,
+              fileId,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            }
+          }
+        );
+      }
+
+      // Legacy logging for backward compatibility
       await this.logFileAccess(fileId, userId, 'delete', {
         success: false,
         error_message: error instanceof Error ? error.message : 'Unknown error'
       });
       throw error;
     }
+  }
+
+  /**
+   * Get user's current storage usage statistics
+   */
+  async getUserStorageStats(userId: string): Promise<{
+    totalFiles: number;
+    totalSize: number;
+    quotaUsage?: any;
+  }> {
+    const stats = await this.db.prepare(`
+      SELECT 
+        COUNT(*) as total_files,
+        COALESCE(SUM(file_size), 0) as total_size
+      FROM files 
+      WHERE user_id = ?
+    `).bind(userId).first();
+
+    let quotaUsage = undefined;
+    if (this.quotaManager) {
+      try {
+        const userQuota = await this.quotaManager.getUserQuota(userId);
+        quotaUsage = {
+          tier: userQuota.tier.name,
+          storageUsed: userQuota.currentUsage.storageUsed,
+          storageLimit: userQuota.tier.storageLimit,
+          fileCount: userQuota.currentUsage.fileCount,
+          fileCountLimit: userQuota.tier.fileCountLimit,
+          bandwidthUsed: userQuota.currentUsage.bandwidthUsed,
+          bandwidthLimit: userQuota.tier.bandwidthLimit,
+          percentages: {
+            storage: (userQuota.currentUsage.storageUsed / userQuota.tier.storageLimit) * 100,
+            files: (userQuota.currentUsage.fileCount / userQuota.tier.fileCountLimit) * 100,
+            bandwidth: (userQuota.currentUsage.bandwidthUsed / userQuota.tier.bandwidthLimit) * 100
+          }
+        };
+      } catch (error) {
+        console.warn('Failed to get quota usage:', error);
+      }
+    }
+
+    return {
+      totalFiles: stats?.total_files as number || 0,
+      totalSize: stats?.total_size as number || 0,
+      quotaUsage
+    };
+  }
+
+  /**
+   * Check if user can perform an operation without exceeding quota
+   */
+  async canPerformOperation(
+    userId: string,
+    operationType: QuotaOperationType,
+    resourceSize: number = 0
+  ): Promise<{ allowed: boolean; reason?: string; quotaCheck?: any }> {
+    if (!this.quotaManager) {
+      return { allowed: true };
+    }
+
+    try {
+      const quotaCheck = await this.quotaManager.checkQuota({
+        userId,
+        operationType,
+        resourceSize,
+        ignoreOverage: false
+      });
+
+      return {
+        allowed: quotaCheck.isAllowed,
+        reason: quotaCheck.errorMessage,
+        quotaCheck
+      };
+    } catch (error) {
+      return {
+        allowed: false,
+        reason: error instanceof Error ? error.message : 'Quota check failed'
+      };
+    }
+  }
+
+  /**
+   * Batch operation with quota checking
+   */
+  async performBatchOperation(
+    operations: Array<{
+      type: 'upload' | 'download' | 'delete';
+      userId: string;
+      fileId?: string;
+      fileName?: string;
+      fileData?: ArrayBuffer | ReadableStream | Uint8Array;
+      options?: any;
+    }>
+  ): Promise<Array<{ success: boolean; result?: any; error?: string }>> {
+    const results = [];
+
+    // Pre-check all operations for quota compliance
+    for (const operation of operations) {
+      const operationType = operation.type === 'upload' ? QuotaOperationType.UPLOAD :
+                          operation.type === 'download' ? QuotaOperationType.DOWNLOAD :
+                          QuotaOperationType.DELETE;
+
+      let resourceSize = 0;
+      if (operation.type === 'upload' && operation.fileData) {
+        if (operation.fileData instanceof ArrayBuffer) {
+          resourceSize = operation.fileData.byteLength;
+        } else if (operation.fileData instanceof Uint8Array) {
+          resourceSize = operation.fileData.byteLength;
+        }
+      } else if ((operation.type === 'download' || operation.type === 'delete') && operation.fileId) {
+        const fileRecord = await this.db.prepare('SELECT file_size FROM files WHERE id = ?')
+          .bind(operation.fileId).first();
+        resourceSize = fileRecord?.file_size as number || 0;
+      }
+
+      const canPerform = await this.canPerformOperation(operation.userId, operationType, resourceSize);
+      
+      if (!canPerform.allowed) {
+        results.push({
+          success: false,
+          error: `Quota check failed: ${canPerform.reason}`
+        });
+        continue;
+      }
+
+      // Perform the operation
+      try {
+        let result;
+        switch (operation.type) {
+          case 'upload':
+            if (operation.fileData && operation.options) {
+              result = await this.uploadFile(operation.fileData, operation.options);
+            }
+            break;
+          case 'download':
+            if (operation.fileId) {
+              result = await this.downloadFile(operation.fileId, operation.userId, operation.options || {});
+            }
+            break;
+          case 'delete':
+            if (operation.fileId) {
+              result = await this.deleteFile(operation.fileId, operation.userId);
+            }
+            break;
+        }
+
+        results.push({ success: true, result });
+      } catch (error) {
+        results.push({
+          success: false,
+          error: error instanceof Error ? error.message : 'Operation failed'
+        });
+      }
+    }
+
+    return results;
   }
 
   /**

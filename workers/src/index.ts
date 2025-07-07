@@ -3,21 +3,21 @@ import { errorHandler } from './middleware/error';
 import { addCorsHeaders, corsHeaders } from './middleware/cors';
 import { securityMiddleware, addSecurityHeaders } from './middleware/security';
 import { handleHome } from './routes/home';
-import { handleCsvCutterUpload } from './routes/list_cutter/csv_cutter';
-import { handleExportCsv } from './routes/list_cutter/export_csv';
-import { handleDownload } from './routes/list_cutter/download';
+import { handleCsvCutterUpload } from './routes/cutty/csv_cutter';
+import { handleExportCsv } from './routes/cutty/export_csv';
+import { handleDownload } from './routes/cutty/download';
 import { handleRegister } from './routes/accounts/register';
 import { handleLogin } from './routes/accounts/login';
 import { handleRefresh } from './routes/accounts/refresh';
 import { handleLogout } from './routes/accounts/logout';
 import { handleGetUser } from './routes/accounts/user';
-import { handleUpload } from './routes/list_cutter/upload';
-import { handleListSavedFiles } from './routes/list_cutter/list_files';
-import { handleDeleteFile } from './routes/list_cutter/delete';
-import { handleSaveGeneratedFile } from './routes/list_cutter/save_generated_file';
-import { handleFetchSavedFile } from './routes/list_cutter/fetch_saved_file';
-import { handleUpdateTags } from './routes/list_cutter/update_tags';
-import { handleFetchFileLineage } from './routes/list_cutter/fetch_file_lineage';
+import { handleUpload } from './routes/cutty/upload';
+import { handleListSavedFiles } from './routes/cutty/list_files';
+import { handleDeleteFile } from './routes/cutty/delete';
+import { handleSaveGeneratedFile } from './routes/cutty/save_generated_file';
+import { handleFetchSavedFile } from './routes/cutty/fetch_saved_file';
+import { handleUpdateTags } from './routes/cutty/update_tags';
+import { handleFetchFileLineage } from './routes/cutty/fetch_file_lineage';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -43,11 +43,11 @@ export default {
 
       if (pathname === '/' && method === 'GET') {
         response = handleHome();
-      } else if (pathname === '/api/list_cutter/csv_cutter' && method === 'POST') {
+      } else if (pathname === '/api/cutty/csv_cutter' && method === 'POST') {
         response = await handleCsvCutterUpload(request, env);
-      } else if (pathname === '/api/list_cutter/export_csv' && method === 'POST') {
+      } else if (pathname === '/api/cutty/export_csv' && method === 'POST') {
         response = await handleExportCsv(request, env);
-      } else if (pathname.startsWith('/api/list_cutter/download/') && method === 'GET') {
+      } else if (pathname.startsWith('/api/cutty/download/') && method === 'GET') {
         const filename = pathname.split('/').pop();
         if (!filename) {
           response = new Response(JSON.stringify({ error: 'No filename provided' }), {
@@ -67,11 +67,11 @@ export default {
         response = await handleLogout(request, env);
       } else if (pathname === '/api/accounts/user' && method === 'GET') {
         response = await handleGetUser(request, env);
-      } else if (pathname === '/api/list_cutter/upload' && method === 'POST') {
+      } else if (pathname === '/api/cutty/upload' && method === 'POST') {
         response = await handleUpload(request, env);
-      } else if (pathname === '/api/list_cutter/list_saved_files' && method === 'GET') {
+      } else if (pathname === '/api/cutty/list_saved_files' && method === 'GET') {
         response = await handleListSavedFiles(request, env);
-      } else if (pathname.startsWith('/api/list_cutter/delete/') && method === 'DELETE') {
+      } else if (pathname.startsWith('/api/cutty/delete/') && method === 'DELETE') {
         const fileId = pathname.split('/').pop();
         if (!fileId) {
           response = new Response(JSON.stringify({ error: 'No file ID provided' }), {
@@ -81,9 +81,9 @@ export default {
         } else {
           response = await handleDeleteFile(request, env, fileId);
         }
-      } else if (pathname === '/api/list_cutter/save_generated_file' && method === 'POST') {
+      } else if (pathname === '/api/cutty/save_generated_file' && method === 'POST') {
         response = await handleSaveGeneratedFile(request, env);
-      } else if (pathname.startsWith('/api/list_cutter/fetch_saved_file/') && method === 'GET') {
+      } else if (pathname.startsWith('/api/cutty/fetch_saved_file/') && method === 'GET') {
         const fileId = pathname.split('/').pop();
         if (!fileId) {
           response = new Response(JSON.stringify({ error: 'No file ID provided' }), {
@@ -93,7 +93,7 @@ export default {
         } else {
           response = await handleFetchSavedFile(request, env, fileId);
         }
-      } else if (pathname.startsWith('/api/list_cutter/update_tags/') && method === 'PATCH') {
+      } else if (pathname.startsWith('/api/cutty/update_tags/') && method === 'PATCH') {
         const fileId = pathname.split('/').pop();
         if (!fileId) {
           response = new Response(JSON.stringify({ error: 'No file ID provided' }), {
@@ -103,7 +103,7 @@ export default {
         } else {
           response = await handleUpdateTags(request, env, fileId);
         }
-      } else if (pathname.startsWith('/api/list_cutter/fetch_file_lineage/') && method === 'GET') {
+      } else if (pathname.startsWith('/api/cutty/fetch_file_lineage/') && method === 'GET') {
         const fileId = pathname.split('/').pop();
         if (!fileId) {
           response = new Response(JSON.stringify({ error: 'No file ID provided' }), {

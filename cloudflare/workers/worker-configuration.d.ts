@@ -4,10 +4,10 @@ interface Env {
 	AUTH_TOKENS: KVNamespace;
 	ENVIRONMENT: "development" | "staging" | "production";
 	API_VERSION: "v1";
-	CORS_ORIGIN: "http://localhost:5173" | "https://staging.list-cutter.com" | "https://list-cutter.com";
+	CORS_ORIGIN: "http://localhost:5173" | "https://staging.cutty.com" | "https://cutty.com";
 	MAX_FILE_SIZE: "52428800";
-	JWT_ISSUER: "list-cutter";
-	JWT_AUDIENCE: "list-cutter-api";
+	JWT_ISSUER: "cutty";
+	JWT_AUDIENCE: "cutty-api";
 	JWT_SECRET: string;
 	JWT_REFRESH_SECRET: string;
 	DB_ENCRYPTION_KEY: string;

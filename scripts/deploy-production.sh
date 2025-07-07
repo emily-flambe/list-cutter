@@ -149,9 +149,9 @@ if [ $? -eq 0 ]; then
     echo "✅ Production deployment: PASSED"
     echo "✅ Production validation: PASSED"
     echo ""
-    echo "🌐 Application URL: https://list-cutter.com"
-    echo "📊 Health Check: https://list-cutter.com/health"
-    echo "📈 Metrics: https://list-cutter.com/metrics"
+    echo "🌐 Application URL: https://cutty.com"
+    echo "📊 Health Check: https://cutty.com/health"
+    echo "📈 Metrics: https://cutty.com/metrics"
     echo ""
     
     # Send notification

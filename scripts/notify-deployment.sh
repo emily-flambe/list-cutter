@@ -4,7 +4,7 @@
 
 STATUS=$1
 TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-DEPLOYMENT_URL="https://list-cutter.com"
+DEPLOYMENT_URL="https://cutty.com"
 
 if [ -z "$STATUS" ]; then
     echo "Usage: $0 <success|failure>"

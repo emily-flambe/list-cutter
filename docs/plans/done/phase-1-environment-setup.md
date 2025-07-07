@@ -277,8 +277,8 @@ migrations_dir = "../../migrations"
 # R2 Storage bindings
 [[r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "list-cutter-files-dev"
-preview_bucket_name = "list-cutter-files-preview"
+bucket_name = "cutty-files-dev"
+preview_bucket_name = "cutty-files-dev"
 
 # KV Namespace bindings (for JWT refresh tokens)
 [[kv_namespaces]]
@@ -311,7 +311,7 @@ database_id = "PLACEHOLDER_STAGING_DB_ID"
 
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "list-cutter-files-staging"
+bucket_name = "cutty-files-staging"
 
 [[env.staging.kv_namespaces]]
 binding = "AUTH_TOKENS"
@@ -332,7 +332,7 @@ database_id = "PLACEHOLDER_PROD_DB_ID"
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "list-cutter-files-production"
+bucket_name = "cutty-files-prod"
 
 [[env.production.kv_namespaces]]
 binding = "AUTH_TOKENS"
@@ -759,10 +759,10 @@ wrangler d1 execute list-cutter-dev --local --command "SELECT name FROM sqlite_m
 ### Step 9.1: Create R2 Buckets
 ```bash
 # Create development bucket
-wrangler r2 bucket create list-cutter-files-dev
+wrangler r2 bucket create cutty-files-dev
 
 # Create preview bucket
-wrangler r2 bucket create list-cutter-files-preview
+wrangler r2 bucket create cutty-files-staging
 
 # List buckets to verify
 wrangler r2 bucket list

@@ -1,4 +1,4 @@
-name = "list-cutter"
+name = "cutty"
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
@@ -28,21 +28,21 @@ ENVIRONMENT = "development"
 API_VERSION = "v1"
 CORS_ORIGIN = "http://localhost:5173"
 MAX_FILE_SIZE = "52428800"
-JWT_ISSUER = "list-cutter"
-JWT_AUDIENCE = "list-cutter-api"
+JWT_ISSUER = "cutty"
+JWT_AUDIENCE = "cutty-api"
 LOG_LEVEL = "debug"
 
 # Development bindings
 [[d1_databases]]
 binding = "DB"
-database_name = "list-cutter-dev"
+database_name = "cutty-dev"
 database_id = "fc5af020-09f2-4235-8a47-590140e8ad74"
 migrations_dir = "./migrations"
 
 [[r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "list-cutter-files-dev"
-preview_bucket_name = "list-cutter-files-preview"
+bucket_name = "cutty-files-dev"
+preview_bucket_name = "cutty-files-dev"
 
 [[kv_namespaces]]
 binding = "AUTH_TOKENS"
@@ -60,7 +60,7 @@ queue = "csv-processing"
 # Analytics Engine binding
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"
-dataset = "list_cutter_analytics"
+dataset = "cutty_analytics"
 
 # Rate limiting
 [[unsafe.bindings]]
@@ -71,31 +71,31 @@ simple = { limit = 100, period = 60 }
 
 # Staging environment
 [env.staging]
-name = "list-cutter-staging"
+name = "cutty-staging"
 vars = { 
   ENVIRONMENT = "staging",
   API_VERSION = "v1",
-  CORS_ORIGIN = "https://staging.list-cutter.com",
+  CORS_ORIGIN = "https://staging.cutty.com",
   MAX_FILE_SIZE = "52428800",
-  JWT_ISSUER = "list-cutter",
-  JWT_AUDIENCE = "list-cutter-api",
+  JWT_ISSUER = "cutty",
+  JWT_AUDIENCE = "cutty-api",
   LOG_LEVEL = "info",
   SENTRY_ENVIRONMENT = "staging"
 }
 
 # Staging domain for testing
 routes = [
-  { pattern = "staging.list-cutter.com/*", zone_name = "list-cutter.com" }
+  { pattern = "staging.cutty.com/*", zone_name = "cutty.com" }
 ]
 
 [[env.staging.d1_databases]]
 binding = "DB"
-database_name = "list-cutter-staging"
+database_name = "cutty-staging"
 database_id = "24c83d4f-09e8-4d0c-80bc-ac5c19a999cf"
 
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "list-cutter-files-staging"
+bucket_name = "cutty-files-staging"
 
 [[env.staging.kv_namespaces]]
 binding = "AUTH_TOKENS"
@@ -103,33 +103,33 @@ id = "061bd8c2dc2e4616b3eaadd17248eb43"
 
 # Production environment
 [env.production]
-name = "list-cutter-production"
+name = "cutty-production"
 vars = { 
   ENVIRONMENT = "production",
   API_VERSION = "v1",
-  CORS_ORIGIN = "https://list-cutter.com",
+  CORS_ORIGIN = "https://cutty.com",
   MAX_FILE_SIZE = "52428800",
-  JWT_ISSUER = "list-cutter",
-  JWT_AUDIENCE = "list-cutter-api",
+  JWT_ISSUER = "cutty",
+  JWT_AUDIENCE = "cutty-api",
   LOG_LEVEL = "info",
   SENTRY_ENVIRONMENT = "production"
 }
 
 # Single domain for entire application
 routes = [
-  { pattern = "list-cutter.com/*", zone_name = "list-cutter.com" },
-  { pattern = "www.list-cutter.com/*", zone_name = "list-cutter.com" }
+  { pattern = "cutty.com/*", zone_name = "cutty.com" },
+  { pattern = "www.cutty.com/*", zone_name = "cutty.com" }
 ]
 
 # Production bindings
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "list-cutter-production"
+database_name = "cutty-production"
 database_id = "PRODUCTION_DB_ID"
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "list-cutter-files-production"
+bucket_name = "cutty-files-prod"
 
 [[env.production.kv_namespaces]]
 binding = "AUTH_TOKENS"
