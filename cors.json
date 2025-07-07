@@ -1,197 +1,35 @@
-{
-  "description": "CORS configuration for Cutty R2 bucket - Issue #66 File Migration Tools",
-  "rules": [
-    {
-      "id": "cutty-app-cors",
-      "description": "Allow Cutty application to access R2 files",
-      "allowedOrigins": [
-        "https://cutty.com",
-        "https://www.cutty.com",
-        "https://app.cutty.com",
-        "https://preview.cutty.com",
-        "https://staging.cutty.com",
-        "https://dev.cutty.com",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:8000",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:8000"
-      ],
-      "allowedMethods": [
-        "GET",
-        "HEAD",
-        "POST",
-        "PUT",
-        "DELETE",
-        "OPTIONS"
-      ],
-      "allowedHeaders": [
-        "Accept",
-        "Accept-Language",
-        "Authorization",
-        "Cache-Control",
-        "Content-Language",
-        "Content-Type",
-        "Content-MD5",
-        "Content-Disposition",
-        "Content-Encoding",
-        "Content-Length",
-        "Content-Range",
-        "Date",
-        "ETag",
-        "Expires",
-        "If-Match",
-        "If-Modified-Since",
-        "If-None-Match",
-        "If-Unmodified-Since",
-        "Last-Modified",
-        "Origin",
-        "Range",
-        "User-Agent",
-        "X-Requested-With",
-        "X-Content-Type-Options",
-        "X-Frame-Options",
-        "X-XSS-Protection"
-      ],
-      "exposedHeaders": [
-        "Accept-Ranges",
-        "Content-Encoding",
-        "Content-Length",
-        "Content-Range",
-        "Content-Type",
-        "Date",
-        "ETag",
-        "Last-Modified",
-        "Server",
-        "X-Content-Type-Options",
-        "X-Frame-Options",
-        "X-XSS-Protection"
-      ],
-      "maxAgeSeconds": 3600,
-      "optionsSuccessStatus": 200
-    },
-    {
-      "id": "cloudflare-worker-cors",
-      "description": "Allow Cloudflare Workers to access R2 files",
-      "allowedOrigins": [
-        "https://*.workers.dev",
-        "https://*.cloudflareworkers.com"
-      ],
-      "allowedMethods": [
-        "GET",
-        "HEAD",
-        "POST",
-        "PUT",
-        "DELETE",
-        "OPTIONS"
-      ],
-      "allowedHeaders": [
-        "*"
-      ],
-      "exposedHeaders": [
-        "*"
-      ],
-      "maxAgeSeconds": 86400
-    },
-    {
-      "id": "migration-tools-cors",
-      "description": "Allow migration tools to access R2 bucket",
-      "allowedOrigins": [
-        "*"
-      ],
-      "allowedMethods": [
-        "GET",
-        "HEAD",
-        "POST",
-        "PUT",
-        "DELETE",
-        "OPTIONS"
-      ],
-      "allowedHeaders": [
-        "Accept",
-        "Accept-Language",
-        "Authorization",
-        "Cache-Control",
-        "Content-Language",
-        "Content-Type",
-        "Content-MD5",
-        "Content-Disposition",
-        "Content-Encoding",
-        "Content-Length",
-        "Content-Range",
-        "Date",
-        "ETag",
-        "Expires",
-        "If-Match",
-        "If-Modified-Since",
-        "If-None-Match",
-        "If-Unmodified-Since",
-        "Last-Modified",
-        "Origin",
-        "Range",
-        "User-Agent",
-        "X-Requested-With",
-        "X-Migration-Batch-Id",
-        "X-Migration-Tool",
-        "X-File-Hash",
-        "X-Original-Path"
-      ],
-      "exposedHeaders": [
-        "Accept-Ranges",
-        "Content-Encoding",
-        "Content-Length",
-        "Content-Range",
-        "Content-Type",
-        "Date",
-        "ETag",
-        "Last-Modified",
-        "Server",
-        "X-Migration-Status",
-        "X-R2-Key",
-        "X-Upload-Time"
-      ],
-      "maxAgeSeconds": 3600,
-      "optionsSuccessStatus": 200
-    }
-  ],
-  "configuration_notes": {
-    "security_considerations": [
-      "Review and restrict allowedOrigins for production environment",
-      "Consider implementing more restrictive CORS policies after migration",
-      "Monitor CORS logs for unauthorized access attempts",
-      "Regularly audit and update allowed origins and headers"
+[
+  {
+    "AllowedOrigins": [
+      "https://cutty.emilycogsdill.com",
+      "https://list-cutter.emilycogsdill.com",
+      "https://staging.cutty.emilycogsdill.com",
+      "https://dev.cutty.emilycogsdill.com",
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:8000"
     ],
-    "setup_instructions": [
-      "Apply this CORS configuration to your R2 bucket using wrangler:",
-      "wrangler r2 bucket cors put <BUCKET_NAME> --file cors.json",
-      "Verify CORS configuration:",
-      "wrangler r2 bucket cors get <BUCKET_NAME>",
-      "Test CORS from your application domains"
+    "AllowedMethods": [
+      "GET",
+      "HEAD",
+      "POST",
+      "PUT",
+      "DELETE"
     ],
-    "migration_specific_headers": {
-      "X-Migration-Batch-Id": "Tracks migration batch operations",
-      "X-Migration-Tool": "Identifies the migration tool used",
-      "X-File-Hash": "Provides file integrity verification",
-      "X-Original-Path": "Preserves original file path information",
-      "X-Migration-Status": "Returns migration operation status",
-      "X-R2-Key": "Returns the R2 object key for migrated files",
-      "X-Upload-Time": "Timestamp of successful upload"
-    },
-    "development_origins": [
-      "http://localhost:3000 - React development server",
-      "http://localhost:5173 - Vite development server",
-      "http://localhost:8000 - Django development server"
+    "AllowedHeaders": [
+      "Accept",
+      "Authorization",
+      "Content-Type",
+      "Content-Length",
+      "Origin",
+      "X-Requested-With"
     ],
-    "production_security": {
-      "recommendation": "Remove wildcards and localhost origins in production",
-      "monitoring": "Enable CloudFlare security monitoring for R2 access",
-      "access_control": "Implement proper authentication and authorization"
-    }
-  },
-  "validation_commands": [
-    "wrangler r2 bucket cors get <BUCKET_NAME>",
-    "curl -X OPTIONS -H 'Origin: https://cutty.com' -H 'Access-Control-Request-Method: GET' https://your-bucket.r2.cloudflarestorage.com/test-file",
-    "curl -X OPTIONS -H 'Origin: http://localhost:3000' -H 'Access-Control-Request-Method: POST' https://your-bucket.r2.cloudflarestorage.com/"
-  ]
-}
+    "ExposeHeaders": [
+      "Content-Length",
+      "Content-Type",
+      "ETag",
+      "Last-Modified"
+    ],
+    "MaxAgeSeconds": 3600
+  }
+]
