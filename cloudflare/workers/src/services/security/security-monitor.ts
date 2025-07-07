@@ -16,27 +16,10 @@ import {
   SecurityEventType,
   SecurityEventSeverity,
   SecurityEventCategory,
-  RiskLevel,
-  SecurityMetrics as SecurityEventsMetrics
+  RiskLevel
 } from '../../types/security-events';
 
 // Metadata interfaces for type safety
-interface SecurityEventMetadata {
-  operation?: string;
-  duration?: number;
-  threshold?: number;
-  success?: boolean;
-  method?: string;
-  filename?: string;
-  fileSize?: number;
-  validationResults?: ValidationResult;
-  blocked?: boolean;
-  limit?: number;
-  current?: number;
-  usage?: number;
-  threatType?: string;
-  [key: string]: unknown;
-}
 
 interface FileValidationResults {
   passed: boolean;
@@ -863,69 +846,6 @@ export class SecurityMonitorService {
     }
   }
   
-  /**
-   * Get security dashboard data
-   */
-  async getSecurityDashboard(): Promise<SecurityDashboard> {
-    const metrics = await this.getSecurityMetrics();
-    const alerts = await this.getActiveAlerts();
-    const trends = await this.calculateTrends();
-    
-    return {
-      summary: {
-        totalEvents: Object.values(metrics.counters).reduce((sum, count) => sum + count, 0),
-        criticalAlerts: alerts.filter(a => a.severity === 'critical').length,
-        activeThreats: metrics.counters.threatDetections,
-        systemHealth: await this.checkSystemHealth(),
-        threatLevel: this.calculateThreatLevel(metrics, alerts)
-      },
-      metrics,
-      alerts: alerts.slice(0, 10), // Latest 10 alerts
-      trends,
-      performance: {
-        averageResponseTime: this.calculateAverageResponseTime(this.eventBuffer),
-        throughput: metrics.counters.authenticationAttempts + metrics.counters.fileUploads,
-        errorRate: (metrics.counters.authenticationFailures + metrics.counters.fileUploadFailures) / 
-                  Math.max(metrics.counters.authenticationAttempts + metrics.counters.fileUploads, 1)
-      }
-    };
-  }
-  
-  /**
-   * Resolve an alert
-   */
-  async resolveAlert(alertId: string, resolvedBy: string): Promise<void> {
-    try {
-      const alertsData = await this.kvNamespace.get('active-alerts');
-      const alerts = alertsData ? JSON.parse(alertsData) : [];
-      
-      const alertIndex = alerts.findIndex((a: SecurityAlert) => a.id === alertId);
-      if (alertIndex >= 0) {
-        alerts[alertIndex].resolved = true;
-        alerts[alertIndex].resolvedBy = resolvedBy;
-        alerts[alertIndex].resolvedAt = new Date().toISOString();
-        
-        await this.kvNamespace.put('active-alerts', JSON.stringify(alerts));
-      }
-    } catch (error) {
-      console.error('Failed to resolve alert:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Get active alerts
-   */
-  private async getActiveAlerts(): Promise<SecurityAlert[]> {
-    try {
-      const alertsData = await this.kvNamespace.get('active-alerts');
-      const alerts = alertsData ? JSON.parse(alertsData) : [];
-      return alerts.filter((a: SecurityAlert) => !a.resolved);
-    } catch (error) {
-      console.error('Failed to get active alerts:', error);
-      return [];
-    }
-  }
 }
 
 /**
