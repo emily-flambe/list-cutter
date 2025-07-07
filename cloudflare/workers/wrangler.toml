@@ -14,9 +14,9 @@ port = 8788
 local_protocol = "http"
 ip = "127.0.0.1"
 
-# Build configuration
-[build]
-command = "npm run build"
+# Build configuration disabled for now
+# [build]
+# command = "npm run build"
 
 # Environment variables (non-sensitive)
 [vars]
