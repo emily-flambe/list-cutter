@@ -4,7 +4,6 @@ import {
   DetectedThreat,
   ThreatType,
   ThreatSeverity,
-  ThreatLocation,
   ThreatRecommendation,
   MalwareHash,
   ThreatIntelligenceDatabase,
@@ -87,7 +86,7 @@ export class ThreatDetectionService {
       id: 'mal_006',
       name: 'Ransomware Indicators',
       type: ThreatType.RANSOMWARE,
-      pattern: '(encrypt|decrypt|ransom|bitcoin|cryptocurrency|\.locked|\.encrypted)',
+      pattern: '(encrypt|decrypt|ransom|bitcoin|cryptocurrency|.locked|.encrypted)',
       description: 'Potential ransomware indicators',
       severity: ThreatSeverity.CRITICAL,
       confidence: 80,
@@ -228,7 +227,7 @@ export class ThreatDetectionService {
   /**
    * Hash-based malware detection
    */
-  private async scanByHash(file: File, fileId: string): Promise<DetectedThreat[]> {
+  private async scanByHash(file: File, _fileId: string): Promise<DetectedThreat[]> {
     const threats: DetectedThreat[] = [];
     
     try {
@@ -303,7 +302,7 @@ export class ThreatDetectionService {
   /**
    * Signature-based threat detection
    */
-  private async scanBySignatures(file: File, fileId: string): Promise<DetectedThreat[]> {
+  private async scanBySignatures(file: File, _fileId: string): Promise<DetectedThreat[]> {
     const threats: DetectedThreat[] = [];
     
     try {
@@ -347,7 +346,7 @@ export class ThreatDetectionService {
   /**
    * Behavioral analysis
    */
-  private async scanByBehavior(file: File, fileId: string): Promise<DetectedThreat[]> {
+  private async scanByBehavior(file: File, _fileId: string): Promise<DetectedThreat[]> {
     const threats: DetectedThreat[] = [];
     
     try {
@@ -418,7 +417,7 @@ export class ThreatDetectionService {
   /**
    * File extension analysis
    */
-  private async scanByExtension(file: File, fileId: string): Promise<DetectedThreat[]> {
+  private async scanByExtension(file: File, _fileId: string): Promise<DetectedThreat[]> {
     const threats: DetectedThreat[] = [];
     
     try {
@@ -484,7 +483,7 @@ export class ThreatDetectionService {
   /**
    * File structure analysis
    */
-  private async scanByStructure(file: File, fileId: string): Promise<DetectedThreat[]> {
+  private async scanByStructure(file: File, _fileId: string): Promise<DetectedThreat[]> {
     const threats: DetectedThreat[] = [];
     
     try {
@@ -684,7 +683,7 @@ export class ThreatDetectionService {
   /**
    * Get mitigation suggestion based on threat type and severity
    */
-  private getMitigationSuggestion(type: ThreatType, severity: ThreatSeverity): string {
+  private getMitigationSuggestion(type: ThreatType, _severity: ThreatSeverity): string {
     const suggestions: Record<ThreatType, string> = {
       [ThreatType.MALWARE]: 'Block file and quarantine immediately',
       [ThreatType.VIRUS]: 'Delete file and scan system',
@@ -834,7 +833,7 @@ export class ThreatDetectionService {
   /**
    * Get threat statistics
    */
-  async getThreatStatistics(startDate: Date, endDate: Date): Promise<any> {
+  async getThreatStatistics(_startDate: Date, _endDate: Date): Promise<Record<string, unknown>> {
     // Implementation would query database for statistics
     return {
       totalScans: 0,

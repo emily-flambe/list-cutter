@@ -17,7 +17,7 @@ import {
  */
 export class ThreatIntelligenceDatabaseService {
   private db: D1Database;
-  private cache: Map<string, any> = new Map();
+  private cache: Map<string, unknown> = new Map();
   private cacheExpiry: Map<string, number> = new Map();
   private readonly CACHE_TTL = 300000; // 5 minutes
 
@@ -384,7 +384,7 @@ export class ThreatIntelligenceDatabaseService {
    */
   async updateFromExternalSource(
     sourceUrl: string,
-    sourceType: 'json' | 'csv' | 'xml' = 'json'
+    _sourceType: 'json' | 'csv' | 'xml' = 'json'
   ): Promise<ThreatIntelligenceUpdateResponse> {
     try {
       // In a real implementation, this would fetch from external threat intelligence feeds
@@ -547,7 +547,21 @@ export class ThreatIntelligenceDatabaseService {
   /**
    * Map database row to ThreatSignature
    */
-  private mapToThreatSignature(row: any): ThreatSignature {
+  private mapToThreatSignature(row: {
+    id: string;
+    name: string;
+    type: string;
+    pattern: string;
+    description: string;
+    severity: string;
+    confidence_score: number;
+    created_at: string;
+    last_updated: string;
+    source: string;
+    tags?: string;
+    metadata?: string;
+    is_active: number;
+  }): ThreatSignature {
     return {
       id: row.id,
       name: row.name,
@@ -564,7 +578,19 @@ export class ThreatIntelligenceDatabaseService {
   /**
    * Map database row to PIIPattern
    */
-  private mapToPIIPattern(row: any): PIIPattern {
+  private mapToPIIPattern(row: {
+    id: string;
+    type: string;
+    pattern: string;
+    description: string;
+    severity: string;
+    regex_pattern: string;
+    test_cases: string;
+    false_positive_indicators: string;
+    is_active: number;
+    created_at: string;
+    updated_at: string;
+  }): PIIPattern {
     return {
       id: row.id,
       type: row.type as PIIType,
@@ -581,7 +607,17 @@ export class ThreatIntelligenceDatabaseService {
   /**
    * Map database row to MalwareHash
    */
-  private mapToMalwareHash(row: any): MalwareHash {
+  private mapToMalwareHash(row: {
+    id: string;
+    hash_value: string;
+    hash_type: string;
+    malware_family?: string;
+    threat_severity: string;
+    first_seen: string;
+    last_seen: string;
+    source: string;
+    metadata?: string;
+  }): MalwareHash {
     return {
       hash: row.hash,
       hashType: row.hash_type as 'md5' | 'sha1' | 'sha256' | 'sha512',
@@ -598,7 +634,18 @@ export class ThreatIntelligenceDatabaseService {
   /**
    * Map database row to SuspiciousIP
    */
-  private mapToSuspiciousIP(row: any): SuspiciousIP {
+  private mapToSuspiciousIP(row: {
+    id: string;
+    ip_address: string;
+    threat_type: string;
+    reputation_score: number;
+    first_seen: string;
+    last_activity: string;
+    associated_domains?: string;
+    geolocation?: string;
+    source: string;
+    metadata?: string;
+  }): SuspiciousIP {
     return {
       ip: row.ip,
       threatType: row.threat_type as ThreatType,
@@ -614,7 +661,7 @@ export class ThreatIntelligenceDatabaseService {
   /**
    * Cache management
    */
-  private getFromCache(key: string): any {
+  private getFromCache(key: string): unknown {
     const expiry = this.cacheExpiry.get(key);
     if (expiry && Date.now() > expiry) {
       this.cache.delete(key);
@@ -624,7 +671,7 @@ export class ThreatIntelligenceDatabaseService {
     return this.cache.get(key);
   }
 
-  private setCache(key: string, value: any): void {
+  private setCache(key: string, value: unknown): void {
     this.cache.set(key, value);
     this.cacheExpiry.set(key, Date.now() + this.CACHE_TTL);
   }

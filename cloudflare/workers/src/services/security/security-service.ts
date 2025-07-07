@@ -247,7 +247,7 @@ export class IntegratedSecurityService {
   /**
    * Get comprehensive security dashboard data
    */
-  async getDashboardData(userId: string, role: string): Promise<any> {
+  async getDashboardData(userId: string, role: string): Promise<Record<string, unknown>> {
     if (!this.config.monitoring.enabled) {
       throw new Error('Security monitoring is disabled');
     }
@@ -331,11 +331,11 @@ export class IntegratedSecurityService {
     reportId: string;
     generatedAt: Date;
     period: { start: Date; end: Date };
-    summary: any;
-    metrics: any;
-    incidents: any[];
-    compliance: any;
-    performance: any;
+    summary: Record<string, unknown>;
+    metrics: Record<string, unknown>;
+    incidents: Record<string, unknown>[];
+    compliance: Record<string, unknown>;
+    performance: Record<string, unknown>;
   }> {
     const reportId = crypto.randomUUID();
     const now = new Date();

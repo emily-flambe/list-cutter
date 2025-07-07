@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { SecurityConfigManager, SecurityPolicy } from '../../src/config/security-config';
+import { SecurityConfigManager } from '../../src/config/security-config';
 import { SecurityMonitorService } from '../../src/services/security/security-monitor';
 import { SecurityMetricsCollector } from '../../src/services/security/metrics-collector';
 import { SecurityHeadersMiddleware } from '../../src/middleware/security-headers';
@@ -291,7 +291,7 @@ describe('Security Integration Tests', () => {
   
   describe('Security Headers Middleware', () => {
     it('should create security context', async () => {
-      const mockContext = {
+      const _mockContext = {
         req: {
           path: '/api/auth/login',
           method: 'POST',

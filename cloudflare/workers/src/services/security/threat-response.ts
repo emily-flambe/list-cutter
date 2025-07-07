@@ -3,11 +3,9 @@ import {
   ThreatAction,
   ThreatResponseDetails,
   NotificationRecord,
-  QuarantineInfo,
   ThreatDetectionResult,
   PIIDetectionResult,
   ThreatSeverity,
-  ThreatRecommendation,
   SecurityAuditEvent,
   SecurityEventType,
   ThreatDetectionConfig
@@ -34,8 +32,8 @@ export class ThreatResponseService {
   async processThreatDetection(
     threatResult: ThreatDetectionResult,
     file: File,
-    userId?: string,
-    ipAddress?: string
+    _userId?: string,
+    _ipAddress?: string
   ): Promise<ThreatResponse[]> {
     const responses: ThreatResponse[] = [];
 
@@ -70,8 +68,8 @@ export class ThreatResponseService {
   async processPIIDetection(
     piiResult: PIIDetectionResult,
     file: File,
-    userId?: string,
-    ipAddress?: string
+    _userId?: string,
+    _ipAddress?: string
   ): Promise<ThreatResponse[]> {
     const responses: ThreatResponse[] = [];
 
@@ -205,8 +203,8 @@ export class ThreatResponseService {
     action: ThreatAction,
     threatResult: ThreatDetectionResult,
     file: File,
-    userId?: string,
-    ipAddress?: string
+    _userId?: string,
+    _ipAddress?: string
   ): Promise<ThreatResponse> {
     const responseId = crypto.randomUUID();
     const timestamp = new Date();
@@ -279,8 +277,8 @@ export class ThreatResponseService {
     action: ThreatAction,
     piiResult: PIIDetectionResult,
     file: File,
-    userId?: string,
-    ipAddress?: string
+    _userId?: string,
+    _ipAddress?: string
   ): Promise<ThreatResponse> {
     const responseId = crypto.randomUUID();
     const timestamp = new Date();
@@ -469,7 +467,7 @@ export class ThreatResponseService {
     threatResult: ThreatDetectionResult,
     file: File,
     details: ThreatResponseDetails,
-    userId?: string
+    _userId?: string
   ): Promise<ThreatResponseDetails> {
     const notifications: NotificationRecord[] = [];
 
@@ -519,7 +517,7 @@ export class ThreatResponseService {
     threatResult: ThreatDetectionResult,
     file: File,
     details: ThreatResponseDetails,
-    userId?: string
+    _userId?: string
   ): Promise<ThreatResponseDetails> {
     // Create escalation ticket/alert
     const escalationId = crypto.randomUUID();
@@ -629,7 +627,7 @@ export class ThreatResponseService {
     piiResult: PIIDetectionResult,
     file: File,
     details: ThreatResponseDetails,
-    userId?: string
+    _userId?: string
   ): Promise<ThreatResponseDetails> {
     const notifications: NotificationRecord[] = [];
 
@@ -653,7 +651,7 @@ export class ThreatResponseService {
     piiResult: PIIDetectionResult,
     file: File,
     details: ThreatResponseDetails,
-    userId?: string
+    _userId?: string
   ): Promise<ThreatResponseDetails> {
     const escalationId = crypto.randomUUID();
     
@@ -726,7 +724,7 @@ export class ThreatResponseService {
   private async logResponseActions(
     threatResult: ThreatDetectionResult,
     responses: ThreatResponse[],
-    userId?: string
+    _userId?: string
   ): Promise<void> {
     const event: SecurityAuditEvent = {
       id: crypto.randomUUID(),
@@ -774,7 +772,7 @@ export class ThreatResponseService {
   private async logPIIResponseActions(
     piiResult: PIIDetectionResult,
     responses: ThreatResponse[],
-    userId?: string
+    _userId?: string
   ): Promise<void> {
     const event: SecurityAuditEvent = {
       id: crypto.randomUUID(),

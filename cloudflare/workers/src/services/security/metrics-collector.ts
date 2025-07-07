@@ -10,7 +10,7 @@
  */
 
 import { SecurityConfigManager } from '../../config/security-config';
-import { SecurityMonitorService, SecurityEvent, SecurityMetrics } from './security-monitor';
+import { SecurityMonitorService, SecurityEvent } from './security-monitor';
 
 // File validation results interface
 interface FileValidationResults {
@@ -704,7 +704,6 @@ export class SecurityMetricsCollector {
    * Generate overview data
    */
   private async generateOverviewData(hoursBack: number): Promise<SecurityDashboardData['overview']> {
-    const metrics = await this.monitor.getSecurityMetrics();
     const dashboard = await this.monitor.getSecurityDashboard();
     
     return {
@@ -764,7 +763,7 @@ export class SecurityMetricsCollector {
   /**
    * Generate trends data
    */
-  private async generateTrendsData(hoursBack: number): Promise<SecurityDashboardData['trends']> {
+  private async generateTrendsData(_hoursBack: number): Promise<SecurityDashboardData['trends']> {
     // This would compare current period with previous period
     // For now, return placeholder data
     return {
@@ -816,7 +815,7 @@ export class SecurityMetricsCollector {
   /**
    * Get top threats
    */
-  private async getTopThreats(hoursBack: number): Promise<ThreatSummary[]> {
+  private async getTopThreats(_hoursBack: number): Promise<ThreatSummary[]> {
     // This would analyze threat patterns from metrics
     // For now, return placeholder data
     return [
@@ -829,7 +828,7 @@ export class SecurityMetricsCollector {
   /**
    * Get top IPs
    */
-  private async getTopIPs(hoursBack: number): Promise<IPSummary[]> {
+  private async getTopIPs(_hoursBack: number): Promise<IPSummary[]> {
     // This would analyze IP patterns from metrics
     // For now, return placeholder data
     return [
@@ -841,7 +840,7 @@ export class SecurityMetricsCollector {
   /**
    * Get recent alerts
    */
-  private async getRecentAlerts(hoursBack: number): Promise<AlertSummary[]> {
+  private async getRecentAlerts(_hoursBack: number): Promise<AlertSummary[]> {
     const alerts = await this.monitor.getActiveAlerts();
     return alerts.map(alert => ({
       id: alert.id,

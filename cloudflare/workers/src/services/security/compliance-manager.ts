@@ -1,8 +1,6 @@
 import {
   ComplianceFramework,
-  SecurityEventType,
-  AuditTrailEntry,
-  ComplianceEvent
+  SecurityEventType
 } from '../../types/security-events';
 import { SecurityAuditLogger } from './audit-logger';
 
@@ -349,7 +347,7 @@ export class ComplianceManager {
         complianceType: request.complianceFramework,
         dataCategories: request.dataProcessed.map(d => d.category as unknown as string),
         requestMethod: 'admin',
-        processingStatus: action.status as any
+        processingStatus: action.status as 'pending' | 'completed' | 'rejected'
       }
     );
 
@@ -670,7 +668,7 @@ export class ComplianceManager {
         severity: v.severity,
         description: v.description,
         recommendation: `Remediate ${v.violationType} violation`,
-        status: v.status as any
+        status: v.status as 'open' | 'in_progress' | 'resolved' | 'closed'
       }))
     };
 
@@ -814,24 +812,24 @@ export class ComplianceManager {
   }
 
   // Placeholder methods for data operations (would be implemented based on actual data schema)
-  private async getUserProfile(userId: string): Promise<unknown> { return {}; }
-  private async getUserFiles(userId: string): Promise<any[]> { return []; }
-  private async getUserAccessLogs(userId: string): Promise<any[]> { return []; }
-  private async getUserConsents(userId: string): Promise<ConsentRecord[]> { return []; }
-  private async getRetentionPolicies(userId: string): Promise<RetentionPolicy[]> { return []; }
-  private async anonymizeUserProfile(userId: string): Promise<void> {}
-  private async deleteUserProfile(userId: string): Promise<void> {}
-  private async deleteFile(fileId: string): Promise<void> {}
-  private async anonymizeAuditLogs(userId: string): Promise<number> { return 0; }
-  private canDeleteData(type: string, policies: RetentionPolicy[]): boolean { return true; }
-  private async getTotalDataSubjects(period: { start: Date; end: Date }): Promise<number> { return 0; }
-  private async getTotalRequests(framework: ComplianceFramework, period: { start: Date; end: Date }): Promise<number> { return 0; }
-  private async getCompletedRequests(framework: ComplianceFramework, period: { start: Date; end: Date }): Promise<number> { return 0; }
-  private async getBreachCount(period: { start: Date; end: Date }): Promise<number> { return 0; }
-  private async getComplianceViolations(framework: ComplianceFramework, period: { start: Date; end: Date }): Promise<ComplianceViolation[]> { return []; }
-  private async getAverageResponseTime(framework: ComplianceFramework, period: { start: Date; end: Date }): Promise<number> { return 0; }
-  private async storeComplianceReport(report: ComplianceReport): Promise<void> {}
-  private async getOverdueRequests(framework: ComplianceFramework): Promise<DataSubjectRequest[]> { return []; }
-  private async checkControlImplementation(control: string): Promise<boolean> { return true; }
-  private async getRecentViolations(framework: ComplianceFramework): Promise<ComplianceViolation[]> { return []; }
+  private async getUserProfile(_userId: string): Promise<unknown> { return {}; }
+  private async getUserFiles(_userId: string): Promise<Record<string, unknown>[]> { return []; }
+  private async getUserAccessLogs(_userId: string): Promise<Record<string, unknown>[]> { return []; }
+  private async getUserConsents(_userId: string): Promise<ConsentRecord[]> { return []; }
+  private async getRetentionPolicies(_userId: string): Promise<RetentionPolicy[]> { return []; }
+  private async anonymizeUserProfile(_userId: string): Promise<void> {}
+  private async deleteUserProfile(_userId: string): Promise<void> {}
+  private async deleteFile(_fileId: string): Promise<void> {}
+  private async anonymizeAuditLogs(_userId: string): Promise<number> { return 0; }
+  private canDeleteData(_type: string, _policies: RetentionPolicy[]): boolean { return true; }
+  private async getTotalDataSubjects(_period: { start: Date; end: Date }): Promise<number> { return 0; }
+  private async getTotalRequests(_framework: ComplianceFramework, _period: { start: Date; end: Date }): Promise<number> { return 0; }
+  private async getCompletedRequests(_framework: ComplianceFramework, _period: { start: Date; end: Date }): Promise<number> { return 0; }
+  private async getBreachCount(_period: { start: Date; end: Date }): Promise<number> { return 0; }
+  private async getComplianceViolations(_framework: ComplianceFramework, _period: { start: Date; end: Date }): Promise<ComplianceViolation[]> { return []; }
+  private async getAverageResponseTime(_framework: ComplianceFramework, _period: { start: Date; end: Date }): Promise<number> { return 0; }
+  private async storeComplianceReport(_report: ComplianceReport): Promise<void> {}
+  private async getOverdueRequests(_framework: ComplianceFramework): Promise<DataSubjectRequest[]> { return []; }
+  private async checkControlImplementation(_control: string): Promise<boolean> { return true; }
+  private async getRecentViolations(_framework: ComplianceFramework): Promise<ComplianceViolation[]> { return []; }
 }

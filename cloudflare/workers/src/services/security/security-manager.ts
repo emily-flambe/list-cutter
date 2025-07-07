@@ -6,8 +6,6 @@ import { ThreatIntelligenceDatabaseService } from './threat-intelligence-db';
 import { SecurityAuditService } from './security-audit';
 import {
   ThreatDetectionConfig,
-  ThreatDetectionResult,
-  PIIDetectionResult,
   ThreatResponse,
   ValidationResult,
   SecurityAuditEvent,
@@ -227,8 +225,7 @@ export class SecurityManager {
           scanTimestamp: new Date(),
           scanEngine: 'SecurityManager',
           engineVersion: '1.0.0',
-          recommendation: 'allow' as any
-        },
+          recommendation: 'allow'        },
         piiResults: validation.piiDetection,
         responseActions: threatResponses,
         message: this.generateScanMessage(validation, threatResponses),
@@ -277,8 +274,7 @@ export class SecurityManager {
           scanTimestamp: new Date(),
           scanEngine: 'SecurityManager',
           engineVersion: '1.0.0',
-          recommendation: 'manual_review' as any
-        },
+          recommendation: 'manual_review'        },
         responseActions: [],
         message: `Security scan failed: ${errorMessage}`,
         timestamp: new Date()
@@ -290,9 +286,9 @@ export class SecurityManager {
    * Get security dashboard data
    */
   async getSecurityDashboard(): Promise<{
-    metrics: any;
+    metrics: Record<string, unknown>;
     recentEvents: SecurityAuditEvent[];
-    threatStatistics: any;
+    threatStatistics: Record<string, unknown>;
     systemHealth: {
       status: 'healthy' | 'warning' | 'critical';
       services: Array<{ name: string; status: string; lastCheck: Date }>;
@@ -336,7 +332,7 @@ export class SecurityManager {
       
       // Update from external source if provided
       if (sourceUrl) {
-        const updateResult = await this.threatIntelligenceDB.updateFromExternalSource(sourceUrl);
+        await this.threatIntelligenceDB.updateFromExternalSource(sourceUrl);
         // Threat intelligence update result: ${JSON.stringify(updateResult)}
       }
 
@@ -538,7 +534,14 @@ export class SecurityManager {
   /**
    * Get service instances for direct access if needed
    */
-  getServices() {
+  getServices(): {
+    fileValidator: FileValidationService;
+    threatDetector: ThreatDetectionService;
+    piiScanner: PIIScannerService;
+    threatResponse: ThreatResponseService;
+    threatIntelligenceDB: ThreatIntelligenceDatabaseService;
+    securityAudit: SecurityAuditService;
+  } {
     return {
       fileValidator: this.fileValidator,
       threatDetector: this.threatDetector,

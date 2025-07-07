@@ -10,6 +10,7 @@
  */
 
 import { SecurityConfigManager } from '../../config/security-config';
+import { ValidationResult } from './file-validator';
 
 // Metadata interfaces for type safety
 interface SecurityEventMetadata {
@@ -20,7 +21,7 @@ interface SecurityEventMetadata {
   method?: string;
   filename?: string;
   fileSize?: number;
-  validationResults?: FileValidationResults;
+  validationResults?: ValidationResult;
   blocked?: boolean;
   limit?: number;
   current?: number;
@@ -641,7 +642,7 @@ export class SecurityMonitorService {
   /**
    * Check for alerts based on event
    */
-  private async checkForAlerts(event: SecurityEvent): Promise<void> {
+  private async checkForAlerts(_event: SecurityEvent): Promise<void> {
     const metrics = await this.getSecurityMetrics();
     const config = await this.configManager.getMonitoringConfig();
     
@@ -867,7 +868,7 @@ export class SecurityMonitorFactory {
     ALERT_WEBHOOK?: string;
     ENVIRONMENT?: string;
   }): SecurityMonitorService {
-    const configManager = new (require('../../config/security-config').SecurityConfigManager)({
+    const configManager = new SecurityConfigManager({
       kvNamespace: env.SECURITY_CONFIG,
       environment: env.ENVIRONMENT || 'development',
       enableDynamicUpdates: true,

@@ -1,7 +1,6 @@
 import {
   FileOperation,
-  FileAccessAudit,
-  AccessControlContext
+  FileAccessAudit
 } from '../../types/permissions';
 
 export interface AuditEvent {
@@ -242,12 +241,20 @@ export class AuditLogger {
       lastAccess: basicStats?.last_access ? new Date(basicStats.last_access as string) : new Date(),
       totalBytesTransferred: basicStats?.total_bytes as number || 0,
       averageResponseTime: basicStats?.avg_response_time as number || 0,
-      topOperations: operationStats.results.map((row: any) => ({
+      topOperations: operationStats.results.map((row: {
+        operation: string;
+        count: number;
+        success_rate: number;
+      }) => ({
         operation: row.operation as FileOperation,
         count: row.count as number,
         successRate: row.success_rate as number
       })),
-      suspiciousActivity: suspiciousActivity.results.map((row: any) => ({
+      suspiciousActivity: suspiciousActivity.results.map((row: {
+        type: string;
+        count: number;
+        last_occurrence: string;
+      }) => ({
         type: row.type as string,
         count: row.count as number,
         lastOccurrence: new Date(row.last_occurrence as string)
@@ -316,7 +323,12 @@ export class AuditLogger {
       deniedAccesses: summary?.denied_accesses as number || 0,
       totalBytesTransferred: summary?.total_bytes as number || 0,
       averageResponseTime: summary?.avg_response_time as number || 0,
-      mostAccessedFiles: mostAccessed.results.map((row: any) => ({
+      mostAccessedFiles: mostAccessed.results.map((row: {
+        file_id: string;
+        filename: string;
+        access_count: number;
+        last_accessed: string;
+      }) => ({
         fileId: row.file_id as string,
         filename: row.filename as string,
         accessCount: row.access_count as number,
@@ -488,7 +500,22 @@ export class AuditLogger {
 
     const results = await this.db.prepare(query).bind(...params).all();
 
-    return results.results.map((row: any) => ({
+    return results.results.map((row: {
+      id: string;
+      file_id: string;
+      user_id?: string;
+      share_token?: string;
+      operation: string;
+      result: string;
+      reason?: string;
+      ip_address?: string;
+      user_agent?: string;
+      request_id?: string;
+      bytes_transferred?: number;
+      duration_ms?: number;
+      metadata?: string;
+      created_at: string;
+    }) => ({
       id: row.id,
       fileId: row.file_id,
       userId: row.user_id,

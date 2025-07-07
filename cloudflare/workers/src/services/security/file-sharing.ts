@@ -3,7 +3,6 @@ import {
   ShareTokenRequest,
   ShareTokenResponse,
   FileOperation,
-  AccessControlContext,
   FileAccessAudit,
   InvalidShareTokenError,
   ShareTokenExpiredError,
@@ -229,7 +228,7 @@ export class FileSharingService {
       }
 
       // Check if token has exceeded max uses
-      if (shareToken.maxUses && shareToken.usedCount! >= shareToken.maxUses) {
+      if (shareToken.maxUses && (shareToken.usedCount || 0) >= shareToken.maxUses) {
         throw new Error('Share token has reached maximum usage limit');
       }
 
@@ -248,7 +247,9 @@ export class FileSharingService {
       }
 
       // Increment usage count
-      await this.incrementTokenUsage(shareToken.id!, context);
+      if (shareToken.id) {
+        await this.incrementTokenUsage(shareToken.id, context);
+      }
 
       // Audit successful token validation
       const auditId = await this.auditTokenAction({
@@ -265,7 +266,7 @@ export class FileSharingService {
           action: 'validate_share_token',
           tokenId: shareToken.id,
           permissions: permissions,
-          usedCount: shareToken.usedCount! + 1
+          usedCount: (shareToken.usedCount || 0) + 1
         }
       });
 
@@ -275,7 +276,7 @@ export class FileSharingService {
         auditId,
         reason: 'share_token_valid',
         expiresAt: shareToken.expiresAt,
-        usesRemaining: shareToken.maxUses ? shareToken.maxUses - shareToken.usedCount! - 1 : undefined
+        usesRemaining: shareToken.maxUses ? shareToken.maxUses - (shareToken.usedCount || 0) - 1 : undefined
       };
 
     } catch (error) {
@@ -514,7 +515,7 @@ export class FileSharingService {
   /**
    * Increment token usage count
    */
-  private async incrementTokenUsage(tokenId: string, context: ShareTokenContext): Promise<void> {
+  private async incrementTokenUsage(tokenId: string, _context: ShareTokenContext): Promise<void> {
     await this.db
       .prepare(`
         UPDATE file_share_tokens 

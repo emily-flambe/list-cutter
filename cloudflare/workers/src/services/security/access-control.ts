@@ -7,11 +7,9 @@ import {
   BulkPermissionCheck,
   FileAccessAudit,
   AccessControlConfig,
-  SecurityPolicy,
   PermissionGrant,
   PermissionRevoke,
   FileVisibility,
-  AccessControlError,
   InsufficientPermissionsError,
   FileNotFoundError
 } from '../../types/permissions';

@@ -2,10 +2,9 @@ import { AccessControlService } from '../security/access-control';
 import { R2StorageService, FileUploadOptions, UploadResult } from './r2-service';
 import {
   FileOperation,
+  FileRole,
   AccessControlContext,
-  AccessControlError,
-  InsufficientPermissionsError,
-  FileNotFoundError
+  InsufficientPermissionsError
 } from '../../types/permissions';
 
 export interface SecureFileUploadOptions extends FileUploadOptions {
@@ -89,8 +88,8 @@ export class SecureR2StorageService {
           options.fileId,
           options.userId,
           FileOperation.WRITE,
-          permissionCheck.requiredRole || 'owner' as any,
-          permissionCheck.currentRole || 'none' as any
+          permissionCheck.requiredRole || 'owner',
+          permissionCheck.currentRole || 'none'
         );
       }
 
@@ -101,7 +100,7 @@ export class SecureR2StorageService {
           options.fileId,
           options.userId,
           FileOperation.WRITE,
-          'editor' as any,
+          'editor',
           ownership.effectiveRole
         );
       }
@@ -158,8 +157,8 @@ export class SecureR2StorageService {
           options.fileId,
           options.userId,
           FileOperation.READ,
-          permissionCheck.requiredRole || 'viewer' as any,
-          permissionCheck.currentRole || 'none' as any
+          (permissionCheck.requiredRole as FileRole) || FileRole.VIEWER,
+          (permissionCheck.currentRole as FileRole) || FileRole.NONE
         );
       }
 
@@ -170,7 +169,7 @@ export class SecureR2StorageService {
           options.fileId,
           options.userId,
           FileOperation.READ,
-          'viewer' as any,
+          FileRole.VIEWER,
           ownership.effectiveRole
         );
       }
@@ -231,8 +230,8 @@ export class SecureR2StorageService {
           options.fileId,
           options.userId,
           FileOperation.DELETE,
-          permissionCheck.requiredRole || 'owner' as any,
-          permissionCheck.currentRole || 'none' as any
+          (permissionCheck.requiredRole as FileRole) || FileRole.OWNER,
+          (permissionCheck.currentRole as FileRole) || FileRole.NONE
         );
       }
 
@@ -243,7 +242,7 @@ export class SecureR2StorageService {
           options.fileId,
           options.userId,
           FileOperation.DELETE,
-          'owner' as any,
+          FileRole.OWNER,
           ownership.effectiveRole
         );
       }
@@ -350,26 +349,26 @@ export class SecureR2StorageService {
 
     const results = await this.db.prepare(query).bind(...params).all();
 
-    return results.results.map((row: any) => {
+    return results.results.map((row: Record<string, unknown>) => {
       const isOwner = row.user_id === userId;
-      let effectiveRole = isOwner ? 'owner' : (row.granted_role || 'none');
+      let effectiveRole = isOwner ? 'owner' : (row.granted_role as string || 'none');
       let permissions: FileOperation[] = [];
 
       if (isOwner) {
         permissions = [FileOperation.READ, FileOperation.WRITE, FileOperation.DELETE, FileOperation.SHARE, FileOperation.ADMIN];
       } else if (row.granted_permissions) {
         try {
-          permissions = JSON.parse(row.granted_permissions);
+          permissions = JSON.parse(row.granted_permissions as string);
         } catch {
           permissions = [];
         }
       }
 
       return {
-        fileId: row.id,
-        filename: row.filename,
-        fileSize: row.file_size,
-        uploadedAt: new Date(row.created_at),
+        fileId: row.id as string,
+        filename: row.filename as string,
+        fileSize: row.file_size as number,
+        uploadedAt: new Date(row.created_at as string),
         isOwner,
         effectiveRole,
         permissions
@@ -395,8 +394,8 @@ export class SecureR2StorageService {
         fileId,
         userId,
         FileOperation.ADMIN,
-        permissionCheck.requiredRole || 'owner' as any,
-        permissionCheck.currentRole || 'none' as any
+        (permissionCheck.requiredRole as FileRole) || FileRole.OWNER,
+        (permissionCheck.currentRole as FileRole) || FileRole.NONE
       );
     }
 

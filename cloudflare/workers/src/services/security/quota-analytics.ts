@@ -6,15 +6,13 @@
 import {
   QuotaAnalytics,
   QuotaReport,
-  QuotaAlert,
   QuotaRecommendation,
   TimeSeriesData,
   FileUsageData,
   QuotaExceededEvent,
   QuotaType,
-  QuotaOperationType,
-  QuotaAlertType
-} from '../../types/quota.js';
+  QuotaOperationType
+} from '../../types/quota';
 
 export interface AnalyticsOptions {
   db: D1Database;
@@ -49,7 +47,7 @@ export interface QuotaForecast {
 export class QuotaAnalyticsService {
   private db: D1Database;
   private retentionDays: number;
-  private aggregationIntervals: any;
+  private aggregationIntervals: Record<string, unknown>;
 
   constructor(options: AnalyticsOptions) {
     this.db = options.db;
@@ -257,8 +255,8 @@ export class QuotaAnalyticsService {
     currentPeriod: { start: Date; end: Date },
     comparisonPeriod: { start: Date; end: Date }
   ): Promise<{
-    current: any;
-    comparison: any;
+    current: Record<string, unknown>;
+    comparison: Record<string, unknown>;
     changes: {
       storage: { value: number; percentage: number };
       files: { value: number; percentage: number };
@@ -304,7 +302,7 @@ export class QuotaAnalyticsService {
     period: { start: Date; end: Date },
     includeRawEvents: boolean = false
   ): Promise<string> {
-    const data: any = {
+    const data: Record<string, unknown> = {
       userId,
       period,
       exportedAt: new Date().toISOString(),
@@ -444,7 +442,7 @@ export class QuotaAnalyticsService {
     userId: string,
     startDate: Date,
     endDate: Date,
-    period: string
+    _period: string
   ): Promise<{
     storage: TimeSeriesData[];
     fileCount: TimeSeriesData[];
@@ -533,7 +531,7 @@ export class QuotaAnalyticsService {
     }));
   }
 
-  private async getUserQuotaInfo(userId: string): Promise<any> {
+  private async getUserQuotaInfo(userId: string): Promise<Record<string, unknown>> {
     const result = await this.db.prepare(`
       SELECT 
         uq.*,
@@ -548,7 +546,7 @@ export class QuotaAnalyticsService {
     return result;
   }
 
-  private async calculateSummaryStats(userId: string, period: { start: Date; end: Date }): Promise<any> {
+  private async calculateSummaryStats(userId: string, period: { start: Date; end: Date }): Promise<Record<string, unknown>> {
     const result = await this.db.prepare(`
       SELECT 
         SUM(storage_used) as total_storage,
@@ -578,7 +576,7 @@ export class QuotaAnalyticsService {
     };
   }
 
-  private async calculateTrends(userId: string, period: { start: Date; end: Date }): Promise<any> {
+  private async calculateTrends(userId: string, period: { start: Date; end: Date }): Promise<Record<string, unknown>> {
     const data = await this.db.prepare(`
       SELECT date, storage_used, file_count, bandwidth_used, total_requests
       FROM quota_analytics_daily
@@ -700,9 +698,9 @@ export class QuotaAnalyticsService {
 
   private async generateRecommendations(
     userId: string,
-    userQuota: any,
-    trends: any,
-    summary: any
+    userQuota: Record<string, unknown>,
+    trends: Record<string, unknown>,
+    summary: Record<string, unknown>
   ): Promise<QuotaRecommendation[]> {
     const recommendations: QuotaRecommendation[] = [];
 
@@ -732,13 +730,13 @@ export class QuotaAnalyticsService {
     return recommendations;
   }
 
-  private convertToCSV(data: any): string {
+  private convertToCSV(data: Record<string, unknown>): string {
     // Simple CSV conversion for daily stats
     const headers = ['date', 'storage_used', 'file_count', 'bandwidth_used', 'total_requests'];
     const rows = [headers.join(',')];
     
     if (data.dailyStats && data.dailyStats.results) {
-      data.dailyStats.results.forEach((row: any) => {
+      data.dailyStats.results.forEach((row: Record<string, unknown>) => {
         const values = headers.map(header => row[header] || '');
         rows.push(values.join(','));
       });

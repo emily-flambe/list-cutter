@@ -138,7 +138,12 @@ export class SecurityHeadersMiddleware {
    */
   private async setSecurityHeaders(
     c: Context,
-    config: any,
+    config: {
+      contentSecurityPolicy: string;
+      strictTransportSecurity?: string;
+      enableReporting?: boolean;
+      reportUri?: string;
+    },
     securityContext: SecurityHeadersContext
   ): Promise<void> {
     const headers = c.res.headers;
@@ -344,7 +349,12 @@ export class SecurityHeadersMiddleware {
  * Security Headers Configuration Builder
  */
 export class SecurityHeadersConfigBuilder {
-  private config: any = {};
+  private config: {
+    contentSecurityPolicy?: string;
+    strictTransportSecurity?: string;
+    enableReporting?: boolean;
+    reportUri?: string;
+  } = {};
   
   /**
    * Set Content Security Policy
@@ -402,7 +412,12 @@ export class SecurityHeadersConfigBuilder {
   /**
    * Build configuration
    */
-  build(): any {
+  build(): {
+    contentSecurityPolicy?: string;
+    strictTransportSecurity?: string;
+    enableReporting?: boolean;
+    reportUri?: string;
+  } {
     return this.config;
   }
 }

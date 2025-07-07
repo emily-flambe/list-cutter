@@ -300,7 +300,7 @@ export interface SecurityEventDetails {
   threatData?: ThreatDetectionResult;
   piiData?: PIIDetectionResult;
   responseActions: ThreatAction[];
-  additionalContext: Record<string, any>;
+  additionalContext: Record<string, unknown>;
 }
 
 // Configuration Types
@@ -412,7 +412,7 @@ export interface ThreatIntelligenceUpdateResponse {
 export interface ThreatDetectionError {
   code: ThreatErrorCode;
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
   timestamp: Date;
   fileId?: string;
   retryable: boolean;

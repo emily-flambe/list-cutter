@@ -94,9 +94,9 @@ class EventCompressor {
 
     // Remove empty fields
     Object.keys(compressed).forEach(key => {
-      const value = (compressed as any)[key];
+      const value = (compressed as Record<string, unknown>)[key];
       if (value === null || value === undefined || value === '') {
-        delete (compressed as any)[key];
+        delete (compressed as Record<string, unknown>)[key];
       }
     });
 
@@ -125,7 +125,7 @@ class EventCompressor {
  * Query optimizer for database operations
  */
 class QueryOptimizer {
-  private queryCache = new Map<string, { result: any; timestamp: number }>();
+  private queryCache = new Map<string, { result: unknown; timestamp: number }>();
   private readonly cacheTTL: number;
 
   constructor(cacheTTL: number) {
@@ -232,7 +232,7 @@ class AsyncLogger {
     }
   }
 
-  private async processBatch(events: SecurityEvent[]): Promise<void> {
+  private async processBatch(_events: SecurityEvent[]): Promise<void> {
     // This would integrate with the actual database insertion logic
     // Processing batch of ${events.length} events
   }

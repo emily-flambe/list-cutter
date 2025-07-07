@@ -7,8 +7,7 @@ import { QuotaManager } from '../services/security/quota-manager';
 import {
   QuotaCheckOptions,
   QuotaOperationType,
-  QuotaNotFoundError,
-  InvalidQuotaOperationError
+  QuotaNotFoundError
 } from '../types/quota';
 import { CloudflareEnv } from '../types/env';
 
@@ -29,7 +28,15 @@ export interface QuotaContext {
 
 export interface QuotaEnforcementResult {
   allowed: boolean;
-  quotaCheck?: any;
+  quotaCheck?: {
+    isAllowed: boolean;
+    currentUsage: number;
+    limit: number;
+    percentageUsed: number;
+    remainingQuota: number;
+    resetTime: Date;
+    quotaType: string;
+  };
   errorMessage?: string;
   recommendedAction?: string;
   retryAfter?: number;
@@ -122,7 +129,7 @@ export class QuotaEnforcementMiddleware {
    * Create Express/Hono middleware for quota enforcement
    */
   createMiddleware() {
-    return async (request: Request, env: CloudflareEnv, ctx: any, next: Function) => {
+    return async (request: Request, env: CloudflareEnv, _ctx: ExecutionContext, next: () => Promise<Response>): Promise<Response> => {
       const url = new URL(request.url);
       const method = request.method;
       
@@ -171,7 +178,7 @@ export class QuotaEnforcementMiddleware {
    * Post-operation middleware to update quota usage
    */
   createPostOperationMiddleware() {
-    return async (request: Request, response: Response, env: CloudflareEnv, ctx: any) => {
+    return async (request: Request, response: Response, _env: CloudflareEnv, _ctx: ExecutionContext): Promise<Response> => {
       const quotaContext = request.quotaContext;
       
       if (!quotaContext) {
@@ -196,7 +203,7 @@ export class QuotaEnforcementMiddleware {
    * Create handler for file upload operations
    */
   createFileUploadHandler() {
-    return async (request: Request, env: CloudflareEnv, ctx: any) => {
+    return async (request: Request, _env: CloudflareEnv, _ctx: ExecutionContext): Promise<Response> => {
       const formData = await request.formData();
       const file = formData.get('file') as File;
       const userId = formData.get('userId') as string;
@@ -256,7 +263,7 @@ export class QuotaEnforcementMiddleware {
    * Create handler for file download operations
    */
   createFileDownloadHandler() {
-    return async (request: Request, env: CloudflareEnv, ctx: any) => {
+    return async (request: Request, env: CloudflareEnv, _ctx: ExecutionContext): Promise<Response> => {
       const url = new URL(request.url);
       const fileId = url.searchParams.get('fileId');
       const userId = url.searchParams.get('userId');
@@ -318,7 +325,7 @@ export class QuotaEnforcementMiddleware {
    * Create bulk operation handler with quota batching
    */
   createBulkOperationHandler() {
-    return async (request: Request, env: CloudflareEnv, ctx: any) => {
+    return async (request: Request, _env: CloudflareEnv, _ctx: ExecutionContext): Promise<Response> => {
       const { operations, userId } = await request.json();
       
       if (!operations || !Array.isArray(operations) || !userId) {
@@ -388,14 +395,22 @@ export class QuotaEnforcementMiddleware {
 
   // Private helper methods
 
-  private generateErrorMessage(quotaCheck: any): string {
+  private generateErrorMessage(quotaCheck: {
+    quotaType: string;
+    currentUsage: number;
+    limit: number;
+    percentageUsed: number;
+    resetTime?: Date;
+  }): string {
     const percentage = quotaCheck.percentageUsed.toFixed(1);
     const resetTime = quotaCheck.resetTime ? ` Resets at ${quotaCheck.resetTime.toISOString()}` : '';
     
     return `Quota exceeded for ${quotaCheck.quotaType}: ${quotaCheck.currentUsage}/${quotaCheck.limit} (${percentage}% used).${resetTime}`;
   }
 
-  private generateRecommendedAction(quotaCheck: any): string {
+  private generateRecommendedAction(quotaCheck: {
+    quotaType: string;
+  }): string {
     if (quotaCheck.quotaType === 'storage') {
       return 'Delete unused files or upgrade to a higher tier';
     }
@@ -411,7 +426,9 @@ export class QuotaEnforcementMiddleware {
     return 'Upgrade to a higher tier or contact support';
   }
 
-  private calculateRetryAfter(quotaCheck: any): number {
+  private calculateRetryAfter(quotaCheck: {
+    resetTime?: Date;
+  }): number {
     if (quotaCheck.resetTime) {
       const now = new Date();
       const resetTime = new Date(quotaCheck.resetTime);
@@ -561,7 +578,13 @@ export async function updateQuotaAfterOperation(
   await middleware.updateQuotaUsage(context);
 }
 
-export function createQuotaHeaders(quotaCheck: any): Record<string, string> {
+export function createQuotaHeaders(quotaCheck: {
+  limit?: number;
+  remainingQuota?: number;
+  resetTime?: Date;
+  currentUsage?: number;
+  percentageUsed?: number;
+}): Record<string, string> {
   return {
     'X-RateLimit-Limit': quotaCheck.limit?.toString() || '0',
     'X-RateLimit-Remaining': quotaCheck.remainingQuota?.toString() || '0',

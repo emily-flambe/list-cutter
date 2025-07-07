@@ -2,8 +2,6 @@ import {
   SecurityEvent,
   SecurityEventType,
   SecurityEventSeverity,
-  SecurityEventCategory,
-  RiskLevel,
   SecurityMetrics,
   SecurityIncident,
   SecurityDashboardWidget,
@@ -110,7 +108,7 @@ export class SecurityMonitoringDashboard {
     
     try {
       // Get or create dashboard configuration
-      const config = await this.getDashboardConfig(userId, role);
+      await this.getDashboardConfig(userId, role);
       
       // Get real-time dashboard data
       const [summary, metrics, recentEvents, activeIncidents, alertSummary, systemHealth] = await Promise.all([
@@ -292,7 +290,7 @@ export class SecurityMonitoringDashboard {
   /**
    * Get active alerts for a user
    */
-  async getActiveAlerts(userId: string): Promise<AlertNotification[]> {
+  async getActiveAlerts(_userId: string): Promise<AlertNotification[]> {
     const userAlerts: AlertNotification[] = [];
     
     for (const alert of this.activeAlerts.values()) {
@@ -560,7 +558,6 @@ export class SecurityMonitoringDashboard {
    */
   private async getAlertSummary(): Promise<DashboardData['alertSummary']> {
     const activeAlertsCount = this.activeAlerts.size;
-    const acknowledgedCount = Array.from(this.activeAlerts.values()).filter(a => a.acknowledged).length;
 
     return {
       triggeredAlerts: activeAlertsCount,
@@ -616,7 +613,12 @@ export class SecurityMonitoringDashboard {
   /**
    * Private: Execute security events query
    */
-  private async executeSecurityEventsQuery(query: any): Promise<unknown> {
+  private async executeSecurityEventsQuery(query: {
+    timeRange?: { start?: Date; end?: Date };
+    aggregation?: string;
+    filters?: Record<string, unknown>;
+    [key: string]: unknown;
+  }): Promise<unknown> {
     // This is a simplified implementation
     // In production, this would build more complex queries based on the query object
     const events = await this.auditLogger.querySecurityEvents({
@@ -641,7 +643,11 @@ export class SecurityMonitoringDashboard {
   /**
    * Private: Execute audit trail query
    */
-  private async executeAuditTrailQuery(query: any): Promise<unknown> {
+  private async executeAuditTrailQuery(query: {
+    timeRange?: { start?: Date; end?: Date };
+    filters?: Record<string, unknown>;
+    [key: string]: unknown;
+  }): Promise<unknown> {
     // Simplified audit trail query implementation
     const results = await this.db.prepare(`
       SELECT * FROM audit_trail 
@@ -659,7 +665,11 @@ export class SecurityMonitoringDashboard {
   /**
    * Private: Execute metrics query
    */
-  private async executeMetricsQuery(query: any): Promise<unknown> {
+  private async executeMetricsQuery(query: {
+    timeRange?: { start?: Date; end?: Date };
+    metricType?: string;
+    [key: string]: unknown;
+  }): Promise<unknown> {
     const results = await this.db.prepare(`
       SELECT * FROM security_metrics 
       WHERE timeframe_start >= ? AND timeframe_end <= ?
@@ -669,7 +679,7 @@ export class SecurityMonitoringDashboard {
       query.timeRange?.end?.toISOString() || new Date().toISOString()
     ).all();
 
-    return results.results.map(row => ({
+    return results.results.map((row: Record<string, unknown>) => ({
       ...row,
       event_counts: JSON.parse(row.event_counts as string),
       severity_counts: JSON.parse(row.severity_counts as string),
@@ -680,7 +690,10 @@ export class SecurityMonitoringDashboard {
   /**
    * Private: Execute incidents query
    */
-  private async executeIncidentsQuery(query: any): Promise<unknown> {
+  private async executeIncidentsQuery(query: {
+    timeRange?: { start?: Date; end?: Date };
+    [key: string]: unknown;
+  }): Promise<unknown> {
     const results = await this.db.prepare(`
       SELECT * FROM security_incidents 
       WHERE detected_at >= ? AND detected_at <= ?
@@ -697,7 +710,7 @@ export class SecurityMonitoringDashboard {
   /**
    * Private: Load dashboard configuration from database
    */
-  private async loadDashboardConfig(userId: string): Promise<DashboardConfig | null> {
+  private async loadDashboardConfig(_userId: string): Promise<DashboardConfig | null> {
     // In a real implementation, this would load from a user_dashboard_configs table
     return null;
   }
@@ -705,7 +718,7 @@ export class SecurityMonitoringDashboard {
   /**
    * Private: Store dashboard configuration to database
    */
-  private async storeDashboardConfig(userId: string, config: DashboardConfig): Promise<void> {
+  private async storeDashboardConfig(_userId: string, _config: DashboardConfig): Promise<void> {
     // In a real implementation, this would store to a user_dashboard_configs table
   }
 
@@ -742,7 +755,21 @@ export class SecurityMonitoringDashboard {
   /**
    * Private: Map database row to widget
    */
-  private mapDatabaseRowToWidget(row: any): SecurityDashboardWidget {
+  private mapDatabaseRowToWidget(row: {
+    id: string;
+    type: string;
+    title: string;
+    description: string;
+    data_source: string;
+    query: string;
+    refresh_interval: number;
+    chart_type: string;
+    display_options?: string;
+    position: string;
+    enabled: number;
+    created_at: string;
+    updated_at: string;
+  }): SecurityDashboardWidget {
     return {
       id: row.id,
       type: row.type,
@@ -764,7 +791,18 @@ export class SecurityMonitoringDashboard {
   /**
    * Private: Map database row to incident
    */
-  private mapDatabaseRowToIncident(row: any): SecurityIncident {
+  private mapDatabaseRowToIncident(row: {
+    id: string;
+    title: string;
+    description: string;
+    severity: string;
+    status: string;
+    detected_at: string;
+    resolved_at?: string;
+    affected_resources: string;
+    response_actions: string;
+    metadata?: string;
+  }): SecurityIncident {
     return {
       id: row.id,
       title: row.title,

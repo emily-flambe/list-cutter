@@ -17,14 +17,8 @@ import {
   QuotaType,
   QuotaOperationType,
   QuotaAlertType,
-  QuotaTierName,
-  DEFAULT_QUOTA_TIERS,
-  QuotaExceededError,
   QuotaNotFoundError,
-  InvalidQuotaOperationError,
-  TimeSeriesData,
-  FileUsageData,
-  QuotaExceededEvent
+  InvalidQuotaOperationError
 } from '../../types/quota';
 
 // Database result interfaces
@@ -436,7 +430,6 @@ export class QuotaManager {
    */
   async resetQuotaCounters(userId: string, quotaTypes: QuotaType[]): Promise<void> {
     const updates: string[] = [];
-    const values: (string | number)[] = [];
 
     quotaTypes.forEach(quotaType => {
       switch (quotaType) {

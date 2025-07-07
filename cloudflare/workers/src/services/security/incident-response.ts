@@ -460,7 +460,11 @@ export class IncidentResponseService {
   /**
    * Private: Evaluate a condition against an event
    */
-  private evaluateCondition(condition: any, event: SecurityEvent): boolean {
+  private evaluateCondition(condition: {
+    field: string;
+    operator: string;
+    value: unknown;
+  }, event: SecurityEvent): boolean {
     const fieldValue = this.getFieldValue(condition.field, event);
     
     switch (condition.operator) {
@@ -490,7 +494,7 @@ export class IncidentResponseService {
    */
   private getFieldValue(field: string, event: SecurityEvent): unknown {
     const parts = field.split('.');
-    let value: any = event;
+    let value: unknown = event;
     
     for (const part of parts) {
       value = value?.[part];
@@ -667,7 +671,9 @@ export class IncidentResponseService {
   /**
    * Private: Check if incident matches channel filters
    */
-  private matchesChannelFilters(incident: SecurityIncident, filters: any): boolean {
+  private matchesChannelFilters(incident: SecurityIncident, filters: {
+    severities?: string[];
+  }): boolean {
     if (filters.severities && !filters.severities.includes(incident.severity)) {
       return false;
     }
@@ -730,7 +736,7 @@ export class IncidentResponseService {
   /**
    * Private: Send email notification
    */
-  private async sendEmailNotification(email: string, incident: SecurityIncident, message: string): Promise<void> {
+  private async sendEmailNotification(_email: string, _incident: SecurityIncident, _message: string): Promise<void> {
     // Email notification implementation would go here
     // Email notification to ${email}: ${message}
   }
@@ -1027,7 +1033,20 @@ export class IncidentResponseService {
   /**
    * Private: Map database row to incident
    */
-  private mapDatabaseRowToIncident(row: any): SecurityIncident {
+  private mapDatabaseRowToIncident(row: {
+    id: string;
+    title: string;
+    description: string;
+    severity: string;
+    status: string;
+    event_ids?: string;
+    created_at: string;
+    updated_at: string;
+    resolved_at?: string;
+    escalated_at?: string;
+    response_actions?: string;
+    metadata?: string;
+  }): SecurityIncident {
     return {
       id: row.id,
       title: row.title,
@@ -1060,7 +1079,17 @@ export class IncidentResponseService {
   /**
    * Private: Map database row to alert rule
    */
-  private mapDatabaseRowToAlertRule(row: any): SecurityAlertRule {
+  private mapDatabaseRowToAlertRule(row: {
+    id: string;
+    name: string;
+    description: string;
+    enabled: number;
+    event_types: string;
+    conditions: string;
+    actions: string;
+    created_at: string;
+    updated_at: string;
+  }): SecurityAlertRule {
     return {
       id: row.id,
       name: row.name,

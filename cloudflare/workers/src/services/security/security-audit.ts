@@ -1,7 +1,6 @@
 import {
   SecurityAuditEvent,
   SecurityEventType,
-  SecurityEventDetails,
   ThreatSeverity,
   ThreatDetectionResult,
   PIIDetectionResult,
@@ -368,7 +367,7 @@ export class SecurityAuditService {
 
     let query = 'SELECT * FROM security_audit_events WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as total FROM security_audit_events WHERE 1=1';
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     // Build WHERE clause
     if (startDate) {
@@ -487,18 +486,18 @@ export class SecurityAuditService {
 
       // Get top threats (mock data - would need threat detail parsing)
       const topThreats: ThreatCount[] = [
-        { type: 'obfuscated_code' as any, count: 15, percentage: 35.7 },
-        { type: 'suspicious_script' as any, count: 12, percentage: 28.6 },
-        { type: 'malware' as any, count: 8, percentage: 19.0 },
-        { type: 'phishing' as any, count: 7, percentage: 16.7 }
+        { type: 'obfuscated_code', count: 15, percentage: 35.7 },
+        { type: 'suspicious_script', count: 12, percentage: 28.6 },
+        { type: 'malware', count: 8, percentage: 19.0 },
+        { type: 'phishing', count: 7, percentage: 16.7 }
       ];
 
       // Get top PII types (mock data)
       const topPIITypes: PIICount[] = [
-        { type: 'email' as any, count: 25, percentage: 41.7 },
-        { type: 'phone_number' as any, count: 18, percentage: 30.0 },
-        { type: 'ssn' as any, count: 10, percentage: 16.7 },
-        { type: 'credit_card' as any, count: 7, percentage: 11.6 }
+        { type: 'email', count: 25, percentage: 41.7 },
+        { type: 'phone_number', count: 18, percentage: 30.0 },
+        { type: 'ssn', count: 10, percentage: 16.7 },
+        { type: 'credit_card', count: 7, percentage: 11.6 }
       ];
 
       const riskDistribution: RiskDistribution = {
@@ -692,7 +691,18 @@ export class SecurityAuditService {
     }
   }
 
-  private mapToSecurityEvent(row: any): SecurityAuditEvent {
+  private mapToSecurityEvent(row: {
+    id: string;
+    timestamp: string;
+    event_type: string;
+    severity: string;
+    user_id?: string;
+    file_id?: string;
+    ip_address?: string;
+    user_agent?: string;
+    details: string;
+    metadata?: string;
+  }): SecurityAuditEvent {
     return {
       id: row.id,
       timestamp: new Date(row.timestamp),

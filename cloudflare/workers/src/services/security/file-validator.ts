@@ -48,8 +48,8 @@ export interface FileUploadLimits {
   maxTotalSizePerHour: number;
 }
 
-import { SecurityAuditLogger } from './audit-logger.js';
-import { SecurityEventType } from '../../types/security-events.js';
+import { SecurityAuditLogger } from './audit-logger';
+import { SecurityEventType } from '../../types/security-events';
 
 /**
  * Comprehensive file validation and security service
@@ -135,8 +135,7 @@ export class FileValidationService {
       scanContent = true,
       checkMagicBytes = true,
       enableThreatDetection = true,
-      enablePIIDetection = true,
-      threatScanTimeout = 30000
+      enablePIIDetection = true
     } = options;
 
     const errors: string[] = [];
@@ -159,7 +158,7 @@ export class FileValidationService {
         fileInfo.hash = Array.from(new Uint8Array(hashBuffer))
           .map(b => b.toString(16).padStart(2, '0'))
           .join('');
-      } catch (error) {
+      } catch {
         warnings.push('Failed to generate file hash for threat detection');
       }
     }
@@ -758,7 +757,7 @@ export class FileValidationService {
   /**
    * Update threat detection configuration
    */
-  async updateThreatDetectionConfig(config: Partial<ThreatDetectionConfig>): Promise<void> {
+  async updateThreatDetectionConfig(_config: Partial<ThreatDetectionConfig>): Promise<void> {
     // This would update the configuration for the threat detection service
     // Implementation depends on how configuration is managed
   }

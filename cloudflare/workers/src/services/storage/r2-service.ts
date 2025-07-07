@@ -32,10 +32,10 @@ export interface UploadResult {
   uploadType: 'single' | 'multipart';
 }
 
-import { QuotaManager } from '../security/quota-manager.js';
-import { QuotaOperationType, QuotaExceededError } from '../../types/quota.js';
-import { SecurityAuditLogger } from '../security/audit-logger.js';
-import { SecurityEventType } from '../../types/security-events.js';
+import { QuotaManager } from '../security/quota-manager';
+import { QuotaOperationType, QuotaExceededError } from '../../types/quota';
+import { SecurityAuditLogger } from '../security/audit-logger';
+import { SecurityEventType } from '../../types/security-events';
 
 /**
  * Advanced R2 storage service with multipart upload support and quota enforcement
@@ -642,7 +642,7 @@ export class R2StorageService {
   async getUserStorageStats(userId: string): Promise<{
     totalFiles: number;
     totalSize: number;
-    quotaUsage?: any;
+    quotaUsage?: Record<string, unknown>;
   }> {
     const stats = await this.db.prepare(`
       SELECT 
@@ -689,7 +689,7 @@ export class R2StorageService {
     userId: string,
     operationType: QuotaOperationType,
     resourceSize: number = 0
-  ): Promise<{ allowed: boolean; reason?: string; quotaCheck?: any }> {
+  ): Promise<{ allowed: boolean; reason?: string; quotaCheck?: Record<string, unknown> }> {
     if (!this.quotaManager) {
       return { allowed: true };
     }
@@ -725,9 +725,9 @@ export class R2StorageService {
       fileId?: string;
       fileName?: string;
       fileData?: ArrayBuffer | ReadableStream | Uint8Array;
-      options?: any;
+      options?: Record<string, unknown>;
     }>
-  ): Promise<Array<{ success: boolean; result?: any; error?: string }>> {
+  ): Promise<Array<{ success: boolean; result?: Record<string, unknown>; error?: string }>> {
     const results = [];
 
     // Pre-check all operations for quota compliance

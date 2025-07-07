@@ -8,7 +8,6 @@ import {
   DataHandling,
   ComplianceFlag,
   ComplianceRegulation,
-  ThreatLocation,
   ThreatSeverity,
   SecurityAuditEvent,
   SecurityEventType
@@ -430,9 +429,10 @@ export class PIIScannerService {
         return value.replace(/\d(?=\d{4})/g, '*');
       case PIIType.PHONE_NUMBER:
         return value.replace(/\d/g, '*');
-      case PIIType.EMAIL:
+      case PIIType.EMAIL: {
         const [local, domain] = value.split('@');
         return `${local.charAt(0)}${'*'.repeat(local.length - 1)}@${domain}`;
+      }
       case PIIType.BANK_ACCOUNT:
         return '*'.repeat(value.length - 4) + value.slice(-4);
       default:
@@ -713,7 +713,7 @@ export class PIIScannerService {
   /**
    * Get mask replacement for PII type
    */
-  private getMaskReplacement(type: PIIType, length: number): string {
+  private getMaskReplacement(type: PIIType, _length: number): string {
     switch (type) {
       case PIIType.SSN:
         return '[SSN_REDACTED]';
@@ -733,7 +733,7 @@ export class PIIScannerService {
   /**
    * Get PII statistics
    */
-  async getPIIStatistics(startDate: Date, endDate: Date): Promise<any> {
+  async getPIIStatistics(_startDate: Date, _endDate: Date): Promise<Record<string, unknown>> {
     // Implementation would query database for statistics
     return {
       totalScans: 0,

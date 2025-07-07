@@ -18,7 +18,13 @@ import migrationRoutes from './routes/migration';
 // import fileRoutes from '@routes/files';
 // import userRoutes from '@routes/users';
 
-const app = new Hono<{ Bindings: CloudflareEnv }>();
+type HonoVariables = {
+  securityConfig?: SecurityConfigManager;
+  securityMonitor?: SecurityMonitorService;
+  securityMetrics?: SecurityMetricsCollector;
+};
+
+const app = new Hono<{ Bindings: CloudflareEnv; Variables: HonoVariables }>();
 
 // Initialize security services
 let securityConfigManager: SecurityConfigManager;

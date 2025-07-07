@@ -22,6 +22,29 @@ export type {
   FileUploadLimits 
 } from './file-validator';
 
+// Security configuration interface
+export interface SecurityConfig {
+  enableMalwareDetection?: boolean;
+  enablePIIDetection?: boolean;
+  enableBehaviorAnalysis?: boolean;
+  enableRealTimeScanning?: boolean;
+  maxScanSize?: number;
+  scanTimeoutMs?: number;
+  quarantineEnabled?: boolean;
+  alertThreshold?: number;
+  [key: string]: unknown;
+}
+
+// Security services type
+export interface SecurityServices {
+  fileValidator: FileValidationService;
+  threatDetector: ThreatDetectionService;
+  piiScanner: PIIScannerService;
+  threatResponse: ThreatResponseService;
+  threatIntelligenceDb: ThreatIntelligenceDatabaseService;
+  securityAudit: SecurityAuditService;
+}
+
 /**
  * Security System Factory
  * Creates and initializes a complete security system
@@ -34,8 +57,8 @@ export class SecuritySystemFactory {
     db: D1Database,
     r2Bucket: R2Bucket,
     analytics?: AnalyticsEngineDataset,
-    config?: any
-  ) {
+    config?: SecurityConfig
+  ): Promise<SecurityManager> {
     const securityManager = new SecurityManager(db, r2Bucket, analytics, config);
     await securityManager.initialize();
     return securityManager;
@@ -48,8 +71,8 @@ export class SecuritySystemFactory {
     db: D1Database,
     r2Bucket: R2Bucket,
     analytics?: AnalyticsEngineDataset,
-    config?: any
-  ) {
+    config?: SecurityConfig
+  ): SecurityServices {
     const defaultConfig = {
       enableMalwareDetection: true,
       enablePIIDetection: true,
