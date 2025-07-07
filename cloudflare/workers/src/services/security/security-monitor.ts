@@ -11,6 +11,44 @@
 
 import { SecurityConfigManager } from '../../config/security-config';
 
+// Metadata interfaces for type safety
+interface SecurityEventMetadata {
+  operation?: string;
+  duration?: number;
+  threshold?: number;
+  success?: boolean;
+  method?: string;
+  filename?: string;
+  fileSize?: number;
+  validationResults?: FileValidationResults;
+  blocked?: boolean;
+  limit?: number;
+  current?: number;
+  usage?: number;
+  threatType?: string;
+  [key: string]: unknown;
+}
+
+interface FileValidationResults {
+  passed: boolean;
+  checks: {
+    fileType: boolean;
+    fileSize: boolean;
+    virusScan: boolean;
+    contentAnalysis: boolean;
+  };
+  warnings: string[];
+  errors: string[];
+}
+
+interface ThreatMetadata {
+  threatType: string;
+  confidence: number;
+  indicators: string[];
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  [key: string]: unknown;
+}
+
 export interface SecurityEvent {
   id: string;
   timestamp: string;
@@ -18,7 +56,7 @@ export interface SecurityEvent {
   severity: 'low' | 'medium' | 'high' | 'critical';
   source: string;
   description: string;
-  metadata: Record<string, any>;
+  metadata: SecurityEventMetadata;
   userId?: string;
   ipAddress?: string;
   userAgent?: string;
@@ -245,7 +283,7 @@ export class SecurityMonitorService {
     fileSize: number,
     userId?: string,
     ipAddress?: string,
-    validationResults?: any,
+    validationResults?: FileValidationResults,
     responseTime?: number
   ): Promise<void> {
     const event: SecurityEvent = {
@@ -308,7 +346,7 @@ export class SecurityMonitorService {
     threatType: string,
     severity: SecurityEvent['severity'],
     description: string,
-    metadata: Record<string, any>,
+    metadata: ThreatMetadata,
     userId?: string,
     ipAddress?: string
   ): Promise<void> {

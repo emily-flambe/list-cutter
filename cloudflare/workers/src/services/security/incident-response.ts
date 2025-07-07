@@ -732,7 +732,7 @@ export class IncidentResponseService {
    */
   private async sendEmailNotification(email: string, incident: SecurityIncident, message: string): Promise<void> {
     // Email notification implementation would go here
-    console.log(`Email notification to ${email}: ${message}`);
+    // Email notification to ${email}: ${message}
   }
 
   /**

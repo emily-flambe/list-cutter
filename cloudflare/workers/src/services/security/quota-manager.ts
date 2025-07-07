@@ -25,7 +25,113 @@ import {
   TimeSeriesData,
   FileUsageData,
   QuotaExceededEvent
-} from '../../types/quota.js';
+} from '../../types/quota';
+
+// Database result interfaces
+interface DatabaseQuotaResult {
+  id: string;
+  user_id: string;
+  tier_id: string;
+  storage_used: number;
+  file_count: number;
+  bandwidth_used: number;
+  requests_this_minute: number;
+  requests_this_hour: number;
+  requests_this_day: number;
+  requests_this_month: number;
+  last_reset_minute: string;
+  last_reset_hour: string;
+  last_reset_day: string;
+  last_reset_month: string;
+  created_at: string;
+  updated_at: string;
+  expires_at: string | null;
+  is_active: number;
+  tier_name: string;
+  storage_limit: number;
+  file_count_limit: number;
+  max_file_size: number;
+  bandwidth_limit: number;
+  requests_per_minute: number;
+  requests_per_hour: number;
+  requests_per_day: number;
+  features: string;
+  price: number;
+  override_storage_limit: number | null;
+  override_file_count_limit: number | null;
+  override_max_file_size: number | null;
+  override_bandwidth_limit: number | null;
+  override_requests_per_minute: number | null;
+  override_requests_per_hour: number | null;
+  override_requests_per_day: number | null;
+  override_reason: string | null;
+  override_created_by: string | null;
+  override_expires_at: string | null;
+}
+
+interface DatabaseAnalyticsResult {
+  date: string;
+  storage_used: number;
+  file_count: number;
+  bandwidth_used: number;
+  total_requests: number;
+}
+
+interface DatabaseTopFilesResult {
+  file_id: string;
+  filename: string;
+  size: number;
+  upload_date: string;
+  last_accessed: string;
+  access_count: number;
+}
+
+interface DatabaseExceededEventsResult {
+  timestamp: string;
+  quota_type: string;
+  attempted: number;
+  limit: number;
+  operation_type: string;
+  file_id: string | null;
+  metadata: string | null;
+}
+
+interface DatabaseQuotaAlertResult {
+  id: string;
+  user_id: string;
+  alert_type: string;
+  quota_type: string;
+  threshold_value: number;
+  current_usage: number;
+  limit_value: number;
+  message: string;
+  severity: string;
+  is_active: number;
+  created_at: string;
+  acknowledged_at: string | null;
+}
+
+interface DatabaseSummaryResult {
+  total_storage: number | null;
+  total_files: number | null;
+  total_bandwidth: number | null;
+  total_requests: number | null;
+}
+
+interface QuotaTrends {
+  storageGrowth: number;
+  fileGrowth: number;
+  bandwidthGrowth: number;
+  requestGrowth: number;
+}
+
+interface QuotaRecommendation {
+  type: string;
+  priority: string;
+  title: string;
+  description: string;
+  actionRequired: boolean;
+}
 
 export interface QuotaManagerOptions {
   db: D1Database;
@@ -162,7 +268,7 @@ export class QuotaManager {
       throw new QuotaNotFoundError(userId);
     }
 
-    const userQuota = this.mapDatabaseResultToUserQuota(result);
+    const userQuota = this.mapDatabaseResultToUserQuota(result as DatabaseQuotaResult);
     
     // Cache the result
     this.quotaCache.set(userId, {
@@ -228,38 +334,38 @@ export class QuotaManager {
     return {
       userId,
       period,
-      storageUsage: timeSeriesData.results.map(row => ({
-        timestamp: new Date(row.date as string),
-        value: row.storage_used as number
+      storageUsage: timeSeriesData.results.map((row: DatabaseAnalyticsResult) => ({
+        timestamp: new Date(row.date),
+        value: row.storage_used
       })),
-      fileCountUsage: timeSeriesData.results.map(row => ({
-        timestamp: new Date(row.date as string),
-        value: row.file_count as number
+      fileCountUsage: timeSeriesData.results.map((row: DatabaseAnalyticsResult) => ({
+        timestamp: new Date(row.date),
+        value: row.file_count
       })),
-      bandwidthUsage: timeSeriesData.results.map(row => ({
-        timestamp: new Date(row.date as string),
-        value: row.bandwidth_used as number
+      bandwidthUsage: timeSeriesData.results.map((row: DatabaseAnalyticsResult) => ({
+        timestamp: new Date(row.date),
+        value: row.bandwidth_used
       })),
-      requestsUsage: timeSeriesData.results.map(row => ({
-        timestamp: new Date(row.date as string),
-        value: row.total_requests as number
+      requestsUsage: timeSeriesData.results.map((row: DatabaseAnalyticsResult) => ({
+        timestamp: new Date(row.date),
+        value: row.total_requests
       })),
-      topFilesBySize: topFiles.results.map(row => ({
-        fileId: row.file_id as string,
-        fileName: row.filename as string,
-        size: row.size as number,
-        uploadDate: new Date(row.upload_date as string),
-        lastAccessed: new Date(row.last_accessed as string),
-        accessCount: row.access_count as number
+      topFilesBySize: topFiles.results.map((row: DatabaseTopFilesResult) => ({
+        fileId: row.file_id,
+        fileName: row.filename,
+        size: row.size,
+        uploadDate: new Date(row.upload_date),
+        lastAccessed: new Date(row.last_accessed),
+        accessCount: row.access_count
       })),
-      quotaExceededEvents: exceededEvents.results.map(row => ({
-        timestamp: new Date(row.timestamp as string),
+      quotaExceededEvents: exceededEvents.results.map((row: DatabaseExceededEventsResult) => ({
+        timestamp: new Date(row.timestamp),
         quotaType: row.quota_type as QuotaType,
-        attempted: row.attempted as number,
-        limit: row.limit as number,
+        attempted: row.attempted,
+        limit: row.limit,
         operationType: row.operation_type as QuotaOperationType,
-        fileId: row.file_id as string | undefined,
-        metadata: row.metadata ? JSON.parse(row.metadata as string) : undefined
+        fileId: row.file_id || undefined,
+        metadata: row.metadata ? JSON.parse(row.metadata) : undefined
       }))
     };
   }
@@ -298,19 +404,19 @@ export class QuotaManager {
       ORDER BY created_at DESC
     `).bind(userId).all();
 
-    return results.results.map(row => ({
-      id: row.id as string,
-      userId: row.user_id as string,
+    return results.results.map((row: DatabaseQuotaAlertResult) => ({
+      id: row.id,
+      userId: row.user_id,
       alertType: row.alert_type as QuotaAlertType,
       quotaType: row.quota_type as QuotaType,
-      threshold: row.threshold_value as number,
-      currentUsage: row.current_usage as number,
-      limit: row.limit_value as number,
-      message: row.message as string,
+      threshold: row.threshold_value,
+      currentUsage: row.current_usage,
+      limit: row.limit_value,
+      message: row.message,
       severity: row.severity as 'info' | 'warning' | 'error' | 'critical',
       isActive: Boolean(row.is_active),
-      createdAt: new Date(row.created_at as string),
-      acknowledgedAt: row.acknowledged_at ? new Date(row.acknowledged_at as string) : undefined
+      createdAt: new Date(row.created_at),
+      acknowledgedAt: row.acknowledged_at ? new Date(row.acknowledged_at) : undefined
     }));
   }
 
@@ -411,10 +517,10 @@ export class QuotaManager {
       reportType,
       period,
       summary: {
-        totalStorage: summary?.total_storage as number || 0,
-        totalFiles: summary?.total_files as number || 0,
-        totalBandwidth: summary?.total_bandwidth as number || 0,
-        totalRequests: summary?.total_requests as number || 0,
+        totalStorage: (summary as DatabaseSummaryResult)?.total_storage || 0,
+        totalFiles: (summary as DatabaseSummaryResult)?.total_files || 0,
+        totalBandwidth: (summary as DatabaseSummaryResult)?.total_bandwidth || 0,
+        totalRequests: (summary as DatabaseSummaryResult)?.total_requests || 0,
         quotaUtilization: {
           [QuotaType.STORAGE]: (userQuota.currentUsage.storageUsed / userQuota.tier.storageLimit) * 100,
           [QuotaType.FILE_COUNT]: (userQuota.currentUsage.fileCount / userQuota.tier.fileCountLimit) * 100,
@@ -639,7 +745,7 @@ export class QuotaManager {
     ).run();
   }
 
-  private mapDatabaseResultToUserQuota(result: any): UserQuota {
+  private mapDatabaseResultToUserQuota(result: DatabaseQuotaResult): UserQuota {
     const tier: QuotaTier = {
       id: result.tier_id,
       name: result.tier_name,
@@ -724,7 +830,7 @@ export class QuotaManager {
     return { start, end };
   }
 
-  private calculateTrends(data: any[]): { storageGrowth: number; fileGrowth: number; bandwidthGrowth: number; requestGrowth: number } {
+  private calculateTrends(data: DatabaseAnalyticsResult[]): QuotaTrends {
     if (data.length < 2) {
       return { storageGrowth: 0, fileGrowth: 0, bandwidthGrowth: 0, requestGrowth: 0 };
     }
@@ -740,8 +846,8 @@ export class QuotaManager {
     };
   }
 
-  private async generateRecommendations(userQuota: UserQuota, trends: any): Promise<any[]> {
-    const recommendations = [];
+  private async generateRecommendations(userQuota: UserQuota, trends: QuotaTrends): Promise<QuotaRecommendation[]> {
+    const recommendations: QuotaRecommendation[] = [];
 
     // Storage recommendations
     const storageUsage = (userQuota.currentUsage.storageUsed / userQuota.tier.storageLimit) * 100;

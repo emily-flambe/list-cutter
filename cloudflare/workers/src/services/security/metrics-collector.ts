@@ -12,6 +12,28 @@
 import { SecurityConfigManager } from '../../config/security-config';
 import { SecurityMonitorService, SecurityEvent, SecurityMetrics } from './security-monitor';
 
+// File validation results interface
+interface FileValidationResults {
+  passed: boolean;
+  checks: {
+    fileType: boolean;
+    fileSize: boolean;
+    virusScan: boolean;
+    contentAnalysis: boolean;
+  };
+  warnings: string[];
+  errors: string[];
+  threats?: Array<{
+    type: string;
+    severity: string;
+    description: string;
+  }>;
+  securityScan?: {
+    risk: 'low' | 'medium' | 'high' | 'critical';
+    score: number;
+  };
+}
+
 export interface MetricsCollectionConfig {
   enabled: boolean;
   batchSize: number;
@@ -191,7 +213,7 @@ export class SecurityMetricsCollector {
     operation: string,
     duration: number,
     success: boolean,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<void> {
     await this.collectMetric(
       'security.performance.duration',
@@ -314,7 +336,7 @@ export class SecurityMetricsCollector {
     fileSize: number,
     fileType: string,
     validationDuration: number,
-    validationResults?: any
+    validationResults?: FileValidationResults
   ): Promise<void> {
     await this.collectMetric(
       'security.file.validations',
@@ -423,10 +445,12 @@ export class SecurityMetricsCollector {
     
     // Check cache first
     if (this.aggregationCache.has(cacheKey)) {
-      const cached = this.aggregationCache.get(cacheKey)!;
-      const cacheAge = Date.now() - new Date(cached.timestamp).getTime();
-      if (cacheAge < windowMinutes * 60 * 1000) {
-        return cached;
+      const cached = this.aggregationCache.get(cacheKey);
+      if (cached) {
+        const cacheAge = Date.now() - new Date(cached.timestamp).getTime();
+        if (cacheAge < windowMinutes * 60 * 1000) {
+          return cached;
+        }
       }
     }
     
@@ -769,7 +793,10 @@ export class SecurityMetricsCollector {
       if (!hourlyData.has(hour)) {
         hourlyData.set(hour, []);
       }
-      hourlyData.get(hour)!.push(metric.value);
+      const hourValues = hourlyData.get(hour);
+      if (hourValues) {
+        hourValues.push(metric.value);
+      }
     }
     
     // Convert to time series
@@ -867,7 +894,7 @@ export class SecurityMetricsCollector {
     
     try {
       await this.kvStorage.delete(`metrics-${dateKey}`);
-      console.log(`Cleaned up metrics for ${dateKey}`);
+      // Cleaned up metrics for ${dateKey}
     } catch (error) {
       console.error('Failed to cleanup old metrics:', error);
     }

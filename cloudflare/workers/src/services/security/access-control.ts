@@ -357,7 +357,7 @@ export class AccessControlService {
 
       if (currentPermissions) {
         const permissions = this.parsePermissions(currentPermissions.permissions as string);
-        const updatedPermissions = permissions.filter(p => !revoke.operations!.includes(p));
+        const updatedPermissions = permissions.filter(p => !(revoke.operations && revoke.operations.includes(p)));
         
         await this.db
           .prepare(`

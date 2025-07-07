@@ -79,7 +79,7 @@ export class SecurityManager {
    * Initialize the security system
    */
   async initialize(): Promise<void> {
-    console.log('Initializing Security Manager...');
+    // Initialize Security Manager
     
     try {
       // Initialize all services
@@ -92,7 +92,7 @@ export class SecurityManager {
       const threatDB = await this.threatIntelligenceDB.getThreatIntelligenceDatabase();
       await this.threatDetector.updateThreatIntelligence(threatDB);
 
-      console.log('Security Manager initialized successfully');
+      // Security Manager initialized successfully
       
       // Log initialization event
       await this.securityAudit.logSecurityEvent({
@@ -143,7 +143,7 @@ export class SecurityManager {
 
     try {
       // 1. Basic file validation with integrated threat detection
-      console.log(`Starting comprehensive security scan for file: ${file.name}`);
+      // Starting comprehensive security scan for file: ${file.name}
       
       const validation = await this.fileValidator.validateFile(file, userId || 'anonymous', {
         enableThreatDetection: this.config.enableMalwareDetection,
@@ -235,7 +235,7 @@ export class SecurityManager {
         timestamp: new Date()
       };
 
-      console.log(`Security scan completed for ${file.name}: ${response.message}`);
+      // Security scan completed for ${file.name}: ${response.message}
       return response;
 
     } catch (error) {
@@ -332,12 +332,12 @@ export class SecurityManager {
    */
   async updateThreatIntelligence(sourceUrl?: string): Promise<void> {
     try {
-      console.log('Updating threat intelligence...');
+      // Updating threat intelligence
       
       // Update from external source if provided
       if (sourceUrl) {
         const updateResult = await this.threatIntelligenceDB.updateFromExternalSource(sourceUrl);
-        console.log(`Threat intelligence update result:`, updateResult);
+        // Threat intelligence update result: ${JSON.stringify(updateResult)}
       }
 
       // Get updated intelligence database
@@ -370,7 +370,7 @@ export class SecurityManager {
         resolved: true
       });
 
-      console.log('Threat intelligence updated successfully');
+      // Threat intelligence updated successfully
     } catch (error) {
       console.error('Failed to update threat intelligence:', error);
       throw error;
@@ -461,7 +461,7 @@ export class SecurityManager {
       resolved: false
     });
 
-    console.log(`EMERGENCY LOCKDOWN: ${reason} (initiated by: ${initiatedBy})`);
+    console.error(`EMERGENCY LOCKDOWN: ${reason} (initiated by: ${initiatedBy})`);    // Use error for critical alerts
   }
 
   /**

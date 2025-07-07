@@ -234,7 +234,7 @@ class AsyncLogger {
 
   private async processBatch(events: SecurityEvent[]): Promise<void> {
     // This would integrate with the actual database insertion logic
-    console.log(`Processing batch of ${events.length} events`);
+    // Processing batch of ${events.length} events
   }
 
   private startFlushTimer(): void {

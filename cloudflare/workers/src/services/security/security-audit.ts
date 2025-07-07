@@ -134,7 +134,7 @@ export class SecurityAuditService {
       await this.db.prepare(index).run();
     }
 
-    console.log('Security audit database initialized successfully');
+    // Security audit database initialized successfully
   }
 
   /**

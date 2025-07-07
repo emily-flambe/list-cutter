@@ -42,7 +42,7 @@ export class ThreatIntelligenceDatabaseService {
       // Load default malware hashes
       await this.loadDefaultMalwareHashes();
 
-      console.log('Threat intelligence database initialized successfully');
+      // Threat intelligence database initialized successfully
     } catch (error) {
       console.error('Failed to initialize threat intelligence database:', error);
       throw error;

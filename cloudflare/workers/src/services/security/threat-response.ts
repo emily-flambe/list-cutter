@@ -349,7 +349,7 @@ export class ThreatResponseService {
     // Block the file from being processed further
     // In practice, this would involve updating database records or cache entries
     
-    console.log(`Blocking file ${file.name} due to threat detection`);
+    // Blocking file ${file.name} due to threat detection
     
     details.originalFile.location = 'BLOCKED';
     
@@ -388,7 +388,7 @@ export class ThreatResponseService {
 
       details.originalFile.location = quarantineKey;
 
-      console.log(`File ${file.name} quarantined to ${quarantineKey}`);
+      // File ${file.name} quarantined to ${quarantineKey}
       
       return details;
     } catch (error) {
@@ -405,7 +405,7 @@ export class ThreatResponseService {
     details: ThreatResponseDetails
   ): Promise<ThreatResponseDetails> {
     // Mark file for deletion - in practice this would remove from storage
-    console.log(`Deleting file ${file.name} due to critical threat`);
+    // Deleting file ${file.name} due to critical threat
     
     details.originalFile.location = 'DELETED';
     
@@ -454,7 +454,7 @@ export class ThreatResponseService {
         modifications: [`Removed ${threatResult.threats.length} threats`]
       };
 
-      console.log(`File ${file.name} sanitized and stored at ${sanitizedKey}`);
+      // File ${file.name} sanitized and stored at ${sanitizedKey}
       
       return details;
     } catch (error) {
@@ -507,7 +507,7 @@ export class ThreatResponseService {
 
     details.notifications = notifications;
     
-    console.log(`Sent ${notifications.length} notifications for file ${file.name}`);
+    // Sent ${notifications.length} notifications for file ${file.name}
     
     return details;
   }
@@ -539,7 +539,7 @@ export class ThreatResponseService {
       'open'
     ).run();
 
-    console.log(`Escalated threat for file ${file.name} - ticket ${escalationId}`);
+    // Escalated threat for file ${file.name} - ticket ${escalationId}
     
     return details;
   }
@@ -553,7 +553,7 @@ export class ThreatResponseService {
     details: ThreatResponseDetails
   ): Promise<ThreatResponseDetails> {
     // Detailed logging is handled elsewhere, this is for audit trail
-    console.log(`Logged threat detection for file ${file.name}`);
+    // Logged threat detection for file ${file.name}
     return details;
   }
 
@@ -617,7 +617,7 @@ export class ThreatResponseService {
     file: File,
     details: ThreatResponseDetails
   ): Promise<ThreatResponseDetails> {
-    console.log(`Blocking file ${file.name} due to critical PII detection`);
+    // Blocking file ${file.name} due to critical PII detection
     details.originalFile.location = 'BLOCKED_PII';
     return details;
   }
@@ -683,7 +683,7 @@ export class ThreatResponseService {
     file: File,
     details: ThreatResponseDetails
   ): Promise<ThreatResponseDetails> {
-    console.log(`Logged PII detection for file ${file.name}`);
+    // Logged PII detection for file ${file.name}
     return details;
   }
 
