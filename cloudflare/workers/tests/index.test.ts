@@ -6,8 +6,8 @@ const mockEnv = {
   API_VERSION: 'v1',
   CORS_ORIGIN: 'http://localhost:5173',
   MAX_FILE_SIZE: '52428800',
-  JWT_ISSUER: 'list-cutter',
-  JWT_AUDIENCE: 'list-cutter-api',
+  JWT_ISSUER: 'cutty',
+  JWT_AUDIENCE: 'cutty-api',
   JWT_SECRET: 'test-secret',
   JWT_REFRESH_SECRET: 'test-refresh-secret',
   DB_ENCRYPTION_KEY: 'test-key'

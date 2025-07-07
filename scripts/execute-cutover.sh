@@ -144,7 +144,7 @@ print_success "✅ Step 3: Deployment propagation completed"
 # Step 4: Verify new system health
 print_status "🏥 Step 4: Verifying new system health..."
 
-PRODUCTION_URL="https://list-cutter.com"
+PRODUCTION_URL="https://cutty.com"
 MAX_RETRIES=20
 RETRY_DELAY=15
 
@@ -228,7 +228,7 @@ print_success "✅ Step 6: System monitoring completed - stable performance"
 print_status "🌐 Step 7: Verifying DNS configuration..."
 
 # Check if DNS is properly pointing to Workers
-DNS_CHECK=$(dig +short list-cutter.com | head -1)
+DNS_CHECK=$(dig +short cutty.com | head -1)
 if [ -n "$DNS_CHECK" ]; then
     print_success "✅ DNS is configured and responding"
 else

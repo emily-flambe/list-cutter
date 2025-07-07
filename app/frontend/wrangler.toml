@@ -19,6 +19,5 @@ ENVIRONMENT = "development"
 [env.production]
 vars = { ENVIRONMENT = "production" }
 routes = [
-  { pattern = "list-cutter.emilycogsdill.com/*", zone_name = "emilycogsdill.com" },
   { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]

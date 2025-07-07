@@ -1,4 +1,4 @@
-name = "list-cutter-api"
+name = "cutty-api"
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
@@ -24,13 +24,13 @@ ENVIRONMENT = "development"
 API_VERSION = "v1"
 CORS_ORIGIN = "http://localhost:5173"
 MAX_FILE_SIZE = "52428800" # 50MB in bytes
-JWT_ISSUER = "list-cutter"
-JWT_AUDIENCE = "list-cutter-api"
+JWT_ISSUER = "cutty"
+JWT_AUDIENCE = "cutty-api"
 
 # D1 Database bindings (commented out - create your own database and update ID)
 # [[d1_databases]]
 # binding = "DB"
-# database_name = "cutty-dev"
+# database_name = "cutty-db"
 # database_id = "your-database-id-here"
 # migrations_dir = "./migrations"
 
@@ -38,7 +38,7 @@ JWT_AUDIENCE = "list-cutter-api"
 [[r2_buckets]]
 binding = "FILE_STORAGE"
 bucket_name = "cutty-files-prod"
-preview_bucket_name = "cutty-files-preview"
+preview_bucket_name = "cutty-files-dev"
 
 # KV Namespace bindings (commented out - create your own KV namespace and update ID)
 # [[kv_namespaces]]
@@ -59,21 +59,73 @@ preview_bucket_name = "cutty-files-preview"
 # Analytics Engine binding (commented out - create your own dataset and update name)
 # [[analytics_engine_datasets]]
 # binding = "ANALYTICS"
-# dataset = "cutty_analytics"
+# dataset = "cutty-metrics"
+
+# Cron triggers for storage metrics aggregation
+# Daily aggregation at 2 AM UTC
+[[triggers.crons]]
+cron = "0 2 * * *"
+endpoint = "/api/metrics/jobs/daily-aggregation"
+
+# Daily snapshots at 1 AM UTC
+[[triggers.crons]]
+cron = "0 1 * * *"
+endpoint = "/api/metrics/jobs/update-daily-snapshots"
+
+# Weekly aggregation every Monday at 3 AM UTC
+[[triggers.crons]]
+cron = "0 3 * * 1"
+endpoint = "/api/metrics/jobs/weekly-aggregation"
+
+# Monthly aggregation on 1st of month at 4 AM UTC
+[[triggers.crons]]
+cron = "0 4 1 * *"
+endpoint = "/api/metrics/jobs/monthly-aggregation"
+
+# Cleanup old metrics every Sunday at 5 AM UTC
+[[triggers.crons]]
+cron = "0 5 * * 0"
+endpoint = "/api/metrics/jobs/cleanup-old-metrics"
+
+# Metrics health check every 5 minutes
+[[triggers.crons]]
+cron = "*/5 * * * *"
+endpoint = "/api/metrics/jobs/health-check"
+
+# Alert system cron triggers
+# Alert evaluation every 5 minutes
+[[triggers.crons]]
+cron = "*/5 * * * *"
+endpoint = "/api/alerts/jobs/evaluate"
+
+# Retry failed notifications every 15 minutes
+[[triggers.crons]]
+cron = "*/15 * * * *"
+endpoint = "/api/alerts/jobs/retry-notifications"
+
+# Alert cleanup daily at 3 AM UTC
+[[triggers.crons]]
+cron = "0 3 * * *"
+endpoint = "/api/alerts/jobs/cleanup"
+
+# Alert health check every 5 minutes
+[[triggers.crons]]
+cron = "*/5 * * * *"
+endpoint = "/api/alerts/jobs/health-check"
 
 # Staging environment
 [env.staging]
-name = "list-cutter-api-staging"
-vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://staging.list-cutter.com" }
+name = "cutty-api-staging"
+vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://staging.cutty.com" }
 
 # [[env.staging.d1_databases]]
 # binding = "DB"
-# database_name = "cutty-staging"
+# database_name = "cutty-db"
 # database_id = "your-staging-database-id-here"
 
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "cutty-files-preview"
+bucket_name = "cutty-files-staging"
 preview_bucket_name = "cutty-files-dev"
 
 # [[env.staging.kv_namespaces]]
@@ -82,21 +134,21 @@ preview_bucket_name = "cutty-files-dev"
 
 # Production environment
 [env.production]
-name = "list-cutter-api-production"
-vars = { ENVIRONMENT = "production", CORS_ORIGIN = "https://list-cutter.com" }
+name = "cutty-api-production"
+vars = { ENVIRONMENT = "production", CORS_ORIGIN = "https://cutty.com" }
 routes = [
-  { pattern = "api.list-cutter.com/*", zone_name = "list-cutter.com" }
+  { pattern = "api.cutty.com/*", zone_name = "cutty.com" }
 ]
 
 # [[env.production.d1_databases]]
 # binding = "DB"
-# database_name = "cutty-production"
+# database_name = "cutty-db"
 # database_id = "your-production-database-id-here"
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"
 bucket_name = "cutty-files-prod"
-preview_bucket_name = "cutty-files-preview"
+preview_bucket_name = "cutty-files-dev"
 
 # [[env.production.kv_namespaces]]
 # binding = "AUTH_TOKENS"
@@ -105,7 +157,7 @@ preview_bucket_name = "cutty-files-preview"
 # Service bindings for microservices architecture (future)
 # [[services]]
 # binding = "AUTH_SERVICE"
-# service = "list-cutter-auth"
+# service = "cutty-auth"
 
 # Rate limiting rules (commented out - need to configure proper rate limiting)
 # [[unsafe.bindings]]

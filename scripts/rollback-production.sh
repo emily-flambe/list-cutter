@@ -79,7 +79,7 @@ sleep 60
 
 # Step 3: Verify rollback
 print_status "✅ Step 3: Verifying rollback..."
-PRODUCTION_URL="https://list-cutter.com"
+PRODUCTION_URL="https://cutty.com"
 MAX_RETRIES=10
 RETRY_DELAY=10
 

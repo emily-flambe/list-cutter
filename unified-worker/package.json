@@ -1,7 +1,7 @@
 {
-  "name": "list-cutter-unified",
+  "name": "cutty-unified",
   "version": "1.0.0",
-  "description": "Unified Cloudflare Workers application for List Cutter - serves both frontend and backend",
+  "description": "Unified Cloudflare Workers application for Cutty - serves both frontend and backend",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -33,6 +33,6 @@
     "vitest": "^1.6.0",
     "wrangler": "^3.84.0"
   },
-  "author": "List Cutter Team",
+  "author": "Cutty Team",
   "license": "MIT"
 }

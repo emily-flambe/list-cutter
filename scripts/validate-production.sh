@@ -4,7 +4,7 @@
 
 set -e
 
-PRODUCTION_URL="https://list-cutter.com"
+PRODUCTION_URL="https://cutty.com"
 MAX_RETRIES=20
 RETRY_DELAY=15
 

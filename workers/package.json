@@ -1,7 +1,7 @@
 {
-  "name": "list-cutter-workers",
+  "name": "cutty-workers",
   "version": "1.0.0",
-  "description": "Cloudflare Workers backend for List Cutter",
+  "description": "Cloudflare Workers backend for Cutty",
   "main": "dist/index.js",
   "scripts": {
     "dev": "wrangler dev",
@@ -28,6 +28,6 @@
     "vitest": "^1.6.0",
     "wrangler": "^3.84.0"
   },
-  "author": "List Cutter Team",
+  "author": "Cutty Team",
   "license": "MIT"
 }

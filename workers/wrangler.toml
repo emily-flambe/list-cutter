@@ -1,16 +1,16 @@
-name = "list-cutter-workers"
+name = "cutty-workers"
 main = "dist/index.js"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
 [env.development]
-name = "list-cutter-workers-dev"
+name = "cutty-workers-dev"
 
 [env.staging]
-name = "list-cutter-workers-staging"
+name = "cutty-workers-staging"
 
 [env.production]
-name = "list-cutter-workers-prod"
+name = "cutty-workers-prod"
 
 # KV for session/token management
 [[kv_namespaces]]
@@ -20,12 +20,12 @@ id = "your-kv-namespace-id"
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
-bucket_name = "list-cutter-files"
-preview_bucket_name = "list-cutter-files-preview"
+bucket_name = "cutty-files-dev"
+preview_bucket_name = "cutty-files-dev"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "list-cutter-db"
+database_name = "cutty-db"
 database_id = "YOUR_D1_DATABASE_ID"
 
 # Rate limiting (beta feature)
