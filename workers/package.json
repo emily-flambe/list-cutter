@@ -1,7 +1,7 @@
 {
-  "name": "list-cutter-workers",
+  "name": "cutty-workers",
   "version": "1.0.0",
-  "description": "Cloudflare Workers backend for List Cutter",
+  "description": "Cloudflare Workers backend for Cutty",
   "main": "dist/index.js",
   "scripts": {
     "dev": "wrangler dev",
@@ -9,9 +9,12 @@
     "build": "tsc",
     "test": "vitest",
     "test:watch": "vitest --watch",
+    "test:backup": "vitest src/services/backup/",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "backup:create": "curl -X POST \"${WORKER_URL}/api/backup/create\" -H \"Authorization: Bearer ${AUTH_TOKEN}\" -H \"Content-Type: application/json\" -d '{\"type\": \"auto\"}'",
+    "backup:stats": "curl \"${WORKER_URL}/api/backup/stats\" -H \"Authorization: Bearer ${AUTH_TOKEN}\""
   },
   "dependencies": {
     "csv-parse": "^5.5.6",
@@ -28,6 +31,6 @@
     "vitest": "^1.6.0",
     "wrangler": "^3.84.0"
   },
-  "author": "List Cutter Team",
+  "author": "Cutty Team",
   "license": "MIT"
 }

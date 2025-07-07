@@ -1,16 +1,16 @@
-name = "list-cutter-workers"
+name = "cutty-workers"
 main = "dist/index.js"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
 [env.development]
-name = "list-cutter-workers-dev"
+name = "cutty-workers-dev"
 
 [env.staging]
-name = "list-cutter-workers-staging"
+name = "cutty-workers-staging"
 
 [env.production]
-name = "list-cutter-workers-prod"
+name = "cutty-workers-prod"
 
 # KV for session/token management
 [[kv_namespaces]]
@@ -20,12 +20,33 @@ id = "your-kv-namespace-id"
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
-bucket_name = "list-cutter-files"
-preview_bucket_name = "list-cutter-files-preview"
+bucket_name = "cutty-files-dev"
+preview_bucket_name = "cutty-files-preview"
+
+[env.staging.r2_buckets]
+binding = "R2_BUCKET"
+bucket_name = "cutty-files-staging"
+
+[env.production.r2_buckets]
+binding = "R2_BUCKET"
+bucket_name = "cutty-files-prod"
+
+[[r2_buckets]]
+binding = "R2_BACKUP_BUCKET"
+bucket_name = "cutty-backups-dev"
+preview_bucket_name = "cutty-backups-preview"
+
+[env.staging.r2_buckets]
+binding = "R2_BACKUP_BUCKET"
+bucket_name = "cutty-backups-staging"
+
+[env.production.r2_buckets]
+binding = "R2_BACKUP_BUCKET"
+bucket_name = "cutty-backups-prod"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "list-cutter-db"
+database_name = "cutty-db"
 database_id = "YOUR_D1_DATABASE_ID"
 
 # Rate limiting (beta feature)
@@ -39,3 +60,14 @@ simple = { limit = 60, period = 60 }  # 60 requests per minute
 JWT_SECRET = "your-jwt-secret-here"
 MAX_FILE_SIZE = "10485760"
 ENVIRONMENT = "development"
+
+# Backup Configuration
+BACKUP_RETENTION_DAYS = "30"
+BACKUP_SCHEDULE = "daily"
+BACKUP_INCREMENTAL_ENABLED = "true"
+BACKUP_COMPRESSION_ENABLED = "false"
+BACKUP_ENCRYPTION_ENABLED = "false"
+
+# Scheduled backup trigger - runs daily at 2 AM UTC
+[triggers]
+crons = ["0 2 * * *"]
