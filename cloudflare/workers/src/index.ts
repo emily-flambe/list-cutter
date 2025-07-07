@@ -27,7 +27,7 @@ let securityMetricsCollector: SecurityMetricsCollector;
 let securityHeadersMiddleware: SecurityHeadersMiddleware;
 
 // Security initialization middleware
-app.use('*', async (c, next) => {
+app.use('*', async (c, next): Promise<void> => {
   // Initialize security services if not already done
   if (!securityConfigManager && c.env.SECURITY_CONFIG) {
     try {
@@ -115,7 +115,7 @@ app.use('*', timing());
 app.use('*', logger());
 
 // Security headers middleware (replaces basic secureHeaders)
-app.use('*', async (c, next) => {
+app.use('*', async (c, next): Promise<void> => {
   if (securityHeadersMiddleware) {
     await securityHeadersMiddleware.middleware(c, next);
   } else {
@@ -128,7 +128,7 @@ app.use('*', async (c, next) => {
 app.use('*', prettyJSON());
 
 // CORS configuration
-app.use('*', async (c, next) => {
+app.use('*', async (c, next): Promise<Response> => {
   const corsMiddleware = cors({
     origin: c.env.CORS_ORIGIN || 'http://localhost:5173',
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -141,7 +141,7 @@ app.use('*', async (c, next) => {
 });
 
 // Health check endpoint
-app.get('/health', async (c) => {
+app.get('/health', async (c): Promise<Response> => {
   const securityMonitor = c.get('securityMonitor') as SecurityMonitorService;
   
   let securityHealth = null;
@@ -171,7 +171,7 @@ app.get('/health', async (c) => {
 });
 
 // Security management endpoints
-app.get('/api/security/config', async (c) => {
+app.get('/api/security/config', async (c): Promise<Response> => {
   const securityConfig = c.get('securityConfig') as SecurityConfigManager;
   
   if (!securityConfig) {
@@ -189,7 +189,7 @@ app.get('/api/security/config', async (c) => {
   }
 });
 
-app.get('/api/security/dashboard', async (c) => {
+app.get('/api/security/dashboard', async (c): Promise<Response> => {
   const securityMonitor = c.get('securityMonitor') as SecurityMonitorService;
   
   if (!securityMonitor) {
@@ -207,7 +207,7 @@ app.get('/api/security/dashboard', async (c) => {
   }
 });
 
-app.get('/api/security/metrics', async (c) => {
+app.get('/api/security/metrics', async (c): Promise<Response> => {
   const securityMetrics = c.get('securityMetrics') as SecurityMetricsCollector;
   
   if (!securityMetrics) {
@@ -253,7 +253,7 @@ app.get('/api/security/metrics', async (c) => {
   }
 });
 
-app.post('/api/security/alerts/:alertId/resolve', async (c) => {
+app.post('/api/security/alerts/:alertId/resolve', async (c): Promise<Response> => {
   const securityMonitor = c.get('securityMonitor') as SecurityMonitorService;
   
   if (!securityMonitor) {
@@ -275,7 +275,7 @@ app.post('/api/security/alerts/:alertId/resolve', async (c) => {
   }
 });
 
-app.post('/api/security/config/update', async (c) => {
+app.post('/api/security/config/update', async (c): Promise<Response> => {
   const securityConfig = c.get('securityConfig') as SecurityConfigManager;
   
   if (!securityConfig) {
@@ -294,7 +294,7 @@ app.post('/api/security/config/update', async (c) => {
   }
 });
 
-app.post('/api/security/csp-report', async (c) => {
+app.post('/api/security/csp-report', async (c): Promise<Response> => {
   const securityMonitor = c.get('securityMonitor') as SecurityMonitorService;
   
   try {
@@ -332,7 +332,7 @@ app.post('/api/security/csp-report', async (c) => {
 });
 
 // Test R2 storage endpoint for Phase 5 verification
-app.get('/test-r2', async (c) => {
+app.get('/test-r2', async (c): Promise<Response> => {
   try {
     // Test R2 bucket connectivity
     const testKey = 'test-connectivity-' + Date.now();
@@ -372,7 +372,7 @@ app.get('/test-r2', async (c) => {
 });
 
 // Test Phase 5 R2StorageService endpoint (basic test without DB)
-app.get('/test-phase5', async (c) => {
+app.get('/test-phase5', async (c): Promise<Response> => {
   try {
     return c.json({
       status: 'success',
@@ -406,7 +406,7 @@ v1.route('/migration', migrationRoutes);
 // v1.route('/users', userRoutes);
 
 // 404 handler
-app.notFound((c) => {
+app.notFound((c): Response => {
   return c.json(
     {
       error: 'Not Found',
@@ -418,7 +418,7 @@ app.notFound((c) => {
 });
 
 // Global error handler
-app.onError((err, c) => {
+app.onError((err, c): Response => {
   // Log error (console.error is available in Workers runtime)
   console.error(`Error: ${err.message}`, err.stack);
   
