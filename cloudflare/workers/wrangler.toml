@@ -1,4 +1,7 @@
 name = "cutty-api"
+routes = [
+  { pattern = "cutty-api.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+]
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
@@ -22,7 +25,7 @@ ip = "127.0.0.1"
 [vars]
 ENVIRONMENT = "development"
 API_VERSION = "v1"
-CORS_ORIGIN = "http://localhost:5173"
+CORS_ORIGIN = "https://cutty.emilycogsdill.com"
 MAX_FILE_SIZE = "52428800" # 50MB in bytes
 JWT_ISSUER = "cutty"
 JWT_AUDIENCE = "cutty-api"
@@ -116,7 +119,10 @@ endpoint = "/api/alerts/jobs/health-check"
 # Staging environment
 [env.staging]
 name = "cutty-api-staging"
-vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://staging.cutty.com" }
+vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://staging.cutty.emilycogsdill.com" }
+routes = [
+  { pattern = "cutty-api-staging.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+]
 
 [[env.staging.d1_databases]]
 binding = "DB"
@@ -135,9 +141,9 @@ preview_bucket_name = "cutty-files-preview"
 # Production environment
 [env.production]
 name = "cutty-api-production"
-vars = { ENVIRONMENT = "production", CORS_ORIGIN = "https://cutty.com" }
+vars = { ENVIRONMENT = "production", CORS_ORIGIN = "https://cutty.emilycogsdill.com" }
 routes = [
-  { pattern = "api.cutty.com/*", zone_name = "cutty.com" }
+  { pattern = "cutty-api.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
 
 [[env.production.d1_databases]]
