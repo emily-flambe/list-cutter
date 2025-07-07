@@ -11,6 +11,7 @@ import { createAlertDashboardRoutes } from './routes/dashboard-alerts.js';
 import { createAlertJobRoutes } from './routes/alert-jobs.js';
 
 // Import route handlers
+import migrationRoutes from './routes/migration';
 // import authRoutes from '@routes/auth';
 // import csvRoutes from '@routes/csv';
 // import fileRoutes from '@routes/files';
@@ -327,10 +328,11 @@ app.all('/api/dashboard/*', async (c) => {
   return alertDashboardRoutes.fetch(request, c.env);
 });
 
-// API version prefix - routes will be added in Phase 2
-// const v1 = app.basePath('/api/v1');
+// API version prefix
+const v1 = app.basePath('/api');
 
-// Mount routes (to be added in Phase 2)
+// Mount routes
+v1.route('/migration', migrationRoutes);
 // v1.route('/auth', authRoutes);
 // v1.route('/csv', csvRoutes);
 // v1.route('/files', fileRoutes);

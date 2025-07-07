@@ -13,8 +13,8 @@ name = "cutty-prod"
 # D1 Database Configuration
 [[d1_databases]]
 binding = "DB"
-database_name = "cutty-db"
-database_id = "fc5af020-09f2-4235-8a47-590140e8ad74"
+database_name = "cutty-dev"
+database_id = "2f87e313-31ff-4298-ab18-552fa5a1ce0e"
 preview_database_id = "fc5af020-09f2-4235-8a47-590140e8ad74"
 
 # Environment variables
@@ -34,7 +34,7 @@ DEBUG = "false"
 
 # KV namespaces (for future use)
 # [[kv_namespaces]]
-# binding = "LIST_CUTTER_CACHE"
+# binding = "CUTTY_CACHE"
 # id = "placeholder-for-kv-id"
 # preview_id = "placeholder-for-preview-kv-id"
 
@@ -42,7 +42,7 @@ DEBUG = "false"
 # [[r2_buckets]]
 # binding = "CUTTY_FILES"
 # bucket_name = "cutty-files-dev"
-# preview_bucket_name = "cutty-files-dev"
+# preview_bucket_name = "cutty-files-preview"
 
 # Build configuration
 [build]

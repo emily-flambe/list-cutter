@@ -27,17 +27,17 @@ MAX_FILE_SIZE = "52428800" # 50MB in bytes
 JWT_ISSUER = "cutty"
 JWT_AUDIENCE = "cutty-api"
 
-# D1 Database bindings (commented out - create your own database and update ID)
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "cutty-db"
-# database_id = "your-database-id-here"
-# migrations_dir = "./migrations"
+# D1 Database bindings
+[[d1_databases]]
+binding = "DB"
+database_name = "cutty-dev"
+database_id = "2f87e313-31ff-4298-ab18-552fa5a1ce0e"
+migrations_dir = "./migrations"
 
 # R2 Storage bindings
 [[r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "cutty-files-prod"
+bucket_name = "cutty-files-dev"
 preview_bucket_name = "cutty-files-dev"
 
 # KV Namespace bindings (commented out - create your own KV namespace and update ID)
@@ -56,10 +56,10 @@ preview_bucket_name = "cutty-files-dev"
 # max_batch_size = 10
 # max_batch_timeout = 5
 
-# Analytics Engine binding (commented out - create your own dataset and update name)
-# [[analytics_engine_datasets]]
-# binding = "ANALYTICS"
-# dataset = "cutty-metrics"
+# Analytics Engine binding
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "cutty-metrics"
 
 # Cron triggers for storage metrics aggregation
 # Daily aggregation at 2 AM UTC
@@ -118,15 +118,15 @@ endpoint = "/api/alerts/jobs/health-check"
 name = "cutty-api-staging"
 vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://staging.cutty.com" }
 
-# [[env.staging.d1_databases]]
-# binding = "DB"
-# database_name = "cutty-db"
-# database_id = "your-staging-database-id-here"
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "cutty-staging"
+database_id = "e16924c6-be97-4012-88ac-79ff31fd5304"
 
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"
 bucket_name = "cutty-files-staging"
-preview_bucket_name = "cutty-files-dev"
+preview_bucket_name = "cutty-files-preview"
 
 # [[env.staging.kv_namespaces]]
 # binding = "AUTH_TOKENS"
@@ -140,10 +140,10 @@ routes = [
   { pattern = "api.cutty.com/*", zone_name = "cutty.com" }
 ]
 
-# [[env.production.d1_databases]]
-# binding = "DB"
-# database_name = "cutty-db"
-# database_id = "your-production-database-id-here"
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "cutty-production"
+database_id = "0a6c6836-02e8-4f91-a37a-7eb82aa58e0f"
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"
