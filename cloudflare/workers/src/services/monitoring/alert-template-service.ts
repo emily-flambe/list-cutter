@@ -9,7 +9,7 @@ import {
   AlertType,
   AlertThreshold,
   NotificationChannelCreateRequest
-} from '../../types/alerts';
+} from '../../types/alerts.js';
 
 export class AlertTemplateService {
   constructor(private db: D1Database) {}

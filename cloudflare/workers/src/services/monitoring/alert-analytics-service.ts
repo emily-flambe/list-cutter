@@ -11,7 +11,7 @@ import {
   AlertFrequencyData,
   AlertDurationData,
   AlertMetricsQuery
-} from '../../types/alerts';
+} from '../../types/alerts.js';
 
 export class AlertAnalyticsService {
   constructor(

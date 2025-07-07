@@ -4,9 +4,9 @@
  */
 
 import { Hono } from 'hono';
-import { AlertManagementService } from '../services/monitoring/alert-management-service';
-import { AlertEvaluationService } from '../services/monitoring/alert-evaluation-service';
-import { NotificationService } from '../services/monitoring/notification-service';
+import { AlertManagementService } from '../services/monitoring/alert-management-service.js';
+import { AlertEvaluationService } from '../services/monitoring/alert-evaluation-service.js';
+import { NotificationService } from '../services/monitoring/notification-service.js';
 import {
   AlertCreateRequest,
   AlertUpdateRequest,
@@ -17,7 +17,7 @@ import {
   NotificationChannelCreateRequest,
   NotificationChannelUpdateRequest,
   AlertMetricsQuery
-} from '../types/alerts';
+} from '../types/alerts.js';
 
 export function createAlertRoutes(
   db: D1Database,

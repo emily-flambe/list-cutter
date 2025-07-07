@@ -13,7 +13,7 @@ import {
   AlertSMSPayload,
   NotificationChannelType,
   DeliveryStatus
-} from '../../types/alerts';
+} from '../../types/alerts.js';
 
 export class NotificationService {
   constructor(private db: D1Database) {}

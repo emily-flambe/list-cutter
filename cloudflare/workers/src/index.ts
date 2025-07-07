@@ -4,7 +4,7 @@ import { logger } from 'hono/logger';
 import { prettyJSON } from 'hono/pretty-json';
 import { secureHeaders } from 'hono/secure-headers';
 import { timing } from 'hono/timing';
-import type { CloudflareEnv } from './types/env';
+import type { CloudflareEnv } from './types/env.js';
 import { IntegratedDashboardAPI } from './routes/dashboard-integration.js';
 import { createAlertRoutes } from './routes/alerts.js';
 import { createAlertDashboardRoutes } from './routes/dashboard-alerts.js';
@@ -20,10 +20,10 @@ import migrationRoutes from './routes/migration.js';
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 // Initialize dashboard API and alert routes
-let dashboardAPI: IntegratedDashboardAPI;
-let alertRoutes: any;
-let alertDashboardRoutes: any;
-let alertJobRoutes: any;
+let dashboardAPI: IntegratedDashboardAPI | undefined;
+let alertRoutes: any = undefined;
+let alertDashboardRoutes: any = undefined;
+let alertJobRoutes: any = undefined;
 
 // Global middleware
 app.use('*', timing());
@@ -375,14 +375,14 @@ export const scheduled: ExportedHandlerScheduledHandler<CloudflareEnv> = async (
   
   try {
     // Initialize alert job routes if not already done
-    const alertJobRoutes = createAlertJobRoutes(env.DB, env.ANALYTICS);
+    const scheduledAlertJobRoutes = createAlertJobRoutes(env.DB, env.ANALYTICS);
     
     let response: Response;
     
     switch (event.cron) {
       case '*/5 * * * *': // Every 5 minutes - Alert evaluation
         console.log('Running scheduled alert evaluation...');
-        response = await alertJobRoutes.fetch(
+        response = await scheduledAlertJobRoutes.fetch(
           new Request('http://localhost/api/alerts/jobs/evaluate', { method: 'POST' }),
           env
         );
@@ -390,7 +390,7 @@ export const scheduled: ExportedHandlerScheduledHandler<CloudflareEnv> = async (
         
       case '*/15 * * * *': // Every 15 minutes - Retry failed notifications  
         console.log('Running notification retry job...');
-        response = await alertJobRoutes.fetch(
+        response = await scheduledAlertJobRoutes.fetch(
           new Request('http://localhost/api/alerts/jobs/retry-notifications', { method: 'POST' }),
           env
         );
@@ -398,7 +398,7 @@ export const scheduled: ExportedHandlerScheduledHandler<CloudflareEnv> = async (
         
       case '0 2 * * *': // Daily at 2 AM - Cleanup old data
         console.log('Running alert cleanup job...');
-        response = await alertJobRoutes.fetch(
+        response = await scheduledAlertJobRoutes.fetch(
           new Request('http://localhost/api/alerts/jobs/cleanup', { method: 'POST' }),
           env
         );
@@ -406,7 +406,7 @@ export const scheduled: ExportedHandlerScheduledHandler<CloudflareEnv> = async (
         
       case '*/10 * * * *': // Every 10 minutes - Health check 
         console.log('Running alert health check...');
-        response = await alertJobRoutes.fetch(
+        response = await scheduledAlertJobRoutes.fetch(
           new Request('http://localhost/api/alerts/jobs/health-check', { method: 'POST' }),
           env
         );

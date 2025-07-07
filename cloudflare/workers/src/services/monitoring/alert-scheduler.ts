@@ -10,10 +10,10 @@ import {
   AlertNotificationContext,
   AlertInstance,
   AlertRule
-} from '../../types/alerts';
-import { AlertEvaluationService } from './alert-evaluation-service';
-import { AlertManagementService } from './alert-management-service';
-import { NotificationService } from './notification-service';
+} from '../../types/alerts.js';
+import { AlertEvaluationService } from './alert-evaluation-service.js';
+import { AlertManagementService } from './alert-management-service.js';
+import { NotificationService } from './notification-service.js';
 
 export class AlertSchedulerService {
   private evaluationService: AlertEvaluationService;

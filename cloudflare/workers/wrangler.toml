@@ -132,6 +132,10 @@ binding = "FILE_STORAGE"
 bucket_name = "cutty-files-staging"
 preview_bucket_name = "cutty-files-preview"
 
+[[env.staging.analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "cutty-metrics-staging"
+
 # [[env.staging.kv_namespaces]]
 # binding = "AUTH_TOKENS"
 # id = "your-staging-kv-namespace-id-here"
@@ -153,6 +157,10 @@ database_id = "0a6c6836-02e8-4f91-a37a-7eb82aa58e0f"
 binding = "FILE_STORAGE"
 bucket_name = "cutty-files-prod"
 preview_bucket_name = "cutty-files-dev"
+
+[[env.production.analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "cutty-metrics-production"
 
 # [[env.production.kv_namespaces]]
 # binding = "AUTH_TOKENS"

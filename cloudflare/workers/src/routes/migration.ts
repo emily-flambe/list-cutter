@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { FileMigrationService } from '../services/migration/file-migration.js';
 import { R2StorageService } from '../services/storage/r2-service.js';
-import type { CloudflareEnv } from '../types/env';
+import type { CloudflareEnv } from '../types/env.js';
 
 const migrationRoutes = new Hono<{ Bindings: CloudflareEnv }>();
 

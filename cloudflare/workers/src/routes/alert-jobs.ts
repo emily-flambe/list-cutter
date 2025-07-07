@@ -4,7 +4,7 @@
  */
 
 import { Hono } from 'hono';
-import { AlertSchedulerService } from '../services/monitoring/alert-scheduler';
+import { AlertSchedulerService } from '../services/monitoring/alert-scheduler.js';
 
 export function createAlertJobRoutes(
   db: D1Database,

@@ -21,9 +21,9 @@ import {
   AlertTestResponse,
   AlertDashboardData,
   AlertInstanceState
-} from '../../types/alerts';
-import { AlertEvaluationService } from './alert-evaluation-service';
-import { NotificationService } from './notification-service';
+} from '../../types/alerts.js';
+import { AlertEvaluationService } from './alert-evaluation-service.js';
+import { NotificationService } from './notification-service.js';
 
 export class AlertManagementService {
   private evaluationService: AlertEvaluationService;

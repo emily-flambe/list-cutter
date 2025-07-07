@@ -14,9 +14,9 @@ import {
   ThresholdOperator,
   AlertLevel,
   AlertInstanceState
-} from '../../types/alerts';
-import { MetricsQueryService } from './query-service';
-import { CostCalculator } from './cost-calculator';
+} from '../../types/alerts.js';
+import { MetricsQueryService } from './query-service.js';
+import { CostCalculator } from './cost-calculator.js';
 
 export class AlertEvaluationService {
   private queryService: MetricsQueryService;

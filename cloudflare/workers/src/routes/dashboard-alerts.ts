@@ -4,9 +4,9 @@
  */
 
 import { Hono } from 'hono';
-import { AlertManagementService } from '../services/monitoring/alert-management-service';
-import { AlertSchedulerService } from '../services/monitoring/alert-scheduler';
-import { EnhancedMetricsService } from '../services/monitoring/enhanced-metrics-service';
+import { AlertManagementService } from '../services/monitoring/alert-management-service.js';
+import { AlertSchedulerService } from '../services/monitoring/alert-scheduler.js';
+import { EnhancedMetricsService } from '../services/monitoring/enhanced-metrics-service.js';
 
 export function createAlertDashboardRoutes(
   db: D1Database,
