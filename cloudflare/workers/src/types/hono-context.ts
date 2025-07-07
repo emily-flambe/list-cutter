@@ -27,6 +27,8 @@ export interface FileAuthContext {
   authorized: boolean;
   role?: string;
   permissions?: string[];
+  shareToken?: string;
+  auditId?: string;
 }
 
 // User quota information

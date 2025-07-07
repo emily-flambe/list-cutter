@@ -13,6 +13,9 @@ export { SecurityAuditService } from './security-audit';
 export { SecurityManager } from './security-manager';
 export { AuditLogger as SecurityAuditLogger } from './audit-logger';
 export { IntegratedSecurityService } from './security-service';
+export { AccessControlService } from './access-control';
+export { FileSharingService } from './file-sharing';
+export { QuotaManager } from './quota-manager';
 
 // Type exports
 export * from '../../types/threat-intelligence';

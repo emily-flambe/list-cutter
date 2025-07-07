@@ -16,7 +16,8 @@ import {
   SecurityEventType,
   SecurityEventSeverity,
   SecurityEventCategory,
-  RiskLevel
+  RiskLevel,
+  SecurityMetrics as SecurityEventsMetrics
 } from '../../types/security-events';
 
 // Metadata interfaces for type safety
@@ -59,7 +60,15 @@ interface ThreatMetadata {
 
 // SecurityEvent is now imported from ../../types/security-events
 
-export interface SecurityMetrics {
+export interface SecurityHealth {
+  overall: 'healthy' | 'degraded' | 'critical';
+  authSystem: 'healthy' | 'degraded' | 'critical';
+  fileValidation: 'healthy' | 'degraded' | 'critical';
+  rateLimit: 'healthy' | 'degraded' | 'critical';
+  threatDetection: 'healthy' | 'degraded' | 'critical';
+}
+
+export interface SecurityMonitorMetrics {
   timestamp: string;
   performance: {
     authenticationLatency: number;
@@ -118,7 +127,7 @@ export interface SecurityDashboard {
   };
   recentEvents: SecurityEvent[];
   activeAlerts: SecurityAlert[];
-  metrics: SecurityMetrics;
+  metrics: SecurityMonitorMetrics;
   trends: {
     authFailureRate: number;
     fileUploadFailureRate: number;
@@ -155,7 +164,7 @@ export class SecurityMonitorService {
   private metricsRetentionDays: number;
   
   // In-memory cache for performance metrics
-  private metricsCache: Map<string, SecurityMetrics> = new Map();
+  private metricsCache: Map<string, SecurityMonitorMetrics> = new Map();
   private eventBuffer: SecurityEvent[] = [];
   private lastFlushTime: number = Date.now();
   
@@ -375,7 +384,7 @@ export class SecurityMonitorService {
   /**
    * Get current security metrics
    */
-  async getSecurityMetrics(): Promise<SecurityMetrics> {
+  async getSecurityMetrics(): Promise<SecurityMonitorMetrics> {
     const now = new Date();
     const cacheKey = `metrics-${now.getHours()}`;
     
@@ -478,11 +487,11 @@ export class SecurityMonitorService {
   /**
    * Check system health
    */
-  async checkSystemHealth(): Promise<SecurityMetrics['health']> {
+  async checkSystemHealth(): Promise<SecurityMonitorMetrics['health']> {
     const metrics = await this.getSecurityMetrics();
     const config = await this.configManager.getMonitoringConfig();
     
-    const health: SecurityMetrics['health'] = {
+    const health: SecurityMonitorMetrics['health'] = {
       overall: 'healthy',
       authSystem: 'healthy',
       fileValidation: 'healthy',
@@ -543,47 +552,47 @@ export class SecurityMonitorService {
     
     // Update counters based on event type
     switch (event.type) {
-      case 'auth':
+      case SecurityEventType.AUTHENTICATION_SUCCESS:
+      case SecurityEventType.AUTHENTICATION_FAILURE:
         metrics.counters.authenticationAttempts++;
-        if (!event.resolved) {
+        if (event.type === SecurityEventType.AUTHENTICATION_FAILURE) {
           metrics.counters.authenticationFailures++;
         }
-        if (event.responseTime) {
+        if (event.details?.responseTime) {
           metrics.performance.authenticationLatency = 
-            (metrics.performance.authenticationLatency + event.responseTime) / 2;
+            (metrics.performance.authenticationLatency + (event.details.responseTime as number)) / 2;
         }
         break;
         
-      case 'file_upload':
+      case SecurityEventType.FILE_UPLOADED:
+      case SecurityEventType.FILE_VALIDATION_FAILED:
         metrics.counters.fileUploads++;
-        if (!event.resolved) {
+        if (event.type === SecurityEventType.FILE_VALIDATION_FAILED) {
           metrics.counters.fileUploadFailures++;
         }
-        if (event.responseTime) {
+        if (event.details?.responseTime) {
           metrics.performance.fileValidationLatency = 
-            (metrics.performance.fileValidationLatency + event.responseTime) / 2;
+            (metrics.performance.fileValidationLatency + (event.details.responseTime as number)) / 2;
         }
         break;
         
-      case 'rate_limit':
-        if (!event.resolved) {
-          metrics.counters.rateLimitViolations++;
-        }
-        if (event.responseTime) {
+      case SecurityEventType.RATE_LIMIT_EXCEEDED:
+        metrics.counters.rateLimitViolations++;
+        if (event.details?.responseTime) {
           metrics.performance.rateLimitCheckLatency = 
-            (metrics.performance.rateLimitCheckLatency + event.responseTime) / 2;
+            (metrics.performance.rateLimitCheckLatency + (event.details.responseTime as number)) / 2;
         }
         break;
         
-      case 'threat_detection':
+      case SecurityEventType.MALICIOUS_FILE_DETECTED:
         metrics.counters.threatDetections++;
         break;
         
-      case 'anomaly':
+      case SecurityEventType.ANOMALY_DETECTED:
         metrics.counters.anomaliesDetected++;
         break;
         
-      case 'violation':
+      case SecurityEventType.SUSPICIOUS_ACTIVITY:
         metrics.counters.securityViolations++;
         break;
     }
@@ -604,7 +613,7 @@ export class SecurityMonitorService {
   /**
    * Calculate current metrics
    */
-  private async calculateMetrics(): Promise<SecurityMetrics> {
+  private async calculateMetrics(): Promise<SecurityMonitorMetrics> {
     const config = await this.configManager.getMonitoringConfig();
     
     return {
@@ -818,7 +827,7 @@ export class SecurityMonitorService {
   /**
    * Calculate threat level
    */
-  private calculateThreatLevel(metrics: SecurityMetrics, alerts: SecurityAlert[]): SecurityDashboard['summary']['threatLevel'] {
+  private calculateThreatLevel(metrics: SecurityMonitorMetrics, alerts: SecurityAlert[]): SecurityDashboard['summary']['threatLevel'] {
     const criticalAlerts = alerts.filter(a => a.severity === 'critical').length;
     const highAlerts = alerts.filter(a => a.severity === 'high').length;
     
@@ -851,6 +860,70 @@ export class SecurityMonitorService {
       
     } catch (error) {
       console.error('Failed to cleanup old data:', error);
+    }
+  }
+  
+  /**
+   * Get security dashboard data
+   */
+  async getSecurityDashboard(): Promise<SecurityDashboard> {
+    const metrics = await this.getSecurityMetrics();
+    const alerts = await this.getActiveAlerts();
+    const trends = await this.calculateTrends();
+    
+    return {
+      summary: {
+        totalEvents: Object.values(metrics.counters).reduce((sum, count) => sum + count, 0),
+        criticalAlerts: alerts.filter(a => a.severity === 'critical').length,
+        activeThreats: metrics.counters.threatDetections,
+        systemHealth: await this.checkSystemHealth(),
+        threatLevel: this.calculateThreatLevel(metrics, alerts)
+      },
+      metrics,
+      alerts: alerts.slice(0, 10), // Latest 10 alerts
+      trends,
+      performance: {
+        averageResponseTime: this.calculateAverageResponseTime(this.eventBuffer),
+        throughput: metrics.counters.authenticationAttempts + metrics.counters.fileUploads,
+        errorRate: (metrics.counters.authenticationFailures + metrics.counters.fileUploadFailures) / 
+                  Math.max(metrics.counters.authenticationAttempts + metrics.counters.fileUploads, 1)
+      }
+    };
+  }
+  
+  /**
+   * Resolve an alert
+   */
+  async resolveAlert(alertId: string, resolvedBy: string): Promise<void> {
+    try {
+      const alertsData = await this.kvNamespace.get('active-alerts');
+      const alerts = alertsData ? JSON.parse(alertsData) : [];
+      
+      const alertIndex = alerts.findIndex((a: SecurityAlert) => a.id === alertId);
+      if (alertIndex >= 0) {
+        alerts[alertIndex].resolved = true;
+        alerts[alertIndex].resolvedBy = resolvedBy;
+        alerts[alertIndex].resolvedAt = new Date().toISOString();
+        
+        await this.kvNamespace.put('active-alerts', JSON.stringify(alerts));
+      }
+    } catch (error) {
+      console.error('Failed to resolve alert:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get active alerts
+   */
+  private async getActiveAlerts(): Promise<SecurityAlert[]> {
+    try {
+      const alertsData = await this.kvNamespace.get('active-alerts');
+      const alerts = alertsData ? JSON.parse(alertsData) : [];
+      return alerts.filter((a: SecurityAlert) => !a.resolved);
+    } catch (error) {
+      console.error('Failed to get active alerts:', error);
+      return [];
     }
   }
 }

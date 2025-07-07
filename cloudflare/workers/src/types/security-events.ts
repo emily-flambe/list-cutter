@@ -161,6 +161,8 @@ export interface SecurityEvent {
   requiresResponse: boolean;
   responseActions?: IncidentResponseAction[];
   responseStatus?: 'pending' | 'in_progress' | 'completed' | 'failed';
+  responseTime?: number;
+  resolved?: boolean;
   
   // Enrichment data
   geoLocation?: {

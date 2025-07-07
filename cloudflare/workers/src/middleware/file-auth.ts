@@ -26,12 +26,13 @@ export interface FileAuthOptions {
 
 export interface FileAuthContext {
   fileId: string;
-  userId?: string;
+  userId: string;
+  operation: string;
+  authorized: boolean;
+  role?: string;
+  permissions?: string[];
   shareToken?: string;
-  accessGranted: boolean;
-  accessReason: string;
   auditId?: string;
-  effectivePermissions: FileOperation[];
 }
 
 /**
@@ -64,10 +65,11 @@ export function fileAuth(options: FileAuthOptions): (c: Context<{ Bindings: Clou
       const userAgent = c.req.header('User-Agent') || 'unknown';
       const requestId = c.req.header('X-Request-ID') || crypto.randomUUID();
 
-      let accessGranted = false;
+      let authorized = false;
       let accessReason = 'unknown';
       let auditId: string | undefined;
       let effectivePermissions: FileOperation[] = [];
+      let userRole: string | undefined;
 
       // Check share token access first (if provided and allowed)
       if (shareToken && options.allowShareTokens) {
@@ -81,7 +83,7 @@ export function fileAuth(options: FileAuthOptions): (c: Context<{ Bindings: Clou
           });
 
           if (tokenValidation.valid) {
-            accessGranted = true;
+            authorized = true;
             accessReason = 'share_token_valid';
             effectivePermissions = tokenValidation.permissions;
             auditId = tokenValidation.auditId;
@@ -97,7 +99,7 @@ export function fileAuth(options: FileAuthOptions): (c: Context<{ Bindings: Clou
       }
 
       // Check user permissions (if no share token or share token failed)
-      if (!accessGranted && userId) {
+      if (!authorized && userId) {
         try {
           const permissionCheck = await accessControl.checkPermission({
             userId,
@@ -109,13 +111,14 @@ export function fileAuth(options: FileAuthOptions): (c: Context<{ Bindings: Clou
           });
 
           if (permissionCheck.allowed) {
-            accessGranted = true;
+            authorized = true;
             accessReason = 'user_permission_granted';
             auditId = permissionCheck.auditId;
             
             // Get effective permissions for the user
             const ownership = await accessControl.validateOwnership(fileId, userId);
             effectivePermissions = ownership.permissions;
+            userRole = ownership.effectiveRole;
           } else {
             throw new InsufficientPermissionsError(
               fileId,
@@ -152,7 +155,7 @@ export function fileAuth(options: FileAuthOptions): (c: Context<{ Bindings: Clou
       }
 
       // Final access check
-      if (!accessGranted) {
+      if (!authorized) {
         throw new HTTPException(401, { message: 'Authentication required or insufficient permissions' });
       }
 
@@ -164,12 +167,13 @@ export function fileAuth(options: FileAuthOptions): (c: Context<{ Bindings: Clou
       // Store file auth context for use in route handlers
       const fileAuthContext: FileAuthContext = {
         fileId,
-        userId,
+        userId: userId || '',
+        operation: options.operation,
+        authorized,
+        role: userRole,
+        permissions: effectivePermissions.map(p => p),
         shareToken,
-        accessGranted,
-        accessReason,
-        auditId,
-        effectivePermissions
+        auditId
       };
 
       c.set('fileAuth', fileAuthContext);
