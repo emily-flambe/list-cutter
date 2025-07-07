@@ -7,7 +7,6 @@ import { QuotaManager } from '../services/security/quota-manager';
 import {
   QuotaCheckOptions,
   QuotaOperationType,
-  QuotaExceededError,
   QuotaNotFoundError,
   InvalidQuotaOperationError
 } from '../types/quota';

@@ -200,32 +200,32 @@ export class SecurityConfigManager {
   /**
    * Get configuration for a specific security domain
    */
-  async getAuthConfig() {
+  async getAuthConfig(): Promise<SecurityPolicy['auth']> {
     const config = await this.getConfig();
     return config.auth;
   }
   
-  async getFileUploadConfig() {
+  async getFileUploadConfig(): Promise<SecurityPolicy['fileUpload']> {
     const config = await this.getConfig();
     return config.fileUpload;
   }
   
-  async getRateLimitConfig() {
+  async getRateLimitConfig(): Promise<SecurityPolicy['rateLimit']> {
     const config = await this.getConfig();
     return config.rateLimit;
   }
   
-  async getHeadersConfig() {
+  async getHeadersConfig(): Promise<SecurityPolicy['headers']> {
     const config = await this.getConfig();
     return config.headers;
   }
   
-  async getDataProtectionConfig() {
+  async getDataProtectionConfig(): Promise<SecurityPolicy['dataProtection']> {
     const config = await this.getConfig();
     return config.dataProtection;
   }
   
-  async getMonitoringConfig() {
+  async getMonitoringConfig(): Promise<SecurityPolicy['monitoring']> {
     const config = await this.getConfig();
     return config.monitoring;
   }

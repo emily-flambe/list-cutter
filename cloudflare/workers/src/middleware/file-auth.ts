@@ -4,7 +4,6 @@ import { AccessControlService } from '../services/security/access-control';
 import { FileSharingService } from '../services/security/file-sharing';
 import {
   FileOperation,
-  AccessControlContext,
   AccessControlError,
   InsufficientPermissionsError,
   FileNotFoundError,
@@ -118,8 +117,8 @@ export function fileAuth(options: FileAuthOptions): (c: Context<{ Bindings: Clou
               fileId,
               userId,
               options.operation,
-              permissionCheck.requiredRole || 'owner' as any,
-              permissionCheck.currentRole || 'none' as any
+              permissionCheck.requiredRole || 'owner',
+              permissionCheck.currentRole || 'none'
             );
           }
         } catch (error) {

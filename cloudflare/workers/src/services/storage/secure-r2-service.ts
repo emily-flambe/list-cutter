@@ -492,7 +492,7 @@ export class SecureR2StorageService {
     try {
       // This is already handled by the access control audit log
       // We could add additional metrics here if needed
-      console.log(`File access metrics updated for ${fileId}: ${metrics.operation} ${metrics.success ? 'succeeded' : 'failed'}`);
+      console.warn(`File access metrics updated for ${fileId}: ${metrics.operation} ${metrics.success ? 'succeeded' : 'failed'}`);
     } catch (error) {
       console.error('Failed to update access metrics:', error);
     }

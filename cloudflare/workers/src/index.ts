@@ -95,7 +95,7 @@ app.use('*', async (c, next): Promise<void> => {
         skipPaths: ['/health', '/favicon.ico', '/robots.txt', '/test-r2', '/test-phase5']
       });
 
-      console.log('Security services initialized successfully');
+      console.warn('Security services initialized successfully');
     } catch (error) {
       console.error('Failed to initialize security services:', error);
       // Continue without security services in case of initialization failure
