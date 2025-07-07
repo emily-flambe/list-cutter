@@ -9,8 +9,18 @@ name = "cutty-workers-dev"
 [env.staging]
 name = "cutty-workers-staging"
 
+[[env.staging.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "cutty-files-staging"
+preview_bucket_name = "cutty-files-preview"
+
 [env.production]
 name = "cutty-workers-prod"
+
+[[env.production.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "cutty-files-prod"
+preview_bucket_name = "cutty-files-preview"
 
 # KV for session/token management
 [[kv_namespaces]]
@@ -20,7 +30,7 @@ id = "your-kv-namespace-id"
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
-bucket_name = "cutty-files"
+bucket_name = "cutty-files-dev"
 preview_bucket_name = "cutty-files-preview"
 
 [[d1_databases]]

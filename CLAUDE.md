@@ -13,7 +13,7 @@ This file contains project-specific instructions for Claude Code usage.
 - **Domains**: `cutty.com`, `api.cutty.com`, `staging.cutty.com`
 - **Worker Names**: `cutty-api`, `cutty-workers`, `cutty-frontend`
 - **Database Names**: `cutty-db`, `cutty-dev`, `cutty-staging`, `cutty-production`
-- **R2 Buckets**: `cutty-files`, `cutty-files-dev`, `cutty-files-staging`, `cutty-files-production`
+- **R2 Buckets**: `cutty-files-dev`, `cutty-files-staging`, `cutty-files-production`
 
 ### Wrangler Commands
 
@@ -25,8 +25,8 @@ wrangler d1 create cutty-db
 wrangler d1 execute cutty-db --file=schema.sql
 
 # R2 storage operations
-wrangler r2 bucket create cutty-files
-wrangler r2 bucket cors put cutty-files --file cors.json
+wrangler r2 bucket create cutty-files-dev
+wrangler r2 bucket cors put cutty-files-dev --file cors.json
 
 # Pages deployment
 wrangler pages deploy dist --project-name cutty-frontend

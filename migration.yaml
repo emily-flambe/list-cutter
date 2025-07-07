@@ -58,7 +58,7 @@ r2:
     secret_access_key: "${R2_SECRET_ACCESS_KEY:}"
   
   bucket:
-    name: "${R2_BUCKET_NAME:list-cutter-files}"
+    name: "${R2_BUCKET_NAME:cutty-files-dev}"
     region: "${R2_REGION:auto}"
     endpoint: "${R2_ENDPOINT_URL:}"
   

@@ -1,16 +1,16 @@
 {
-  "description": "CORS configuration for List Cutter R2 bucket - Issue #66 File Migration Tools",
+  "description": "CORS configuration for Cutty R2 bucket - Issue #66 File Migration Tools",
   "rules": [
     {
-      "id": "list-cutter-app-cors",
-      "description": "Allow List Cutter application to access R2 files",
+      "id": "cutty-app-cors",
+      "description": "Allow Cutty application to access R2 files",
       "allowedOrigins": [
-        "https://list-cutter.com",
-        "https://www.list-cutter.com",
-        "https://app.list-cutter.com",
-        "https://preview.list-cutter.com",
-        "https://staging.list-cutter.com",
-        "https://dev.list-cutter.com",
+        "https://cutty.com",
+        "https://www.cutty.com",
+        "https://app.cutty.com",
+        "https://preview.cutty.com",
+        "https://staging.cutty.com",
+        "https://dev.cutty.com",
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:8000",
@@ -191,7 +191,7 @@
   },
   "validation_commands": [
     "wrangler r2 bucket cors get <BUCKET_NAME>",
-    "curl -X OPTIONS -H 'Origin: https://list-cutter.com' -H 'Access-Control-Request-Method: GET' https://your-bucket.r2.cloudflarestorage.com/test-file",
+    "curl -X OPTIONS -H 'Origin: https://cutty.com' -H 'Access-Control-Request-Method: GET' https://your-bucket.r2.cloudflarestorage.com/test-file",
     "curl -X OPTIONS -H 'Origin: http://localhost:3000' -H 'Access-Control-Request-Method: POST' https://your-bucket.r2.cloudflarestorage.com/"
   ]
 }

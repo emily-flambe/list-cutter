@@ -67,7 +67,7 @@ export D1_LOCAL_PATH=.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite
 # Cloudflare R2 Configuration
 export CLOUDFLARE_ACCOUNT_ID=your_account_id
 export CLOUDFLARE_API_TOKEN=your_api_token
-export R2_BUCKET_NAME=list-cutter-files
+export R2_BUCKET_NAME=cutty-files-dev
 ```
 
 ## Usage
@@ -538,7 +538,7 @@ D1_LOCAL_PATH=.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite
 # Cloudflare R2
 CLOUDFLARE_ACCOUNT_ID=your_account_id
 CLOUDFLARE_API_TOKEN=your_api_token
-R2_BUCKET_NAME=list-cutter-files
+R2_BUCKET_NAME=cutty-files-dev
 
 # Logging
 LOG_LEVEL=INFO

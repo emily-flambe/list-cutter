@@ -241,7 +241,7 @@ The toolkit includes a comprehensive rollback script (`rollback_migration.py`) f
    ```bash
    export CLOUDFLARE_ACCOUNT_ID=your_account_id
    export CLOUDFLARE_API_TOKEN=your_api_token
-   export R2_BUCKET_NAME=list-cutter-files
+   export R2_BUCKET_NAME=cutty-files-dev
    ```
 
 3. Run rollback operations (see `ROLLBACK_MIGRATION_GUIDE.md` for complete documentation)

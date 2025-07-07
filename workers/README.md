@@ -92,7 +92,7 @@ wrangler d1 execute cutty-db --file=schema.sql
 
 1. Create R2 bucket:
 ```bash
-wrangler r2 bucket create cutty-files
+wrangler r2 bucket create cutty-files-dev
 ```
 
 2. Update `wrangler.toml` with your bucket name

@@ -357,7 +357,7 @@ class MigrationRollbackService:
         return {
             'cloudflare_account_id': os.getenv('CLOUDFLARE_ACCOUNT_ID'),
             'cloudflare_api_token': os.getenv('CLOUDFLARE_API_TOKEN'),
-            'r2_bucket_name': os.getenv('R2_BUCKET_NAME', 'list-cutter-files')
+            'r2_bucket_name': os.getenv('R2_BUCKET_NAME', 'cutty-files-dev')
         }
     
     async def execute_rollback(self) -> RollbackStats:

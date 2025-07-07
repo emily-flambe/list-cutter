@@ -37,7 +37,7 @@ migrations_dir = "./migrations"
 # R2 Storage bindings
 [[r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "cutty-files-prod"
+bucket_name = "cutty-files-dev"
 preview_bucket_name = "cutty-files-preview"
 
 # KV Namespace bindings (commented out - create your own KV namespace and update ID)
@@ -73,8 +73,8 @@ database_id = "e16924c6-be97-4012-88ac-79ff31fd5304"
 
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "cutty-files-preview"
-preview_bucket_name = "cutty-files-dev"
+bucket_name = "cutty-files-staging"
+preview_bucket_name = "cutty-files-preview"
 
 # [[env.staging.kv_namespaces]]
 # binding = "AUTH_TOKENS"
