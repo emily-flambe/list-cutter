@@ -11,7 +11,7 @@ import { createAlertDashboardRoutes } from './routes/dashboard-alerts.js';
 import { createAlertJobRoutes } from './routes/alert-jobs.js';
 
 // Import route handlers
-import migrationRoutes from './routes/migration';
+import migrationRoutes from './routes/migration.js';
 // import authRoutes from '@routes/auth';
 // import csvRoutes from '@routes/csv';
 // import fileRoutes from '@routes/files';
@@ -404,7 +404,7 @@ export const scheduled: ExportedHandlerScheduledHandler<CloudflareEnv> = async (
         );
         break;
         
-      case '*/5 * * * *': // Every 5 minutes - Health check (same as evaluation for now)
+      case '*/10 * * * *': // Every 10 minutes - Health check 
         console.log('Running alert health check...');
         response = await alertJobRoutes.fetch(
           new Request('http://localhost/api/alerts/jobs/health-check', { method: 'POST' }),

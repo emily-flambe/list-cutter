@@ -3,14 +3,14 @@
  * Handles cron-triggered alert evaluation and maintenance tasks
  */
 
-import { Router } from 'itty-router';
+import { Hono } from 'hono';
 import { AlertSchedulerService } from '../services/monitoring/alert-scheduler';
 
 export function createAlertJobRoutes(
   db: D1Database,
   analytics: AnalyticsEngineDataset
-): Router<Request, [Env, ExecutionContext]> {
-  const router = Router({ base: '/api/alerts/jobs' });
+): Hono {
+  const router = new Hono();
   
   const alertScheduler = new AlertSchedulerService(db, analytics);
 

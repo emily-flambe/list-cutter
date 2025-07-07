@@ -3,7 +3,7 @@
  * Provides REST endpoints for alert system management
  */
 
-import { Router } from 'itty-router';
+import { Hono } from 'hono';
 import { AlertManagementService } from '../services/monitoring/alert-management-service';
 import { AlertEvaluationService } from '../services/monitoring/alert-evaluation-service';
 import { NotificationService } from '../services/monitoring/notification-service';
@@ -22,8 +22,8 @@ import {
 export function createAlertRoutes(
   db: D1Database,
   analytics: AnalyticsEngineDataset
-): Router<Request, [Env, ExecutionContext]> {
-  const router = Router({ base: '/api/alerts' });
+): Hono {
+  const router = new Hono();
   
   const alertManagement = new AlertManagementService(db, analytics);
   const alertEvaluation = new AlertEvaluationService(db, analytics);

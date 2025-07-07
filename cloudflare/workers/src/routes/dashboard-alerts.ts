@@ -3,7 +3,7 @@
  * Provides enhanced dashboard endpoints with alert data
  */
 
-import { Router } from 'itty-router';
+import { Hono } from 'hono';
 import { AlertManagementService } from '../services/monitoring/alert-management-service';
 import { AlertSchedulerService } from '../services/monitoring/alert-scheduler';
 import { EnhancedMetricsService } from '../services/monitoring/enhanced-metrics-service';
@@ -11,8 +11,8 @@ import { EnhancedMetricsService } from '../services/monitoring/enhanced-metrics-
 export function createAlertDashboardRoutes(
   db: D1Database,
   analytics: AnalyticsEngineDataset
-): Router<Request, [Env, ExecutionContext]> {
-  const router = Router({ base: '/api/dashboard' });
+): Hono {
+  const router = new Hono();
   
   const alertManagement = new AlertManagementService(db, analytics);
   const alertScheduler = new AlertSchedulerService(db, analytics);

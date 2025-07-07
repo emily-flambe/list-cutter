@@ -17,9 +17,7 @@ port = 8788
 local_protocol = "http"
 ip = "127.0.0.1"
 
-# Build configuration disabled for now
-# [build]
-# command = "npm run build"
+# Build configuration - using wrangler's built-in TypeScript compilation
 
 # Environment variables (non-sensitive)
 [vars]
@@ -111,9 +109,9 @@ endpoint = "/api/alerts/jobs/retry-notifications"
 cron = "0 3 * * *"
 endpoint = "/api/alerts/jobs/cleanup"
 
-# Alert health check every 5 minutes
+# Alert health check every 10 minutes
 [[triggers.crons]]
-cron = "*/5 * * * *"
+cron = "*/10 * * * *"
 endpoint = "/api/alerts/jobs/health-check"
 
 # Staging environment

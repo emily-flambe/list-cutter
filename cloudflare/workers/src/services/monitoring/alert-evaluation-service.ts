@@ -15,20 +15,20 @@ import {
   AlertLevel,
   AlertInstanceState
 } from '../../types/alerts';
-import { QueryService } from './query-service';
+import { MetricsQueryService } from './query-service';
 import { CostCalculator } from './cost-calculator';
 
 export class AlertEvaluationService {
-  private queryService: QueryService;
+  private queryService: MetricsQueryService;
   private costCalculator: CostCalculator;
 
   constructor(
     private db: D1Database,
     private analytics: AnalyticsEngineDataset,
-    queryService?: QueryService,
+    queryService?: MetricsQueryService,
     costCalculator?: CostCalculator
   ) {
-    this.queryService = queryService || new QueryService(db, analytics);
+    this.queryService = queryService || new MetricsQueryService(db);
     this.costCalculator = costCalculator || new CostCalculator(db);
   }
 
