@@ -35,7 +35,7 @@ export interface FileAuthContext {
  * File Access Control Middleware
  * Validates permissions for all file operations
  */
-export function fileAuth(options: FileAuthOptions) {
+export function fileAuth(options: FileAuthOptions): (c: Context<{ Bindings: CloudflareEnv }>, next: Next) => Promise<void> {
   return async (c: Context<{ Bindings: CloudflareEnv }>, next: Next) => {
     const startTime = Date.now();
     
@@ -210,31 +210,31 @@ export const fileAuthMiddleware = {
   /**
    * Middleware for file read operations
    */
-  read: (options: Omit<FileAuthOptions, 'operation'> = {}) => 
+  read: (options: Omit<FileAuthOptions, 'operation'> = {}): (c: Context<{ Bindings: CloudflareEnv }>, next: Next) => Promise<void> => 
     fileAuth({ operation: FileOperation.READ, allowShareTokens: true, ...options }),
 
   /**
    * Middleware for file write operations
    */
-  write: (options: Omit<FileAuthOptions, 'operation'> = {}) => 
+  write: (options: Omit<FileAuthOptions, 'operation'> = {}): (c: Context<{ Bindings: CloudflareEnv }>, next: Next) => Promise<void> => 
     fileAuth({ operation: FileOperation.WRITE, allowShareTokens: false, ...options }),
 
   /**
    * Middleware for file delete operations
    */
-  delete: (options: Omit<FileAuthOptions, 'operation'> = {}) => 
+  delete: (options: Omit<FileAuthOptions, 'operation'> = {}): (c: Context<{ Bindings: CloudflareEnv }>, next: Next) => Promise<void> => 
     fileAuth({ operation: FileOperation.DELETE, requireOwnership: true, allowShareTokens: false, ...options }),
 
   /**
    * Middleware for file share operations
    */
-  share: (options: Omit<FileAuthOptions, 'operation'> = {}) => 
+  share: (options: Omit<FileAuthOptions, 'operation'> = {}): (c: Context<{ Bindings: CloudflareEnv }>, next: Next) => Promise<void> => 
     fileAuth({ operation: FileOperation.SHARE, allowShareTokens: false, ...options }),
 
   /**
    * Middleware for file admin operations
    */
-  admin: (options: Omit<FileAuthOptions, 'operation'> = {}) => 
+  admin: (options: Omit<FileAuthOptions, 'operation'> = {}): (c: Context<{ Bindings: CloudflareEnv }>, next: Next) => Promise<void> => 
     fileAuth({ operation: FileOperation.ADMIN, requireOwnership: true, allowShareTokens: false, ...options }),
 };
 
@@ -265,7 +265,7 @@ export function requireFilePermission(c: Context, operation: FileOperation): voi
 /**
  * Middleware to validate file exists and is accessible
  */
-export function validateFileAccess() {
+export function validateFileAccess(): (c: Context<{ Bindings: CloudflareEnv }>, next: Next) => Promise<void> {
   return async (c: Context<{ Bindings: CloudflareEnv }>, next: Next) => {
     const fileAuth = getFileAuthContext(c);
     
@@ -306,7 +306,7 @@ export function rateLimitFileOperations(options: {
   maxRequests: number;
   windowMs: number;
   operation?: FileOperation;
-}) {
+}): (c: Context<{ Bindings: CloudflareEnv }>, next: Next) => Promise<void> {
   return async (c: Context<{ Bindings: CloudflareEnv }>, next: Next) => {
     const fileAuth = getFileAuthContext(c);
     const userId = fileAuth?.userId;

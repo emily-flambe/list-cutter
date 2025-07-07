@@ -130,8 +130,8 @@ export class SecurityConfigManager {
    */
   async getConfig(): Promise<SecurityPolicy> {
     // Check cache first
-    if (this.isCacheValid()) {
-      return this.cachedConfig!;
+    if (this.isCacheValid() && this.cachedConfig) {
+      return this.cachedConfig;
     }
     
     try {
@@ -516,7 +516,7 @@ export class SecurityConfigFactory {
     
     return new SecurityConfigManager({
       kvNamespace: env.SECURITY_CONFIG,
-      environment: (env.ENVIRONMENT as any) || 'development',
+      environment: (env.ENVIRONMENT as SecurityPolicy['environment']) || 'development',
       enableDynamicUpdates: true,
       cacheExpirationMinutes: 5,
       fallbackToDefaults: true
@@ -560,8 +560,8 @@ export class SecurityConfigUtils {
     const sections = ['auth', 'fileUpload', 'rateLimit', 'headers', 'dataProtection', 'monitoring'];
     
     for (const section of sections) {
-      const obj1 = (config1 as any)[section];
-      const obj2 = (config2 as any)[section];
+      const obj1 = (config1 as Record<string, unknown>)[section] as Record<string, unknown>;
+      const obj2 = (config2 as Record<string, unknown>)[section] as Record<string, unknown>;
       
       for (const key in obj1) {
         if (JSON.stringify(obj1[key]) !== JSON.stringify(obj2[key])) {

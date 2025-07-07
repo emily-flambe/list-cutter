@@ -3,15 +3,15 @@
  * Provides real-time quota checking and enforcement for file operations
  */
 
-import { QuotaManager } from '../services/security/quota-manager.js';
+import { QuotaManager } from '../services/security/quota-manager';
 import {
   QuotaCheckOptions,
   QuotaOperationType,
   QuotaExceededError,
   QuotaNotFoundError,
   InvalidQuotaOperationError
-} from '../types/quota.js';
-import { CloudflareEnv } from '../types/env.js';
+} from '../types/quota';
+import { CloudflareEnv } from '../types/env';
 
 export interface QuotaEnforcementOptions {
   quotaManager: QuotaManager;
