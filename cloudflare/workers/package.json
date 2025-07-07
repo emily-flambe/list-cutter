@@ -1,5 +1,5 @@
 {
-  "name": "list-cutter-workers",
+  "name": "cutty-workers",
   "version": "0.1.0",
   "type": "module",
   "main": "src/index.ts",

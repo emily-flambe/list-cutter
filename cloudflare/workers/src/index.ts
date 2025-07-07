@@ -7,6 +7,7 @@ import { timing } from 'hono/timing';
 import type { CloudflareEnv } from './types/env';
 
 // Import route handlers
+import migrationRoutes from './routes/migration';
 // import authRoutes from '@routes/auth';
 // import csvRoutes from '@routes/csv';
 // import fileRoutes from '@routes/files';
@@ -107,10 +108,11 @@ app.get('/test-phase5', async (c) => {
   }
 });
 
-// API version prefix - routes will be added in Phase 2
-// const v1 = app.basePath('/api/v1');
+// API version prefix
+const v1 = app.basePath('/api');
 
-// Mount routes (to be added in Phase 2)
+// Mount routes
+v1.route('/migration', migrationRoutes);
 // v1.route('/auth', authRoutes);
 // v1.route('/csv', csvRoutes);
 // v1.route('/files', fileRoutes);

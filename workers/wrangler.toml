@@ -9,8 +9,18 @@ name = "cutty-workers-dev"
 [env.staging]
 name = "cutty-workers-staging"
 
+[[env.staging.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "cutty-files-staging"
+preview_bucket_name = "cutty-files-preview"
+
 [env.production]
 name = "cutty-workers-prod"
+
+[[env.production.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "cutty-files-prod"
+preview_bucket_name = "cutty-files-preview"
 
 # KV for session/token management
 [[kv_namespaces]]
@@ -23,31 +33,25 @@ binding = "R2_BUCKET"
 bucket_name = "cutty-files-dev"
 preview_bucket_name = "cutty-files-preview"
 
-[env.staging.r2_buckets]
-binding = "R2_BUCKET"
-bucket_name = "cutty-files-staging"
-
-[env.production.r2_buckets]
-binding = "R2_BUCKET"
-bucket_name = "cutty-files-prod"
-
 [[r2_buckets]]
 binding = "R2_BACKUP_BUCKET"
 bucket_name = "cutty-backups-dev"
 preview_bucket_name = "cutty-backups-preview"
 
-[env.staging.r2_buckets]
+[[env.staging.r2_buckets]]
 binding = "R2_BACKUP_BUCKET"
 bucket_name = "cutty-backups-staging"
+preview_bucket_name = "cutty-backups-preview"
 
-[env.production.r2_buckets]
+[[env.production.r2_buckets]]
 binding = "R2_BACKUP_BUCKET"
 bucket_name = "cutty-backups-prod"
+preview_bucket_name = "cutty-backups-preview"
 
-[[d1_databases]]
 binding = "DB"
-database_name = "cutty-db"
-database_id = "YOUR_D1_DATABASE_ID"
+database_name = "cutty-dev"
+database_id = "2f87e313-31ff-4298-ab18-552fa5a1ce0e"
+migrations_dir = "./migrations"
 
 # Rate limiting (beta feature)
 [[unsafe.bindings]]
