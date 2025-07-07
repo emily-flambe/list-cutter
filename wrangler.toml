@@ -1,4 +1,4 @@
-# Wrangler configuration for List Cutter Phase 4 - D1 Database Migration
+# Wrangler configuration for Cutty Phase 4 - D1 Database Migration
 
 name = "cutty"
 main = "src/index.js"

@@ -78,21 +78,21 @@ npm run dev
 
 1. Create D1 database:
 ```bash
-wrangler d1 create list-cutter-db
+wrangler d1 create cutty-db
 ```
 
 2. Update `wrangler.toml` with your database ID
 
 3. Apply schema:
 ```bash
-wrangler d1 execute list-cutter-db --file=schema.sql
+wrangler d1 execute cutty-db --file=schema.sql
 ```
 
 ### R2 Setup
 
 1. Create R2 bucket:
 ```bash
-wrangler r2 bucket create list-cutter-files
+wrangler r2 bucket create cutty-files
 ```
 
 2. Update `wrangler.toml` with your bucket name
