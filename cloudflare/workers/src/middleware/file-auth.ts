@@ -52,7 +52,9 @@ export function fileAuth(options: FileAuthOptions): (c: Context<{ Bindings: Clou
 
       // Initialize access control service
       const accessControl = new AccessControlService(c.env.DB);
-      const fileSharingService = new FileSharingService(c.env.DB, c.env.AUTH_TOKENS);
+      const fileSharingService = c.env.AUTH_TOKENS 
+        ? new FileSharingService(c.env.DB, c.env.AUTH_TOKENS)
+        : null;
 
       // Get user ID from JWT token (if present)
       const userId = c.get('userId') as string | undefined;
@@ -72,7 +74,7 @@ export function fileAuth(options: FileAuthOptions): (c: Context<{ Bindings: Clou
       let userRole: string | undefined;
 
       // Check share token access first (if provided and allowed)
-      if (shareToken && options.allowShareTokens) {
+      if (shareToken && options.allowShareTokens && fileSharingService) {
         try {
           const tokenValidation = await fileSharingService.validateShareToken(shareToken, {
             fileId,

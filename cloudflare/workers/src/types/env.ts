@@ -21,8 +21,8 @@ export interface CloudflareEnv {
   // Bindings
   DB: D1Database;
   FILE_STORAGE: R2Bucket;
-  AUTH_TOKENS: KVNamespace;
-  ANALYTICS: AnalyticsEngineDataset;
+  AUTH_TOKENS?: KVNamespace; // Optional - commented out in wrangler.toml
+  ANALYTICS?: AnalyticsEngineDataset; // Optional - commented out in wrangler.toml
   
   // Security-specific bindings
   CUTTY_SECURITY_CONFIG: KVNamespace;

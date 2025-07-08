@@ -65,10 +65,11 @@ binding = "CUTTY_QUOTA_TRACKING"
 id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 
-[[kv_namespaces]]
-binding = "AUTH_TOKENS"
-id = "your-auth-tokens-kv-namespace-id-here"
-preview_id = "your-auth-tokens-kv-namespace-id-here"
+# AUTH_TOKENS KV namespace (commented out - create namespace first)
+# [[kv_namespaces]]
+# binding = "AUTH_TOKENS"
+# id = "your-auth-tokens-kv-namespace-id-here"
+# preview_id = "your-auth-tokens-kv-namespace-id-here"
 
 # Analytics Engine binding (temporarily commented out for debugging)
 # [[analytics_engine_datasets]]
