@@ -41,21 +41,11 @@ binding = "FILE_STORAGE"
 bucket_name = "cutty-files-dev"
 preview_bucket_name = "cutty-files-dev"
 
-# KV Namespace bindings (commented out - create your own KV namespace and update ID)
-# [[kv_namespaces]]
-# binding = "AUTH_TOKENS"
-# id = "your-kv-namespace-id-here"
-# preview_id = "your-preview-kv-namespace-id-here"
+# KV Namespace bindings will be configured when needed
+# Future KV configuration will go here
 
-# Queue bindings (commented out - create your own queue and update name)
-# [[queues.producers]]
-# binding = "CSV_QUEUE"
-# queue = "csv-processing"
-
-# [[queues.consumers]]
-# queue = "csv-processing"
-# max_batch_size = 10
-# max_batch_timeout = 5
+# Queue bindings will be configured when needed
+# Future queue configuration will go here
 
 # Analytics Engine binding (temporarily commented out for debugging)
 # [[analytics_engine_datasets]]
@@ -136,9 +126,7 @@ preview_bucket_name = "cutty-files-preview"
 # binding = "ANALYTICS"
 # dataset = "cutty-metrics-staging"
 
-# [[env.staging.kv_namespaces]]
-# binding = "AUTH_TOKENS"
-# id = "your-staging-kv-namespace-id-here"
+# KV configuration for staging will be added when needed
 
 # Production environment
 [env.production]
@@ -162,14 +150,10 @@ preview_bucket_name = "cutty-files-dev"
 # binding = "ANALYTICS"
 # dataset = "cutty-metrics-production"
 
-# [[env.production.kv_namespaces]]
-# binding = "AUTH_TOKENS"
-# id = "your-production-kv-namespace-id-here"
+# KV configuration for production will be added when needed
 
-# Service bindings for microservices architecture (future)
-# [[services]]
-# binding = "AUTH_SERVICE"
-# service = "cutty-auth"
+# Service bindings will be configured when needed
+# Future service configuration will go here
 
 # Rate limiting rules (commented out - need to configure proper rate limiting)
 # Future rate limiting configuration will go here when needed
