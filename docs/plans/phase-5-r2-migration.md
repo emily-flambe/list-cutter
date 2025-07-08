@@ -41,7 +41,11 @@ CREATE TABLE list_cutter_savedfile (
 
 **Bucket Organization**:
 ```
+<<<<<<< HEAD
+cutty-files/
+=======
 cutty-files-{environment}/
+>>>>>>> origin/main
 ├── uploads/
 │   ├── user-{user_id}/
 │   │   ├── {file_id}.csv
@@ -229,10 +233,17 @@ export class R2Service {
 #### 1.1 Bucket Creation
 ```bash
 # Create R2 bucket
+<<<<<<< HEAD
+npx wrangler r2 bucket create cutty-files
+
+# Configure CORS for web uploads
+npx wrangler r2 bucket cors put cutty-files --file cors.json
+=======
 npx wrangler r2 bucket create cutty-files-dev
 
 # Configure CORS for web uploads
 npx wrangler r2 bucket cors put cutty-files-dev --file cors.json
+>>>>>>> origin/main
 ```
 
 #### 1.2 CORS Configuration (`cors.json`)
@@ -269,7 +280,11 @@ binding = "ASSETS"
 # R2 Storage
 [[r2_buckets]]
 binding = "FILE_STORAGE"
+<<<<<<< HEAD
+bucket_name = "cutty-files"
+=======
 bucket_name = "cutty-files-dev"
+>>>>>>> origin/main
 preview_bucket_name = "cutty-files-preview"
 
 # D1 Database

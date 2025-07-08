@@ -31,7 +31,7 @@ echo "🌐 DNS Configuration for Unified Workers Deployment"
 echo "==================================================="
 
 # Configuration
-DOMAIN="list-cutter.com"
+DOMAIN="cutty.com"
 ZONE_ID="${CLOUDFLARE_ZONE_ID}"
 API_TOKEN="${CLOUDFLARE_API_TOKEN}"
 
@@ -107,27 +107,27 @@ create_or_update_dns_record() {
 # 1. Main domain - points to unified Worker
 print_status "🎯 Configuring main domain records..."
 
-# Root domain (list-cutter.com)
-create_or_update_dns_record "CNAME" "@" "list-cutter-production.workers.dev" true 1
+# Root domain (cutty.com)
+create_or_update_dns_record "CNAME" "@" "cutty-production.workers.dev" true 1
 
-# WWW subdomain (www.list-cutter.com)
-create_or_update_dns_record "CNAME" "www" "list-cutter-production.workers.dev" true 1
+# WWW subdomain (www.cutty.com)
+create_or_update_dns_record "CNAME" "www" "cutty-production.workers.dev" true 1
 
 # 2. Staging subdomain (for testing)
 print_status "🧪 Configuring staging subdomain..."
-create_or_update_dns_record "CNAME" "staging" "list-cutter-staging.workers.dev" true 300
+create_or_update_dns_record "CNAME" "staging" "cutty-staging.workers.dev" true 300
 
 # 3. Additional subdomains (optional)
 print_status "🔧 Configuring additional subdomains..."
 
 # API subdomain (for explicit API access, though unified worker handles this)
-create_or_update_dns_record "CNAME" "api" "list-cutter-production.workers.dev" true 300
+create_or_update_dns_record "CNAME" "api" "cutty-production.workers.dev" true 300
 
 # Admin subdomain (for admin panel access)
-create_or_update_dns_record "CNAME" "admin" "list-cutter-production.workers.dev" true 300
+create_or_update_dns_record "CNAME" "admin" "cutty-production.workers.dev" true 300
 
 # Status page subdomain (for status monitoring)
-create_or_update_dns_record "CNAME" "status" "list-cutter-production.workers.dev" true 300
+create_or_update_dns_record "CNAME" "status" "cutty-production.workers.dev" true 300
 
 # 4. TXT records for verification and security
 print_status "🔒 Configuring security and verification records..."
@@ -254,12 +254,12 @@ Domain: $DOMAIN
 Zone ID: $ZONE_ID
 
 Records Configured:
-- @ (root) → list-cutter-production.workers.dev (proxied)
-- www → list-cutter-production.workers.dev (proxied)
-- staging → list-cutter-staging.workers.dev (proxied)
-- api → list-cutter-production.workers.dev (proxied)
-- admin → list-cutter-production.workers.dev (proxied)
-- status → list-cutter-production.workers.dev (proxied)
+- @ (root) → cutty-production.workers.dev (proxied)
+- www → cutty-production.workers.dev (proxied)
+- staging → cutty-staging.workers.dev (proxied)
+- api → cutty-production.workers.dev (proxied)
+- admin → cutty-production.workers.dev (proxied)
+- status → cutty-production.workers.dev (proxied)
 
 Security Records:
 - SPF: v=spf1 include:_spf.cloudflare.com ~all

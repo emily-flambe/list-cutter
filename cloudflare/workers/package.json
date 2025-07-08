@@ -14,6 +14,7 @@
     "test": "vitest",
     "test:ci": "vitest run",
     "lint": "eslint src --ext .ts",
+    "lint:deploy": "eslint src --ext .ts --config eslint.config.deploy.js",
     "format": "prettier --write \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
     "build": "esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --platform=node --target=es2022",
@@ -30,11 +31,11 @@
     "prettier": "^3.4.2",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8",
-    "wrangler": "^3.98.0"
+    "wrangler": "^4.23.0"
   },
   "dependencies": {
-    "hono": "^4.6.16",
     "drizzle-orm": "^0.38.4",
+    "hono": "^4.6.16",
     "jose": "^5.10.0",
     "zod": "^3.24.1"
   }
