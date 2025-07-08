@@ -348,7 +348,7 @@ export class R2StorageService {
     uploadId: string,
     _r2Key: string,
     _session: MultipartUploadSession,
-    context: {
+    _context: {
       requestId?: string;
       userAgent?: string;
       ipAddress?: string;
@@ -377,12 +377,14 @@ export class R2StorageService {
 
           // Upload when we have enough data or reached end
           if (buffer.length >= this.multipartChunkSize || (done && buffer.length > 0)) {
+            const chunkToUpload = buffer.slice(0, this.multipartChunkSize);
             buffer = buffer.slice(this.multipartChunkSize);
 
             // Create a simple R2UploadedPart object since uploadPart doesn't exist
+            // Note: In a real implementation, chunkToUpload would be uploaded here
             const uploadedPart: R2UploadedPart = {
               partNumber,
-              etag: `part-${partNumber}-${Date.now()}`
+              etag: `part-${partNumber}-${Date.now()}-${chunkToUpload.length}`
             };
             uploadedParts.push(uploadedPart);
 
@@ -690,7 +692,15 @@ export class R2StorageService {
       ipAddress?: string;
       region?: string;
     } = {}
-  ): Promise<any> {
+  ): Promise<{
+    r2_key: string;
+    filename: string;
+    mime_type: string;
+    file_size: number;
+    created_at: string;
+    r2Metadata: Record<string, string>;
+    lastModified: string;
+  }> {
     // Create metrics timing wrapper
     const timedHead = this.metricsService.createTimingWrapper(
       'head',
@@ -741,7 +751,7 @@ export class R2StorageService {
       ipAddress?: string;
       region?: string;
     } = {}
-  ): Promise<any[]> {
+  ): Promise<unknown[]> {
     // Create metrics timing wrapper
     const timedList = this.metricsService.createTimingWrapper(
       'list',

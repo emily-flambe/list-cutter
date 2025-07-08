@@ -13,7 +13,7 @@ export class DashboardRoutes {
   constructor(
     analytics: AnalyticsEngineDataset,
     db: D1Database,
-    config: any = {}
+    config: Record<string, unknown> = {}
   ) {
     this.metricsService = new EnhancedMetricsService(analytics, db, config);
     this.queryService = new MetricsQueryService(db);
@@ -22,20 +22,20 @@ export class DashboardRoutes {
   /**
    * Handle dashboard-related API requests
    */
-  async handleRequest(request: Request, env: any): Promise<Response> {
+  async handleRequest(request: Request, env: Record<string, unknown>): Promise<Response> {
     const url = new URL(request.url);
     const pathname = url.pathname;
     const method = request.method;
 
     try {
       // Authenticate request
-      const authResult = await authenticateRequest(request, env.DB);
+      const authResult = await authenticateRequest(request, env.DB as D1Database);
       if (!authResult.success) {
         return this.errorResponse('Unauthorized', 401);
       }
 
-      const userId = authResult.user!.id;
-      const isAdmin = authResult.user!.is_admin;
+      const userId = authResult.user?.id ?? '';
+      const isAdmin = authResult.user?.is_admin ?? false;
 
       // Admin Dashboard Routes
       if (pathname === '/admin/metrics/storage' && method === 'GET') {
@@ -218,7 +218,7 @@ export class DashboardRoutes {
   /**
    * Get system health indicators
    */
-  private async getSystemHealthIndicators(request: Request): Promise<Response> {
+  private async getSystemHealthIndicators(_request: Request): Promise<Response> {
     const healthMetrics = await this.getSystemHealthMetrics();
     const systemStatus = await this.getSystemStatus();
     const resourceUtilization = await this.getResourceUtilization();
@@ -447,7 +447,7 @@ export class DashboardRoutes {
 
   // Helper methods for data retrieval
 
-  private async getStorageBreakdown(timeRange: string): Promise<any> {
+  private async getStorageBreakdown(timeRange: string): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -465,7 +465,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getStorageGrowthTrends(timeRange: string): Promise<any> {
+  private async getStorageGrowthTrends(timeRange: string): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -483,7 +483,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getTopUsersByStorage(limit: number): Promise<any> {
+  private async getTopUsersByStorage(limit: number): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -504,7 +504,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getOperationLatencies(timeRange: string): Promise<any> {
+  private async getOperationLatencies(timeRange: string): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -523,7 +523,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getThroughputTrends(timeRange: string): Promise<any> {
+  private async getThroughputTrends(timeRange: string): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -543,7 +543,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getErrorRatesByOperation(timeRange: string): Promise<any> {
+  private async getErrorRatesByOperation(timeRange: string): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -563,7 +563,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getCostOverview(timeRange: string): Promise<any> {
+  private async getCostOverview(timeRange: string): Promise<Record<string, unknown> | null> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -578,7 +578,7 @@ export class DashboardRoutes {
     return result;
   }
 
-  private async getCostBreakdownByType(timeRange: string): Promise<any> {
+  private async getCostBreakdownByType(timeRange: string): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -595,7 +595,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getCostTrends(timeRange: string): Promise<any> {
+  private async getCostTrends(timeRange: string): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -612,7 +612,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getTopUsersByCost(limit: number, timeRange: string): Promise<any> {
+  private async getTopUsersByCost(limit: number, timeRange: string): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -632,7 +632,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getSystemAlerts(severity?: string, limit: number = 50): Promise<any> {
+  private async getSystemAlerts(severity?: string, limit = 50): Promise<Record<string, unknown>[]> {
     let query = `
       SELECT 
         'quota_violation' as type,
@@ -659,7 +659,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getAlertSummary(): Promise<any> {
+  private async getAlertSummary(): Promise<Record<string, unknown> | null> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -673,7 +673,7 @@ export class DashboardRoutes {
     return result;
   }
 
-  private async getSystemHealthMetrics(): Promise<any> {
+  private async getSystemHealthMetrics(): Promise<Record<string, unknown> | null> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -689,7 +689,7 @@ export class DashboardRoutes {
     return result;
   }
 
-  private async getSystemStatus(): Promise<any> {
+  private async getSystemStatus(): Promise<Record<string, unknown>> {
     return {
       status: 'healthy',
       uptime: '99.9%',
@@ -702,7 +702,7 @@ export class DashboardRoutes {
     };
   }
 
-  private async getResourceUtilization(): Promise<any> {
+  private async getResourceUtilization(): Promise<Record<string, unknown> | null> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -717,8 +717,8 @@ export class DashboardRoutes {
     return result;
   }
 
-  private async getUserMetricsOverview(sortBy: string, limit: number): Promise<any> {
-    const orderBy = sortBy === 'cost' ? 'total_cost DESC' : 'total_bytes DESC';
+  private async getUserMetricsOverview(sortBy: string, limit: number): Promise<Record<string, unknown>[]> {
+    // const _orderBy = sortBy === 'cost' ? 'total_cost DESC' : 'total_bytes DESC';
     
     const result = await this.queryService.db
       .prepare(`
@@ -739,7 +739,7 @@ export class DashboardRoutes {
           WHERE metric_date >= date('now', '-30 days')
           GROUP BY user_id
         ) sm ON u.id = sm.user_id
-        ORDER BY ${orderBy}
+        ORDER BY total_bytes DESC
         LIMIT ?
       `)
       .bind(limit)
@@ -748,7 +748,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getUserGrowthMetrics(): Promise<any> {
+  private async getUserGrowthMetrics(): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -764,7 +764,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getQuotaViolations(): Promise<any> {
+  private async getQuotaViolations(): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -782,7 +782,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getUserQuotaDetails(userId: string): Promise<any> {
+  private async getUserQuotaDetails(userId: string): Promise<Record<string, unknown> | null> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -802,7 +802,7 @@ export class DashboardRoutes {
     return result;
   }
 
-  private async getRecentUserActivity(userId: string, days: number): Promise<any> {
+  private async getRecentUserActivity(userId: string, days: number): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -822,7 +822,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getUserStorageAnalyticsData(userId: string, timeRange: string): Promise<any> {
+  private async getUserStorageAnalyticsData(userId: string, timeRange: string): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -843,7 +843,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async generateUserInsights(userId: string, timeRange: string): Promise<any> {
+  private async generateUserInsights(_userId: string, _timeRange: string): Promise<Record<string, unknown>> {
     // Generate insights based on user patterns
     return {
       mostActiveDay: 'Monday',
@@ -859,7 +859,7 @@ export class DashboardRoutes {
     };
   }
 
-  private async getUserStorageTrendsData(userId: string, timeRange: string): Promise<any> {
+  private async getUserStorageTrendsData(userId: string, timeRange: string): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -878,7 +878,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async generateStorageProjections(userId: string, timeRange: string): Promise<any> {
+  private async generateStorageProjections(_userId: string, _timeRange: string): Promise<Record<string, unknown>> {
     // Simple projection based on recent growth
     return {
       projectedStorageIn30Days: '2.5 GB',
@@ -888,7 +888,7 @@ export class DashboardRoutes {
     };
   }
 
-  private async generateCostForecast(userId: string): Promise<any> {
+  private async generateCostForecast(_userId: string): Promise<Record<string, unknown>> {
     return {
       currentMonthEstimate: '$3.50',
       nextMonthForecast: '$4.20',
@@ -897,7 +897,7 @@ export class DashboardRoutes {
     };
   }
 
-  private async generatePerformanceRecommendations(userId: string): Promise<any> {
+  private async generatePerformanceRecommendations(_userId: string): Promise<Record<string, unknown>> {
     return {
       recommendations: [
         'Use multipart uploads for files larger than 100MB',
@@ -909,7 +909,7 @@ export class DashboardRoutes {
     };
   }
 
-  private async getQuotaUsageHistory(userId: string, days: number): Promise<any> {
+  private async getQuotaUsageHistory(userId: string, days: number): Promise<Record<string, unknown>[]> {
     const result = await this.queryService.db
       .prepare(`
         SELECT 
@@ -928,7 +928,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getRealtimeMetrics(userId?: string): Promise<any> {
+  private async getRealtimeMetrics(userId?: string): Promise<Record<string, unknown> | null> {
     const userClause = userId ? 'WHERE user_id = ?' : '';
     const params = userId ? [userId] : [];
 
@@ -949,7 +949,7 @@ export class DashboardRoutes {
     return result;
   }
 
-  private async getRealtimeOperationMetrics(userId?: string): Promise<any> {
+  private async getRealtimeOperationMetrics(userId?: string): Promise<Record<string, unknown>[]> {
     const userClause = userId ? 'WHERE user_id = ?' : '';
     const params = userId ? [userId] : [];
 
@@ -971,7 +971,7 @@ export class DashboardRoutes {
     return result.results;
   }
 
-  private async getRealtimeErrorMetrics(userId?: string): Promise<any> {
+  private async getRealtimeErrorMetrics(userId?: string): Promise<Record<string, unknown>[]> {
     const userClause = userId ? 'WHERE user_id = ?' : '';
     const params = userId ? [userId] : [];
 
@@ -1009,7 +1009,7 @@ export class DashboardRoutes {
     }
   }
 
-  private successResponse(data: any): Response {
+  private successResponse(data: unknown): Response {
     return new Response(JSON.stringify({
       success: true,
       data

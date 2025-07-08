@@ -12,6 +12,19 @@ import {
   DashboardContext
 } from '../middleware/dashboard.js';
 
+// Types
+interface DashboardConfig {
+  maxCacheSize?: number;
+  defaultTTL?: number;
+  rateLimitConfig?: Record<string, unknown>;
+}
+
+interface DashboardEnv {
+  DB: D1Database;
+  ANALYTICS?: AnalyticsEngineDataset;
+  [key: string]: unknown;
+}
+
 /**
  * Integrated dashboard API that combines metrics and specialized dashboard endpoints
  * with comprehensive middleware for authentication, caching, and rate limiting
@@ -23,7 +36,7 @@ export class IntegratedDashboardAPI {
   constructor(
     analytics: AnalyticsEngineDataset,
     db: D1Database,
-    config: any = {}
+    config: DashboardConfig = {}
   ) {
     this.dashboardRoutes = new DashboardRoutes(analytics, db, config);
     this.metricsRoutes = new MetricsRoutes(analytics, db, config);
@@ -32,7 +45,7 @@ export class IntegratedDashboardAPI {
   /**
    * Main request handler with comprehensive middleware pipeline
    */
-  async handleRequest(request: Request, env: any): Promise<Response> {
+  async handleRequest(request: Request, env: DashboardEnv): Promise<Response> {
     const url = new URL(request.url);
     const pathname = url.pathname;
     const monitor = performanceMonitor(request);
@@ -51,10 +64,13 @@ export class IntegratedDashboardAPI {
       // 2. Authentication
       const authResult = await dashboardAuth(request, env.DB);
       if (!authResult.success) {
-        return formatDashboardError(authResult.error!, 401);
+        return formatDashboardError(authResult.error || 'Authentication failed', 401);
       }
 
-      const context = authResult.context!;
+      const context = authResult.context;
+      if (!context) {
+        return formatDashboardError('Authentication context missing', 401);
+      }
 
       // 3. Rate limiting
       if (!dashboardRateLimit.checkLimit(context.userId, pathname)) {
@@ -77,7 +93,7 @@ export class IntegratedDashboardAPI {
       }
 
       // 5. Cache check
-      let responseData: any = null;
+      let responseData: Record<string, unknown> | null = null;
       if (context.shouldCache) {
         responseData = dashboardCache.get(context.cacheKey);
         if (responseData) {
@@ -105,7 +121,7 @@ export class IntegratedDashboardAPI {
       return formatDashboardResponse(responseData, request, context, duration);
 
     } catch (error) {
-      const duration = monitor.finish();
+      monitor.finish();
       console.error('Dashboard API error:', error);
       
       return formatDashboardError(
@@ -122,8 +138,8 @@ export class IntegratedDashboardAPI {
   private async handleDashboardRoute(
     request: Request,
     context: DashboardContext,
-    env: any
-  ): Promise<any> {
+    env: DashboardEnv
+  ): Promise<unknown> {
     // Create a new request with updated headers for the dashboard routes handler
     const dashboardRequest = new Request(request.url, {
       method: request.method,
@@ -205,7 +221,7 @@ export class IntegratedDashboardAPI {
    * Format cached response with cache indicators
    */
   private formatCachedResponse(
-    data: any,
+    data: unknown,
     request: Request,
     context: DashboardContext,
     processingTime: number
@@ -264,7 +280,7 @@ export class IntegratedDashboardAPI {
   /**
    * Get cache status
    */
-  getCacheStatus(): any {
+  getCacheStatus(): unknown {
     return dashboardCache.getStats();
   }
 
@@ -334,7 +350,7 @@ export class IntegratedDashboardAPI {
 /**
  * Dashboard-specific route patterns and configurations
  */
-export const DashboardConfig = {
+export const DashboardRouteConfig = {
   // Admin endpoints
   adminEndpoints: [
     '/admin/metrics/storage',

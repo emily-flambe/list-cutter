@@ -11,9 +11,11 @@ import {
   AlertSlackPayload,
   AlertEmailPayload,
   AlertSMSPayload,
-  NotificationChannelType,
   DeliveryStatus
 } from '../../types/alerts.js';
+
+// Union type for all message payload types
+type AlertMessagePayload = AlertEmailPayload | AlertWebhookPayload | AlertSlackPayload | AlertSMSPayload;
 
 export class NotificationService {
   constructor(private db: D1Database) {}
@@ -80,7 +82,7 @@ export class NotificationService {
   private async prepareMessage(
     channel: NotificationChannel,
     context: AlertNotificationContext
-  ): Promise<any> {
+  ): Promise<AlertMessagePayload> {
     switch (channel.channelType) {
       case 'email':
         return this.prepareEmailMessage(channel, context);
@@ -105,10 +107,10 @@ export class NotificationService {
     const template = this.renderTemplate(channel.subjectTemplate || 'Alert: {{alert_name}}', context);
     const body = this.renderTemplate(channel.bodyTemplate || this.getDefaultEmailTemplate(), context);
     
-    const config = channel.configuration as any;
+    const config = channel.configuration as Record<string, unknown>;
     
     return {
-      to: config.to || [config.email],
+      to: (config.to as string[]) || [config.email as string],
       subject: template,
       body: body,
       isHtml: true
@@ -190,11 +192,11 @@ export class NotificationService {
     channel: NotificationChannel,
     context: AlertNotificationContext
   ): AlertSMSPayload {
-    const config = channel.configuration as any;
+    const config = channel.configuration as Record<string, unknown>;
     const message = `ALERT: ${context.alertRule.name} - ${context.severity.toUpperCase()}. Current: ${this.formatValue(context.currentValue, context.alertRule.thresholdUnit)}, Threshold: ${this.formatValue(context.thresholdValue, context.alertRule.thresholdUnit)}`;
     
     return {
-      to: config.phoneNumber,
+      to: config.phoneNumber as string,
       message: message.substring(0, 160) // SMS character limit
     };
   }
@@ -202,8 +204,8 @@ export class NotificationService {
   /**
    * Deliver message through appropriate channel
    */
-  private async deliverMessage(channel: NotificationChannel, message: any): Promise<void> {
-    const config = channel.configuration as any;
+  private async deliverMessage(channel: NotificationChannel, message: AlertMessagePayload): Promise<void> {
+    const config = channel.configuration as Record<string, unknown>;
     
     switch (channel.channelType) {
       case 'email':
@@ -226,17 +228,17 @@ export class NotificationService {
   /**
    * Send email notification
    */
-  private async sendEmail(config: any, message: AlertEmailPayload): Promise<void> {
+  private async sendEmail(config: Record<string, unknown>, message: AlertEmailPayload): Promise<void> {
     // This would integrate with an email service like SendGrid, Mailgun, etc.
     // For now, we'll use a simple fetch to a webhook endpoint
     const response = await fetch(config.webhook_url || 'https://api.example.com/send-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.api_key}`
+        'Authorization': `Bearer ${config.api_key as string}`
       },
       body: JSON.stringify({
-        from: config.from_email,
+        from: config.from_email as string,
         to: message.to,
         subject: message.subject,
         html: message.body
@@ -251,12 +253,12 @@ export class NotificationService {
   /**
    * Send webhook notification
    */
-  private async sendWebhook(config: any, message: AlertWebhookPayload): Promise<void> {
-    const response = await fetch(config.url, {
-      method: config.method || 'POST',
+  private async sendWebhook(config: Record<string, unknown>, message: AlertWebhookPayload): Promise<void> {
+    const response = await fetch(config.url as string, {
+      method: (config.method as string) || 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...config.headers
+        ...(config.headers as Record<string, string>)
       },
       body: JSON.stringify(message)
     });
@@ -269,8 +271,8 @@ export class NotificationService {
   /**
    * Send Slack notification
    */
-  private async sendSlack(config: any, message: AlertSlackPayload): Promise<void> {
-    const response = await fetch(config.webhook_url, {
+  private async sendSlack(config: Record<string, unknown>, message: AlertSlackPayload): Promise<void> {
+    const response = await fetch(config.webhook_url as string, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -286,16 +288,16 @@ export class NotificationService {
   /**
    * Send SMS notification
    */
-  private async sendSMS(config: any, message: AlertSMSPayload): Promise<void> {
+  private async sendSMS(config: Record<string, unknown>, message: AlertSMSPayload): Promise<void> {
     // This would integrate with an SMS service like Twilio, AWS SNS, etc.
-    const response = await fetch(config.api_url || 'https://api.twilio.com/2010-04-01/Accounts/YOUR_ACCOUNT_SID/Messages.json', {
+    const response = await fetch((config.api_url as string) || 'https://api.twilio.com/2010-04-01/Accounts/YOUR_ACCOUNT_SID/Messages.json', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${btoa(`${config.account_sid}:${config.auth_token}`)}`
+        'Authorization': `Basic ${btoa(`${config.account_sid as string}:${config.auth_token as string}`)}`
       },
       body: new URLSearchParams({
-        From: config.from_number,
+        From: config.from_number as string,
         To: message.to,
         Body: message.message
       })
@@ -548,7 +550,7 @@ export class NotificationService {
   /**
    * Retry a specific delivery
    */
-  private async retryDelivery(delivery: any): Promise<void> {
+  private async retryDelivery(delivery: DeliveryRow): Promise<void> {
     const channel = this.mapDatabaseRowToNotificationChannel(delivery);
     
     // Get alert context for retry
@@ -594,7 +596,7 @@ export class NotificationService {
   /**
    * Map database row to NotificationChannel
    */
-  private mapDatabaseRowToNotificationChannel(row: any): NotificationChannel {
+  private mapDatabaseRowToNotificationChannel(row: DatabaseRow): NotificationChannel {
     return {
       id: row.id,
       name: row.name,
@@ -616,7 +618,7 @@ export class NotificationService {
   /**
    * Map database row to AlertInstance
    */
-  private mapDatabaseRowToAlertInstance(row: any): any {
+  private mapDatabaseRowToAlertInstance(row: DatabaseRow): AlertInstanceData {
     return {
       id: row.id,
       alertRuleId: row.alert_rule_id,
@@ -643,7 +645,7 @@ export class NotificationService {
   /**
    * Map database row to AlertRule
    */
-  private mapDatabaseRowToAlertRule(row: any): any {
+  private mapDatabaseRowToAlertRule(row: DatabaseRow): AlertRuleData {
     return {
       id: row.id,
       name: row.name,
@@ -672,4 +674,26 @@ export class NotificationService {
       lastTriggeredAt: row.last_triggered_at
     };
   }
+}
+
+// Type definitions (duplicate removed to fix redeclare error)
+
+interface DatabaseRow {
+  [key: string]: unknown;
+}
+
+// Removed unused interface
+
+interface DeliveryRow {
+  id: string;
+  alert_instance_id: string;
+  [key: string]: unknown;
+}
+
+interface AlertInstanceData {
+  [key: string]: unknown;
+}
+
+interface AlertRuleData {
+  [key: string]: unknown;
 }

@@ -6,6 +6,25 @@
 import { EnhancedR2ServiceFactory } from '../services/storage/r2-service-factory.js';
 import { MetricsConfiguration } from '../types/metrics.js';
 import { CloudflareEnv } from '../types/env.js';
+import { Context } from 'hono';
+
+// Define proper types
+interface HonoContext extends Context {
+  get(key: string): unknown;
+  set(key: string, value: unknown): void;
+  req: {
+    header(key: string): string | undefined;
+    param(key: string): string;
+    formData(): Promise<FormData>;
+  };
+  json(object: unknown, status?: number): Response;
+}
+
+interface HonoApp {
+  use(path: string, middleware: (c: HonoContext, next: () => Promise<void>) => Promise<void>): void;
+  post(path: string, handler: (c: HonoContext) => Promise<Response>): void;
+  get(path: string, handler: (c: HonoContext) => Promise<Response>): void;
+}
 
 /**
  * Example configuration for metrics collection
@@ -54,7 +73,7 @@ export async function uploadFileWithMetrics(
   requestId?: string,
   userAgent?: string,
   ipAddress?: string
-) {
+): Promise<unknown> {
   // Get enhanced R2 service instance
   const r2Service = EnhancedR2ServiceFactory.getInstance(env, metricsConfig);
   
@@ -81,7 +100,7 @@ export async function uploadFileWithMetrics(
       }
     );
 
-    console.log('Upload successful:', uploadResult);
+    console.warn('Upload successful:', uploadResult);
     return uploadResult;
     
   } catch (error) {
@@ -101,7 +120,7 @@ export async function downloadFileWithMetrics(
   requestId?: string,
   userAgent?: string,
   ipAddress?: string
-) {
+): Promise<unknown> {
   const r2Service = EnhancedR2ServiceFactory.getInstance(env, metricsConfig);
   
   try {
@@ -118,7 +137,7 @@ export async function downloadFileWithMetrics(
     );
 
     if (downloadResult) {
-      console.log('Download successful, size:', downloadResult.size);
+      console.warn('Download successful, size:', downloadResult.size);
       return downloadResult;
     } else {
       throw new Error('File not found');
@@ -140,7 +159,7 @@ export async function deleteFileWithMetrics(
   requestId?: string,
   userAgent?: string,
   ipAddress?: string
-) {
+): Promise<unknown> {
   const r2Service = EnhancedR2ServiceFactory.getInstance(env, metricsConfig);
   
   try {
@@ -155,7 +174,7 @@ export async function deleteFileWithMetrics(
       }
     );
 
-    console.log('Delete successful:', deleteResult);
+    console.warn('Delete successful:', deleteResult);
     return deleteResult;
     
   } catch (error) {
@@ -170,13 +189,13 @@ export async function deleteFileWithMetrics(
 export async function getUserStorageAnalytics(
   env: CloudflareEnv,
   userId: string
-) {
+): Promise<{ currentUsage: unknown; analytics: unknown }> {
   const r2Service = EnhancedR2ServiceFactory.getInstance(env, metricsConfig);
   
   try {
     // Get current usage metrics
     const currentUsage = await r2Service.getUserStorageUsage(userId);
-    console.log('Current usage:', currentUsage);
+    console.warn('Current usage:', currentUsage);
     
     // Get historical analytics for the last 30 days
     const analytics = await r2Service.getUserStorageAnalytics(userId, {
@@ -184,7 +203,7 @@ export async function getUserStorageAnalytics(
       endDate: new Date().toISOString().split('T')[0],
       granularity: 'day'
     });
-    console.log('Historical analytics:', analytics);
+    console.warn('Historical analytics:', analytics);
     
     return {
       currentUsage,
@@ -200,12 +219,12 @@ export async function getUserStorageAnalytics(
 /**
  * Example: Get system-wide storage metrics
  */
-export async function getSystemMetrics(env: CloudflareEnv) {
+export async function getSystemMetrics(env: CloudflareEnv): Promise<unknown> {
   const r2Service = EnhancedR2ServiceFactory.getInstance(env, metricsConfig);
   
   try {
     const systemMetrics = await r2Service.getSystemStorageMetrics();
-    console.log('System metrics:', systemMetrics);
+    console.warn('System metrics:', systemMetrics);
     return systemMetrics;
     
   } catch (error) {
@@ -217,8 +236,8 @@ export async function getSystemMetrics(env: CloudflareEnv) {
 /**
  * Example: Hono middleware for automatic metrics collection
  */
-export function createMetricsMiddleware(env: CloudflareEnv) {
-  return async (c: any, next: () => Promise<void>) => {
+export function createMetricsMiddleware(_env: CloudflareEnv): (c: HonoContext, next: () => Promise<void>) => Promise<void> {
+  return async (c: HonoContext, next: () => Promise<void>) => {
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
     const userAgent = c.req.header('User-Agent');
@@ -235,7 +254,7 @@ export function createMetricsMiddleware(env: CloudflareEnv) {
       
       // Record successful request metric
       const duration = Date.now() - startTime;
-      console.log(`Request ${requestId} completed in ${duration}ms`);
+      console.warn(`Request ${requestId} completed in ${duration}ms`);
       
     } catch (error) {
       // Record failed request metric
@@ -249,7 +268,7 @@ export function createMetricsMiddleware(env: CloudflareEnv) {
 /**
  * Example: Periodic metrics flush (call this in a scheduled worker)
  */
-export async function periodicMetricsFlush(env: CloudflareEnv) {
+export async function periodicMetricsFlush(env: CloudflareEnv): Promise<void> {
   const r2Service = EnhancedR2ServiceFactory.getInstance(env, metricsConfig);
   
   try {
@@ -258,11 +277,11 @@ export async function periodicMetricsFlush(env: CloudflareEnv) {
     
     // Get cache statistics
     const cacheStats = r2Service.getCacheStats();
-    console.log('Cache statistics:', cacheStats);
+    console.warn('Cache statistics:', cacheStats);
     
     // Optionally clear old cache entries if memory usage is high
     if (cacheStats.totalMemoryUsage > 10 * 1024 * 1024) { // 10MB
-      console.log('Cache memory usage high, clearing old entries');
+      console.warn('Cache memory usage high, clearing old entries');
       // Could implement selective cache clearing here
     }
     
@@ -274,11 +293,11 @@ export async function periodicMetricsFlush(env: CloudflareEnv) {
 /**
  * Example: Application shutdown cleanup
  */
-export async function gracefulShutdown(env: CloudflareEnv) {
+export async function gracefulShutdown(env: CloudflareEnv): Promise<void> {
   const r2Service = EnhancedR2ServiceFactory.getInstance(env, metricsConfig);
   
   try {
-    console.log('Starting graceful shutdown...');
+    console.warn('Starting graceful shutdown...');
     
     // Flush all pending metrics
     await r2Service.flushMetrics();
@@ -286,7 +305,7 @@ export async function gracefulShutdown(env: CloudflareEnv) {
     // Cleanup resources
     await r2Service.cleanup();
     
-    console.log('Graceful shutdown completed');
+    console.warn('Graceful shutdown completed');
     
   } catch (error) {
     console.error('Error during graceful shutdown:', error);
@@ -296,12 +315,12 @@ export async function gracefulShutdown(env: CloudflareEnv) {
 /**
  * Example usage in a Hono application
  */
-export function setupR2Routes(app: any, env: CloudflareEnv) {
+export function setupR2Routes(app: HonoApp, env: CloudflareEnv): void {
   // Add metrics middleware
   app.use('*', createMetricsMiddleware(env));
   
   // Upload endpoint
-  app.post('/api/v1/files/upload', async (c: any) => {
+  app.post('/api/v1/files/upload', async (c: HonoContext) => {
     const userId = c.get('userId'); // Assuming auth middleware sets this
     const requestId = c.get('requestId');
     const userAgent = c.get('userAgent');
@@ -330,12 +349,12 @@ export function setupR2Routes(app: any, env: CloudflareEnv) {
       return c.json(result);
       
     } catch (error) {
-      return c.json({ error: error.message }, 500);
+      return c.json({ error: (error as Error).message }, 500);
     }
   });
   
   // Download endpoint
-  app.get('/api/v1/files/:fileId/download', async (c: any) => {
+  app.get('/api/v1/files/:fileId/download', async (c: HonoContext) => {
     const userId = c.get('userId');
     const fileId = c.req.param('fileId');
     const rangeHeader = c.req.header('Range');
@@ -368,12 +387,12 @@ export function setupR2Routes(app: any, env: CloudflareEnv) {
       });
       
     } catch (error) {
-      return c.json({ error: error.message }, 500);
+      return c.json({ error: (error as Error).message }, 500);
     }
   });
   
   // User analytics endpoint
-  app.get('/api/v1/users/:userId/analytics', async (c: any) => {
+  app.get('/api/v1/users/:userId/analytics', async (c: HonoContext) => {
     const userId = c.req.param('userId');
     const currentUserId = c.get('userId');
     
@@ -387,7 +406,7 @@ export function setupR2Routes(app: any, env: CloudflareEnv) {
       return c.json(analytics);
       
     } catch (error) {
-      return c.json({ error: error.message }, 500);
+      return c.json({ error: (error as Error).message }, 500);
     }
   });
 }

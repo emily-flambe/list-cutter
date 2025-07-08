@@ -9,7 +9,7 @@ const migrationRoutes = new Hono<{ Bindings: CloudflareEnv }>();
  * POST /api/migration/batch
  * Create a new migration batch
  */
-migrationRoutes.post('/batch', async (c) => {
+migrationRoutes.post('/batch', async (c): Promise<Response> => {
   try {
     const { files, metadata } = await c.req.json();
     
@@ -40,7 +40,7 @@ migrationRoutes.post('/batch', async (c) => {
  * POST /api/migration/process
  * Process a migration batch
  */
-migrationRoutes.post('/process', async (c) => {
+migrationRoutes.post('/process', async (c): Promise<Response> => {
   try {
     const { batchId } = await c.req.json();
     
@@ -71,7 +71,7 @@ migrationRoutes.post('/process', async (c) => {
  * GET /api/migration/progress/:batchId
  * Get migration batch progress
  */
-migrationRoutes.get('/progress/:batchId', async (c) => {
+migrationRoutes.get('/progress/:batchId', async (c): Promise<Response> => {
   try {
     const batchId = c.req.param('batchId');
     
@@ -102,7 +102,7 @@ migrationRoutes.get('/progress/:batchId', async (c) => {
  * POST /api/migration/rollback
  * Rollback a migration batch
  */
-migrationRoutes.post('/rollback', async (c) => {
+migrationRoutes.post('/rollback', async (c): Promise<Response> => {
   try {
     const { batchId } = await c.req.json();
     
@@ -132,7 +132,7 @@ migrationRoutes.post('/rollback', async (c) => {
  * GET /api/migration/batches
  * List all migration batches
  */
-migrationRoutes.get('/batches', async (c) => {
+migrationRoutes.get('/batches', async (c): Promise<Response> => {
   try {
     const limit = parseInt(c.req.query('limit') || '20');
     const offset = parseInt(c.req.query('offset') || '0');
@@ -167,7 +167,7 @@ migrationRoutes.get('/batches', async (c) => {
  * GET /api/migration/batch/:batchId/files
  * Get files in a migration batch
  */
-migrationRoutes.get('/batch/:batchId/files', async (c) => {
+migrationRoutes.get('/batch/:batchId/files', async (c): Promise<Response> => {
   try {
     const batchId = c.req.param('batchId');
     const status = c.req.query('status'); // Optional status filter
@@ -214,7 +214,7 @@ migrationRoutes.get('/batch/:batchId/files', async (c) => {
  * POST /api/migration/verify
  * Verify integrity of migrated files
  */
-migrationRoutes.post('/verify', async (c) => {
+migrationRoutes.post('/verify', async (c): Promise<Response> => {
   try {
     const { batchId, fileIds } = await c.req.json();
     

@@ -37,7 +37,7 @@ export function createAlertRoutes(
    * Create alert rule
    * POST /api/alerts/rules
    */
-  router.post('/rules', async (request: Request, env: Env) => {
+  router.post('/rules', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       if (!userId) {
@@ -79,16 +79,16 @@ export function createAlertRoutes(
    * List alert rules
    * GET /api/alerts/rules
    */
-  router.get('/rules', async (request: Request, env: Env) => {
+  router.get('/rules', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const url = new URL(request.url);
       
       const query: AlertMetricsQuery = {
-        alertType: url.searchParams.get('alertType') as any,
-        severity: url.searchParams.get('severity') as any,
-        limit: url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined,
-        offset: url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset')!) : undefined
+        alertType: url.searchParams.get('alertType') as string | null,
+        severity: url.searchParams.get('severity') as string | null,
+        limit: url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit') || '0') : undefined,
+        offset: url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset') || '0') : undefined
       };
 
       const rules = await alertManagement.listAlertRules(userId || undefined, query);
@@ -110,7 +110,7 @@ export function createAlertRoutes(
    * Get alert rule by ID
    * GET /api/alerts/rules/:id
    */
-  router.get('/rules/:id', async (request: Request, env: Env) => {
+  router.get('/rules/:id', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const ruleId = request.params?.id;
@@ -148,7 +148,7 @@ export function createAlertRoutes(
    * Update alert rule
    * PUT /api/alerts/rules/:id
    */
-  router.put('/rules/:id', async (request: Request, env: Env) => {
+  router.put('/rules/:id', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const ruleId = request.params?.id;
@@ -187,7 +187,7 @@ export function createAlertRoutes(
    * Delete alert rule
    * DELETE /api/alerts/rules/:id
    */
-  router.delete('/rules/:id', async (request: Request, env: Env) => {
+  router.delete('/rules/:id', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const ruleId = request.params?.id;
@@ -225,7 +225,7 @@ export function createAlertRoutes(
    * Test alert rule
    * POST /api/alerts/rules/:id/test
    */
-  router.post('/rules/:id/test', async (request: Request, env: Env) => {
+  router.post('/rules/:id/test', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const ruleId = request.params?.id;
@@ -268,23 +268,23 @@ export function createAlertRoutes(
    * List alert instances
    * GET /api/alerts/instances
    */
-  router.get('/instances', async (request: Request, env: Env) => {
+  router.get('/instances', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const url = new URL(request.url);
       
       const query: AlertMetricsQuery = {
-        state: url.searchParams.get('state') as any,
-        severity: url.searchParams.get('severity') as any,
-        alertType: url.searchParams.get('alertType') as any,
-        limit: url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined,
-        offset: url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset')!) : undefined
+        state: url.searchParams.get('state') as string | null,
+        severity: url.searchParams.get('severity') as string | null,
+        alertType: url.searchParams.get('alertType') as string | null,
+        limit: url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit') || '0') : undefined,
+        offset: url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset') || '0') : undefined
       };
 
       if (url.searchParams.get('startTime') && url.searchParams.get('endTime')) {
         query.timeRange = {
-          startTime: url.searchParams.get('startTime')!,
-          endTime: url.searchParams.get('endTime')!
+          startTime: url.searchParams.get('startTime') || '',
+          endTime: url.searchParams.get('endTime') || ''
         };
       }
 
@@ -307,7 +307,7 @@ export function createAlertRoutes(
    * Get alert instance by ID
    * GET /api/alerts/instances/:id
    */
-  router.get('/instances/:id', async (request: Request, env: Env) => {
+  router.get('/instances/:id', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const alertId = request.params?.id;
       
@@ -344,7 +344,7 @@ export function createAlertRoutes(
    * Acknowledge alert
    * POST /api/alerts/instances/:id/acknowledge
    */
-  router.post('/instances/:id/acknowledge', async (request: Request, env: Env) => {
+  router.post('/instances/:id/acknowledge', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const alertId = request.params?.id;
@@ -383,7 +383,7 @@ export function createAlertRoutes(
    * Resolve alert
    * POST /api/alerts/instances/:id/resolve
    */
-  router.post('/instances/:id/resolve', async (request: Request, env: Env) => {
+  router.post('/instances/:id/resolve', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const alertId = request.params?.id;
@@ -422,7 +422,7 @@ export function createAlertRoutes(
    * Bulk operations on alerts
    * POST /api/alerts/instances/bulk
    */
-  router.post('/instances/bulk', async (request: Request, env: Env) => {
+  router.post('/instances/bulk', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       
@@ -465,7 +465,7 @@ export function createAlertRoutes(
    * Create notification channel
    * POST /api/alerts/channels
    */
-  router.post('/channels', async (request: Request, env: Env) => {
+  router.post('/channels', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       
@@ -507,7 +507,7 @@ export function createAlertRoutes(
    * List notification channels
    * GET /api/alerts/channels
    */
-  router.get('/channels', async (request: Request, env: Env) => {
+  router.get('/channels', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const channels = await alertManagement.listNotificationChannels(userId || undefined);
@@ -529,7 +529,7 @@ export function createAlertRoutes(
    * Get notification channel by ID
    * GET /api/alerts/channels/:id
    */
-  router.get('/channels/:id', async (request: Request, env: Env) => {
+  router.get('/channels/:id', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const channelId = request.params?.id;
@@ -567,7 +567,7 @@ export function createAlertRoutes(
    * Update notification channel
    * PUT /api/alerts/channels/:id
    */
-  router.put('/channels/:id', async (request: Request, env: Env) => {
+  router.put('/channels/:id', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const channelId = request.params?.id;
@@ -606,7 +606,7 @@ export function createAlertRoutes(
    * Delete notification channel
    * DELETE /api/alerts/channels/:id
    */
-  router.delete('/channels/:id', async (request: Request, env: Env) => {
+  router.delete('/channels/:id', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const channelId = request.params?.id;
@@ -644,7 +644,7 @@ export function createAlertRoutes(
    * Associate channel with alert rule
    * POST /api/alerts/rules/:ruleId/channels/:channelId
    */
-  router.post('/rules/:ruleId/channels/:channelId', async (request: Request, env: Env) => {
+  router.post('/rules/:ruleId/channels/:channelId', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const ruleId = request.params?.ruleId;
@@ -683,7 +683,7 @@ export function createAlertRoutes(
    * Dissociate channel from alert rule
    * DELETE /api/alerts/rules/:ruleId/channels/:channelId
    */
-  router.delete('/rules/:ruleId/channels/:channelId', async (request: Request, env: Env) => {
+  router.delete('/rules/:ruleId/channels/:channelId', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const ruleId = request.params?.ruleId;
@@ -726,7 +726,7 @@ export function createAlertRoutes(
    * Get alert dashboard
    * GET /api/alerts/dashboard
    */
-  router.get('/dashboard', async (request: Request, env: Env) => {
+  router.get('/dashboard', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const dashboard = await alertManagement.getAlertDashboard(userId || undefined);
@@ -748,23 +748,23 @@ export function createAlertRoutes(
    * Get alert history
    * GET /api/alerts/history
    */
-  router.get('/history', async (request: Request, env: Env) => {
+  router.get('/history', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const url = new URL(request.url);
       
       const query: AlertMetricsQuery = {
-        alertType: url.searchParams.get('alertType') as any,
-        severity: url.searchParams.get('severity') as any,
-        state: url.searchParams.get('state') as any,
-        limit: url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined,
-        offset: url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset')!) : undefined
+        alertType: url.searchParams.get('alertType') as string | null,
+        severity: url.searchParams.get('severity') as string | null,
+        state: url.searchParams.get('state') as string | null,
+        limit: url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit') || '0') : undefined,
+        offset: url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset') || '0') : undefined
       };
 
       if (url.searchParams.get('startTime') && url.searchParams.get('endTime')) {
         query.timeRange = {
-          startTime: url.searchParams.get('startTime')!,
-          endTime: url.searchParams.get('endTime')!
+          startTime: url.searchParams.get('startTime') || '',
+          endTime: url.searchParams.get('endTime') || ''
         };
       }
 
@@ -791,7 +791,7 @@ export function createAlertRoutes(
    * Evaluate all alerts (manual trigger)
    * POST /api/alerts/evaluate
    */
-  router.post('/evaluate', async (request: Request, env: Env) => {
+  router.post('/evaluate', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const isAdmin = request.headers.get('X-Is-Admin') === 'true';
       
@@ -825,7 +825,7 @@ export function createAlertRoutes(
    * Retry failed notifications
    * POST /api/alerts/notifications/retry
    */
-  router.post('/notifications/retry', async (request: Request, env: Env) => {
+  router.post('/notifications/retry', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const isAdmin = request.headers.get('X-Is-Admin') === 'true';
       

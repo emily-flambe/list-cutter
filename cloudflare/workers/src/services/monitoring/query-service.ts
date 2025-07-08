@@ -19,7 +19,10 @@ export class MetricsQueryService {
     
     // Check cache
     if (this.isValidCache(cacheKey)) {
-      return this.cache.get(cacheKey)!.data;
+      const cached = this.cache.get(cacheKey);
+      if (cached) {
+        return cached.data;
+      }
     }
 
     const overview = await this.db
@@ -91,10 +94,10 @@ export class MetricsQueryService {
         currentMonthCost: overview.current_month_cost,
         todayCost: overview.today_cost
       },
-      recentActivity: recentActivity.results.map((activity: any) => ({
-        action: activity.action,
-        count: activity.count,
-        totalBytes: activity.total_bytes || 0
+      recentActivity: recentActivity.results.map((activity: Record<string, unknown>) => ({
+        action: activity.action as string,
+        count: activity.count as number,
+        totalBytes: (activity.total_bytes as number) ?? 0
       }))
     };
 
@@ -119,7 +122,10 @@ export class MetricsQueryService {
     const cacheKey = `storage_history_${userId}_${timeRange}_${aggregationLevel}`;
     
     if (this.isValidCache(cacheKey)) {
-      return this.cache.get(cacheKey)!.data;
+      const cached = this.cache.get(cacheKey);
+      if (cached) {
+        return cached.data;
+      }
     }
 
     // Get storage metrics
@@ -183,7 +189,10 @@ export class MetricsQueryService {
     const cacheKey = `cost_breakdown_${userId}_${timeRange}`;
     
     if (this.isValidCache(cacheKey)) {
-      return this.cache.get(cacheKey)!.data;
+      const cached = this.cache.get(cacheKey);
+      if (cached) {
+        return cached.data;
+      }
     }
 
     // Get cost breakdown by metric type
@@ -237,20 +246,20 @@ export class MetricsQueryService {
     const result: CostBreakdownData = {
       userId,
       timeRange,
-      totalCost: costBreakdown.results.reduce((sum: number, item: any) => sum + item.total_cost, 0),
-      breakdown: costBreakdown.results.map((item: any) => ({
-        metricType: item.metric_type,
-        storageClass: item.storage_class,
-        cost: item.total_cost,
-        operations: item.total_operations,
-        bytes: item.total_bytes
+      totalCost: costBreakdown.results.reduce((sum: number, item: Record<string, unknown>) => sum + (item.total_cost as number), 0),
+      breakdown: costBreakdown.results.map((item: Record<string, unknown>) => ({
+        metricType: item.metric_type as string,
+        storageClass: item.storage_class as string,
+        cost: item.total_cost as number,
+        operations: item.total_operations as number,
+        bytes: item.total_bytes as number
       })),
-      monthlyTrend: monthlyBilling.results.map((month: any) => ({
-        month: month.billing_month,
-        totalCost: month.total_monthly_cost_usd,
-        storageCost: month.storage_cost_usd,
-        requestCost: month.class_a_cost_usd + month.class_b_cost_usd,
-        transferCost: month.transfer_out_cost_usd + month.transfer_in_cost_usd
+      monthlyTrend: monthlyBilling.results.map((month: Record<string, unknown>) => ({
+        month: month.billing_month as string,
+        totalCost: month.total_monthly_cost_usd as number,
+        storageCost: month.storage_cost_usd as number,
+        requestCost: (month.class_a_cost_usd as number) + (month.class_b_cost_usd as number),
+        transferCost: (month.transfer_out_cost_usd as number) + (month.transfer_in_cost_usd as number)
       })),
       freeTierUsage: {
         storageUsedBytes: freeTierUsage?.avg_storage_used || 0,
@@ -275,7 +284,10 @@ export class MetricsQueryService {
     const cacheKey = 'system_overview';
     
     if (this.isValidCache(cacheKey)) {
-      return this.cache.get(cacheKey)!.data;
+      const cached = this.cache.get(cacheKey);
+      if (cached) {
+        return cached.data;
+      }
     }
 
     // Get overall system stats
@@ -348,23 +360,23 @@ export class MetricsQueryService {
         completedUploads: systemStats?.completed_uploads || 0,
         failedUploads: systemStats?.failed_uploads || 0
       },
-      activity: todayActivity.results.map((activity: any) => ({
-        action: activity.action,
-        count: activity.count,
-        totalBytes: activity.total_bytes || 0,
-        successRate: activity.count > 0 ? activity.successful_count / activity.count : 0
+      activity: todayActivity.results.map((activity: Record<string, unknown>) => ({
+        action: activity.action as string,
+        count: activity.count as number,
+        totalBytes: (activity.total_bytes as number) ?? 0,
+        successRate: (activity.count as number) > 0 ? (activity.successful_count as number) / (activity.count as number) : 0
       })),
       costs: {
         totalMonthlyCost: costSummary?.total_monthly_cost || 0,
         averageUserCost: costSummary?.avg_user_cost || 0,
         billingUsers: costSummary?.billing_users || 0
       },
-      topUsers: topUsers.results.map((user: any) => ({
-        username: user.username,
-        email: user.email,
-        totalBytes: user.total_bytes || 0,
-        totalFiles: user.total_files || 0,
-        monthlyCost: user.total_monthly_cost_usd || 0
+      topUsers: topUsers.results.map((user: Record<string, unknown>) => ({
+        username: user.username as string,
+        email: user.email as string,
+        totalBytes: (user.total_bytes as number) || 0,
+        totalFiles: (user.total_files as number) || 0,
+        monthlyCost: (user.total_monthly_cost_usd as number) || 0
       }))
     };
 
@@ -387,7 +399,10 @@ export class MetricsQueryService {
     const cacheKey = `error_analytics_${userId || 'all'}_${timeRange}`;
     
     if (this.isValidCache(cacheKey)) {
-      return this.cache.get(cacheKey)!.data;
+      const cached = this.cache.get(cacheKey);
+      if (cached) {
+        return cached.data;
+      }
     }
 
     const userFilter = userId ? 'AND user_id = ?' : '';
@@ -453,18 +468,18 @@ export class MetricsQueryService {
     const result: ErrorAnalyticsData = {
       timeRange,
       userId,
-      distribution: errorDistribution.results.map((item: any) => ({
+      distribution: errorDistribution.results.map((item: Record<string, unknown>) => ({
         errorTypes: JSON.parse(item.error_types || '[]'),
         occurrenceCount: item.occurrence_count,
         totalErrors: item.total_errors
       })),
-      trends: errorTrends.results.map((item: any) => ({
+      trends: errorTrends.results.map((item: Record<string, unknown>) => ({
         date: item.metric_date,
         totalErrors: item.total_errors,
         totalOperations: item.total_operations,
         errorRate: item.total_operations > 0 ? item.total_errors / item.total_operations : 0
       })),
-      recentErrors: recentErrors.results.map((item: any) => ({
+      recentErrors: recentErrors.results.map((item: Record<string, unknown>) => ({
         action: item.action,
         errorMessage: item.error_message,
         userId: item.user_id,
@@ -493,7 +508,10 @@ export class MetricsQueryService {
     const cacheKey = `performance_metrics_${userId || 'all'}_${timeRange}`;
     
     if (this.isValidCache(cacheKey)) {
-      return this.cache.get(cacheKey)!.data;
+      const cached = this.cache.get(cacheKey);
+      if (cached) {
+        return cached.data;
+      }
     }
 
     const userFilter = userId ? 'AND user_id = ?' : '';
@@ -540,7 +558,7 @@ export class MetricsQueryService {
     const result: PerformanceMetricsData = {
       timeRange,
       userId,
-      operationPerformance: operationPerformance.results.map((item: any) => ({
+      operationPerformance: operationPerformance.results.map((item: Record<string, unknown>) => ({
         action: item.action,
         totalOperations: item.total_operations,
         avgDuration: item.avg_duration || 0,
@@ -548,7 +566,7 @@ export class MetricsQueryService {
         avgThroughput: item.avg_throughput || 0,
         successRate: item.total_operations > 0 ? item.successful_operations / item.total_operations : 0
       })),
-      throughputTrends: throughputTrends.results.map((item: any) => ({
+      throughputTrends: throughputTrends.results.map((item: Record<string, unknown>) => ({
         date: item.date,
         avgThroughputBps: item.avg_throughput_bps || 0,
         operations: item.operations
@@ -600,26 +618,30 @@ export class MetricsQueryService {
       case '1day':
         startDate = endDate;
         break;
-      case '7days':
+      case '7days': {
         const sevenDaysAgo = new Date(now);
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         startDate = sevenDaysAgo.toISOString().split('T')[0];
         break;
-      case '30days':
+      }
+      case '30days': {
         const thirtyDaysAgo = new Date(now);
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         startDate = thirtyDaysAgo.toISOString().split('T')[0];
         break;
-      case '90days':
+      }
+      case '90days': {
         const ninetyDaysAgo = new Date(now);
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
         startDate = ninetyDaysAgo.toISOString().split('T')[0];
         break;
-      case '1year':
+      }
+      case '1year': {
         const oneYearAgo = new Date(now);
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
         startDate = oneYearAgo.toISOString().split('T')[0];
         break;
+      }
       default:
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     }
@@ -631,27 +653,31 @@ export class MetricsQueryService {
    * Process storage history data
    */
   private processStorageHistoryData(
-    metrics: any[],
-    snapshots: any[],
+    metrics: DatabaseRow[],
+    snapshots: DatabaseRow[],
     timeRange: TimeRange
   ): StorageHistoryData {
     // Group metrics by date and type
-    const metricsByDate = new Map<string, Map<string, any>>();
+    const metricsByDate = new Map<string, Map<string, Record<string, unknown>>>();
     for (const metric of metrics) {
-      if (!metricsByDate.has(metric.metric_date)) {
-        metricsByDate.set(metric.metric_date, new Map());
+      const metricDate = metric.metric_date as string;
+      if (!metricsByDate.has(metricDate)) {
+        metricsByDate.set(metricDate, new Map());
       }
       const key = `${metric.metric_type}_${metric.storage_class}`;
-      metricsByDate.get(metric.metric_date)!.set(key, metric);
+      const dateMap = metricsByDate.get(metricDate);
+      if (dateMap) {
+        dateMap.set(key, metric);
+      }
     }
 
     // Process snapshots
-    const storageUsage = snapshots.map((snapshot: any) => ({
-      date: snapshot.snapshot_date,
-      totalBytes: snapshot.total_bytes,
-      standardBytes: snapshot.standard_bytes,
-      iaBytes: snapshot.ia_bytes,
-      dailyCost: snapshot.total_daily_cost_usd
+    const storageUsage = snapshots.map((snapshot: DatabaseRow) => ({
+      date: snapshot.snapshot_date as string,
+      totalBytes: snapshot.total_bytes as number,
+      standardBytes: snapshot.standard_bytes as number,
+      iaBytes: snapshot.ia_bytes as number,
+      dailyCost: snapshot.total_daily_cost_usd as number
     }));
 
     // Process operations by date
@@ -663,16 +689,16 @@ export class MetricsQueryService {
       let totalCost = 0;
 
       for (const [key, metric] of metrics) {
-        totalCost += metric.total_cost_usd;
+        totalCost += (metric.total_cost_usd as number);
         
         if (key.includes('requests_class_a')) {
-          classAOps += metric.total_operations;
+          classAOps += (metric.total_operations as number);
         } else if (key.includes('requests_class_b')) {
-          classBOps += metric.total_operations;
+          classBOps += (metric.total_operations as number);
         } else if (key.includes('data_transfer_out')) {
-          transferOut += metric.total_bytes;
+          transferOut += (metric.total_bytes as number);
         } else if (key.includes('data_transfer_in')) {
-          transferIn += metric.total_bytes;
+          transferIn += (metric.total_bytes as number);
         }
       }
 
@@ -699,7 +725,7 @@ type TimeRange = '1day' | '7days' | '30days' | '90days' | '1year';
 type AggregationLevel = 'hourly' | 'daily' | 'weekly' | 'monthly';
 
 interface CachedQuery {
-  data: any;
+  data: Record<string, unknown>;
   timestamp: number;
 }
 
@@ -847,4 +873,9 @@ interface PerformanceMetricsData {
     avgThroughputBps: number;
     operations: number;
   }>;
+}
+
+// Additional type definitions
+interface DatabaseRow {
+  [key: string]: unknown;
 }

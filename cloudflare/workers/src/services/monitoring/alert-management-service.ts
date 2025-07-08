@@ -19,8 +19,7 @@ import {
   AlertBulkOperationResponse,
   AlertTestRequest,
   AlertTestResponse,
-  AlertDashboardData,
-  AlertInstanceState
+  AlertDashboardData
 } from '../../types/alerts.js';
 import { AlertEvaluationService } from './alert-evaluation-service.js';
 import { NotificationService } from './notification-service.js';
@@ -118,7 +117,7 @@ export class AlertManagementService {
     }
 
     const updateFields: string[] = [];
-    const updateValues: any[] = [];
+    const updateValues: unknown[] = [];
 
     if (request.name !== undefined) {
       updateFields.push('name = ?');
@@ -181,7 +180,11 @@ export class AlertManagementService {
       UPDATE alert_rules SET ${updateFields.join(', ')} WHERE id = ?
     `).bind(...updateValues).run();
 
-    return this.getAlertRule(ruleId, userId)!;
+    const updated = await this.getAlertRule(ruleId, userId);
+    if (!updated) {
+      throw new Error('Failed to retrieve updated alert rule');
+    }
+    return updated;
   }
 
   /**
@@ -220,7 +223,7 @@ export class AlertManagementService {
   async listAlertRules(userId?: string, query?: AlertMetricsQuery): Promise<AlertRule[]> {
     let sql = 'SELECT * FROM alert_rules';
     const conditions: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     if (userId) {
       conditions.push('user_id = ?');
@@ -281,7 +284,11 @@ export class AlertManagementService {
       WHERE id = ?
     `).bind(now, userId, request.notes, now, alertId).run();
 
-    return this.getAlertInstance(alertId)!;
+    const updated = await this.getAlertInstance(alertId);
+    if (!updated) {
+      throw new Error('Failed to retrieve updated alert instance');
+    }
+    return updated;
   }
 
   /**
@@ -316,7 +323,11 @@ export class AlertManagementService {
       `).bind(alert.alertRuleId).run();
     }
 
-    return this.getAlertInstance(alertId)!;
+    const updated = await this.getAlertInstance(alertId);
+    if (!updated) {
+      throw new Error('Failed to retrieve updated alert instance');
+    }
+    return updated;
   }
 
   /**
@@ -336,7 +347,7 @@ export class AlertManagementService {
       JOIN alert_rules ar ON ai.alert_rule_id = ar.id
     `;
     const conditions: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     if (userId) {
       conditions.push('ar.user_id = ?');
@@ -505,7 +516,7 @@ export class AlertManagementService {
     }
 
     const updateFields: string[] = [];
-    const updateValues: any[] = [];
+    const updateValues: unknown[] = [];
 
     if (request.name !== undefined) {
       updateFields.push('name = ?');
@@ -552,7 +563,11 @@ export class AlertManagementService {
       UPDATE notification_channels SET ${updateFields.join(', ')} WHERE id = ?
     `).bind(...updateValues).run();
 
-    return this.getNotificationChannel(channelId, userId)!;
+    const updated = await this.getNotificationChannel(channelId, userId);
+    if (!updated) {
+      throw new Error('Failed to retrieve updated notification channel');
+    }
+    return updated;
   }
 
   /**
@@ -754,7 +769,7 @@ export class AlertManagementService {
 
     const results = await this.db.prepare(sql).bind(...params).all();
 
-    return results.results.map((row: any): AlertHistoryItem => ({
+    return results.results.map((row: DatabaseRow): AlertHistoryItem => ({
       id: row.id,
       alertRuleId: row.alert_rule_id,
       alertRuleName: row.alert_rule_name,
@@ -797,7 +812,7 @@ export class AlertManagementService {
     }
   }
 
-  private async getNotificationStats(userId?: string): Promise<any> {
+  private async getNotificationStats(userId?: string): Promise<NotificationStats> {
     const userFilter = userId ? 'AND nc.user_id = ?' : '';
     const params = userId ? [userId] : [];
 
@@ -821,7 +836,7 @@ export class AlertManagementService {
     };
   }
 
-  private async getEvaluationMetrics(userId?: string): Promise<any> {
+  private async getEvaluationMetrics(userId?: string): Promise<EvaluationMetrics> {
     const userFilter = userId ? 'AND ar.user_id = ?' : '';
     const params = userId ? [userId] : [];
 
@@ -846,7 +861,7 @@ export class AlertManagementService {
     };
   }
 
-  private arrayToRecord(array: any[], keyField: string, valueField: string): Record<string, number> {
+  private arrayToRecord(array: DatabaseRow[], keyField: string, valueField: string): Record<string, number> {
     const record: Record<string, number> = {};
     array.forEach(item => {
       record[item[keyField]] = item[valueField];
@@ -854,7 +869,7 @@ export class AlertManagementService {
     return record;
   }
 
-  private mapDatabaseRowToAlertRule(row: any): AlertRule {
+  private mapDatabaseRowToAlertRule(row: DatabaseRow): AlertRule {
     return {
       id: row.id,
       name: row.name,
@@ -884,7 +899,7 @@ export class AlertManagementService {
     };
   }
 
-  private mapDatabaseRowToAlertInstance(row: any): AlertInstance {
+  private mapDatabaseRowToAlertInstance(row: DatabaseRow): AlertInstance {
     return {
       id: row.id,
       alertRuleId: row.alert_rule_id,
@@ -908,7 +923,7 @@ export class AlertManagementService {
     };
   }
 
-  private mapDatabaseRowToNotificationChannel(row: any): NotificationChannel {
+  private mapDatabaseRowToNotificationChannel(row: DatabaseRow): NotificationChannel {
     return {
       id: row.id,
       name: row.name,
@@ -926,4 +941,27 @@ export class AlertManagementService {
       lastUsedAt: row.last_used_at
     };
   }
+}
+
+// Type definitions
+interface DatabaseRow {
+  [key: string]: unknown;
+}
+
+interface NotificationStats {
+  totalDeliveries: number;
+  successfulDeliveries: number;
+  failedDeliveries: number;
+  deliveryRate: number;
+  averageDeliveryTime: number;
+  deliveriesByChannel: Record<string, unknown>;
+}
+
+interface EvaluationMetrics {
+  totalEvaluations: number;
+  evaluationsPerMinute: number;
+  averageEvaluationTime: number;
+  thresholdBreaches: number;
+  alertsTrigger: number;
+  alertTriggerRate: number;
 }

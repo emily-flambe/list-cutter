@@ -19,15 +19,15 @@ export function createAlertJobRoutes(
    * POST /api/alerts/jobs/evaluate
    * Triggered every 5 minutes via cron
    */
-  router.post('/evaluate', async (request: Request, env: Env, ctx: ExecutionContext) => {
+  router.post('/evaluate', async (_request: Request, _env: Env, _ctx: ExecutionContext): Promise<Response> => {
     try {
-      console.log('Starting scheduled alert evaluation job...');
+      console.warn('Starting scheduled alert evaluation job...');
       const startTime = Date.now();
       
       const result = await alertScheduler.runAlertEvaluation();
       
       const duration = Date.now() - startTime;
-      console.log(`Alert evaluation job completed in ${duration}ms:`, result);
+      console.warn(`Alert evaluation job completed in ${duration}ms:`, result);
       
       // Store job execution metrics
       await analytics.writeDataPoint({
@@ -80,15 +80,15 @@ export function createAlertJobRoutes(
    * POST /api/alerts/jobs/retry-notifications
    * Triggered every 15 minutes via cron
    */
-  router.post('/retry-notifications', async (request: Request, env: Env, ctx: ExecutionContext) => {
+  router.post('/retry-notifications', async (_request: Request, _env: Env, _ctx: ExecutionContext): Promise<Response> => {
     try {
-      console.log('Starting notification retry job...');
+      console.warn('Starting notification retry job...');
       const startTime = Date.now();
       
       const result = await alertScheduler.retryFailedNotifications();
       
       const duration = Date.now() - startTime;
-      console.log(`Notification retry job completed in ${duration}ms:`, result);
+      console.warn(`Notification retry job completed in ${duration}ms:`, result);
       
       // Store job execution metrics
       await analytics.writeDataPoint({
@@ -127,15 +127,15 @@ export function createAlertJobRoutes(
    * POST /api/alerts/jobs/cleanup
    * Triggered daily via cron
    */
-  router.post('/cleanup', async (request: Request, env: Env, ctx: ExecutionContext) => {
+  router.post('/cleanup', async (_request: Request, _env: Env, _ctx: ExecutionContext): Promise<Response> => {
     try {
-      console.log('Starting alert cleanup job...');
+      console.warn('Starting alert cleanup job...');
       const startTime = Date.now();
       
       const result = await alertScheduler.cleanupOldAlertData();
       
       const duration = Date.now() - startTime;
-      console.log(`Alert cleanup job completed in ${duration}ms:`, result);
+      console.warn(`Alert cleanup job completed in ${duration}ms:`, result);
       
       // Store job execution metrics
       await analytics.writeDataPoint({
@@ -175,9 +175,9 @@ export function createAlertJobRoutes(
    * POST /api/alerts/jobs/health-check
    * Triggered every 5 minutes via cron
    */
-  router.post('/health-check', async (request: Request, env: Env, ctx: ExecutionContext) => {
+  router.post('/health-check', async (_request: Request, _env: Env, _ctx: ExecutionContext): Promise<Response> => {
     try {
-      console.log('Starting alert health check job...');
+      console.warn('Starting alert health check job...');
       const startTime = Date.now();
       
       const stats = await alertScheduler.getSchedulerStatistics();
@@ -217,7 +217,7 @@ export function createAlertJobRoutes(
         }
       });
       
-      console.log(`Alert health check completed in ${duration}ms. Issues: ${issues.length}`);
+      console.warn(`Alert health check completed in ${duration}ms. Issues: ${issues.length}`);
       
       return new Response(JSON.stringify({
         success: true,
@@ -245,7 +245,7 @@ export function createAlertJobRoutes(
    * Manual job trigger (admin only)
    * POST /api/alerts/jobs/trigger/:jobType
    */
-  router.post('/trigger/:jobType', async (request: Request, env: Env, ctx: ExecutionContext) => {
+  router.post('/trigger/:jobType', async (request: Request, _env: Env, _ctx: ExecutionContext): Promise<Response> => {
     try {
       const isAdmin = request.headers.get('X-Is-Admin') === 'true';
       
@@ -265,9 +265,9 @@ export function createAlertJobRoutes(
         });
       }
       
-      console.log(`Manually triggering job: ${jobType}`);
+      console.warn(`Manually triggering job: ${jobType}`);
       const startTime = Date.now();
-      let result: any;
+      let result: unknown;
       
       switch (jobType) {
         case 'evaluate':
@@ -328,7 +328,7 @@ export function createAlertJobRoutes(
    * Get job execution history
    * GET /api/alerts/jobs/history
    */
-  router.get('/history', async (request: Request, env: Env) => {
+  router.get('/history', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const isAdmin = request.headers.get('X-Is-Admin') === 'true';
       
@@ -390,7 +390,7 @@ export function createAlertJobRoutes(
    * Get job statistics
    * GET /api/alerts/jobs/stats
    */
-  router.get('/stats', async (request: Request, env: Env) => {
+  router.get('/stats', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const isAdmin = request.headers.get('X-Is-Admin') === 'true';
       

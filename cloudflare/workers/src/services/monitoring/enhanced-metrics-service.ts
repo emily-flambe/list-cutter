@@ -20,7 +20,7 @@ export class EnhancedMetricsService {
   constructor(
     analytics: AnalyticsEngineDataset,
     db: D1Database,
-    config: any = {}
+    config: Record<string, unknown> = {}
   ) {
     this.db = db;
     this.metricsService = new MetricsService(analytics, db, config);
@@ -184,7 +184,7 @@ export class EnhancedMetricsService {
   async triggerAggregation(
     type: 'daily' | 'weekly' | 'monthly',
     date?: Date
-  ): Promise<any> {
+  ): Promise<AggregationResult> {
     const targetDate = date || new Date();
     
     switch (type) {
@@ -256,7 +256,7 @@ export class EnhancedMetricsService {
     quotaUpdates: Partial<UserQuotaUpdate>
   ): Promise<void> {
     const updateFields: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     if (quotaUpdates.maxStorageBytes !== undefined) {
       updateFields.push('max_storage_bytes = ?');
@@ -318,7 +318,7 @@ export class EnhancedMetricsService {
     errorMessage?: string,
     bytesTransferred: number = 0,
     durationMs: number = 0,
-    metadata: any = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
       await this.db
@@ -419,7 +419,7 @@ export class EnhancedMetricsService {
     userId: string,
     operation: StorageOperation,
     fileSize: number,
-    overview: any
+    overview: UserStorageOverview
   ): Promise<string[]> {
     const warnings: string[] = [];
 
@@ -456,7 +456,7 @@ export class EnhancedMetricsService {
       `)
       .all();
 
-    for (const user of overQuotaUsers.results as any[]) {
+    for (const user of overQuotaUsers.results as Record<string, unknown>[]) {
       alerts.push({
         type: 'quota_violation',
         severity: 'high',
@@ -480,7 +480,7 @@ export class EnhancedMetricsService {
       `)
       .all();
 
-    for (const rate of errorRates.results as any[]) {
+    for (const rate of errorRates.results as Record<string, unknown>[]) {
       const errorRate = (rate.failed_ops / rate.total_ops) * 100;
       alerts.push({
         type: 'high_error_rate',
@@ -556,20 +556,20 @@ export class EnhancedMetricsService {
 
 // Type definitions
 interface UserDashboard {
-  overview: any;
-  history: any;
-  costs: any;
-  errors: any;
-  performance: any;
+  overview: UserStorageOverview;
+  history: StorageHistoryData;
+  costs: CostBreakdownData;
+  errors: ErrorAnalyticsData;
+  performance: PerformanceMetricsData;
   quotaStatus: QuotaStatus;
 }
 
 interface AdminDashboard {
-  systemOverview: any;
-  errorAnalytics: any;
-  performanceMetrics: any;
-  jobStats: any;
-  jobHistory: any;
+  systemOverview: SystemMetricsOverview;
+  errorAnalytics: ErrorAnalyticsData;
+  performanceMetrics: PerformanceMetricsData;
+  jobStats: JobStatistics;
+  jobHistory: JobHistoryEntry[];
   alerts: SystemAlert[];
 }
 
@@ -608,5 +608,48 @@ interface SystemAlert {
   severity: 'low' | 'medium' | 'high' | 'critical';
   message: string;
   timestamp: string;
-  data?: any;
+  data?: Record<string, unknown>;
+}
+
+// Additional type definitions
+interface AggregationResult {
+  successful: number;
+  failed: number;
+  duration: number;
+  [key: string]: unknown;
+}
+
+interface UserStorageOverview {
+  storage: { totalBytes: number; usagePercentage: number; [key: string]: unknown };
+  costs: { currentMonthCost: number; [key: string]: unknown };
+  quota: { maxStorageBytes: number; billingEnabled: boolean; quotaType: string; [key: string]: unknown };
+  [key: string]: unknown;
+}
+
+interface StorageHistoryData {
+  [key: string]: unknown;
+}
+
+interface CostBreakdownData {
+  [key: string]: unknown;
+}
+
+interface ErrorAnalyticsData {
+  [key: string]: unknown;
+}
+
+interface PerformanceMetricsData {
+  [key: string]: unknown;
+}
+
+interface SystemMetricsOverview {
+  [key: string]: unknown;
+}
+
+interface JobStatistics {
+  [key: string]: unknown;
+}
+
+interface JobHistoryEntry {
+  [key: string]: unknown;
 }

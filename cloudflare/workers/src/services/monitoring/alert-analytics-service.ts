@@ -10,7 +10,7 @@ import {
   UserAlertAnalytics,
   AlertFrequencyData,
   AlertDurationData,
-  AlertMetricsQuery
+  // AlertMetricsQuery
 } from '../../types/alerts.js';
 
 export class AlertAnalyticsService {
@@ -29,8 +29,8 @@ export class AlertAnalyticsService {
       endTime: new Date().toISOString()
     }
   ): Promise<AlertAnalytics> {
-    const userFilter = userId ? 'AND ar.user_id = ?' : '';
-    const baseParams = userId ? [timeRange.startTime, timeRange.endTime, userId] : [timeRange.startTime, timeRange.endTime];
+    // const _userFilter = userId ? 'AND ar.user_id = ?' : '';
+    // const _baseParams = userId ? [timeRange.startTime, timeRange.endTime, userId] : [timeRange.startTime, timeRange.endTime];
 
     // Get alert volume over time
     const alertVolume = await this.getAlertVolumeTimeSeries(timeRange, userId);
@@ -91,8 +91,8 @@ export class AlertAnalyticsService {
       ORDER BY ai.started_at
     `).bind(...params).all();
 
-    return results.results.map((row: any) => ({
-      timestamp: `${row.date}T${row.hour.padStart(2, '0')}:00:00.000Z`,
+    return results.results.map((row: DatabaseRow) => ({
+      timestamp: `${row.date}T${String(row.hour).padStart(2, '0')}:00:00.000Z`,
       value: row.value
     }));
   }
@@ -121,9 +121,9 @@ export class AlertAnalyticsService {
       ORDER BY ai.resolved_at
     `).bind(...params).all();
 
-    return results.results.map((row: any) => ({
+    return results.results.map((row: DatabaseRow) => ({
       timestamp: `${row.date}T00:00:00.000Z`,
-      value: row.value || 0
+      value: row.value ?? 0
     }));
   }
 
@@ -159,7 +159,7 @@ export class AlertAnalyticsService {
     const previousPeriodStart = new Date(currentPeriodStart.getTime() - (new Date(timeRange.endTime).getTime() - currentPeriodStart.getTime()));
     const previousPeriodEnd = currentPeriodStart;
 
-    return Promise.all(results.results.map(async (row: any) => {
+    return Promise.all(results.results.map(async (row: DatabaseRow) => {
       const previousPeriodAlerts = await this.db.prepare(`
         SELECT COUNT(ai.id) as count
         FROM alert_instances ai
@@ -168,7 +168,7 @@ export class AlertAnalyticsService {
           AND ai.started_at >= ? AND ai.started_at <= ? ${userFilter}
       `).bind(row.alert_type, previousPeriodStart.toISOString(), previousPeriodEnd.toISOString(), ...(userId ? [userId] : [])).first();
 
-      const previousCount = previousPeriodAlerts?.count || 0;
+      const previousCount = previousPeriodAlerts?.count ?? 0;
       let trend: 'increasing' | 'decreasing' | 'stable' = 'stable';
       
       if (row.total_alerts > previousCount * 1.1) {
@@ -180,7 +180,7 @@ export class AlertAnalyticsService {
       return {
         alertType: row.alert_type,
         totalAlerts: row.total_alerts,
-        averageResolutionTime: row.avg_resolution_time || 0,
+        averageResolutionTime: row.avg_resolution_time ?? 0,
         falsePositiveRate: row.total_alerts > 0 ? (row.false_positives / row.total_alerts) * 100 : 0,
         trend
       };
@@ -216,16 +216,16 @@ export class AlertAnalyticsService {
     `).bind(timeRange.startTime, timeRange.endTime).all();
 
     // Group by user and find most common alert type
-    const userMap = new Map<string, any>();
+    const userMap = new Map<string, UserAlertEntry>();
     
-    results.results.forEach((row: any) => {
-      if (!userMap.has(row.user_id) || row.type_count > userMap.get(row.user_id).type_count) {
+    results.results.forEach((row: DatabaseRow) => {
+      if (!userMap.has(row.user_id) || row.type_count > (userMap.get(row.user_id)?.type_count ?? 0)) {
         userMap.set(row.user_id, {
           userId: row.user_id,
           userEmail: row.user_email,
           totalAlerts: row.total_alerts,
           activeAlerts: row.active_alerts,
-          averageResolutionTime: row.avg_resolution_time || 0,
+          averageResolutionTime: row.avg_resolution_time ?? 0,
           mostCommonAlertType: row.most_common_type
         });
       }
@@ -265,7 +265,7 @@ export class AlertAnalyticsService {
 
     return {
       falsePositiveRate: metrics?.total_alerts > 0 ? (metrics.false_positives / metrics.total_alerts) * 100 : 0,
-      averageResolutionTime: metrics?.avg_resolution_time || 0,
+      averageResolutionTime: metrics?.avg_resolution_time ?? 0,
       escalationRate: metrics?.total_alerts > 0 ? (metrics.escalated_alerts / metrics.total_alerts) * 100 : 0
     };
   }
@@ -282,7 +282,7 @@ export class AlertAnalyticsService {
   }> {
     const currentPeriodStart = new Date(timeRange.startTime);
     const currentPeriodEnd = new Date(timeRange.endTime);
-    const periodDuration = currentPeriodEnd.getTime() - currentPeriodStart.getTime();
+    // const _periodDuration = currentPeriodEnd.getTime() - currentPeriodStart.getTime();
 
     // Calculate week over week
     const lastWeekStart = new Date(currentPeriodStart.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -337,7 +337,7 @@ export class AlertAnalyticsService {
       LIMIT 10
     `).bind(...params).all();
 
-    return results.results.map((row: any) => ({
+    return results.results.map((row: DatabaseRow) => ({
       alertRuleId: row.alert_rule_id,
       alertRuleName: row.alert_rule_name,
       alertType: row.alert_type,
@@ -382,7 +382,7 @@ export class AlertAnalyticsService {
       LIMIT 10
     `).bind(...params).all();
 
-    return results.results.map((row: any) => ({
+    return results.results.map((row: DatabaseRow) => ({
       alertRuleId: row.alert_rule_id,
       alertRuleName: row.alert_rule_name,
       alertType: row.alert_type,
@@ -408,7 +408,7 @@ export class AlertAnalyticsService {
       WHERE ai.started_at >= ? AND ai.started_at <= ? ${userFilter}
     `).bind(...params).first();
 
-    return result?.count || 0;
+    return result?.count ?? 0;
   }
 
   /**
@@ -421,7 +421,7 @@ export class AlertAnalyticsService {
       endTime: new Date().toISOString()
     },
     format: 'json' | 'csv' = 'json'
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const analytics = await this.getAlertAnalytics(userId, timeRange);
     
     if (format === 'csv') {
@@ -524,4 +524,19 @@ export class AlertAnalyticsService {
 
     return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
   }
+}
+
+// Type definitions
+interface DatabaseRow {
+  [key: string]: unknown;
+}
+
+interface UserAlertEntry {
+  userId: string;
+  userEmail: string;
+  totalAlerts: number;
+  activeAlerts: number;
+  averageResolutionTime: number;
+  mostCommonAlertType: string;
+  type_count?: number;
 }

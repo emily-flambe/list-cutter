@@ -19,7 +19,7 @@ export class MetricsScheduler {
   /**
    * Handle scheduled job execution
    */
-  async handleScheduledJob(jobType: string, request: Request): Promise<Response> {
+  async handleScheduledJob(jobType: string, _request: Request): Promise<Response> {
     const startTime = Date.now();
     
     try {
@@ -75,7 +75,7 @@ export class MetricsScheduler {
    * Run daily aggregation job
    * Schedule: Every day at 2 AM UTC
    */
-  private async runDailyAggregation(): Promise<any> {
+  private async runDailyAggregation(): Promise<JobResult> {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     
@@ -97,7 +97,7 @@ export class MetricsScheduler {
    * Run weekly aggregation job
    * Schedule: Every Monday at 3 AM UTC
    */
-  private async runWeeklyAggregation(): Promise<any> {
+  private async runWeeklyAggregation(): Promise<JobResult> {
     const lastWeek = new Date();
     lastWeek.setDate(lastWeek.getDate() - 7);
     
@@ -117,7 +117,7 @@ export class MetricsScheduler {
    * Run monthly aggregation job
    * Schedule: 1st of every month at 4 AM UTC
    */
-  private async runMonthlyAggregation(): Promise<any> {
+  private async runMonthlyAggregation(): Promise<JobResult> {
     const lastMonth = new Date();
     lastMonth.setMonth(lastMonth.getMonth() - 1);
     
@@ -137,7 +137,7 @@ export class MetricsScheduler {
    * Run daily snapshot update job
    * Schedule: Every day at 1 AM UTC
    */
-  private async runDailySnapshotUpdate(): Promise<any> {
+  private async runDailySnapshotUpdate(): Promise<JobResult> {
     const today = new Date();
     const startTime = Date.now();
     
@@ -147,7 +147,7 @@ export class MetricsScheduler {
       .all();
 
     const results = await Promise.allSettled(
-      users.results.map((user: any) => 
+      users.results.map((user: Record<string, unknown>) => 
         this.costCalculator.updateDailySnapshot(user.id, today)
       )
     );
@@ -172,7 +172,7 @@ export class MetricsScheduler {
    * Run cleanup job
    * Schedule: Every Sunday at 5 AM UTC
    */
-  private async runCleanupJob(): Promise<any> {
+  private async runCleanupJob(): Promise<JobResult> {
     const result = await this.aggregationService.cleanupOldMetrics();
     
     await this.logJobExecution('cleanup-old-metrics', true, result);
@@ -184,7 +184,7 @@ export class MetricsScheduler {
    * Run health check job
    * Schedule: Every 5 minutes
    */
-  private async runHealthCheck(): Promise<any> {
+  private async runHealthCheck(): Promise<JobResult> {
     const checks = await Promise.allSettled([
       this.checkDatabaseHealth(),
       this.checkStorageHealth(),
@@ -210,7 +210,7 @@ export class MetricsScheduler {
   /**
    * Check database health
    */
-  private async checkDatabaseHealth(): Promise<any> {
+  private async checkDatabaseHealth(): Promise<HealthCheckResult> {
     const result = await this.db
       .prepare(`SELECT COUNT(*) as user_count FROM users`)
       .first();
@@ -225,7 +225,7 @@ export class MetricsScheduler {
   /**
    * Check storage health
    */
-  private async checkStorageHealth(): Promise<any> {
+  private async checkStorageHealth(): Promise<HealthCheckResult> {
     const result = await this.db
       .prepare(`
         SELECT 
@@ -250,7 +250,7 @@ export class MetricsScheduler {
   /**
    * Check metrics health
    */
-  private async checkMetricsHealth(): Promise<any> {
+  private async checkMetricsHealth(): Promise<HealthCheckResult> {
     const today = new Date().toISOString().split('T')[0];
     
     const result = await this.db
@@ -279,7 +279,7 @@ export class MetricsScheduler {
   private async logJobExecution(
     jobType: string,
     success: boolean,
-    metadata: any
+    metadata: Record<string, unknown>
   ): Promise<void> {
     try {
       await this.db
@@ -332,12 +332,12 @@ export class MetricsScheduler {
       .bind(...params)
       .all();
 
-    return result.results.map((row: any) => ({
-      id: row.id,
-      jobType: row.resource_id,
-      action: row.action,
-      timestamp: row.created_at,
-      metadata: JSON.parse(row.metadata || '{}')
+    return result.results.map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      jobType: row.resource_id as string,
+      action: row.action as string,
+      timestamp: row.created_at as string,
+      metadata: JSON.parse((row.metadata as string) || '{}')
     }));
   }
 
@@ -372,17 +372,18 @@ export class MetricsScheduler {
       jobTypes: {}
     };
 
-    for (const row of result.results as any[]) {
-      stats.totalJobs += row.count;
+    for (const row of result.results as DatabaseRow[]) {
+      stats.totalJobs += (row.count as number);
       
       if (row.action === 'job_completed') {
-        stats.successfulJobs += row.count;
+        stats.successfulJobs += (row.count as number);
       } else {
-        stats.failedJobs += row.count;
+        stats.failedJobs += (row.count as number);
       }
 
-      if (!stats.jobTypes[row.job_type]) {
-        stats.jobTypes[row.job_type] = {
+      const jobType = row.job_type as string;
+      if (!stats.jobTypes[jobType]) {
+        stats.jobTypes[jobType] = {
           total: 0,
           successful: 0,
           failed: 0,
@@ -390,12 +391,12 @@ export class MetricsScheduler {
         };
       }
 
-      stats.jobTypes[row.job_type].total += row.count;
+      stats.jobTypes[jobType].total += (row.count as number);
       if (row.action === 'job_completed') {
-        stats.jobTypes[row.job_type].successful += row.count;
-        stats.jobTypes[row.job_type].avgDuration = row.avg_duration || 0;
+        stats.jobTypes[jobType].successful += (row.count as number);
+        stats.jobTypes[jobType].avgDuration = (row.avg_duration as number) || 0;
       } else {
-        stats.jobTypes[row.job_type].failed += row.count;
+        stats.jobTypes[jobType].failed += (row.count as number);
       }
     }
 
@@ -409,7 +410,7 @@ interface JobHistoryEntry {
   jobType: string;
   action: string;
   timestamp: string;
-  metadata: any;
+  metadata: Record<string, unknown>;
 }
 
 interface JobStatistics {
@@ -425,4 +426,17 @@ interface JobStatistics {
       avgDuration: number;
     };
   };
+}
+
+interface JobResult {
+  [key: string]: unknown;
+}
+
+interface HealthCheckResult {
+  healthy: boolean;
+  [key: string]: unknown;
+}
+
+interface DatabaseRow {
+  [key: string]: unknown;
 }

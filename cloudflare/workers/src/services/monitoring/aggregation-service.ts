@@ -33,7 +33,7 @@ export class AggregationService {
         .all();
 
       const results = await Promise.allSettled(
-        users.results.map((user: any) => this.aggregateUserDailyMetrics(user.user_id, date))
+        users.results.map((user: { user_id: string }) => this.aggregateUserDailyMetrics(user.user_id, date))
       );
 
       const successful = results.filter(r => r.status === 'fulfilled').length;
@@ -75,7 +75,7 @@ export class AggregationService {
         .all();
 
       const results = await Promise.allSettled(
-        users.results.map((user: any) => this.aggregateUserWeeklyMetrics(user.user_id, date))
+        users.results.map((user: { user_id: string }) => this.aggregateUserWeeklyMetrics(user.user_id, date))
       );
 
       const successful = results.filter(r => r.status === 'fulfilled').length;
@@ -117,7 +117,7 @@ export class AggregationService {
         .all();
 
       const results = await Promise.allSettled(
-        users.results.map((user: any) => this.aggregateUserMonthlyMetrics(user.user_id, date))
+        users.results.map((user: { user_id: string }) => this.aggregateUserMonthlyMetrics(user.user_id, date))
       );
 
       const successful = results.filter(r => r.status === 'fulfilled').length;
@@ -165,7 +165,7 @@ export class AggregationService {
       .all();
 
     // Process each metric group
-    for (const metric of rawMetrics.results as any[]) {
+    for (const metric of rawMetrics.results as DatabaseMetric[]) {
       await this.processRawMetric(userId, date, metric);
     }
 
@@ -204,7 +204,7 @@ export class AggregationService {
       .all();
 
     // Insert/update weekly aggregations
-    for (const metric of dailyMetrics.results as any[]) {
+    for (const metric of dailyMetrics.results as DatabaseMetric[]) {
       await this.db
         .prepare(`
           INSERT INTO storage_metrics (
@@ -310,7 +310,7 @@ export class AggregationService {
       .all();
 
     // Insert/update monthly aggregations
-    for (const metric of dailyMetrics.results as any[]) {
+    for (const metric of dailyMetrics.results as DatabaseMetric[]) {
       await this.db
         .prepare(`
           INSERT INTO storage_metrics (
@@ -345,14 +345,14 @@ export class AggregationService {
   private async processRawMetric(
     userId: string,
     date: Date,
-    rawMetric: any
+    rawMetric: RawMetric
   ): Promise<void> {
     const dateStr = date.toISOString().split('T')[0];
     const metricType = this.getMetricTypeFromAction(rawMetric.action);
     const storageClass = 'Standard'; // Default for now
     
     // Get file info if available
-    let fileSize = rawMetric.bytes_transferred || 0;
+    let fileSize = rawMetric.bytes_transferred ?? 0;
     if (rawMetric.file_id) {
       const file = await this.db
         .prepare(`SELECT file_size, storage_class FROM files WHERE id = ?`)
@@ -360,7 +360,7 @@ export class AggregationService {
         .first();
       
       if (file) {
-        fileSize = file.file_size || fileSize;
+        fileSize = file.file_size ?? fileSize;
       }
     }
 
@@ -404,7 +404,7 @@ export class AggregationService {
         userId, dateStr, metricType, storageClass,
         metricType === 'data_transfer_out' || metricType === 'data_transfer_in' ? fileSize : 0,
         rawMetric.operation_count, operationCost.unitCost, operationCost.totalCost,
-        rawMetric.duration_ms || 0, rawMetric.success ? 1.0 : 0.0,
+        rawMetric.duration_ms ?? 0, rawMetric.success ? 1.0 : 0.0,
         rawMetric.success ? 0 : rawMetric.operation_count,
         JSON.stringify(errorCategories)
       )
@@ -597,7 +597,7 @@ interface AggregationResult {
   successful: number;
   failed: number;
   duration: number;
-  errors: any[];
+  errors: unknown[];
 }
 
 interface CleanupResult {
@@ -606,4 +606,26 @@ interface CleanupResult {
   dailyAggregationsDeleted: number;
   snapshotsDeleted: number;
   logsDeleted: number;
+}
+
+// Type definitions for database operations
+interface DatabaseMetric {
+  metric_type: string;
+  storage_class: string;
+  total_bytes: number;
+  total_operations: number;
+  total_cost_usd: number;
+  error_count: number;
+  avg_success_rate?: number;
+  source_records?: number;
+}
+
+interface RawMetric {
+  action: string;
+  file_id?: string;
+  bytes_transferred?: number;
+  duration_ms?: number;
+  success: boolean;
+  error_message?: string;
+  operation_count: number;
 }

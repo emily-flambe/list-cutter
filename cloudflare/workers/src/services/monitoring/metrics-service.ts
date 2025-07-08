@@ -1,8 +1,7 @@
 import {
   StorageMetrics,
-  UserStorageMetrics,
-  MultipartUploadMetrics,
-  SystemMetrics,
+  // UserStorageMetrics,
+  // MultipartUploadMetrics,
   MetricsConfiguration,
   ErrorCategory,
   StorageOperation,
@@ -134,23 +133,7 @@ export class MetricsService {
     const averagePartSize = totalBytes / totalParts;
     const overallThroughput = totalBytes > 0 ? (totalBytes / duration) * 1000 : 0;
 
-    const multipartMetric: MultipartUploadMetrics = {
-      uploadId,
-      fileId,
-      userId,
-      startTime,
-      endTime,
-      duration,
-      totalParts,
-      completedParts,
-      failedParts,
-      totalBytes,
-      averagePartSize,
-      concurrentParts: Math.min(3, totalParts), // Based on our concurrency limit
-      overallThroughput,
-      status,
-      errorDetails
-    };
+    // Multipart metric would be created here if needed
 
     // Send to Analytics Engine
     await this.analytics.writeDataPoint({
@@ -219,7 +202,7 @@ export class MetricsService {
       let dailyDeletes = 0;
       let dailyBandwidthBytes = 0;
 
-      dailyActivity.results.forEach((activity: any) => {
+      dailyActivity.results.forEach((activity: DatabaseRow) => {
         switch (activity.action) {
           case 'download':
             dailyDownloads = activity.count;
@@ -246,24 +229,7 @@ export class MetricsService {
       const successRate = recentOperations?.total ? 
         (recentOperations.successful / recentOperations.total) * 100 : 100;
 
-      const userMetrics: UserStorageMetrics = {
-        userId,
-        timestamp: Date.now(),
-        totalFiles,
-        totalSizeBytes,
-        quotaUsagePercentage: (totalSizeBytes / (5 * 1024 * 1024 * 1024)) * 100, // Assuming 5GB quota
-        dailyUploads,
-        dailyDownloads,
-        dailyDeletes,
-        dailyBandwidthBytes,
-        averageUploadSpeed: 0, // Would need to calculate from recent uploads
-        averageDownloadSpeed: 0, // Would need to calculate from recent downloads
-        successRate,
-        storageByType: {}, // Would need to calculate from file types
-        storageByClass: {}, // Would need to calculate from storage classes
-        weeklyGrowth: 0, // Would need historical data
-        monthlyGrowth: 0 // Would need historical data
-      };
+      // User metrics would be created here if needed
 
       // Send to Analytics Engine
       await this.analytics.writeDataPoint({
@@ -357,7 +323,7 @@ export class MetricsService {
       ipAddress?: string;
       region?: string;
     } = {}
-  ) {
+  ): (asyncOperation: () => Promise<T>) => Promise<T> {
     return async (asyncOperation: () => Promise<T>): Promise<T> => {
       const startTime = Date.now();
       let success = false;
@@ -649,4 +615,9 @@ export class MetricsService {
     this.stopPeriodicFlush();
     await this.flushMetrics();
   }
+}
+
+// Type definitions
+interface DatabaseRow {
+  [key: string]: unknown;
 }

@@ -69,8 +69,8 @@ export class EnhancedR2Service {
       ipAddress?: string;
       region?: string;
     } = {}
-  ) {
-    const startTime = Date.now();
+  ): Promise<UploadResult> {
+    // const _startTime = Date.now();
     
     try {
       // Upload file using R2 service
@@ -119,7 +119,7 @@ export class EnhancedR2Service {
       ipAddress?: string;
       region?: string;
     } = {}
-  ) {
+  ): Promise<R2ObjectBody | null> {
     try {
       // Get file metadata first
       const fileMetadata = await this.r2Service.getFileMetadata(fileId, userId, context);
@@ -154,7 +154,7 @@ export class EnhancedR2Service {
           false,
           !!options.range
         );
-      } catch (metaError) {
+      } catch {
         // If we can't get metadata, still track with minimal info
         await this.usageTracker.trackFileDownload(
           userId,
@@ -183,7 +183,7 @@ export class EnhancedR2Service {
       ipAddress?: string;
       region?: string;
     } = {}
-  ) {
+  ): Promise<boolean> {
     try {
       // Get file metadata first
       const fileMetadata = await this.r2Service.getFileMetadata(fileId, userId, context);
@@ -219,7 +219,7 @@ export class EnhancedR2Service {
           fileMetadata.mime_type,
           false
         );
-      } catch (metaError) {
+      } catch {
         // If we can't get metadata, still track with minimal info
         await this.usageTracker.trackFileDelete(
           userId,
@@ -252,7 +252,7 @@ export class EnhancedR2Service {
       ipAddress?: string;
       region?: string;
     } = {}
-  ) {
+  ): Promise<unknown[]> {
     return await this.r2Service.listFiles(userId, options, context);
   }
 
@@ -268,14 +268,14 @@ export class EnhancedR2Service {
       ipAddress?: string;
       region?: string;
     } = {}
-  ) {
+  ): Promise<unknown> {
     return await this.r2Service.getFileMetadata(fileId, userId, context);
   }
 
   /**
    * Get user storage usage
    */
-  async getUserStorageUsage(userId: string) {
+  async getUserStorageUsage(userId: string): Promise<unknown> {
     return await this.usageTracker.getUserStorageUsage(userId);
   }
 
@@ -289,7 +289,12 @@ export class EnhancedR2Service {
       endDate?: string;
       granularity?: 'day' | 'week' | 'month';
     } = {}
-  ) {
+  ): Promise<{
+    userId: string;
+    period: { start: string; end: string; granularity: string };
+    analytics: unknown[];
+    summary: unknown;
+  }> {
     try {
       const { startDate, endDate, granularity = 'day' } = options;
       const start = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -332,7 +337,16 @@ export class EnhancedR2Service {
   /**
    * Get system-wide storage metrics
    */
-  async getSystemStorageMetrics() {
+  async getSystemStorageMetrics(): Promise<{
+    timestamp: number;
+    totalUsers: number;
+    totalFiles: number;
+    totalStorageBytes: number;
+    dailyUploads: number;
+    averageFileSize: number;
+    dailyActivity: unknown[];
+    healthStatus: 'healthy' | 'warning' | 'critical';
+  }> {
     try {
       const systemStats = await this.env.DB
         .prepare(`
@@ -363,11 +377,11 @@ export class EnhancedR2Service {
 
       return {
         timestamp: Date.now(),
-        totalUsers: systemStats?.total_users || 0,
-        totalFiles: systemStats?.total_files || 0,
-        totalStorageBytes: systemStats?.total_storage_bytes || 0,
-        dailyUploads: systemStats?.daily_uploads || 0,
-        averageFileSize: systemStats?.average_file_size || 0,
+        totalUsers: systemStats?.total_users ?? 0,
+        totalFiles: systemStats?.total_files ?? 0,
+        totalStorageBytes: systemStats?.total_storage_bytes ?? 0,
+        dailyUploads: systemStats?.daily_uploads ?? 0,
+        averageFileSize: systemStats?.average_file_size ?? 0,
         dailyActivity: dailyActivity.results,
         healthStatus: this.calculateHealthStatus(dailyActivity.results)
       };
@@ -380,28 +394,28 @@ export class EnhancedR2Service {
   /**
    * Flush all pending metrics
    */
-  async flushMetrics() {
+  async flushMetrics(): Promise<void> {
     await this.metricsService.flushMetrics();
   }
 
   /**
    * Clear user usage cache
    */
-  clearUserCache(userId: string) {
+  clearUserCache(userId: string): void {
     this.usageTracker.clearUserCache(userId);
   }
 
   /**
    * Get cache statistics
    */
-  getCacheStats() {
+  getCacheStats(): unknown {
     return this.usageTracker.getCacheStats();
   }
 
   /**
    * Cleanup method for graceful shutdown
    */
-  async cleanup() {
+  async cleanup(): Promise<void> {
     await this.r2Service.cleanup();
     this.usageTracker.clearAllCache();
   }
@@ -422,7 +436,14 @@ export class EnhancedR2Service {
   /**
    * Calculate analytics summary
    */
-  private calculateAnalyticsSummary(analytics: any[]): any {
+  private calculateAnalyticsSummary(analytics: unknown[]): {
+    totalOperations: number;
+    totalUploads: number;
+    totalDeletes: number;
+    totalBandwidth: number;
+    averageFileSize: number;
+    growthRate: number;
+  } {
     if (analytics.length === 0) {
       return {
         totalOperations: 0,
@@ -434,11 +455,11 @@ export class EnhancedR2Service {
       };
     }
 
-    const summary = analytics.reduce((acc, item) => {
-      acc.totalOperations += item.operations_count || 0;
-      acc.totalUploads += item.uploaded_files || 0;
-      acc.totalDeletes += item.deleted_files || 0;
-      acc.totalBandwidth += item.bandwidth_used_bytes || 0;
+    const summary = analytics.reduce((acc, item: Record<string, unknown>) => {
+      acc.totalOperations += (item.operations_count as number) ?? 0;
+      acc.totalUploads += (item.uploaded_files as number) ?? 0;
+      acc.totalDeletes += (item.deleted_files as number) ?? 0;
+      acc.totalBandwidth += (item.bandwidth_used_bytes as number) ?? 0;
       return acc;
     }, {
       totalOperations: 0,
@@ -447,15 +468,15 @@ export class EnhancedR2Service {
       totalBandwidth: 0
     });
 
-    const firstDay = analytics[0];
-    const lastDay = analytics[analytics.length - 1];
-    const growthRate = firstDay.total_size_bytes > 0 ? 
-      ((lastDay.total_size_bytes - firstDay.total_size_bytes) / firstDay.total_size_bytes) * 100 : 0;
+    const firstDay = analytics[0] as Record<string, unknown>;
+    const lastDay = analytics[analytics.length - 1] as Record<string, unknown>;
+    const growthRate = (firstDay.total_size_bytes as number) > 0 ? 
+      (((lastDay.total_size_bytes as number) - (firstDay.total_size_bytes as number)) / (firstDay.total_size_bytes as number)) * 100 : 0;
 
     return {
       ...summary,
       averageFileSize: summary.totalUploads > 0 ? 
-        lastDay.total_size_bytes / lastDay.total_files : 0,
+        (lastDay.total_size_bytes as number) / (lastDay.total_files as number) : 0,
       growthRate
     };
   }
@@ -463,9 +484,9 @@ export class EnhancedR2Service {
   /**
    * Calculate system health status
    */
-  private calculateHealthStatus(dailyActivity: any[]): 'healthy' | 'warning' | 'critical' {
-    const totalOps = dailyActivity.reduce((sum, activity) => sum + activity.count, 0);
-    const successfulOps = dailyActivity.reduce((sum, activity) => sum + activity.successful_ops, 0);
+  private calculateHealthStatus(dailyActivity: unknown[]): 'healthy' | 'warning' | 'critical' {
+    const totalOps = dailyActivity.reduce((sum, activity: Record<string, unknown>) => sum + (activity.count as number), 0);
+    const successfulOps = dailyActivity.reduce((sum, activity: Record<string, unknown>) => sum + (activity.successful_ops as number), 0);
     
     if (totalOps === 0) return 'healthy';
     

@@ -10,7 +10,7 @@ export class MetricsRoutes {
   constructor(
     analytics: AnalyticsEngineDataset,
     db: D1Database,
-    config: any = {}
+    config: Record<string, unknown> = {}
   ) {
     this.metricsService = new EnhancedMetricsService(analytics, db, config);
   }
@@ -18,14 +18,14 @@ export class MetricsRoutes {
   /**
    * Handle metrics-related API requests
    */
-  async handleRequest(request: Request, env: any): Promise<Response> {
+  async handleRequest(request: Request, env: Record<string, unknown>): Promise<Response> {
     const url = new URL(request.url);
     const pathname = url.pathname;
     const method = request.method;
 
     try {
       // Authenticate request
-      const authResult = await authenticateRequest(request, env.DB);
+      const authResult = await authenticateRequest(request, env.DB as D1Database);
       if (!authResult.success) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 401,
@@ -33,8 +33,8 @@ export class MetricsRoutes {
         });
       }
 
-      const userId = authResult.user!.id;
-      const isAdmin = authResult.user!.is_admin;
+      const userId = authResult.user?.id ?? '';
+      const isAdmin = authResult.user?.is_admin ?? false;
 
       // Route handling
       if (pathname === '/api/metrics/dashboard' && method === 'GET') {
@@ -112,7 +112,7 @@ export class MetricsRoutes {
       // Scheduled job endpoints (no auth required - handled by Cloudflare)
       if (pathname.startsWith('/api/metrics/jobs/') && method === 'POST') {
         const jobType = pathname.split('/').pop();
-        return await this.metricsService.handleScheduledJob(jobType!, request);
+        return await this.metricsService.handleScheduledJob(jobType ?? '', request);
       }
 
       return new Response(JSON.stringify({ error: 'Not found' }), {
@@ -164,8 +164,8 @@ export class MetricsRoutes {
    */
   private async getStorageHistory(request: Request, userId: string): Promise<Response> {
     const url = new URL(request.url);
-    const timeRange = url.searchParams.get('timeRange') as any || '30days';
-    const aggregationLevel = url.searchParams.get('aggregation') as any || 'daily';
+    const timeRange = (url.searchParams.get('timeRange') as string) ?? '30days';
+    const aggregationLevel = (url.searchParams.get('aggregation') as string) ?? 'daily';
     
     const history = await this.metricsService.queryService.getUserStorageHistory(
       userId,
@@ -186,7 +186,7 @@ export class MetricsRoutes {
    */
   private async getCostBreakdown(request: Request, userId: string): Promise<Response> {
     const url = new URL(request.url);
-    const timeRange = url.searchParams.get('timeRange') as any || '30days';
+    const timeRange = (url.searchParams.get('timeRange') as string) ?? '30days';
     
     const costs = await this.metricsService.queryService.getUserCostBreakdown(
       userId,
@@ -246,8 +246,8 @@ export class MetricsRoutes {
     isAdmin: boolean
   ): Promise<Response> {
     const url = new URL(request.url);
-    const timeRange = url.searchParams.get('timeRange') as any || '7days';
-    const targetUserId = isAdmin ? url.searchParams.get('userId') || userId : userId;
+    const timeRange = (url.searchParams.get('timeRange') as string) ?? '7days';
+    const targetUserId = isAdmin ? (url.searchParams.get('userId') ?? userId) : userId;
     
     const errors = await this.metricsService.queryService.getErrorAnalytics(
       targetUserId,
@@ -271,8 +271,8 @@ export class MetricsRoutes {
     isAdmin: boolean
   ): Promise<Response> {
     const url = new URL(request.url);
-    const timeRange = url.searchParams.get('timeRange') as any || '7days';
-    const targetUserId = isAdmin ? url.searchParams.get('userId') || userId : userId;
+    const timeRange = (url.searchParams.get('timeRange') as string) ?? '7days';
+    const targetUserId = isAdmin ? (url.searchParams.get('userId') ?? userId) : userId;
     
     const performance = await this.metricsService.queryService.getPerformanceMetrics(
       targetUserId,
@@ -314,7 +314,7 @@ export class MetricsRoutes {
     isAdmin: boolean
   ): Promise<Response> {
     const body = await request.json();
-    const targetUserId = isAdmin ? body.userId || userId : userId;
+    const targetUserId = isAdmin ? (body.userId ?? userId) : userId;
     
     // Only admins can update other users' quotas or sensitive settings
     if (!isAdmin && (body.userId || body.quotaType || body.maxMonthlyCost)) {
@@ -344,28 +344,31 @@ export class MetricsRoutes {
     const endpoint = segments[segments.length - 1];
     
     switch (endpoint) {
-      case 'system-overview':
+      case 'system-overview': {
         const overview = await this.metricsService.queryService.getSystemMetricsOverview();
         return new Response(JSON.stringify({ success: true, data: overview }), {
           headers: { 'Content-Type': 'application/json' }
         });
+      }
         
-      case 'job-statistics':
+      case 'job-statistics': {
         const url = new URL(request.url);
-        const days = parseInt(url.searchParams.get('days') || '30');
+        const days = parseInt(url.searchParams.get('days') ?? '30');
         const stats = await this.metricsService.scheduler.getJobStatistics(days);
         return new Response(JSON.stringify({ success: true, data: stats }), {
           headers: { 'Content-Type': 'application/json' }
         });
+      }
         
-      case 'job-history':
+      case 'job-history': {
         const urlHistory = new URL(request.url);
         const jobType = urlHistory.searchParams.get('jobType');
-        const limit = parseInt(urlHistory.searchParams.get('limit') || '100');
-        const history = await this.metricsService.scheduler.getJobHistory(jobType || undefined, limit);
+        const limit = parseInt(urlHistory.searchParams.get('limit') ?? '100');
+        const history = await this.metricsService.scheduler.getJobHistory(jobType ?? undefined, limit);
         return new Response(JSON.stringify({ success: true, data: history }), {
           headers: { 'Content-Type': 'application/json' }
         });
+      }
         
       default:
         return new Response(JSON.stringify({ error: 'Admin endpoint not found' }), {
@@ -409,7 +412,7 @@ export class MetricsRoutes {
     const url = new URL(request.url);
     const pattern = url.searchParams.get('pattern');
     
-    this.metricsService.clearCache(pattern || undefined);
+    this.metricsService.clearCache(pattern ?? undefined);
     
     return new Response(JSON.stringify({
       success: true,
@@ -427,14 +430,14 @@ export function createMetricsMiddleware(
   metricsService: EnhancedMetricsService
 ) {
   return async (
-    operation: any,
+    operation: string,
     fileId: string,
     userId: string,
     fileName: string,
     fileSize: number,
     contentType: string,
-    additionalData: any = {}
-  ) => {
+    additionalData: Record<string, unknown> = {}
+  ): { execute<T>(asyncOperation: () => Promise<T>): Promise<T> } => {
     return {
       async execute<T>(asyncOperation: () => Promise<T>): Promise<T> {
         const startTime = Date.now();

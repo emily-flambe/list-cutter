@@ -50,7 +50,7 @@ export class AlertSchedulerService {
     };
 
     try {
-      console.log('Starting scheduled alert evaluation...');
+      console.warn('Starting scheduled alert evaluation...');
 
       // Evaluate all enabled alert rules
       const evaluations = await this.evaluationService.evaluateAllAlerts();
@@ -80,7 +80,7 @@ export class AlertSchedulerService {
       // Clean up suppressed alerts
       await this.processSuppressionCleanup();
 
-      console.log(`Alert evaluation completed: ${result.evaluatedRules} rules evaluated, ${result.triggeredAlerts} alerts triggered, ${result.sentNotifications} notifications sent`);
+      console.warn(`Alert evaluation completed: ${result.evaluatedRules} rules evaluated, ${result.triggeredAlerts} alerts triggered, ${result.sentNotifications} notifications sent`);
 
     } catch (error) {
       const errorMsg = `Alert evaluation job failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -107,7 +107,7 @@ export class AlertSchedulerService {
 
     // Check if alert is suppressed
     if (await this.isAlertSuppressed(alertRule, alertInstance)) {
-      console.log(`Alert ${alertInstanceId} is suppressed, skipping notifications`);
+      console.warn(`Alert ${alertInstanceId} is suppressed, skipping notifications`);
       return 0;
     }
 
@@ -169,7 +169,7 @@ export class AlertSchedulerService {
   /**
    * Escalate a specific alert
    */
-  private async escalateAlert(alert: any): Promise<void> {
+  private async escalateAlert(alert: AlertDatabaseRow): Promise<void> {
     const escalationPolicies = await this.getApplicableEscalationPolicies(alert);
     
     if (escalationPolicies.length === 0) {
@@ -185,7 +185,7 @@ export class AlertSchedulerService {
     }
 
     const escalationSteps = JSON.parse(policy.escalationSteps);
-    const step = escalationSteps.find((s: any) => s.level === nextLevel);
+    const step = escalationSteps.find((s: Record<string, unknown>) => s.level === nextLevel);
     
     if (!step) {
       return;
@@ -217,13 +217,13 @@ export class AlertSchedulerService {
       }
     }
 
-    console.log(`Escalated alert ${alert.id} to level ${nextLevel}`);
+    console.warn(`Escalated alert ${alert.id} to level ${nextLevel}`);
   }
 
   /**
    * Get applicable escalation policies for an alert
    */
-  private async getApplicableEscalationPolicies(alert: any): Promise<AlertEscalationPolicy[]> {
+  private async getApplicableEscalationPolicies(alert: AlertDatabaseRow): Promise<AlertEscalationPolicy[]> {
     const policies = await this.db.prepare(`
       SELECT * FROM alert_escalation_policies 
       WHERE enabled = 1
@@ -278,7 +278,7 @@ export class AlertSchedulerService {
             WHERE id = ?
           `).bind(new Date().toISOString(), alert.id).run();
           
-          console.log(`Reactivated suppressed alert ${alert.id}`);
+          console.warn(`Reactivated suppressed alert ${alert.id}`);
         } else {
           // Condition resolved, mark as resolved
           await this.db.prepare(`
@@ -287,7 +287,7 @@ export class AlertSchedulerService {
             WHERE id = ?
           `).bind(new Date().toISOString(), new Date().toISOString(), alert.id).run();
           
-          console.log(`Resolved suppressed alert ${alert.id}`);
+          console.warn(`Resolved suppressed alert ${alert.id}`);
         }
       }
     }
@@ -427,7 +427,7 @@ export class AlertSchedulerService {
     `).run();
     result.deletedDeliveries = deliveryResult.meta.changes;
 
-    console.log(`Cleaned up ${result.deletedEvaluations} old evaluations and ${result.deletedDeliveries} old deliveries`);
+    console.warn(`Cleaned up ${result.deletedEvaluations} old evaluations and ${result.deletedDeliveries} old deliveries`);
 
     return result;
   }
@@ -491,7 +491,7 @@ export class AlertSchedulerService {
   // Database Mapping Helpers
   // ============================================================================
 
-  private mapDatabaseRowToEscalationPolicy(row: any): AlertEscalationPolicy {
+  private mapDatabaseRowToEscalationPolicy(row: DatabaseRow): AlertEscalationPolicy {
     return {
       id: row.id,
       name: row.name,
@@ -509,7 +509,7 @@ export class AlertSchedulerService {
     };
   }
 
-  private mapDatabaseRowToSuppressionRule(row: any): AlertSuppressionRule {
+  private mapDatabaseRowToSuppressionRule(row: DatabaseRow): AlertSuppressionRule {
     return {
       id: row.id,
       name: row.name,
@@ -530,4 +530,19 @@ export class AlertSchedulerService {
       updatedAt: row.updated_at
     };
   }
+}
+
+// Type definitions
+interface DatabaseRow {
+  [key: string]: unknown;
+}
+
+interface AlertDatabaseRow {
+  id: string;
+  alert_rule_id: string;
+  escalation_level: number;
+  user_id?: string;
+  severity: string;
+  alert_type: string;
+  [key: string]: unknown;
 }

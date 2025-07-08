@@ -6,8 +6,7 @@
 import {
   AlertTemplate,
   AlertCreateRequest,
-  AlertType,
-  AlertThreshold,
+  // AlertThreshold,
   NotificationChannelCreateRequest
 } from '../../types/alerts.js';
 
@@ -472,7 +471,7 @@ export class AlertTemplateService {
   /**
    * Map database row to AlertTemplate
    */
-  private mapDatabaseRowToTemplate(row: any): AlertTemplate {
+  private mapDatabaseRowToTemplate(row: DatabaseRow): AlertTemplate {
     return {
       id: row.id,
       name: row.name,
@@ -485,4 +484,9 @@ export class AlertTemplateService {
       updatedAt: row.updated_at
     };
   }
+}
+
+// Type definitions
+interface DatabaseRow {
+  [key: string]: unknown;
 }

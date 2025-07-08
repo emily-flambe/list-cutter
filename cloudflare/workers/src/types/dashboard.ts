@@ -3,7 +3,7 @@
  */
 
 // Base response types
-export interface DashboardResponse<T = any> {
+export interface DashboardResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -124,7 +124,7 @@ export interface RealtimeErrors {
 }
 
 // Historical Types
-export interface HistoricalData<T = any> {
+export interface HistoricalData<T = unknown> {
   data: T[];
   timeRange: string;
   granularity?: string;
@@ -243,7 +243,7 @@ export interface SystemAlert {
   severity: 'low' | 'medium' | 'high' | 'critical';
   message: string;
   timestamp: string;
-  data?: any;
+  data?: unknown;
   acknowledged?: boolean;
   resolvedAt?: string;
 }

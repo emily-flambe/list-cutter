@@ -39,7 +39,7 @@ export async function authenticateRequest(c: Context): Promise<AuthContext | nul
 }
 
 export function requireAuth() {
-  return async (c: Context, next: Function) => {
+  return async (c: Context, next: () => Promise<void>): Promise<Response | void> => {
     const auth = await authenticateRequest(c);
     if (!auth) {
       return c.json({ error: 'Authentication required' }, 401);
@@ -51,7 +51,7 @@ export function requireAuth() {
 }
 
 export function requireAdmin() {
-  return async (c: Context, next: Function) => {
+  return async (c: Context, next: () => Promise<void>): Promise<Response | void> => {
     const auth = await authenticateRequest(c);
     if (!auth || !auth.isAdmin) {
       return c.json({ error: 'Admin access required' }, 403);

@@ -22,7 +22,7 @@ export function createAlertDashboardRoutes(
    * Get enhanced dashboard with alert data
    * GET /api/dashboard/enhanced
    */
-  router.get('/enhanced', async (request: Request, env: Env) => {
+  router.get('/enhanced', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       
@@ -59,7 +59,7 @@ export function createAlertDashboardRoutes(
             lastEvaluationTime: schedulerStats.lastEvaluationTime
           }
         },
-        healthStatus: await this.calculateHealthStatus(alertData, schedulerStats)
+        healthStatus: await calculateHealthStatus(alertData, schedulerStats)
       };
       
       return new Response(JSON.stringify(enhancedDashboard), {
@@ -79,7 +79,7 @@ export function createAlertDashboardRoutes(
    * Get alert widget data for dashboard
    * GET /api/dashboard/alerts/widget
    */
-  router.get('/alerts/widget', async (request: Request, env: Env) => {
+  router.get('/alerts/widget', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       
@@ -102,9 +102,9 @@ export function createAlertDashboardRoutes(
           thresholdValue: alert.thresholdValue
         })),
         trends: {
-          alertsToday: await this.getAlertsInPeriod(userId, '1d'),
-          alertsThisWeek: await this.getAlertsInPeriod(userId, '7d'),
-          changeFromLastWeek: await this.getAlertTrendChange(userId)
+          alertsToday: await getAlertsInPeriod(userId, '1d'),
+          alertsThisWeek: await getAlertsInPeriod(userId, '7d'),
+          changeFromLastWeek: await getAlertTrendChange(userId)
         }
       };
       
@@ -125,13 +125,13 @@ export function createAlertDashboardRoutes(
    * Get alert metrics for charts
    * GET /api/dashboard/alerts/metrics
    */
-  router.get('/alerts/metrics', async (request: Request, env: Env) => {
+  router.get('/alerts/metrics', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const url = new URL(request.url);
       const timeRange = url.searchParams.get('timeRange') || '7d';
       
-      const metrics = await this.getAlertMetricsForTimeRange(userId, timeRange);
+      const metrics = await getAlertMetricsForTimeRange(userId, timeRange);
       
       return new Response(JSON.stringify(metrics), {
         headers: { 'Content-Type': 'application/json' }
@@ -150,13 +150,13 @@ export function createAlertDashboardRoutes(
    * Get alert heatmap data
    * GET /api/dashboard/alerts/heatmap
    */
-  router.get('/alerts/heatmap', async (request: Request, env: Env) => {
+  router.get('/alerts/heatmap', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const url = new URL(request.url);
       const days = parseInt(url.searchParams.get('days') || '30');
       
-      const heatmapData = await this.generateAlertHeatmap(userId, days);
+      const heatmapData = await generateAlertHeatmap(userId, days);
       
       return new Response(JSON.stringify(heatmapData), {
         headers: { 'Content-Type': 'application/json' }
@@ -175,13 +175,13 @@ export function createAlertDashboardRoutes(
    * Get notification delivery status
    * GET /api/dashboard/alerts/notifications
    */
-  router.get('/alerts/notifications', async (request: Request, env: Env) => {
+  router.get('/alerts/notifications', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       const url = new URL(request.url);
       const timeRange = url.searchParams.get('timeRange') || '24h';
       
-      const notificationStats = await this.getNotificationDeliveryStats(userId, timeRange);
+      const notificationStats = await getNotificationDeliveryStats(userId, timeRange);
       
       return new Response(JSON.stringify(notificationStats), {
         headers: { 'Content-Type': 'application/json' }
@@ -200,11 +200,11 @@ export function createAlertDashboardRoutes(
    * Get alert rule performance
    * GET /api/dashboard/alerts/rules/performance
    */
-  router.get('/alerts/rules/performance', async (request: Request, env: Env) => {
+  router.get('/alerts/rules/performance', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const userId = request.headers.get('X-User-ID');
       
-      const performance = await this.getAlertRulePerformance(userId);
+      const performance = await getAlertRulePerformance(userId);
       
       return new Response(JSON.stringify(performance), {
         headers: { 'Content-Type': 'application/json' }
@@ -223,7 +223,7 @@ export function createAlertDashboardRoutes(
    * Get system health dashboard (admin only)
    * GET /api/dashboard/alerts/system
    */
-  router.get('/alerts/system', async (request: Request, env: Env) => {
+  router.get('/alerts/system', async (request: Request, _env: Env): Promise<Response> => {
     try {
       const isAdmin = request.headers.get('X-Is-Admin') === 'true';
       
@@ -234,7 +234,7 @@ export function createAlertDashboardRoutes(
         });
       }
       
-      const systemHealth = await this.getSystemHealthDashboard();
+      const systemHealth = await getSystemHealthDashboard();
       
       return new Response(JSON.stringify(systemHealth), {
         headers: { 'Content-Type': 'application/json' }
@@ -253,7 +253,7 @@ export function createAlertDashboardRoutes(
   // Helper Methods
   // ============================================================================
 
-  async function calculateHealthStatus(alertData: any, schedulerStats: any): Promise<{
+  async function calculateHealthStatus(alertData: Record<string, unknown>, schedulerStats: Record<string, unknown>): Promise<{
     status: 'healthy' | 'warning' | 'critical';
     score: number;
     factors: Array<{ name: string; status: string; weight: number }>;
@@ -346,7 +346,7 @@ export function createAlertDashboardRoutes(
     return Math.round(((thisWeek - lastWeek) / lastWeek) * 100);
   }
 
-  async function getAlertMetricsForTimeRange(userId: string | null, timeRange: string): Promise<any> {
+  async function getAlertMetricsForTimeRange(userId: string | null, timeRange: string): Promise<unknown> {
     const userFilter = userId ? 'AND ar.user_id = ?' : '';
     const params = userId ? [userId] : [];
     
@@ -394,7 +394,7 @@ export function createAlertDashboardRoutes(
     };
   }
 
-  async function generateAlertHeatmap(userId: string | null, days: number): Promise<any> {
+  async function generateAlertHeatmap(userId: string | null, days: number): Promise<unknown> {
     const userFilter = userId ? 'AND ar.user_id = ?' : '';
     const params = userId ? [days, userId] : [days];
     
@@ -413,9 +413,9 @@ export function createAlertDashboardRoutes(
     `).bind(...params).all();
     
     // Process into 24x7 grid format
-    const grid: any[][] = [];
+    const grid: Array<Array<Record<string, unknown>>> = [];
     for (let day = 0; day < days; day++) {
-      const dayData: any[] = [];
+      const dayData: Array<Record<string, unknown>> = [];
       for (let hour = 0; hour < 24; hour++) {
         dayData.push({ hour, alerts: 0, severity: 'none' });
       }
@@ -423,15 +423,15 @@ export function createAlertDashboardRoutes(
     }
     
     // Fill grid with actual data
-    heatmapData.results.forEach((row: any) => {
+    heatmapData.results.forEach((row: Record<string, unknown>) => {
       const date = new Date(row.date);
       const dayIndex = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
       const hour = parseInt(row.hour);
       
       if (dayIndex >= 0 && dayIndex < days && hour >= 0 && hour < 24) {
-        grid[dayIndex][hour].alerts += row.alert_count;
+        (grid[dayIndex][hour].alerts as number) += (row.alert_count as number);
         // Set highest severity
-        if (row.severity === 'critical' || grid[dayIndex][hour].severity === 'none') {
+        if (row.severity === 'critical' || (grid[dayIndex][hour].severity as string) === 'none') {
           grid[dayIndex][hour].severity = row.severity;
         }
       }
@@ -440,12 +440,12 @@ export function createAlertDashboardRoutes(
     return {
       grid,
       days,
-      maxAlerts: Math.max(...grid.flat().map(cell => cell.alerts)),
+      maxAlerts: Math.max(...grid.flat().map(cell => cell.alerts as number)),
       generatedAt: new Date().toISOString()
     };
   }
 
-  async function getNotificationDeliveryStats(userId: string | null, timeRange: string): Promise<any> {
+  async function getNotificationDeliveryStats(userId: string | null, timeRange: string): Promise<unknown> {
     const userFilter = userId ? 'AND nc.user_id = ?' : '';
     const params = userId ? [userId] : [];
     
@@ -495,7 +495,7 @@ export function createAlertDashboardRoutes(
     };
   }
 
-  async function getAlertRulePerformance(userId: string | null): Promise<any> {
+  async function getAlertRulePerformance(userId: string | null): Promise<unknown> {
     const userFilter = userId ? 'AND ar.user_id = ?' : '';
     const params = userId ? [userId] : [];
     
@@ -528,16 +528,16 @@ export function createAlertDashboardRoutes(
     `).bind(...params).all();
     
     return {
-      rules: rulePerformance.results.map((rule: any) => ({
+      rules: rulePerformance.results.map((rule: Record<string, unknown>) => ({
         ...rule,
-        triggerRate: rule.total_evaluations > 0 ? (rule.triggered_evaluations / rule.total_evaluations) * 100 : 0,
-        resolutionRate: rule.total_alerts > 0 ? (rule.resolved_alerts / rule.total_alerts) * 100 : 0
+        triggerRate: (rule.total_evaluations as number) > 0 ? ((rule.triggered_evaluations as number) / (rule.total_evaluations as number)) * 100 : 0,
+        resolutionRate: (rule.total_alerts as number) > 0 ? ((rule.resolved_alerts as number) / (rule.total_alerts as number)) * 100 : 0
       })),
       generatedAt: new Date().toISOString()
     };
   }
 
-  async function getSystemHealthDashboard(): Promise<any> {
+  async function getSystemHealthDashboard(): Promise<unknown> {
     const systemStats = await alertScheduler.getSchedulerStatistics();
     
     const globalAlertStats = await db.prepare(`

@@ -65,7 +65,7 @@ export interface AlertRule {
   maxAlertsPerDay: number;
   
   // Additional filters
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   
   // Timestamps
   createdAt: string;
@@ -81,7 +81,7 @@ export interface NotificationChannel {
   userId?: string;
   
   // Channel configuration
-  configuration: Record<string, any>;
+  configuration: Record<string, unknown>;
   
   // Delivery settings
   enabled: boolean;
@@ -134,7 +134,7 @@ export interface AlertInstance {
   notes?: string;
   
   // Alert context
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   affectedResources?: string[];
   
   // Escalation tracking
@@ -192,7 +192,7 @@ export interface AlertEvaluation {
   alertInstanceId?: string;
   
   // Evaluation context
-  evaluationData?: Record<string, any>;
+  evaluationData?: Record<string, unknown>;
   
   // Performance metrics
   evaluationDurationMs: number;
@@ -255,7 +255,7 @@ export interface AlertSuppressionRule {
   endDate?: string;
   
   // Conditional suppression
-  conditions?: Record<string, any>;
+  conditions?: Record<string, unknown>;
   
   // State
   enabled: boolean;
@@ -461,7 +461,7 @@ export interface AlertCreateRequest {
   aggregationMethod?: AggregationMethod;
   suppressionDurationMinutes?: number;
   maxAlertsPerDay?: number;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   notificationChannelIds?: string[];
 }
 
@@ -477,13 +477,13 @@ export interface AlertUpdateRequest {
   evaluationFrequencyMinutes?: number;
   suppressionDurationMinutes?: number;
   maxAlertsPerDay?: number;
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
 }
 
 export interface NotificationChannelCreateRequest {
   name: string;
   channelType: NotificationChannelType;
-  configuration: Record<string, any>;
+  configuration: Record<string, unknown>;
   rateLimitPerHour?: number;
   maxRetries?: number;
   retryDelayMinutes?: number;
@@ -493,7 +493,7 @@ export interface NotificationChannelCreateRequest {
 
 export interface NotificationChannelUpdateRequest {
   name?: string;
-  configuration?: Record<string, any>;
+  configuration?: Record<string, unknown>;
   enabled?: boolean;
   rateLimitPerHour?: number;
   maxRetries?: number;
@@ -513,7 +513,7 @@ export interface AlertResolveRequest {
 export interface AlertTestRequest {
   alertRuleId: string;
   testValue: number;
-  testContext?: Record<string, any>;
+  testContext?: Record<string, unknown>;
 }
 
 export interface AlertTestResponse {
@@ -521,7 +521,7 @@ export interface AlertTestResponse {
   currentValue: number;
   thresholdValue: number;
   thresholdBreached: boolean;
-  evaluationData: Record<string, any>;
+  evaluationData: Record<string, unknown>;
   estimatedNotifications: number;
 }
 
@@ -566,7 +566,7 @@ export interface AlertWebhookPayload {
   acknowledgedAt?: string;
   resolvedAt?: string;
   userId?: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   affectedResources?: string[];
 }
 
@@ -606,8 +606,8 @@ export interface AlertSMSPayload {
 
 export interface AlertCustomPayload {
   channelType: NotificationChannelType;
-  configuration: Record<string, any>;
-  payload: Record<string, any>;
+  configuration: Record<string, unknown>;
+  payload: Record<string, unknown>;
 }
 
 export interface AlertNotificationContext {
@@ -618,7 +618,7 @@ export interface AlertNotificationContext {
   thresholdValue: number;
   severity: AlertSeverity;
   timestamp: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   affectedResources?: string[];
 }
 
@@ -629,7 +629,7 @@ export interface AlertEvaluationContext {
     startTime: string;
     endTime: string;
   };
-  metrics: Record<string, any>;
+  metrics: Record<string, unknown>;
   previousEvaluations: AlertEvaluation[];
   existingAlert?: AlertInstance;
 }

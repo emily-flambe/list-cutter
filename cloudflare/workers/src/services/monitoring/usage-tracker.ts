@@ -224,7 +224,7 @@ export class UsageTracker {
       let dailyDeletes = 0;
       let dailyBandwidthBytes = 0;
 
-      dailyActivity.results.forEach((activity: any) => {
+      dailyActivity.results.forEach((activity: DatabaseRow) => {
         switch (activity.action) {
           case 'download':
             dailyDownloads = activity.count;
@@ -294,7 +294,7 @@ export class UsageTracker {
         .all();
 
       const storageByType: Record<string, number> = {};
-      typeStats.results.forEach((stat: any) => {
+      typeStats.results.forEach((stat: DatabaseRow) => {
         const category = this.getFileCategory(stat.mime_type);
         storageByType[category] = (storageByType[category] || 0) + stat.total_size;
       });
@@ -324,7 +324,7 @@ export class UsageTracker {
         .all();
 
       const storageByClass: Record<string, number> = {};
-      classStats.results.forEach((stat: any) => {
+      classStats.results.forEach((stat: DatabaseRow) => {
         storageByClass[stat.storage_class || 'Standard'] = stat.total_size;
       });
 
@@ -368,7 +368,7 @@ export class UsageTracker {
       let totalOps = 0;
       let successfulOps = 0;
 
-      recentOps.results.forEach((op: any) => {
+      recentOps.results.forEach((op: DatabaseRow) => {
         totalOps += op.total_ops;
         successfulOps += op.successful_ops;
         
@@ -616,4 +616,9 @@ export class UsageTracker {
       newestEntry: Math.max(...timestamps)
     };
   }
+}
+
+// Type definitions
+interface DatabaseRow {
+  [key: string]: unknown;
 }

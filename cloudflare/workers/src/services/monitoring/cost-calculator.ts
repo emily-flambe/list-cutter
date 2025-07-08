@@ -132,7 +132,7 @@ export class CostCalculator {
       .all();
 
     // Calculate average storage usage
-    const avgStorageBytes = this.calculateAverageStorage(dailySnapshots.results as any[]);
+    const avgStorageBytes = this.calculateAverageStorage(dailySnapshots.results as Record<string, unknown>[]);
     
     // Aggregate costs
     let totalCost = 0;
@@ -147,7 +147,7 @@ export class CostCalculator {
     let totalTransferOut = 0;
     let totalTransferIn = 0;
 
-    for (const metric of operationMetrics.results as any[]) {
+    for (const metric of operationMetrics.results as Record<string, unknown>[]) {
       totalCost += metric.total_cost_usd;
       
       switch (metric.metric_type) {
@@ -286,7 +286,10 @@ export class CostCalculator {
     
     // Check cache
     if (this.pricingCache.has(cacheKey) && Date.now() < this.cacheExpiry) {
-      return this.pricingCache.get(cacheKey)!;
+      const cached = this.pricingCache.get(cacheKey);
+      if (cached) {
+        return cached;
+      }
     }
     
     const dateStr = date.toISOString().split('T')[0];
@@ -580,7 +583,7 @@ export class CostCalculator {
   /**
    * Calculate average storage usage from daily snapshots
    */
-  private calculateAverageStorage(snapshots: any[]): number {
+  private calculateAverageStorage(snapshots: DatabaseRow[]): number {
     if (snapshots.length === 0) return 0;
     
     const totalBytes = snapshots.reduce((sum, snapshot) => sum + (snapshot.total_bytes || 0), 0);
@@ -619,7 +622,7 @@ export class CostCalculator {
       transferOutUsedBytes: 0
     };
 
-    for (const metric of usage.results as any[]) {
+    for (const metric of usage.results as Record<string, unknown>[]) {
       switch (metric.metric_type) {
         case 'storage_bytes':
           freeTierUsage.storageUsedBytes = Math.min(metric.total_bytes, 10 * 1024 * 1024 * 1024); // 10GB limit
@@ -717,4 +720,9 @@ interface FreeTierUsage {
   classAUsed: number;
   classBUsed: number;
   transferOutUsedBytes: number;
+}
+
+// Additional type definitions
+interface DatabaseRow {
+  [key: string]: unknown;
 }

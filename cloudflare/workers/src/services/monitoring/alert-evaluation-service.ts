@@ -8,12 +8,8 @@ import {
   AlertInstance, 
   AlertEvaluation, 
   AlertEvaluationContext,
-  AlertType,
-  MetricType,
-  ComparisonType,
   ThresholdOperator,
-  AlertLevel,
-  AlertInstanceState
+  AlertLevel
 } from '../../types/alerts.js';
 import { MetricsQueryService } from './query-service.js';
 import { CostCalculator } from './cost-calculator.js';
@@ -105,7 +101,7 @@ export class AlertEvaluationService {
    * Get current value for the alert rule
    */
   private async getCurrentValue(rule: AlertRule, context: AlertEvaluationContext): Promise<number> {
-    const { alertType, metricType, comparisonType, comparisonWindow, aggregationMethod } = rule;
+    const { alertType } = rule;
 
     switch (alertType) {
       case 'cost_spike':
@@ -134,13 +130,13 @@ export class AlertEvaluationService {
   /**
    * Evaluate cost spike alerts
    */
-  private async evaluateCostSpike(rule: AlertRule, context: AlertEvaluationContext): Promise<number> {
+  private async evaluateCostSpike(rule: AlertRule, _context: AlertEvaluationContext): Promise<number> {
     const userId = rule.userId;
     if (!userId) {
       throw new Error('Cost spike alerts require a user ID');
     }
 
-    const { comparisonType, comparisonWindow } = rule;
+    const { comparisonType } = rule;
     
     if (comparisonType === 'month_over_month') {
       const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
@@ -244,13 +240,13 @@ export class AlertEvaluationService {
     
     const result = await this.db.prepare(query).bind(...params).first();
     
-    return result?.value || 0;
+    return result?.value ?? 0;
   }
 
   /**
    * Evaluate storage growth alerts
    */
-  private async evaluateStorageGrowth(rule: AlertRule, context: AlertEvaluationContext): Promise<number> {
+  private async evaluateStorageGrowth(rule: AlertRule, _context: AlertEvaluationContext): Promise<number> {
     const userId = rule.userId;
     if (!userId) {
       throw new Error('Storage growth alerts require a user ID');
@@ -288,7 +284,7 @@ export class AlertEvaluationService {
   /**
    * Evaluate quota violation alerts
    */
-  private async evaluateQuotaViolation(rule: AlertRule, context: AlertEvaluationContext): Promise<number> {
+  private async evaluateQuotaViolation(rule: AlertRule, _context: AlertEvaluationContext): Promise<number> {
     const userId = rule.userId;
     if (!userId) {
       throw new Error('Quota violation alerts require a user ID');
@@ -314,7 +310,7 @@ export class AlertEvaluationService {
   /**
    * Evaluate custom metric alerts
    */
-  private async evaluateCustomMetric(rule: AlertRule, context: AlertEvaluationContext): Promise<number> {
+  private async evaluateCustomMetric(_rule: AlertRule, _context: AlertEvaluationContext): Promise<number> {
     // This would be implemented based on custom metric definitions
     // For now, return 0 as a placeholder
     return 0;
@@ -323,7 +319,7 @@ export class AlertEvaluationService {
   /**
    * Get threshold value (may be dynamic based on comparison type)
    */
-  private async getThresholdValue(rule: AlertRule, context: AlertEvaluationContext): Promise<number> {
+  private async getThresholdValue(rule: AlertRule, _context: AlertEvaluationContext): Promise<number> {
     return rule.thresholdValue;
   }
 
@@ -355,7 +351,7 @@ export class AlertEvaluationService {
   private async shouldTriggerAlert(
     rule: AlertRule,
     thresholdBreached: boolean,
-    context: AlertEvaluationContext
+    _context: AlertEvaluationContext
   ): Promise<boolean> {
     if (!thresholdBreached) return false;
 
@@ -424,7 +420,7 @@ export class AlertEvaluationService {
       WHERE id = ?
     `).bind(new Date().toISOString(), rule.id).run();
 
-    return alertInstance.id!;
+    return alertInstance.id ?? '';
   }
 
   /**
@@ -569,13 +565,13 @@ export class AlertEvaluationService {
       AND evaluation_time >= datetime('now', '-' || ? || ' minutes')
     `).bind(ruleId, minutes).first();
 
-    return result?.count || 0;
+    return result?.count ?? 0;
   }
 
   /**
    * Check if alert is suppressed
    */
-  private async isAlertSuppressed(rule: AlertRule): Promise<boolean> {
+  private async isAlertSuppressed(_rule: AlertRule): Promise<boolean> {
     // This would check suppression rules
     // For now, return false as a placeholder
     return false;
@@ -593,7 +589,7 @@ export class AlertEvaluationService {
       AND date(started_at) = ?
     `).bind(rule.id, today).first();
 
-    return (result?.count || 0) >= rule.maxAlertsPerDay;
+    return (result?.count ?? 0) >= rule.maxAlertsPerDay;
   }
 
   /**
@@ -656,7 +652,7 @@ export class AlertEvaluationService {
   /**
    * Map database row to AlertRule
    */
-  private mapDatabaseRowToAlertRule(row: any): AlertRule {
+  private mapDatabaseRowToAlertRule(row: DatabaseRow): AlertRule {
     return {
       id: row.id,
       name: row.name,
@@ -689,7 +685,7 @@ export class AlertEvaluationService {
   /**
    * Map database row to AlertInstance
    */
-  private mapDatabaseRowToAlertInstance(row: any): AlertInstance {
+  private mapDatabaseRowToAlertInstance(row: DatabaseRow): AlertInstance {
     return {
       id: row.id,
       alertRuleId: row.alert_rule_id,
@@ -716,7 +712,7 @@ export class AlertEvaluationService {
   /**
    * Map database row to AlertEvaluation
    */
-  private mapDatabaseRowToAlertEvaluation(row: any): AlertEvaluation {
+  private mapDatabaseRowToAlertEvaluation(row: DatabaseRow): AlertEvaluation {
     return {
       id: row.id,
       alertRuleId: row.alert_rule_id,
@@ -731,4 +727,9 @@ export class AlertEvaluationService {
       createdAt: row.created_at
     };
   }
+}
+
+// Type definitions
+interface DatabaseRow {
+  [key: string]: unknown;
 }
