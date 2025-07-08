@@ -10,7 +10,6 @@
  */
 
 import { SecurityConfigManager } from '../../config/security-config';
-import { ValidationResult } from './file-validator';
 import { 
   SecurityEvent,
   SecurityEventType,
