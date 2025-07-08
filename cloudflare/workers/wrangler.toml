@@ -8,8 +8,8 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
 # Enable versioning and gradual deployments
-[version_metadata]
-enable_versions = true
+# [version_metadata]
+# enable_versions = true
 
 # Development configuration
 [dev]
@@ -57,62 +57,62 @@ preview_bucket_name = "cutty-files-dev"
 # max_batch_size = 10
 # max_batch_timeout = 5
 
-# Analytics Engine binding
-[[analytics_engine_datasets]]
-binding = "ANALYTICS"
-dataset = "cutty-metrics"
+# Analytics Engine binding (temporarily commented out for debugging)
+# [[analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "cutty-metrics"
 
-# Cron triggers for storage metrics aggregation
-# Daily aggregation at 2 AM UTC
-[[triggers.crons]]
-cron = "0 2 * * *"
-endpoint = "/api/metrics/jobs/daily-aggregation"
+# Cron triggers for storage metrics aggregation (temporarily commented out for debugging)
+# # Daily aggregation at 2 AM UTC
+# [[triggers.crons]]
+# cron = "0 2 * * *"
+# endpoint = "/api/metrics/jobs/daily-aggregation"
 
-# Daily snapshots at 1 AM UTC
-[[triggers.crons]]
-cron = "0 1 * * *"
-endpoint = "/api/metrics/jobs/update-daily-snapshots"
+# # Daily snapshots at 1 AM UTC
+# [[triggers.crons]]
+# cron = "0 1 * * *"
+# endpoint = "/api/metrics/jobs/update-daily-snapshots"
 
-# Weekly aggregation every Monday at 3 AM UTC
-[[triggers.crons]]
-cron = "0 3 * * 1"
-endpoint = "/api/metrics/jobs/weekly-aggregation"
+# # Weekly aggregation every Monday at 3 AM UTC
+# [[triggers.crons]]
+# cron = "0 3 * * 1"
+# endpoint = "/api/metrics/jobs/weekly-aggregation"
 
-# Monthly aggregation on 1st of month at 4 AM UTC
-[[triggers.crons]]
-cron = "0 4 1 * *"
-endpoint = "/api/metrics/jobs/monthly-aggregation"
+# # Monthly aggregation on 1st of month at 4 AM UTC
+# [[triggers.crons]]
+# cron = "0 4 1 * *"
+# endpoint = "/api/metrics/jobs/monthly-aggregation"
 
-# Cleanup old metrics every Sunday at 5 AM UTC
-[[triggers.crons]]
-cron = "0 5 * * 0"
-endpoint = "/api/metrics/jobs/cleanup-old-metrics"
+# # Cleanup old metrics every Sunday at 5 AM UTC
+# [[triggers.crons]]
+# cron = "0 5 * * 0"
+# endpoint = "/api/metrics/jobs/cleanup-old-metrics"
 
-# Metrics health check every 5 minutes
-[[triggers.crons]]
-cron = "*/5 * * * *"
-endpoint = "/api/metrics/jobs/health-check"
+# # Metrics health check every 5 minutes
+# [[triggers.crons]]
+# cron = "*/5 * * * *"
+# endpoint = "/api/metrics/jobs/health-check"
 
-# Alert system cron triggers
-# Alert evaluation every 5 minutes
-[[triggers.crons]]
-cron = "*/5 * * * *"
-endpoint = "/api/alerts/jobs/evaluate"
+# # Alert system cron triggers
+# # Alert evaluation every 5 minutes
+# [[triggers.crons]]
+# cron = "*/5 * * * *"
+# endpoint = "/api/alerts/jobs/evaluate"
 
-# Retry failed notifications every 15 minutes
-[[triggers.crons]]
-cron = "*/15 * * * *"
-endpoint = "/api/alerts/jobs/retry-notifications"
+# # Retry failed notifications every 15 minutes
+# [[triggers.crons]]
+# cron = "*/15 * * * *"
+# endpoint = "/api/alerts/jobs/retry-notifications"
 
-# Alert cleanup daily at 3 AM UTC
-[[triggers.crons]]
-cron = "0 3 * * *"
-endpoint = "/api/alerts/jobs/cleanup"
+# # Alert cleanup daily at 3 AM UTC
+# [[triggers.crons]]
+# cron = "0 3 * * *"
+# endpoint = "/api/alerts/jobs/cleanup"
 
-# Alert health check every 10 minutes
-[[triggers.crons]]
-cron = "*/10 * * * *"
-endpoint = "/api/alerts/jobs/health-check"
+# # Alert health check every 10 minutes
+# [[triggers.crons]]
+# cron = "*/10 * * * *"
+# endpoint = "/api/alerts/jobs/health-check"
 
 # Staging environment
 [env.staging]
@@ -132,9 +132,9 @@ binding = "FILE_STORAGE"
 bucket_name = "cutty-files-staging"
 preview_bucket_name = "cutty-files-preview"
 
-[[env.staging.analytics_engine_datasets]]
-binding = "ANALYTICS"
-dataset = "cutty-metrics-staging"
+# [[env.staging.analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "cutty-metrics-staging"
 
 # [[env.staging.kv_namespaces]]
 # binding = "AUTH_TOKENS"
@@ -158,9 +158,9 @@ binding = "FILE_STORAGE"
 bucket_name = "cutty-files-prod"
 preview_bucket_name = "cutty-files-dev"
 
-[[env.production.analytics_engine_datasets]]
-binding = "ANALYTICS"
-dataset = "cutty-metrics-production"
+# [[env.production.analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "cutty-metrics-production"
 
 # [[env.production.kv_namespaces]]
 # binding = "AUTH_TOKENS"
@@ -172,8 +172,4 @@ dataset = "cutty-metrics-production"
 # service = "cutty-auth"
 
 # Rate limiting rules (commented out - need to configure proper rate limiting)
-# [[unsafe.bindings]]
-# binding = "RATE_LIMITER"
-# type = "ratelimit"
-# namespace_id = "1"
-# simple = { limit = 100, period = 60 }
+# Future rate limiting configuration will go here when needed
