@@ -75,7 +75,6 @@ database_id = "PRODUCTION_DB_ID"
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "cutty-files-prod"
 
 [[env.production.kv_namespaces]]
 binding = "AUTH_TOKENS"
@@ -179,7 +178,6 @@ migrations_dir = "./migrations"
 # R2 Storage
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "cutty-files-prod"
 
 # KV Namespace
 [[env.production.kv_namespaces]]

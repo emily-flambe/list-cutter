@@ -1,4 +1,4 @@
-import { R2StorageService } from '../storage/r2-service';
+import { R2StorageService } from '../storage/r2-service.js';
 
 export interface CSVProcessingOptions {
   selectedColumns?: string[];

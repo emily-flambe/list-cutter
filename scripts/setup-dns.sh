@@ -254,12 +254,12 @@ Domain: $DOMAIN
 Zone ID: $ZONE_ID
 
 Records Configured:
-- @ (root) → list-cutter-production.workers.dev (proxied)
-- www → list-cutter-production.workers.dev (proxied)
-- staging → list-cutter-staging.workers.dev (proxied)
-- api → list-cutter-production.workers.dev (proxied)
-- admin → list-cutter-production.workers.dev (proxied)
-- status → list-cutter-production.workers.dev (proxied)
+- @ (root) → cutty-production.workers.dev (proxied)
+- www → cutty-production.workers.dev (proxied)
+- staging → cutty-staging.workers.dev (proxied)
+- api → cutty-production.workers.dev (proxied)
+- admin → cutty-production.workers.dev (proxied)
+- status → cutty-production.workers.dev (proxied)
 
 Security Records:
 - SPF: v=spf1 include:_spf.cloudflare.com ~all

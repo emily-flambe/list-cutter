@@ -32,5 +32,5 @@ export interface CloudflareEnv {
   CUTTY_QUOTA_TRACKING: KVNamespace;
   
   // Optional bindings
-  RATE_LIMITER?: unknown;
+  RATE_LIMITER?: DurableObjectNamespace;
 }
