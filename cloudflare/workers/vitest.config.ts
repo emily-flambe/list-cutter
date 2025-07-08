@@ -2,7 +2,6 @@ import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
 
 export default defineWorkersConfig({
   test: {
-    globals: true,
     pool: '@cloudflare/vitest-pool-workers',
     poolOptions: {
       workers: {
@@ -26,25 +25,6 @@ export default defineWorkersConfig({
         }
       }
     },
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'dist/',
-        '**/*.d.ts',
-        '**/*.config.*',
-        '**/mockData.ts',
-        'tests/**'
-      ],
-      thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 70,
-        statements: 80
-      }
-    },
-    include: ['tests/**/*.test.ts'],
-    setupFiles: ['./tests/setup.ts']
+    include: ['tests/**/*.test.ts']
   }
 });

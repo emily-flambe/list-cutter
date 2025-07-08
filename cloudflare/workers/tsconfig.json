@@ -3,13 +3,10 @@
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022", "WebWorker"],
-    "jsx": "react-jsx",
     "moduleResolution": "bundler",
-    "moduleDetection": "force",
     "allowImportingTsExtensions": true,
+    "strict": false,
     "skipLibCheck": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
     "allowJs": true,
     "noEmit": true,
     "esModuleInterop": true,
@@ -19,7 +16,6 @@
     "newLine": "lf",
     
     // Very permissive - only syntax errors and critical issues
-    "strict": false,
     "noImplicitAny": false,
     "noImplicitThis": false,
     "strictNullChecks": false,
