@@ -36,7 +36,7 @@ const FileLineageCytoscape = () => {
   useEffect(() => {
     const fetchFiles = async () => {
       try {
-        const response = await api.get('/api/list_cutter/list_saved_files/', {
+        const response = await api.get('/api/cutty/list_saved_files/', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFiles(response.data.files);
@@ -55,7 +55,7 @@ const FileLineageCytoscape = () => {
     if (!selectedFileId) return;
     setLoading(true);
     try {
-      const response = await api.get(`/api/list_cutter/fetch_file_lineage/${selectedFileId}/`, {
+      const response = await api.get(`/api/cutty/fetch_file_lineage/${selectedFileId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setGraphData(response.data);

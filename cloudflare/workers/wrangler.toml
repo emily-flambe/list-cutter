@@ -27,6 +27,9 @@ CORS_ORIGIN = "https://cutty.emilycogsdill.com"
 MAX_FILE_SIZE = "52428800" # 50MB in bytes
 JWT_ISSUER = "cutty"
 JWT_AUDIENCE = "cutty-api"
+SECURITY_PERFORMANCE_THRESHOLD = "100"
+SECURITY_METRICS_RETENTION_DAYS = "30"
+SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
 
 # D1 Database bindings
 [[d1_databases]]
@@ -41,11 +44,32 @@ binding = "FILE_STORAGE"
 bucket_name = "cutty-files-dev"
 preview_bucket_name = "cutty-files-dev"
 
-# KV Namespace bindings will be configured when needed
-# Future KV configuration will go here
+# Security KV Namespaces (Development)
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_CONFIG"
+id = "a6973edd26304221934017997dbd147e"
+preview_id = "a6973edd26304221934017997dbd147e"
 
-# Queue bindings will be configured when needed
-# Future queue configuration will go here
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_EVENTS"
+id = "e696502dea8942a8acb47e2ac474e248"
+preview_id = "e696502dea8942a8acb47e2ac474e248"
+
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_METRICS"
+id = "805adc47af9c4e8aa7ddf5b412ea3083"
+preview_id = "805adc47af9c4e8aa7ddf5b412ea3083"
+
+[[kv_namespaces]]
+binding = "CUTTY_QUOTA_TRACKING"
+id = "4c1a53aaab2846a3b11ee39416e6b1dd"
+preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
+
+# AUTH_TOKENS KV namespace (commented out - create namespace first)
+# [[kv_namespaces]]
+# binding = "AUTH_TOKENS"
+# id = "your-auth-tokens-kv-namespace-id-here"
+# preview_id = "your-auth-tokens-kv-namespace-id-here"
 
 # Analytics Engine binding (temporarily commented out for debugging)
 # [[analytics_engine_datasets]]
@@ -112,10 +136,15 @@ routes = [
   { pattern = "cutty-api-staging.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
 
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "cutty-staging"
-database_id = "e16924c6-be97-4012-88ac-79ff31fd5304"
+# Queue bindings for CSV processing (commented out - create queue first)
+# [[queues.producers]]
+# binding = "CSV_QUEUE"
+# queue = "csv-processing"
+
+# Analytics Engine binding for metrics collection (commented out for debugging)
+# [[analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "cutty_analytics"
 
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"

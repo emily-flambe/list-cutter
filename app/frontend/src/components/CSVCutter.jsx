@@ -103,7 +103,7 @@ const CSVCutter = () => {
 
     try {
       const response = await api.post(
-        `/api/list_cutter/csv_cutter/`,
+        `/api/cutty/csv_cutter/`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -146,7 +146,7 @@ const CSVCutter = () => {
     }
 
     try {
-      const exportUrl = `/api/list_cutter/export_csv/`;
+      const exportUrl = `/api/cutty/export_csv/`;
       const response = await api.post(
         exportUrl,
         { columns: selectedColumns, file_path: filePath, filters },
@@ -193,7 +193,7 @@ const CSVCutter = () => {
 
     console.log(formData);
     try {
-        await api.post(`/api/list_cutter/save_generated_file/`, formData, {
+        await api.post(`/api/cutty/save_generated_file/`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });
         setShowPopup(true);
