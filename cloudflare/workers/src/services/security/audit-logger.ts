@@ -574,7 +574,7 @@ export class SecurityAuditLogger {
   }): Promise<void> {
     await this.logSecurityIncident({
       type: 'suspicious_activity',
-      severity: (event.severity as any) || 'low',
+      severity: (['low', 'medium', 'high', 'critical'].includes(event.severity as string) ? event.severity : 'low') as 'low' | 'medium' | 'high' | 'critical',
       description: `System Event: ${event.description}`,
       evidence: event.metadata || {},
       timestamp: new Date()
@@ -590,7 +590,7 @@ export class SecurityAuditLogger {
   }): Promise<void> {
     await this.logSecurityIncident({
       type: 'suspicious_activity',
-      severity: (event.severity as any) || 'medium',
+      severity: (['low', 'medium', 'high', 'critical'].includes(event.severity as string) ? event.severity : 'medium') as 'low' | 'medium' | 'high' | 'critical',
       description: `Security Violation: ${event.description}`,
       userId: event.userId,
       evidence: event.metadata || {},
@@ -607,7 +607,7 @@ export class SecurityAuditLogger {
   }): Promise<void> {
     await this.logSecurityIncident({
       type: 'suspicious_activity',
-      severity: (event.severity as any) || 'medium',
+      severity: (['low', 'medium', 'high', 'critical'].includes(event.severity as string) ? event.severity : 'medium') as 'low' | 'medium' | 'high' | 'critical',
       description: `Security Event: ${event.description}`,
       userId: event.userId,
       evidence: event.metadata || {},
