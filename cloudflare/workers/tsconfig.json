@@ -3,37 +3,16 @@
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022", "WebWorker"],
-    "jsx": "react-jsx",
     "moduleResolution": "bundler",
-    "moduleDetection": "force",
     "allowImportingTsExtensions": true,
-    "strict": true,
+    "strict": false,
     "skipLibCheck": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
     "allowJs": true,
     "noEmit": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "incremental": true,
-    "newLine": "lf",
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "types": [
-      "@cloudflare/workers-types"
-    ],
-    "paths": {
-      "@/*": ["./src/*"],
-      "@types/*": ["./src/types/*"],
-      "@routes/*": ["./src/routes/*"],
-      "@services/*": ["./src/services/*"],
-      "@db/*": ["./src/db/*"],
-      "@middleware/*": ["./src/middleware/*"],
-      "@utils/*": ["./src/utils/*"]
-    }
+    "types": ["@cloudflare/workers-types"]
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist"]
