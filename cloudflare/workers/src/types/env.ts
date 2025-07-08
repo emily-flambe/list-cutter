@@ -22,7 +22,6 @@ export interface CloudflareEnv {
   DB: D1Database;
   FILE_STORAGE: R2Bucket;
   AUTH_TOKENS: KVNamespace;
-  CSV_QUEUE: Queue;
   ANALYTICS: AnalyticsEngineDataset;
   
   // Security-specific bindings

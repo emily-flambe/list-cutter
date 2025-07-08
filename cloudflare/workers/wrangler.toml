@@ -135,10 +135,10 @@ routes = [
   { pattern = "cutty-api-staging.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
 
-# Queue bindings for CSV processing
-[[queues.producers]]
-binding = "CSV_QUEUE"
-queue = "csv-processing"
+# Queue bindings for CSV processing (commented out - create queue first)
+# [[queues.producers]]
+# binding = "CSV_QUEUE"
+# queue = "csv-processing"
 
 # Analytics Engine binding for metrics collection (commented out for debugging)
 # [[analytics_engine_datasets]]
