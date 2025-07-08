@@ -10,10 +10,10 @@ This file contains project-specific instructions for Claude Code usage.
 
 - **GitHub Repository**: `list-cutter` (historical name)
 - **Cloudflare Resources**: `cutty-*` (preferred naming)
-- **Domains**: `cutty.com`, `api.cutty.com`, `staging.cutty.com`
+- **Domains**: `cutty.emilycogsdill.com`, `list-cutter.emilycogsdill.com`
 - **Worker Names**: `cutty-api`, `cutty-workers`, `cutty-frontend`
-- **Database Names**: `cutty-db`, `cutty-dev`, `cutty-staging`, `cutty-production`
-- **R2 Buckets**: `cutty-files-dev`, `cutty-files-staging`, `cutty-files-production`
+- **Database Names**: `cutty-preview`, `cutty-dev`, `cutty-staging`, `cutty-prod`
+- **R2 Buckets**: `cutty-files-dev`, `cutty-files-staging`, `cutty-files-prod`, `cutty-files-preview`
 
 ### Wrangler Commands
 
