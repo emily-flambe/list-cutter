@@ -343,7 +343,7 @@ app.post('/api/security/csp-report', async (c): Promise<Response> => {
       });
     }
     
-    return c.text('', 204);
+    return c.text('', 204 as any);
   } catch (error) {
     console.error('Error handling CSP report:', error);
     return c.json({ error: 'Invalid report format' }, 400);

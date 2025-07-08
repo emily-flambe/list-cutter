@@ -6,7 +6,8 @@ import {
   PIIDetectionResult, 
   ThreatSeverity, 
   ThreatRecommendation,
-  ThreatDetectionConfig
+  ThreatDetectionConfig,
+  ComplianceMode
 } from '../../types/threat-intelligence';
 
 export interface FileValidationOptions {
@@ -110,7 +111,7 @@ export class FileValidationService {
         webhook: { enabled: false, url: '', headers: {} },
         dashboard: { enabled: true, realTimeUpdates: true }
       },
-      complianceMode: 'balanced' as const
+      complianceMode: ComplianceMode.BALANCED
     };
     
     this.threatDetectionService = new ThreatDetectionService(

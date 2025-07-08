@@ -14,7 +14,7 @@ import {
 import type { CloudflareEnv } from '../types/env';
 
 // Import Hono context extensions
-import '../types/hono-context';
+import { FileRecord } from '../types/hono-context';
 
 export interface FileAuthOptions {
   operation: FileOperation;
@@ -257,7 +257,7 @@ export function getFileAuthContext(c: Context): FileAuthContext | undefined {
  */
 export function hasFilePermission(c: Context, operation: FileOperation): boolean {
   const fileAuth = getFileAuthContext(c);
-  return fileAuth?.effectivePermissions.includes(operation) || false;
+  return fileAuth?.permissions?.includes(operation) || false;
 }
 
 /**
@@ -281,21 +281,33 @@ export function validateFileAccess(): (c: Context<{ Bindings: CloudflareEnv }>, 
     }
 
     // Verify file exists in database
-    const fileRecord = await c.env.DB
-      .prepare('SELECT id, filename, user_id, upload_status FROM files WHERE id = ?')
+    const dbResult = await c.env.DB
+      .prepare('SELECT id, filename, file_size, mime_type, user_id, created_at, path, checksum, upload_status FROM files WHERE id = ?')
       .bind(fileAuth.fileId)
       .first();
 
-    if (!fileRecord) {
+    if (!dbResult) {
       throw new HTTPException(404, { message: 'File not found' });
     }
 
+    // Map database result to FileRecord interface
+    const fileRecord: FileRecord = {
+      id: dbResult.id as string,
+      filename: dbResult.filename as string,
+      fileSize: dbResult.file_size as number,
+      mimeType: dbResult.mime_type as string,
+      ownerId: dbResult.user_id as string,
+      uploadedAt: new Date(dbResult.created_at as string),
+      path: dbResult.path as string,
+      checksum: dbResult.checksum as string | undefined
+    };
+
     // Check if file is in a usable state
-    if (fileRecord.upload_status === 'failed') {
+    if (dbResult.upload_status === 'failed') {
       throw new HTTPException(409, { message: 'File upload failed and is not accessible' });
     }
 
-    if (fileRecord.upload_status === 'pending' || fileRecord.upload_status === 'processing') {
+    if (dbResult.upload_status === 'pending' || dbResult.upload_status === 'processing') {
       throw new HTTPException(202, { message: 'File is still being processed' });
     }
 

@@ -36,7 +36,7 @@ export class FileSharingService {
   private kvStore: KVNamespace;
   private accessControl: AccessControlService;
   private readonly TOKEN_PREFIX = 'fst_';
-  private readonly MAX_TOKEN_LENGTH = 64;
+  private readonly _MAX_TOKEN_LENGTH = 64;
 
   constructor(db: D1Database, kvStore: KVNamespace) {
     this.db = db;
@@ -211,7 +211,7 @@ export class FileSharingService {
           sharedBy: dbRecord.shared_by as string,
           permissions: JSON.parse(dbRecord.permissions as string),
           expiresAt: new Date(dbRecord.expires_at as string),
-          maxUses: dbRecord.max_uses as number | null,
+          maxUses: dbRecord.max_uses as number | undefined,
           usedCount: dbRecord.used_count as number,
           ipWhitelist: dbRecord.ip_whitelist ? JSON.parse(dbRecord.ip_whitelist as string) : null
         };
@@ -431,7 +431,7 @@ export class FileSharingService {
       `)
       .run();
 
-    return result.changes;
+    return result.meta.changes;
   }
 
   /**

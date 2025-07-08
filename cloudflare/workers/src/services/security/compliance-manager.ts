@@ -265,31 +265,35 @@ export class ComplianceManager {
     ).run();
 
     // Log compliance event
-    await this.auditLogger.logComplianceEvent(
-      this.mapRequestTypeToEventType(type),
-      {
-        userId,
+    await this.auditLogger.logComplianceEvent({
+      type: this.mapRequestTypeToEventType(type),
+      description: `Compliance event: ${type}`,
+      userId,
+      metadata: {
         complianceType: framework,
         dataCategories: [],
         requestMethod: context.requestMethod,
         processingStatus: 'pending',
         completionDeadline: deadline,
         ipAddress: context.ipAddress,
-        userAgent: context.userAgent
+        userAgent: context.userAgent,
       }
-    );
+    });
 
     // Create audit trail entry
-    await this.auditLogger.createAuditTrailEntry(requestId, {
-      userId,
+    await this.auditLogger.createAuditTrailEntry({
       action: `data_subject_request_${type}`,
-      resourceType: 'data_subject_request',
-      resourceId: requestId,
-      newValue: JSON.stringify(request),
-      ipAddress: context.ipAddress,
-      userAgent: context.userAgent,
-      outcome: 'success',
-      complianceFrameworks: [framework]
+      userId,
+      details: `Data subject request ${type} created with ID ${requestId}`,
+      metadata: {
+        resourceType: 'data_subject_request',
+        resourceId: requestId,
+        newValue: JSON.stringify(request),
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+        outcome: 'success',
+        complianceFrameworks: [framework]
+      }
     });
 
     return requestId;
@@ -423,7 +427,7 @@ export class ComplianceManager {
    */
   async eraseUserData(
     userId: string,
-    requestId: string,
+    _requestId: string,
     options: {
       preserveAuditLogs: boolean;
       anonymizeInsteadOfDelete: boolean;

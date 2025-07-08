@@ -212,10 +212,12 @@ export class SecurityHeadersMiddleware {
     }
     
     // Request ID for tracking
-    headers.set('X-Request-ID', securityContext.requestId);
+    if (securityContext.requestId) {
+      headers.set('X-Request-ID', securityContext.requestId);
+    }
     
     // Security level indicator (development only)
-    if (c.env?.ENVIRONMENT === 'development') {
+    if (c.env?.ENVIRONMENT === 'development' && securityContext.securityLevel) {
       headers.set('X-Security-Level', securityContext.securityLevel);
     }
     
@@ -370,6 +372,9 @@ export class SecurityHeadersConfigBuilder {
     strictTransportSecurity?: string;
     enableReporting?: boolean;
     reportUri?: string;
+    xFrameOptions?: string;
+    referrerPolicy?: string;
+    permissionsPolicy?: string;
   } = {};
   
   /**
@@ -488,12 +493,13 @@ export class CSPReportHandler {
       if (this.monitor) {
         await this.monitor.recordEvent({
           id: crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          type: 'violation',
-          severity: 'medium',
-          source: 'csp_report',
-          description: 'Content Security Policy violation detected',
-          metadata: {
+          timestamp: new Date(),
+          type: SecurityEventType.SUSPICIOUS_ACTIVITY,
+          severity: SecurityEventSeverity.MEDIUM,
+          category: SecurityEventCategory.SECURITY_VIOLATION,
+          riskLevel: RiskLevel.MEDIUM,
+          message: 'Content Security Policy violation detected',
+          details: {
             report,
             violatedDirective: report['csp-report']?.['violated-directive'],
             blockedUri: report['csp-report']?.['blocked-uri'],
@@ -505,7 +511,7 @@ export class CSPReportHandler {
         });
       }
       
-      return c.json({ received: true }, 204);
+      return c.json({ received: true }, 204 as any);
     } catch (error) {
       console.error('Error handling CSP report:', error);
       return c.json({ error: 'Invalid report format' }, 400);

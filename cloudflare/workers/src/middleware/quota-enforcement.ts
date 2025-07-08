@@ -48,12 +48,12 @@ export interface QuotaEnforcementResult {
 export class QuotaEnforcementMiddleware {
   private quotaManager: QuotaManager;
   private skipQuotaCheck: boolean;
-  private gracePeriodMinutes: number;
+  private _gracePeriodMinutes: number;
 
   constructor(options: QuotaEnforcementOptions) {
     this.quotaManager = options.quotaManager;
     this.skipQuotaCheck = options.skipQuotaCheck || false;
-    this.gracePeriodMinutes = options.gracePeriodMinutes || 5;
+    this._gracePeriodMinutes = options.gracePeriodMinutes || 5;
   }
 
   /**
@@ -77,7 +77,15 @@ export class QuotaEnforcementMiddleware {
       if (!quotaCheck.isAllowed) {
         return {
           allowed: false,
-          quotaCheck,
+          quotaCheck: {
+            isAllowed: quotaCheck.isAllowed,
+            currentUsage: quotaCheck.currentUsage,
+            limit: quotaCheck.limit,
+            percentageUsed: quotaCheck.percentageUsed,
+            remainingQuota: quotaCheck.remainingQuota,
+            resetTime: quotaCheck.resetTime || new Date(),
+            quotaType: quotaCheck.quotaType.toString()
+          },
           errorMessage: this.generateErrorMessage(quotaCheck),
           recommendedAction: this.generateRecommendedAction(quotaCheck),
           retryAfter: this.calculateRetryAfter(quotaCheck)
@@ -86,7 +94,15 @@ export class QuotaEnforcementMiddleware {
 
       return {
         allowed: true,
-        quotaCheck
+        quotaCheck: {
+          isAllowed: quotaCheck.isAllowed,
+          currentUsage: quotaCheck.currentUsage,
+          limit: quotaCheck.limit,
+          percentageUsed: quotaCheck.percentageUsed,
+          remainingQuota: quotaCheck.remainingQuota,
+          resetTime: quotaCheck.resetTime || new Date(),
+          quotaType: quotaCheck.quotaType.toString()
+        }
       };
     } catch (error) {
       if (error instanceof QuotaNotFoundError) {
