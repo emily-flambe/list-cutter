@@ -48,3 +48,18 @@ preview_id = "805adc47af9c4e8aa7ddf5b412ea3083"
 binding = "CUTTY_QUOTA_TRACKING"
 id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
+
+[[kv_namespaces]]
+binding = "AUTH_TOKENS"
+id = "your-auth-tokens-kv-namespace-id-here"
+preview_id = "your-auth-tokens-kv-namespace-id-here"
+
+# Queue bindings for CSV processing
+[[queues.producers]]
+binding = "CSV_QUEUE"
+queue = "csv-processing"
+
+# Analytics Engine binding for metrics collection
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "cutty_analytics"

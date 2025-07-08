@@ -507,6 +507,8 @@ export class CSPReportHandler {
           },
           ipAddress: c.req.header('CF-Connecting-IP'),
           userAgent: c.req.header('User-Agent'),
+          source: 'security-headers-middleware',
+          requiresResponse: false,
           resolved: false
         });
       }

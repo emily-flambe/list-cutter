@@ -60,6 +60,7 @@ export interface AuditSummary {
 export class SecurityAuditLogger {
   private db: D1Database;
   private analytics?: AnalyticsEngineDataset;
+  // @ts-ignore - Future implementation for batch processing
   private readonly _BATCH_SIZE = 100;
   private readonly RETENTION_DAYS = 365;
 
@@ -241,24 +242,22 @@ export class SecurityAuditLogger {
       lastAccess: basicStats?.last_access ? new Date(basicStats.last_access as string) : new Date(),
       totalBytesTransferred: basicStats?.total_bytes as number || 0,
       averageResponseTime: basicStats?.avg_response_time as number || 0,
-      topOperations: operationStats.results.map((row: {
-        operation: string;
-        count: number;
-        success_rate: number;
-      }) => ({
-        operation: row.operation as FileOperation,
-        count: row.count as number,
-        successRate: row.success_rate as number
-      })),
-      suspiciousActivity: suspiciousActivity.results.map((row: {
-        type: string;
-        count: number;
-        last_occurrence: string;
-      }) => ({
-        type: row.type as string,
-        count: row.count as number,
-        lastOccurrence: new Date(row.last_occurrence as string)
-      }))
+      topOperations: operationStats.results.map((row) => {
+        const typedRow = row as { operation: string; count: number; success_rate: number };
+        return {
+          operation: typedRow.operation as FileOperation,
+          count: typedRow.count,
+          successRate: typedRow.success_rate
+        };
+      }),
+      suspiciousActivity: suspiciousActivity.results.map((row) => {
+        const typedRow = row as { type: string; count: number; last_occurrence: string };
+        return {
+          type: typedRow.type,
+          count: typedRow.count,
+          lastOccurrence: new Date(typedRow.last_occurrence)
+        };
+      })
     };
   }
 
@@ -323,17 +322,15 @@ export class SecurityAuditLogger {
       deniedAccesses: summary?.denied_accesses as number || 0,
       totalBytesTransferred: summary?.total_bytes as number || 0,
       averageResponseTime: summary?.avg_response_time as number || 0,
-      mostAccessedFiles: mostAccessed.results.map((row: {
-        file_id: string;
-        filename: string;
-        access_count: number;
-        last_accessed: string;
-      }) => ({
-        fileId: row.file_id as string,
-        filename: row.filename as string,
-        accessCount: row.access_count as number,
-        lastAccessed: new Date(row.last_accessed as string)
-      }))
+      mostAccessedFiles: mostAccessed.results.map((row) => {
+        const typedRow = row as { file_id: string; filename: string; access_count: number; last_accessed: string };
+        return {
+          fileId: typedRow.file_id,
+          filename: typedRow.filename,
+          accessCount: typedRow.access_count,
+          lastAccessed: new Date(typedRow.last_accessed)
+        };
+      })
     };
   }
 
@@ -500,37 +497,40 @@ export class SecurityAuditLogger {
 
     const results = await this.db.prepare(query).bind(...params).all();
 
-    return results.results.map((row: {
-      id: string;
-      file_id: string;
-      user_id?: string;
-      share_token?: string;
-      operation: string;
-      result: string;
-      reason?: string;
-      ip_address?: string;
-      user_agent?: string;
-      request_id?: string;
-      bytes_transferred?: number;
-      duration_ms?: number;
-      metadata?: string;
-      created_at: string;
-    }) => ({
-      id: row.id,
-      fileId: row.file_id,
-      userId: row.user_id,
-      shareToken: row.share_token,
-      operation: row.operation as FileOperation,
-      result: row.result as 'allowed' | 'denied',
-      reason: row.reason,
-      ipAddress: row.ip_address,
-      userAgent: row.user_agent,
-      requestId: row.request_id,
-      bytesTransferred: row.bytes_transferred,
-      durationMs: row.duration_ms,
-      metadata: row.metadata ? JSON.parse(row.metadata) : {},
-      createdAt: new Date(row.created_at)
-    }));
+    return results.results.map((row) => {
+      const typedRow = row as {
+        id: string;
+        file_id: string;
+        user_id?: string;
+        share_token?: string;
+        operation: string;
+        result: string;
+        reason?: string;
+        ip_address?: string;
+        user_agent?: string;
+        request_id?: string;
+        bytes_transferred?: number;
+        duration_ms?: number;
+        metadata?: string;
+        created_at: string;
+      };
+      return {
+        id: typedRow.id,
+        fileId: typedRow.file_id,
+        userId: typedRow.user_id,
+        shareToken: typedRow.share_token,
+        operation: typedRow.operation as FileOperation,
+        result: typedRow.result as 'allowed' | 'denied',
+        reason: typedRow.reason,
+        ipAddress: typedRow.ip_address,
+        userAgent: typedRow.user_agent,
+        requestId: typedRow.request_id,
+        bytesTransferred: typedRow.bytes_transferred,
+        durationMs: typedRow.duration_ms,
+        metadata: typedRow.metadata ? JSON.parse(typedRow.metadata) : {},
+        createdAt: new Date(typedRow.created_at)
+      };
+    });
   }
 
   // Additional methods required by other services

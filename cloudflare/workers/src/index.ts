@@ -46,10 +46,10 @@ let securityHeadersMiddleware: SecurityHeadersMiddleware;
 // Security initialization middleware
 app.use('*', async (c, next): Promise<void> => {
   // Initialize security services if not already done
-  if (!securityConfigManager && c.env.SECURITY_CONFIG) {
+  if (!securityConfigManager && c.env.CUTTY_SECURITY_CONFIG) {
     try {
       securityConfigManager = new SecurityConfigManager({
-        kvNamespace: c.env.SECURITY_CONFIG,
+        kvNamespace: c.env.CUTTY_SECURITY_CONFIG,
         environment: c.env.ENVIRONMENT,
         enableDynamicUpdates: true,
         cacheExpirationMinutes: 5,
@@ -59,7 +59,7 @@ app.use('*', async (c, next): Promise<void> => {
       securityMonitor = new SecurityMonitorService({
         configManager: securityConfigManager,
         analytics: c.env.ANALYTICS,
-        kvNamespace: c.env.SECURITY_EVENTS,
+        kvNamespace: c.env.CUTTY_SECURITY_EVENTS,
         alertWebhook: c.env.SECURITY_ALERT_WEBHOOK,
         performanceThreshold: parseInt(c.env.SECURITY_PERFORMANCE_THRESHOLD || '100'),
         enableRealTimeMonitoring: c.env.SECURITY_ENABLE_REAL_TIME_MONITORING === 'true',
@@ -71,7 +71,7 @@ app.use('*', async (c, next): Promise<void> => {
         configManager: securityConfigManager,
         monitor: securityMonitor,
         analytics: c.env.ANALYTICS,
-        kvStorage: c.env.SECURITY_METRICS,
+        kvStorage: c.env.CUTTY_SECURITY_METRICS,
         config: {
           enabled: true,
           batchSize: 100,

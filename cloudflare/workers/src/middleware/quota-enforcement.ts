@@ -48,6 +48,7 @@ export interface QuotaEnforcementResult {
 export class QuotaEnforcementMiddleware {
   private quotaManager: QuotaManager;
   private skipQuotaCheck: boolean;
+  // @ts-ignore - Future implementation for grace period
   private _gracePeriodMinutes: number;
 
   constructor(options: QuotaEnforcementOptions) {
@@ -342,7 +343,8 @@ export class QuotaEnforcementMiddleware {
    */
   createBulkOperationHandler() {
     return async (request: Request, _env: CloudflareEnv, _ctx: ExecutionContext): Promise<Response> => {
-      const { operations, userId } = await request.json();
+      const requestData = await request.json() as { operations?: unknown; userId?: string };
+      const { operations, userId } = requestData;
       
       if (!operations || !Array.isArray(operations) || !userId) {
         return new Response(JSON.stringify({ error: 'Invalid bulk operation request' }), {

@@ -26,9 +26,10 @@ export interface CloudflareEnv {
   ANALYTICS: AnalyticsEngineDataset;
   
   // Security-specific bindings
-  SECURITY_CONFIG: KVNamespace;
-  SECURITY_EVENTS: KVNamespace;
-  SECURITY_METRICS: KVNamespace;
+  CUTTY_SECURITY_CONFIG: KVNamespace;
+  CUTTY_SECURITY_EVENTS: KVNamespace;
+  CUTTY_SECURITY_METRICS: KVNamespace;
+  CUTTY_QUOTA_TRACKING: KVNamespace;
   
   // Optional bindings
   RATE_LIMITER?: unknown;
