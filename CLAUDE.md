@@ -42,3 +42,53 @@ This is a Django + React application being migrated to Cloudflare Workers with D
 - Target deployment: Cloudflare Workers with D1 + R2
 - Migration tools: Comprehensive Python scripts for file migration
 - Identity: Use "cutty" for all new Cloudflare resources
+
+## Debugging Lessons Learned
+
+### Wrangler Deployment Issues (Issue #65)
+
+**Problem**: CI deployment failing with "binding should have a string binding field" error.
+
+**Root Cause**: Multi-layered issue combining:
+1. Package-lock.json mismatch (v3 lockfile, v4 package.json)
+2. Complex commented TOML binding configurations causing parsing errors
+
+**Key Lessons**:
+
+#### 🎯 Root Cause Analysis
+- **Multi-layered Problems**: Always check for multiple simultaneous issues
+- **Environment Parity**: CI uses `npm ci` (strict) vs local `npm install` (flexible)
+- **Version Dependencies**: Regenerate lockfiles after major version changes
+- **Configuration Comments**: Even commented TOML syntax can break parsers
+
+#### 🔧 Technical Debugging
+- **Test Exact CI Commands**: Use `npm ci` and exact wrangler commands locally
+- **Transitive Dependencies**: Check for conflicting sub-dependencies
+- **Error Message Validity**: "binding field" error pointed to config, but root cause was version mismatch
+- **Incremental Changes**: Simplify configuration → working deployment → add complexity back
+
+#### 📋 Process Improvements
+- **Local Testing First**: Always reproduce CI environment exactly before pushing
+- **Systematic Approach**: Reproduce → Isolate → Document → Verify → Validate
+- **Test Scripts**: Create validation scripts for consistent testing
+- **Version Specificity**: Use exact versions in package.json for critical dependencies
+
+#### 🚀 Wrangler-Specific
+- **Version Compatibility**: v3 vs v4 have different binding syntax requirements
+- **Configuration Validation**: Use `wrangler deploy --dry-run` and `wrangler versions upload --dry-run`
+- **Clean Configuration**: Remove complex commented binding examples that cause parsing issues
+
+#### ✅ Resolution Commands
+```bash
+# Test exact CI environment locally
+cd cloudflare/workers
+rm -rf node_modules package-lock.json
+npm ci  # This should match CI exactly
+
+# Test the failing commands
+npx wrangler versions upload --dry-run
+npx wrangler deploy --dry-run
+npm run build
+```
+
+**Next Time**: Always start by reproducing the exact CI failure locally before making any configuration changes.

@@ -1,10 +1,10 @@
 #!/bin/bash
 # scripts/deploy-production.sh
-# Production deployment script for List Cutter unified Worker
+# Production deployment script for Cutty unified Worker
 
 set -e
 
-echo "🚀 Starting List Cutter production deployment..."
+echo "🚀 Starting Cutty production deployment..."
 echo "============================================="
 
 # Color codes for output
@@ -136,7 +136,7 @@ sleep 30 # Wait for deployment to propagate
 ./scripts/validate-production.sh
 if [ $? -eq 0 ]; then
     print_success "🎉 Production deployment successful!"
-    print_success "List Cutter is now live on the unified Worker architecture"
+    print_success "Cutty is now live on the unified Worker architecture"
     
     echo ""
     echo "Deployment Summary:"
@@ -149,9 +149,9 @@ if [ $? -eq 0 ]; then
     echo "✅ Production deployment: PASSED"
     echo "✅ Production validation: PASSED"
     echo ""
-    echo "🌐 Application URL: https://list-cutter.com"
-    echo "📊 Health Check: https://list-cutter.com/health"
-    echo "📈 Metrics: https://list-cutter.com/metrics"
+    echo "🌐 Application URL: https://cutty.com"
+    echo "📊 Health Check: https://cutty.com/health"
+    echo "📈 Metrics: https://cutty.com/metrics"
     echo ""
     
     # Send notification

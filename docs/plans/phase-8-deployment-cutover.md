@@ -75,7 +75,7 @@ database_id = "PRODUCTION_DB_ID"
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "list-cutter-files-production"
+bucket_name = "cutty-files-production"
 
 [[env.production.kv_namespaces]]
 binding = "AUTH_TOKENS"
@@ -179,7 +179,7 @@ migrations_dir = "./migrations"
 # R2 Storage
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "list-cutter-files-production"
+bucket_name = "cutty-files-production"
 
 # KV Namespace
 [[env.production.kv_namespaces]]
@@ -215,7 +215,7 @@ database_id = "STAGING_DB_ID"
 
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "list-cutter-files-staging"
+bucket_name = "cutty-files-staging"
 
 [[env.staging.kv_namespaces]]
 binding = "AUTH_TOKENS"

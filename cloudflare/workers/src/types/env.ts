@@ -20,5 +20,5 @@ export interface CloudflareEnv {
   ANALYTICS: AnalyticsEngineDataset;
   
   // Optional bindings
-  RATE_LIMITER?: unknown;
+  RATE_LIMITER?: DurableObjectNamespace;
 }

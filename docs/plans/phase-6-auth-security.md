@@ -51,7 +51,7 @@ preview_id = "your-preview-kv-id"
 # D1 for user data
 [[d1_databases]]
 binding = "DB"
-database_name = "list-cutter-db"
+database_name = "cutty-db"
 database_id = "your-d1-database-id"
 
 # Rate limiting

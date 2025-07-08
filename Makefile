@@ -71,13 +71,13 @@ black:
 push:
 
 	docker compose -f docker-compose.yml build
-	docker tag list-cutter-backend emilycogsdill/list-cutter-backend:latest
-	docker tag list-cutter-frontend emilycogsdill/list-cutter-frontend:latest
+	docker tag cutty-backend emilycogsdill/cutty-backend:latest
+	docker tag cutty-frontend emilycogsdill/cutty-frontend:latest
 	docker buildx build --platform linux/amd64,linux/arm64 \
 		--target prod-backend \
-		-t emilycogsdill/list-cutter-backend:latest \
+		-t emilycogsdill/cutty-backend:latest \
 		--push .
 	docker buildx build --platform linux/amd64,linux/arm64 \
 		--target frontend \
-		-t emilycogsdill/list-cutter-frontend:latest \
+		-t emilycogsdill/cutty-frontend:latest \
 		--push .
