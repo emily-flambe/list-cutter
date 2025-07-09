@@ -1,0 +1,512 @@
+name: CI/CD Pipeline - Unified Workers
+
+on:
+  push:
+    branches: [ main, phase-7-testing-optimization ]
+    paths:
+      - 'unified-workers/**'
+      - '.github/workflows/ci-cd.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'unified-workers/**'
+      - '.github/workflows/ci-cd.yml'
+
+env:
+  NODE_VERSION: '18'
+  WRANGLER_VERSION: '3.89.0'
+
+jobs:
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'unified-workers/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: unified-workers
+        run: npm ci
+      
+      - name: Lint check
+        working-directory: unified-workers
+        run: npm run lint
+      
+      - name: Type check
+        working-directory: unified-workers
+        run: npm run type-check
+      
+      - name: Build check
+        working-directory: unified-workers
+        run: npm run build
+      
+      - name: Format check
+        working-directory: unified-workers
+        run: npx prettier --check "src/**/*.{ts,js,json}" "tests/**/*.{ts,js,json}"
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: quality-gates
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'unified-workers/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: unified-workers
+        run: npm ci
+      
+      - name: Run unit tests
+        working-directory: unified-workers
+        run: npm run test:unit
+        env:
+          VITEST_REPORTER: 'verbose'
+      
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: unified-workers/test-results/
+          retention-days: 7
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: quality-gates
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'unified-workers/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: unified-workers
+        run: npm ci
+      
+      - name: Run integration tests
+        working-directory: unified-workers
+        run: npm run test:integration
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: unified-workers/test-results/
+          retention-days: 7
+
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: quality-gates
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'unified-workers/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: unified-workers
+        run: npm ci
+      
+      - name: Run security tests
+        working-directory: unified-workers
+        run: npm run test:security
+        env:
+          SECURITY_SCAN_MODE: 'strict'
+      
+      - name: Upload security test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-test-results
+          path: unified-workers/test-results/
+          retention-days: 30
+
+  coverage-analysis:
+    name: Coverage Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [unit-tests, integration-tests]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'unified-workers/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: unified-workers
+        run: npm ci
+      
+      - name: Generate coverage report
+        working-directory: unified-workers
+        run: npm run test:coverage
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: unified-workers/coverage/lcov.info
+          flags: unified-workers
+          name: unified-workers-coverage
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+      
+      - name: Coverage quality gate
+        working-directory: unified-workers
+        run: |
+          coverage_percent=$(grep -o 'lines.*: [0-9.]*%' coverage/lcov-report/index.html | head -n1 | grep -o '[0-9.]*' | head -n1)
+          echo "Coverage: ${coverage_percent}%"
+          if (( $(echo "$coverage_percent < 90" | bc -l) )); then
+            echo "Coverage ${coverage_percent}% is below the required 90%"
+            exit 1
+          fi
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [unit-tests, integration-tests, security-tests]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'unified-workers/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: unified-workers
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        working-directory: unified-workers
+        run: npx playwright install --with-deps
+      
+      - name: Start preview deployment
+        working-directory: unified-workers
+        run: |
+          npx wrangler deploy --env preview --dry-run
+          echo "PREVIEW_URL=https://unified-workers-preview.example.com" >> $GITHUB_ENV
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      
+      - name: Run E2E tests
+        working-directory: unified-workers
+        run: npm run test:e2e
+        env:
+          BASE_URL: ${{ env.PREVIEW_URL }}
+          PLAYWRIGHT_HTML_REPORT: test-results/playwright-report
+      
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: unified-workers/test-results/
+          retention-days: 30
+
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: e2e-tests
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'unified-workers/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: unified-workers
+        run: npm ci
+      
+      - name: Run performance tests
+        working-directory: unified-workers
+        run: npm run test:performance
+        env:
+          PERFORMANCE_BUDGET_P95: 500ms
+          PERFORMANCE_BUDGET_MEMORY: 100MB
+      
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-test-results
+          path: unified-workers/test-results/
+          retention-days: 30
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: quality-gates
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'unified-workers/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: unified-workers
+        run: npm ci
+      
+      - name: Run npm audit
+        working-directory: unified-workers
+        run: npm audit --audit-level moderate
+      
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium --project-name=unified-workers
+          command: test
+        continue-on-error: false
+      
+      - name: Run OWASP dependency check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'unified-workers'
+          path: 'unified-workers'
+          format: 'ALL'
+          out: 'security-reports'
+      
+      - name: Upload security scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-results
+          path: security-reports/
+          retention-days: 30
+
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [unit-tests, integration-tests, security-tests]
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'unified-workers/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: unified-workers
+        run: npm ci
+      
+      - name: Build for production
+        working-directory: unified-workers
+        run: npm run build
+      
+      - name: Deploy to Cloudflare Workers Preview
+        working-directory: unified-workers
+        run: |
+          npx wrangler deploy --env preview --name unified-workers-pr-${{ github.event.number }}
+          echo "Preview deployed to: https://unified-workers-pr-${{ github.event.number }}.example.workers.dev"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Preview deployment ready: https://unified-workers-pr-${{ github.event.number }}.example.workers.dev`
+            })
+
+  deploy-production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [coverage-analysis, e2e-tests, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'unified-workers/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: unified-workers
+        run: npm ci
+      
+      - name: Build for production
+        working-directory: unified-workers
+        run: npm run build
+        env:
+          NODE_ENV: production
+      
+      - name: Pre-deployment health check
+        working-directory: unified-workers
+        run: |
+          # Verify build artifacts
+          test -f dist/index.js || (echo "Build artifact missing" && exit 1)
+          
+          # Check bundle size
+          bundle_size=$(wc -c < dist/index.js)
+          echo "Bundle size: ${bundle_size} bytes"
+          if [ $bundle_size -gt 1048576 ]; then  # 1MB limit
+            echo "Bundle size exceeds 1MB limit"
+            exit 1
+          fi
+      
+      - name: Deploy to Cloudflare Workers Production
+        working-directory: unified-workers
+        run: |
+          npx wrangler deploy --env production
+          echo "Production deployment complete"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      
+      - name: Post-deployment health check
+        working-directory: unified-workers
+        run: |
+          sleep 30  # Wait for propagation
+          curl -f https://unified-workers.example.com/health || exit 1
+          echo "Production health check passed"
+      
+      - name: Notify deployment success
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'success',
+              target_url: 'https://unified-workers.example.com',
+              description: 'Production deployment successful',
+              context: 'deployment/production'
+            })
+
+  cleanup-preview:
+    name: Cleanup Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    
+    steps:
+      - name: Cleanup preview deployment
+        run: |
+          npx wrangler delete --name unified-workers-pr-${{ github.event.number }} || true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  quality-summary:
+    name: Quality Summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [coverage-analysis, security-scan, performance-tests]
+    if: always()
+    
+    steps:
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          path: test-results/
+      
+      - name: Generate quality summary
+        run: |
+          echo "# Quality Gates Summary" > quality-summary.md
+          echo "" >> quality-summary.md
+          echo "## Test Results" >> quality-summary.md
+          echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> quality-summary.md
+          echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> quality-summary.md
+          echo "- Security Tests: ${{ needs.security-tests.result }}" >> quality-summary.md
+          echo "- E2E Tests: ${{ needs.e2e-tests.result }}" >> quality-summary.md
+          echo "- Performance Tests: ${{ needs.performance-tests.result }}" >> quality-summary.md
+          echo "" >> quality-summary.md
+          echo "## Code Quality" >> quality-summary.md
+          echo "- Coverage Analysis: ${{ needs.coverage-analysis.result }}" >> quality-summary.md
+          echo "- Security Scan: ${{ needs.security-scan.result }}" >> quality-summary.md
+          echo "" >> quality-summary.md
+          echo "Generated at: $(date -u)" >> quality-summary.md
+      
+      - name: Upload quality summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-summary
+          path: quality-summary.md
+          retention-days: 30
