@@ -1,6 +1,6 @@
 #!/bin/bash
 # scripts/setup-dns.sh
-# DNS configuration script for unified Workers deployment
+# DNS configuration script for dual Workers deployment
 
 set -e
 
@@ -27,11 +27,11 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-echo "🌐 DNS Configuration for Unified Workers Deployment"
-echo "==================================================="
+echo "🌐 DNS Configuration for Dual Workers Deployment"
+echo "================================================"
 
 # Configuration
-DOMAIN="cutty.com"
+DOMAIN="emilycogsdill.com"
 ZONE_ID="${CLOUDFLARE_ZONE_ID}"
 API_TOKEN="${CLOUDFLARE_API_TOKEN}"
 
@@ -49,7 +49,7 @@ if [ -z "$ZONE_ID" ]; then
     exit 1
 fi
 
-print_status "Setting up DNS for unified Worker deployment..."
+print_status "Setting up DNS for dual Worker deployment..."
 print_status "Domain: $DOMAIN"
 print_status "Zone ID: $ZONE_ID"
 
@@ -104,30 +104,25 @@ create_or_update_dns_record() {
     fi
 }
 
-# 1. Main domain - points to unified Worker
-print_status "🎯 Configuring main domain records..."
+# 1. Frontend Worker - points to Cloudflare Pages
+print_status "🎯 Configuring frontend domain records..."
 
-# Root domain (cutty.com)
-create_or_update_dns_record "CNAME" "@" "cutty-production.workers.dev" true 1
+# Frontend subdomain (cutty.emilycogsdill.com)
+create_or_update_dns_record "CNAME" "cutty" "cutty-frontend.pages.dev" true 1
 
-# WWW subdomain (www.cutty.com)
-create_or_update_dns_record "CNAME" "www" "cutty-production.workers.dev" true 1
+# List-cutter subdomain (list-cutter.emilycogsdill.com)
+create_or_update_dns_record "CNAME" "list-cutter" "cutty-frontend.pages.dev" true 1
 
-# 2. Staging subdomain (for testing)
-print_status "🧪 Configuring staging subdomain..."
-create_or_update_dns_record "CNAME" "staging" "cutty-staging.workers.dev" true 300
+# 2. Backend Worker - points to Cloudflare Workers
+print_status "🔧 Configuring backend API domain records..."
 
-# 3. Additional subdomains (optional)
-print_status "🔧 Configuring additional subdomains..."
+# API subdomain (cutty-api.emilycogsdill.com)
+create_or_update_dns_record "CNAME" "cutty-api" "cutty-api.workers.dev" true 1
 
-# API subdomain (for explicit API access, though unified worker handles this)
-create_or_update_dns_record "CNAME" "api" "cutty-production.workers.dev" true 300
-
-# Admin subdomain (for admin panel access)
-create_or_update_dns_record "CNAME" "admin" "cutty-production.workers.dev" true 300
-
-# Status page subdomain (for status monitoring)
-create_or_update_dns_record "CNAME" "status" "cutty-production.workers.dev" true 300
+# 3. Staging subdomains (for testing)
+print_status "🧪 Configuring staging subdomains..."
+create_or_update_dns_record "CNAME" "cutty-staging" "cutty-frontend-staging.pages.dev" true 300
+create_or_update_dns_record "CNAME" "cutty-api-staging" "cutty-api-staging.workers.dev" true 300
 
 # 4. TXT records for verification and security
 print_status "🔒 Configuring security and verification records..."

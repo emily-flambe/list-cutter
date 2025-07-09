@@ -78,11 +78,20 @@ See the [done/](done/) folder for completed phase plans and documentation.
 
 ## Architecture Overview
 
-The migration delivers a unified Cloudflare Workers architecture where a single Worker serves both the React frontend and API backend, leveraging:
+The migration delivers a dual Cloudflare Workers architecture with separate frontend and backend workers:
+
+**Frontend Worker (cutty-frontend):**
+- React SPA served via Cloudflare Pages
+- Static asset optimization and caching
+- Client-side routing and authentication flow
+- Deployed at: cutty.emilycogsdill.com
+
+**Backend Worker (cutty-api):**
+- REST API endpoints for all business logic
 - **D1** for database (SQLite)
 - **R2** for object storage
 - **Workers KV** for session management
-- **Static Assets** for serving the React app
+- Deployed at: cutty-api.emilycogsdill.com
 
-This approach simplifies deployment, reduces latency, and maximizes the benefits of Cloudflare's edge network.
+This dual worker approach provides clear separation of concerns, independent scaling, and simplified development workflows.
 EOF < /dev/null
