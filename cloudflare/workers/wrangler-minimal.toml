@@ -1,0 +1,148 @@
+name = "cutty-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# Enable versioning and gradual deployments
+[version_metadata]
+enable_versions = true
+
+# Development configuration
+[dev]
+port = 8788
+local_protocol = "http"
+ip = "127.0.0.1"
+
+# Build configuration
+[build]
+command = "npm run build"
+
+# Environment variables (non-sensitive)
+[vars]
+ENVIRONMENT = "development"
+API_VERSION = "v1"
+CORS_ORIGIN = "http://localhost:5173"
+MAX_FILE_SIZE = "52428800"
+JWT_ISSUER = "cutty"
+JWT_AUDIENCE = "cutty-api"
+SECURITY_PERFORMANCE_THRESHOLD = "100"
+SECURITY_METRICS_RETENTION_DAYS = "30"
+SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
+
+# D1 Database bindings
+[[d1_databases]]
+binding = "DB"
+database_name = "cutty-dev"
+database_id = "2f87e313-31ff-4298-ab18-552fa5a1ce0e"
+migrations_dir = "./migrations"
+
+# R2 Storage bindings
+[[r2_buckets]]
+binding = "FILE_STORAGE"
+bucket_name = "cutty-files-dev"
+preview_bucket_name = "cutty-files-dev"
+
+# KV namespaces
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_CONFIG"
+id = "a6973edd26304221934017997dbd147e"
+preview_id = "a6973edd26304221934017997dbd147e"
+
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_EVENTS"
+id = "e696502dea8942a8acb47e2ac474e248"
+preview_id = "e696502dea8942a8acb47e2ac474e248"
+
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_METRICS"
+id = "805adc47af9c4e8aa7ddf5b412ea3083"
+preview_id = "805adc47af9c4e8aa7ddf5b412ea3083"
+
+[[kv_namespaces]]
+binding = "CUTTY_QUOTA_TRACKING"
+id = "4c1a53aaab2846a3b11ee39416e6b1dd"
+preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
+
+# Staging environment
+[env.staging]
+name = "cutty-api-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+CORS_ORIGIN = "https://staging.cutty.com"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "cutty-staging"
+database_id = "e16924c6-be97-4012-88ac-79ff31fd5304"
+
+[[env.staging.r2_buckets]]
+binding = "FILE_STORAGE"
+bucket_name = "cutty-files-staging"
+preview_bucket_name = "cutty-files-staging"
+
+[[env.staging.kv_namespaces]]
+binding = "CUTTY_SECURITY_CONFIG"
+id = "a6973edd26304221934017997dbd147e"
+preview_id = "a6973edd26304221934017997dbd147e"
+
+[[env.staging.kv_namespaces]]
+binding = "CUTTY_SECURITY_EVENTS"
+id = "e696502dea8942a8acb47e2ac474e248"
+preview_id = "e696502dea8942a8acb47e2ac474e248"
+
+[[env.staging.kv_namespaces]]
+binding = "CUTTY_SECURITY_METRICS"
+id = "805adc47af9c4e8aa7ddf5b412ea3083"
+preview_id = "805adc47af9c4e8aa7ddf5b412ea3083"
+
+[[env.staging.kv_namespaces]]
+binding = "CUTTY_QUOTA_TRACKING"
+id = "4c1a53aaab2846a3b11ee39416e6b1dd"
+preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
+
+# Production environment
+[env.production]
+name = "cutty-api-production"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+CORS_ORIGIN = "https://cutty.com"
+SECURITY_PERFORMANCE_THRESHOLD = "50"
+SECURITY_METRICS_RETENTION_DAYS = "90"
+SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
+
+routes = [
+  { pattern = "api.cutty.com/*", zone_name = "cutty.com" }
+]
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "cutty-production"
+database_id = "0a6c6836-02e8-4f91-a37a-7eb82aa58e0f"
+
+[[env.production.r2_buckets]]
+binding = "FILE_STORAGE"
+bucket_name = "cutty-files-prod"
+preview_bucket_name = "cutty-files-prod"
+
+[[env.production.kv_namespaces]]
+binding = "CUTTY_SECURITY_CONFIG"
+id = "a6973edd26304221934017997dbd147e"
+preview_id = "a6973edd26304221934017997dbd147e"
+
+[[env.production.kv_namespaces]]
+binding = "CUTTY_SECURITY_EVENTS"
+id = "e696502dea8942a8acb47e2ac474e248"
+preview_id = "e696502dea8942a8acb47e2ac474e248"
+
+[[env.production.kv_namespaces]]
+binding = "CUTTY_SECURITY_METRICS"
+id = "805adc47af9c4e8aa7ddf5b412ea3083"
+preview_id = "805adc47af9c4e8aa7ddf5b412ea3083"
+
+[[env.production.kv_namespaces]]
+binding = "CUTTY_QUOTA_TRACKING"
+id = "4c1a53aaab2846a3b11ee39416e6b1dd"
+preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"

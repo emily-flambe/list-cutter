@@ -231,7 +231,7 @@ neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@host.docker.inter
 # D1 Database settings (Phase 4+)
 D1_DATABASE_CONFIG = {
     'local_db_path': get_env_variable("D1_LOCAL_PATH", ".wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite"),
-    'database_name': get_env_variable("D1_DATABASE_NAME", "cutty-db"),
+    'database_name': get_env_variable("D1_DATABASE_NAME", "cutty-dev"),
     'use_d1': get_env_variable("USE_D1_DATABASE", False),  # Feature flag for gradual migration
 }
 

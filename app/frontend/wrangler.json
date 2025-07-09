@@ -16,7 +16,7 @@
       },
       "routes": [
         {
-          "pattern": "list-cutter.emilycogsdill.com/*",
+          "pattern": "cutty.emilycogsdill.com/*",
           "zone_name": "emilycogsdill.com"
         },
         {

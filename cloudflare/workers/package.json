@@ -14,7 +14,6 @@
     "test": "vitest",
     "test:ci": "vitest run",
     "lint": "eslint src --ext .ts",
-    "lint:deploy": "eslint src --ext .ts --config eslint.config.deploy.js",
     "format": "prettier --write \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
     "build": "esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --platform=node --target=es2022",

@@ -73,7 +73,11 @@ class SavedFile(models.Model):
 
 **Bucket Structure:**
 ```
+<<<<<<< HEAD
+cutty-files/
+=======
 cutty-files-{environment}/
+>>>>>>> origin/main
 ├── uploads/
 │   └── user-{user_id}/
 │       ├── {file_id}-{timestamp}.csv
@@ -1835,7 +1839,11 @@ export class MetricsService {
     const logEntry = {
       '@timestamp': metric.timestamp,
       level: metric.success ? 'info' : 'error',
+<<<<<<< HEAD
+      service: 'cutty-files',
+=======
       service: 'cutty-files-storage',
+>>>>>>> origin/main
       action: metric.action,
       user_id: metric.userId,
       file_id: metric.fileId,

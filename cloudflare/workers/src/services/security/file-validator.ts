@@ -1,10 +1,24 @@
 
+import { ThreatDetectionService } from './threat-detector';
+import { PIIScannerService } from './pii-scanner';
+import { 
+  ThreatDetectionResult, 
+  PIIDetectionResult, 
+  ThreatSeverity, 
+  ThreatRecommendation,
+  ThreatDetectionConfig,
+  ComplianceMode
+} from '../../types/threat-intelligence';
+
 export interface FileValidationOptions {
   maxSize?: number;
   allowedTypes?: string[];
   allowedExtensions?: string[];
   scanContent?: boolean;
   checkMagicBytes?: boolean;
+  enableThreatDetection?: boolean;
+  enablePIIDetection?: boolean;
+  threatScanTimeout?: number;
 }
 
 export interface ValidationResult {
@@ -16,11 +30,17 @@ export interface ValidationResult {
     type: string;
     extension: string;
     magicBytes?: string;
+    hash?: string;
   };
   securityScan?: {
     threats: string[];
     risk: 'low' | 'medium' | 'high';
   };
+  threatDetection?: import('../../types/threat-intelligence').ThreatDetectionResult;
+  piiDetection?: import('../../types/threat-intelligence').PIIDetectionResult;
+  riskScore?: number;
+  overallRisk?: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  recommendation?: 'block' | 'quarantine' | 'sanitize' | 'warn' | 'allow' | 'manual_review';
 }
 
 export interface FileUploadLimits {
@@ -29,12 +49,18 @@ export interface FileUploadLimits {
   maxTotalSizePerHour: number;
 }
 
+import { SecurityAuditLogger } from './audit-logger';
+import { SecurityEventType } from '../../types/security-events';
+
 /**
  * Comprehensive file validation and security service
  * Implements multiple layers of security for file uploads
  */
 export class FileValidationService {
   private db: D1Database;
+  private auditLogger?: SecurityAuditLogger;
+  private threatDetectionService: ThreatDetectionService;
+  private piiScannerService: PIIScannerService;
   private defaultMaxSize = 50 * 1024 * 1024; // 50MB
   private allowedMimeTypes = [
     'text/csv',
@@ -65,8 +91,34 @@ export class FileValidationService {
     /window\.location/i
   ];
 
-  constructor(db: D1Database) {
+  constructor(db: D1Database, threatDetectionConfig?: ThreatDetectionConfig, auditLogger?: SecurityAuditLogger) {
     this.db = db;
+    this.auditLogger = auditLogger;
+    
+    // Initialize threat detection service with configuration
+    const defaultThreatConfig: ThreatDetectionConfig = {
+      enableMalwareDetection: true,
+      enablePIIDetection: true,
+      enableBehaviorAnalysis: true,
+      enableRealTimeScanning: true,
+      maxScanSize: 50 * 1024 * 1024, // 50MB
+      scanTimeoutMs: 30000, // 30 seconds
+      confidenceThreshold: 70,
+      autoQuarantineThreshold: 85,
+      enableNotifications: true,
+      notificationSettings: {
+        email: { enabled: false, recipients: [], template: '' },
+        webhook: { enabled: false, url: '', headers: {} },
+        dashboard: { enabled: true, realTimeUpdates: true }
+      },
+      complianceMode: ComplianceMode.BALANCED
+    };
+    
+    this.threatDetectionService = new ThreatDetectionService(
+      db, 
+      threatDetectionConfig || defaultThreatConfig
+    );
+    this.piiScannerService = new PIIScannerService(db);
   }
 
   /**
@@ -82,7 +134,9 @@ export class FileValidationService {
       allowedTypes = this.allowedMimeTypes,
       allowedExtensions = this.allowedExtensions,
       scanContent = true,
-      checkMagicBytes = true
+      checkMagicBytes = true,
+      enableThreatDetection = true,
+      enablePIIDetection = true
     } = options;
 
     const errors: string[] = [];
@@ -93,8 +147,22 @@ export class FileValidationService {
       size: file.size,
       type: file.type,
       extension: this.getFileExtension(file.name),
-      magicBytes: undefined as string | undefined
+      magicBytes: undefined as string | undefined,
+      hash: undefined as string | undefined
     };
+
+    // Generate file hash for threat detection
+    if (enableThreatDetection) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+        fileInfo.hash = Array.from(new Uint8Array(hashBuffer))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+      } catch {
+        warnings.push('Failed to generate file hash for threat detection');
+      }
+    }
 
     // Size validation
     if (file.size > maxSize) {
@@ -126,10 +194,34 @@ export class FileValidationService {
     const rateLimitCheck = await this.checkRateLimit(userId);
     if (!rateLimitCheck.allowed) {
       errors.push(rateLimitCheck.reason || 'Rate limit exceeded');
+      
+      // Log rate limit violation
+      if (this.auditLogger) {
+        await this.auditLogger.logSecurityViolationEvent(
+          SecurityEventType.RATE_LIMIT_EXCEEDED,
+          {
+            userId,
+            violationType: 'file_upload_rate_limit',
+            threshold: rateLimitCheck.threshold,
+            actualValue: rateLimitCheck.actualValue,
+            details: {
+              fileName: file.name,
+              fileSize: file.size,
+              reason: rateLimitCheck.reason
+            }
+          }
+        );
+      }
     }
 
     // Content validation (if no critical errors so far)
     let securityScan: ValidationResult['securityScan'] | undefined;
+    let threatDetection: ThreatDetectionResult | undefined;
+    let piiDetection: PIIDetectionResult | undefined;
+    let overallRisk: 'critical' | 'high' | 'medium' | 'low' | 'info' | undefined;
+    let riskScore: number | undefined;
+    let recommendation: 'block' | 'quarantine' | 'sanitize' | 'warn' | 'allow' | 'manual_review' | undefined;
+
     if (errors.length === 0 && scanContent) {
       try {
         const contentValidation = await this.validateFileContent(file, {
@@ -150,6 +242,130 @@ export class FileValidationService {
       } catch (error) {
         warnings.push(`Content validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
+
+      // Advanced threat detection
+      if (enableThreatDetection) {
+        try {
+          const fileId = crypto.randomUUID();
+          threatDetection = await this.threatDetectionService.scanFile(file, fileId, userId);
+          
+          // Convert threat severity to our format
+          overallRisk = this.mapThreatSeverity(threatDetection.overallRisk);
+          riskScore = threatDetection.riskScore;
+          recommendation = this.mapThreatRecommendation(threatDetection.recommendation);
+
+          // Add threat-based errors and warnings
+          if (threatDetection.overallRisk === ThreatSeverity.CRITICAL) {
+            errors.push('Critical security threat detected - file blocked');
+            
+            // Log critical threat detection
+            if (this.auditLogger) {
+              await this.auditLogger.logSecurityViolationEvent(
+                SecurityEventType.MALICIOUS_FILE_DETECTED,
+                {
+                  userId,
+                  violationType: 'malicious_file',
+                  resourceId: file.name,
+                  resourceType: 'file',
+                  details: {
+                    fileName: file.name,
+                    fileSize: file.size,
+                    threats: threatDetection.threats,
+                    riskScore: threatDetection.riskScore
+                  }
+                }
+              );
+            }
+          } else if (threatDetection.overallRisk === ThreatSeverity.HIGH) {
+            errors.push('High-risk security threat detected - file rejected');
+            
+            // Log high-risk threat detection
+            if (this.auditLogger) {
+              await this.auditLogger.logSecurityViolationEvent(
+                SecurityEventType.SUSPICIOUS_ACTIVITY,
+                {
+                  userId,
+                  violationType: 'high_risk_file',
+                  resourceId: file.name,
+                  resourceType: 'file',
+                  details: {
+                    fileName: file.name,
+                    fileSize: file.size,
+                    threats: threatDetection.threats,
+                    riskScore: threatDetection.riskScore
+                  }
+                }
+              );
+            }
+          } else if (threatDetection.overallRisk === ThreatSeverity.MEDIUM) {
+            warnings.push('Medium-risk security threat detected - review recommended');
+          }
+
+          if (threatDetection.threats.length > 0) {
+            warnings.push(`${threatDetection.threats.length} security threat(s) detected`);
+          }
+        } catch (error) {
+          warnings.push(`Advanced threat detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      // PII detection
+      if (enablePIIDetection) {
+        try {
+          const fileId = crypto.randomUUID();
+          piiDetection = await this.piiScannerService.scanForPII(file, fileId, userId);
+          
+          // Add PII-based warnings and errors
+          if (piiDetection.piiFindings.length > 0) {
+            const criticalPII = piiDetection.piiFindings.filter(f => f.severity === 'critical');
+            const highPII = piiDetection.piiFindings.filter(f => f.severity === 'high');
+            
+            if (criticalPII.length > 0) {
+              errors.push(`Critical PII detected (${criticalPII.length} instances) - file blocked`);
+            } else if (highPII.length > 0) {
+              warnings.push(`High-risk PII detected (${highPII.length} instances) - data handling required`);
+            } else {
+              warnings.push(`PII detected (${piiDetection.piiFindings.length} instances) - review recommended`);
+            }
+          }
+
+          // Add compliance warnings
+          if (piiDetection.complianceFlags.length > 0) {
+            warnings.push(`${piiDetection.complianceFlags.length} compliance flag(s) raised`);
+          }
+        } catch (error) {
+          warnings.push(`PII detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+    }
+
+    // Log overall validation result
+    if (this.auditLogger) {
+      if (errors.length > 0) {
+        await this.auditLogger.logSecurityEvent({
+          type: SecurityEventType.FILE_VALIDATION_FAILED,
+          userId,
+          resourceType: 'file',
+          resourceId: file.name,
+          resourceName: file.name,
+          message: `File validation failed: ${errors.join(', ')}`,
+          details: {
+            fileName: file.name,
+            fileSize: file.size,
+            errors,
+            warnings,
+            threatDetection: threatDetection ? {
+              threats: threatDetection.threats,
+              riskScore: threatDetection.riskScore,
+              overallRisk: threatDetection.overallRisk
+            } : undefined,
+            piiDetection: piiDetection ? {
+              piiCount: piiDetection.piiFindings.length,
+              complianceFlags: piiDetection.complianceFlags
+            } : undefined
+          }
+        });
+      }
     }
 
     return {
@@ -157,7 +373,12 @@ export class FileValidationService {
       errors,
       warnings,
       fileInfo,
-      securityScan
+      securityScan,
+      threatDetection,
+      piiDetection,
+      riskScore,
+      overallRisk,
+      recommendation
     };
   }
 
@@ -476,5 +697,95 @@ export class FileValidationService {
   generateSecureFileId(): string {
     // Use crypto.randomUUID() for cryptographically secure random ID
     return crypto.randomUUID();
+  }
+
+  /**
+   * Map threat severity to validation result format
+   */
+  private mapThreatSeverity(severity: ThreatSeverity): 'critical' | 'high' | 'medium' | 'low' | 'info' {
+    switch (severity) {
+      case ThreatSeverity.CRITICAL:
+        return 'critical';
+      case ThreatSeverity.HIGH:
+        return 'high';
+      case ThreatSeverity.MEDIUM:
+        return 'medium';
+      case ThreatSeverity.LOW:
+        return 'low';
+      case ThreatSeverity.INFO:
+        return 'info';
+      default:
+        return 'low';
+    }
+  }
+
+  /**
+   * Map threat recommendation to validation result format
+   */
+  private mapThreatRecommendation(recommendation: ThreatRecommendation): 'block' | 'quarantine' | 'sanitize' | 'warn' | 'allow' | 'manual_review' {
+    switch (recommendation) {
+      case ThreatRecommendation.BLOCK:
+        return 'block';
+      case ThreatRecommendation.QUARANTINE:
+        return 'quarantine';
+      case ThreatRecommendation.SANITIZE:
+        return 'sanitize';
+      case ThreatRecommendation.WARN:
+        return 'warn';
+      case ThreatRecommendation.ALLOW:
+        return 'allow';
+      case ThreatRecommendation.MANUAL_REVIEW:
+        return 'manual_review';
+      default:
+        return 'manual_review';
+    }
+  }
+
+  /**
+   * Get threat detection service instance
+   */
+  getThreatDetectionService(): ThreatDetectionService {
+    return this.threatDetectionService;
+  }
+
+  /**
+   * Get PII scanner service instance
+   */
+  getPIIScannerService(): PIIScannerService {
+    return this.piiScannerService;
+  }
+
+  /**
+   * Update threat detection configuration
+   */
+  async updateThreatDetectionConfig(_config: Partial<ThreatDetectionConfig>): Promise<void> {
+    // This would update the configuration for the threat detection service
+    // Implementation depends on how configuration is managed
+  }
+
+  /**
+   * Get comprehensive security report for a file
+   */
+  async getSecurityReport(
+    file: File,
+    fileId: string,
+    userId?: string
+  ): Promise<{
+    validation: ValidationResult;
+    detailedThreats: ThreatDetectionResult | null;
+    detailedPII: PIIDetectionResult | null;
+  }> {
+    const validation = await this.validateFile(file, userId || 'system', {
+      enableThreatDetection: true,
+      enablePIIDetection: true,
+      scanContent: true,
+      checkMagicBytes: true
+    });
+
+    return {
+      validation,
+      detailedThreats: validation.threatDetection || null,
+      detailedPII: validation.piiDetection || null
+    };
   }
 }

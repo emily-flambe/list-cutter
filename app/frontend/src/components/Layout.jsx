@@ -90,7 +90,7 @@ const Layout = ({ children }) => {
   return (
     <Box sx={{ display: 'flex', bgcolor: 'var(--primary-bg)', minHeight: '100vh' }}>
       <MuiLink
-        href="https://github.com/emily-flambe/list-cutter"
+        href="https://github.com/emily-flambe/cutty"
         target="_blank"
         rel="noopener noreferrer"
         sx={{

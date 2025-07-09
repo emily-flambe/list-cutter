@@ -7,6 +7,12 @@ export interface CloudflareEnv {
   JWT_ISSUER: string;
   JWT_AUDIENCE: string;
   
+  // Security environment variables
+  SECURITY_PERFORMANCE_THRESHOLD?: string;
+  SECURITY_ALERT_WEBHOOK?: string;
+  SECURITY_METRICS_RETENTION_DAYS?: string;
+  SECURITY_ENABLE_REAL_TIME_MONITORING?: string;
+  
   // Secrets (from .dev.vars or Wrangler secrets)
   JWT_SECRET: string;
   JWT_REFRESH_SECRET: string;
@@ -15,9 +21,14 @@ export interface CloudflareEnv {
   // Bindings
   DB: D1Database;
   FILE_STORAGE: R2Bucket;
-  AUTH_TOKENS: KVNamespace;
-  CSV_QUEUE: Queue;
-  ANALYTICS: AnalyticsEngineDataset;
+  AUTH_TOKENS?: KVNamespace; // Optional - commented out in wrangler.toml
+  ANALYTICS?: AnalyticsEngineDataset; // Optional - commented out in wrangler.toml
+  
+  // Security-specific bindings
+  CUTTY_SECURITY_CONFIG: KVNamespace;
+  CUTTY_SECURITY_EVENTS: KVNamespace;
+  CUTTY_SECURITY_METRICS: KVNamespace;
+  CUTTY_QUOTA_TRACKING: KVNamespace;
   
   // Optional bindings
   RATE_LIMITER?: DurableObjectNamespace;

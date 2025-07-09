@@ -278,7 +278,11 @@ migrations_dir = "../../migrations"
 [[r2_buckets]]
 binding = "FILE_STORAGE"
 bucket_name = "cutty-files-dev"
+<<<<<<< HEAD
+preview_bucket_name = "cutty-files-dev"
+=======
 preview_bucket_name = "cutty-files-preview"
+>>>>>>> origin/main
 
 # KV Namespace bindings (for JWT refresh tokens)
 [[kv_namespaces]]
@@ -332,7 +336,11 @@ database_id = "PLACEHOLDER_PROD_DB_ID"
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"
+<<<<<<< HEAD
+bucket_name = "cutty-files-prod"
+=======
 bucket_name = "cutty-files-production"
+>>>>>>> origin/main
 
 [[env.production.kv_namespaces]]
 binding = "AUTH_TOKENS"
@@ -762,7 +770,11 @@ wrangler d1 execute cutty-dev --local --command "SELECT name FROM sqlite_master 
 wrangler r2 bucket create cutty-files-dev
 
 # Create preview bucket
+<<<<<<< HEAD
+wrangler r2 bucket create cutty-files-staging
+=======
 wrangler r2 bucket create cutty-files-preview
+>>>>>>> origin/main
 
 # List buckets to verify
 wrangler r2 bucket list
