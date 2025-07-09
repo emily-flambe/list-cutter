@@ -180,3 +180,6 @@ app/config/media/uploads/
 
 # Git worktrees
 worktrees/
+
+# Node.js dependencies
+node_modules/
