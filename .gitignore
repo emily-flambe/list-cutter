@@ -183,3 +183,6 @@ worktrees/
 
 # Node.js dependencies
 node_modules/
+
+# Wrangler local development files
+.wrangler/
