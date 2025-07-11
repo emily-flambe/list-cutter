@@ -37,8 +37,8 @@ from typing import Dict, List, Optional, Tuple, Any, Callable, Set
 from collections import deque, defaultdict
 import sqlite3
 import smtplib
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
+from email.mime.text import MIMEText as MimeText
+from email.mime.multipart import MIMEMultipart as MimeMultipart
 import uuid
 import subprocess
 
