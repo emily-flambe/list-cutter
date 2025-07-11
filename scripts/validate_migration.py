@@ -33,7 +33,6 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import click
-import psycopg2
 import requests
 from tqdm import tqdm
 

@@ -33,7 +33,6 @@ import logging
 import os
 import sys
 import sqlite3
-import psycopg2
 import hashlib
 import requests
 from datetime import datetime, timezone

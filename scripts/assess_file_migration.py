@@ -30,7 +30,6 @@ from dataclasses import dataclass, asdict
 from collections import defaultdict, Counter
 
 import click
-import psycopg2
 import pandas as pd
 from tqdm import tqdm
 

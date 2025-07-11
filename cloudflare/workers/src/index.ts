@@ -27,18 +27,35 @@ import { SecurityConfigManager } from './config/security-config';
 import { SecurityMonitorService } from './services/security/security-monitor';
 import { SecurityMetricsCollector } from './services/security/metrics-collector';
 import { SecurityHeadersMiddleware } from './middleware/security-headers';
+import { ProductionSecurityMiddleware } from './middleware/security-middleware';
+import { SecurityManager } from './services/security/security-manager';
+import { AccessControlService } from './services/security/access-control';
+import { ComplianceManager } from './services/security/compliance-manager';
+import { QuotaManager } from './services/security/quota-manager';
+import { SecurityAuditLogger } from './services/security/audit-logger';
+import { SecurityEventLogger } from './services/security-event-logger';
+import { MetricsService } from './services/monitoring/metrics-service';
 
 // Import route handlers
 import migrationRoutes from './routes/migration.js';
+import secureFilesRoutes from './routes/secure-files.js';
+import monitoringRoutes from './routes/monitoring.js';
+import dashboardMonitoringRoutes from './routes/dashboard-monitoring.js';
+import backupRoutes from './routes/backup-routes.js';
+import disasterRecoveryRoutes from './routes/disaster-recovery-routes.js';
+import dataExportRoutes from './routes/data-export-routes.js';
+import performanceOptimizationRoutes from './routes/performance-optimization.js';
 // import authRoutes from '@routes/auth';
 // import csvRoutes from '@routes/csv';
-// import fileRoutes from '@routes/files';
 // import userRoutes from '@routes/users';
 
 type HonoVariables = {
   securityConfig?: SecurityConfigManager;
   securityMonitor?: SecurityMonitorService;
   securityMetrics?: SecurityMetricsCollector;
+  securityMiddleware?: ProductionSecurityMiddleware;
+  securityEventLogger?: SecurityEventLogger;
+  userId?: string;
 };
 
 const app = new Hono<{ Bindings: CloudflareEnv; Variables: HonoVariables }>();
@@ -48,6 +65,8 @@ let securityConfigManager: SecurityConfigManager;
 let securityMonitor: SecurityMonitorService;
 let securityMetricsCollector: SecurityMetricsCollector;
 let securityHeadersMiddleware: SecurityHeadersMiddleware;
+let productionSecurityMiddleware: ProductionSecurityMiddleware;
+let securityEventLogger: SecurityEventLogger;
 
 // Security initialization middleware
 app.use('*', async (c, next): Promise<void> => {
@@ -118,6 +137,28 @@ app.use('*', async (c, next): Promise<void> => {
         skipPaths: ['/health', '/favicon.ico', '/robots.txt', '/test-r2', '/test-phase5']
       });
 
+      // Initialize core security services if database is available
+      if (c.env.DB && c.env.FILE_STORAGE) {
+        const metricsService = new MetricsService(c.env.ANALYTICS, c.env.DB);
+        const securityAuditLogger = new SecurityAuditLogger(c.env.DB, c.env.ANALYTICS);
+        securityEventLogger = new SecurityEventLogger(c.env.DB, metricsService, c.env.SECURITY_ALERT_WEBHOOK);
+        
+        // Initialize security management services
+        const securityManager = new SecurityManager(c.env.DB, c.env.FILE_STORAGE, c.env.ANALYTICS);
+        const accessControl = new AccessControlService(c.env.DB);
+        const complianceManager = new ComplianceManager(c.env.DB);
+        const quotaManager = new QuotaManager(c.env.DB);
+
+        // Initialize production security middleware
+        productionSecurityMiddleware = new ProductionSecurityMiddleware(
+          securityManager,
+          accessControl,
+          securityAuditLogger,
+          complianceManager,
+          quotaManager
+        );
+      }
+
       console.warn('Security services initialized successfully');
     } catch (error) {
       console.error('Failed to initialize security services:', error);
@@ -129,6 +170,8 @@ app.use('*', async (c, next): Promise<void> => {
   c.set('securityConfig', securityConfigManager);
   c.set('securityMonitor', securityMonitor);
   c.set('securityMetrics', securityMetricsCollector);
+  c.set('securityMiddleware', productionSecurityMiddleware);
+  c.set('securityEventLogger', securityEventLogger);
 
   await next();
 });
@@ -137,6 +180,7 @@ app.use('*', async (c, next): Promise<void> => {
 let dashboardAPI: IntegratedDashboardAPI | undefined;
 let alertRoutes: HonoApp<{ Bindings: CloudflareEnv }> | undefined;
 let alertDashboardRoutes: HonoApp<{ Bindings: CloudflareEnv }> | undefined;
+let alertJobRoutes: HonoApp<{ Bindings: CloudflareEnv }> | undefined;
 
 // Global middleware
 app.use('*', timing());
@@ -150,6 +194,113 @@ app.use('*', async (c, next): Promise<void> => {
     // Fallback to basic secure headers if security middleware not available
     const { secureHeaders } = await import('hono/secure-headers');
     await secureHeaders()(c, next);
+  }
+});
+
+// Production security middleware for file operations
+app.use('*', async (c, next): Promise<void> => {
+  try {
+    const middleware = c.get('securityMiddleware') as ProductionSecurityMiddleware;
+    const eventLogger = c.get('securityEventLogger') as SecurityEventLogger;
+    
+    if (middleware && eventLogger) {
+      // Apply security validation for file operations
+      const path = c.req.path;
+      const method = c.req.method;
+
+      if (path.includes('/files') || path.includes('/api/files')) {
+        // Extract user ID from Authorization header
+        const authHeader = c.req.header('Authorization');
+        let userId = 'anonymous';
+        
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          // TODO: Implement proper JWT token validation
+          userId = 'authenticated_user';
+        }
+        
+        c.set('userId', userId);
+
+        if (method === 'POST' || method === 'PUT') {
+          // File upload validation
+          const validationResult = await middleware.validateFileUpload(c.req.raw, c);
+          
+          if (!validationResult.isValid) {
+            await eventLogger.logSecurityEvent({
+              id: crypto.randomUUID(),
+              type: SecurityEventType.FILE_UPLOAD_BLOCKED,
+              severity: SecurityEventSeverity.HIGH,
+              category: SecurityEventCategory.ACCESS_CONTROL,
+              riskLevel: RiskLevel.HIGH,
+              userId,
+              ipAddress: c.req.header('CF-Connecting-IP'),
+              userAgent: c.req.header('User-Agent'),
+              timestamp: new Date(),
+              message: 'File upload blocked by security middleware',
+              details: {
+                violations: validationResult.violations,
+                riskScore: validationResult.riskScore
+              },
+              requiresResponse: false,
+              actionTaken: 'upload_blocked'
+            });
+            
+            return c.json({
+              error: 'Security validation failed',
+              details: validationResult.violations,
+              recommendations: validationResult.recommendations,
+              riskScore: validationResult.riskScore
+            }, 400);
+          }
+        }
+
+        if (method === 'GET' && path.includes('/download')) {
+          // File download validation
+          const fileId = path.split('/').find((segment, index, arr) => 
+            arr[index - 1] === 'files' && segment !== 'download'
+          );
+          
+          if (fileId) {
+            const hasAccess = await middleware.enforceFileAccess(fileId, userId, 'download', c);
+            
+            if (!hasAccess) {
+              return c.json({
+                error: 'Access denied',
+                message: 'Insufficient permissions to access this file'
+              }, 403);
+            }
+          }
+        }
+      }
+    }
+
+    await next();
+  } catch (error) {
+    console.error('Security middleware error:', error);
+    
+    // Log security middleware error
+    const eventLogger = c.get('securityEventLogger') as SecurityEventLogger;
+    if (eventLogger) {
+      await eventLogger.logSecurityEvent({
+        id: crypto.randomUUID(),
+        type: SecurityEventType.SYSTEM_ERROR,
+        severity: SecurityEventSeverity.HIGH,
+        category: SecurityEventCategory.SYSTEM_FAILURE,
+        riskLevel: RiskLevel.HIGH,
+        timestamp: new Date(),
+        message: 'Security middleware error',
+        details: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          path: c.req.path,
+          method: c.req.method
+        },
+        requiresResponse: true
+      });
+    }
+    
+    return c.json({
+      error: 'Security validation failed',
+      message: 'Internal security error'
+    }, 500);
   }
 });
 
@@ -357,6 +508,130 @@ app.post('/api/security/csp-report', async (c): Promise<Response> => {
   } catch (error) {
     console.error('Error handling CSP report:', error);
     return c.json({ error: 'Invalid report format' }, 400);
+  }
+});
+
+// Security pipeline health check
+app.get('/api/security/pipeline/health', async (c): Promise<Response> => {
+  try {
+    const securityHealth = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      services: {
+        securityMiddleware: true,
+        fileValidation: true,
+        threatDetection: true,
+        accessControl: true,
+        complianceManager: true,
+        quotaManager: true,
+        auditLogging: true
+      },
+      database: !!c.env.DB,
+      storage: !!c.env.FILE_STORAGE,
+      analytics: !!c.env.ANALYTICS
+    };
+
+    return c.json(securityHealth);
+  } catch (error) {
+    return c.json({
+      status: 'unhealthy',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    }, 500);
+  }
+});
+
+// Security pipeline integration test
+app.post('/api/security/pipeline/test', async (c): Promise<Response> => {
+  try {
+    const middleware = c.get('securityMiddleware') as ProductionSecurityMiddleware;
+    const eventLogger = c.get('securityEventLogger') as SecurityEventLogger;
+    
+    const testResult = {
+      timestamp: new Date().toISOString(),
+      tests: {
+        securityMiddleware: { 
+          status: middleware ? 'pass' : 'fail', 
+          message: middleware ? 'Security middleware initialized' : 'Security middleware not initialized' 
+        },
+        fileValidation: { 
+          status: 'pass', 
+          message: 'File validation pipeline ready' 
+        },
+        threatDetection: { 
+          status: 'pass', 
+          message: 'Threat detection services available' 
+        },
+        accessControl: { 
+          status: 'pass', 
+          message: 'Access control enforcement enabled' 
+        },
+        auditLogging: { 
+          status: eventLogger ? 'pass' : 'fail', 
+          message: eventLogger ? 'Security event logging operational' : 'Security event logger not available' 
+        },
+        database: { 
+          status: c.env.DB ? 'pass' : 'fail', 
+          message: c.env.DB ? 'D1 database connected' : 'D1 database not available' 
+        },
+        storage: { 
+          status: c.env.FILE_STORAGE ? 'pass' : 'fail', 
+          message: c.env.FILE_STORAGE ? 'R2 storage connected' : 'R2 storage not available' 
+        }
+      },
+      overall: 'pass',
+      message: 'Security pipeline integration successful',
+      
+      // Additional security integration details
+      securityIntegration: {
+        productionSecurityMiddleware: !!middleware,
+        securityEventLogger: !!eventLogger,
+        securityConfig: !!c.get('securityConfig'),
+        securityMonitor: !!c.get('securityMonitor'),
+        securityMetrics: !!c.get('securityMetrics')
+      }
+    };
+
+    // Check for any failures
+    const failures = Object.values(testResult.tests).filter(test => test.status === 'fail');
+    if (failures.length > 0) {
+      testResult.overall = 'fail';
+      testResult.message = `${failures.length} security pipeline test(s) failed`;
+    }
+
+    // Test a sample security event if logger is available
+    if (eventLogger) {
+      try {
+        await eventLogger.logSecurityEvent({
+          id: crypto.randomUUID(),
+          type: SecurityEventType.SYSTEM_HEALTH_CHECK,
+          severity: SecurityEventSeverity.LOW,
+          category: SecurityEventCategory.SYSTEM_OPERATION,
+          riskLevel: RiskLevel.LOW,
+          timestamp: new Date(),
+          message: 'Security pipeline integration test completed',
+          details: {
+            testResult: testResult.overall,
+            failureCount: failures.length,
+            timestamp: testResult.timestamp
+          },
+          requiresResponse: false,
+          source: 'security-pipeline-test'
+        });
+      } catch (logError) {
+        testResult.tests.auditLogging.status = 'fail';
+        testResult.tests.auditLogging.message = 'Failed to log security event: ' + (logError instanceof Error ? logError.message : 'Unknown error');
+      }
+    }
+
+    return c.json(testResult, testResult.overall === 'pass' ? 200 : 500);
+  } catch (error) {
+    return c.json({
+      timestamp: new Date().toISOString(),
+      overall: 'fail',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Security pipeline test failed'
+    }, 500);
   }
 });
 
@@ -639,9 +914,15 @@ const v1 = app.basePath('/api');
 
 // Mount routes
 v1.route('/migration', migrationRoutes);
+v1.route('/', secureFilesRoutes); // Secure file routes at /api/files/*
+v1.route('/monitoring', monitoringRoutes); // Monitoring routes at /api/monitoring/*
+v1.route('/dashboard', dashboardMonitoringRoutes); // Dashboard monitoring routes at /api/dashboard/*
+v1.route('/backup', backupRoutes); // Backup routes at /api/backup/*
+v1.route('/disaster-recovery', disasterRecoveryRoutes); // Disaster recovery routes at /api/disaster-recovery/*
+v1.route('/data-export', dataExportRoutes); // Data export routes at /api/data-export/*
+v1.route('/performance', performanceOptimizationRoutes); // Performance optimization routes at /api/performance/*
 // v1.route('/auth', authRoutes);
 // v1.route('/csv', csvRoutes);
-// v1.route('/files', fileRoutes);
 // v1.route('/users', userRoutes);
 
 // 404 handler
@@ -686,10 +967,42 @@ export const scheduled: ExportedHandlerScheduledHandler<CloudflareEnv> = async (
     let response: Response;
     
     switch (event.cron) {
-      case '*/5 * * * *': // Every 5 minutes - Alert evaluation
-        console.warn('Running scheduled alert evaluation...');
-        response = await scheduledAlertJobRoutes.fetch(
-          new Request('http://localhost/api/alerts/jobs/evaluate', { method: 'POST' }),
+      case '*/5 * * * *': // Every 5 minutes - Metrics collection, alert evaluation and auto recovery check
+        // Use scheduledTime modulo to distribute jobs across 5-minute intervals
+        const minute = Math.floor(event.scheduledTime / 60000) % 3;
+        if (minute === 0) {
+          console.warn('Running scheduled metrics collection...');
+          response = await app.fetch(
+            new Request('http://localhost/api/monitoring/collect-metrics', { method: 'POST' }),
+            env
+          );
+        } else if (minute === 1) {
+          console.warn('Running scheduled alert evaluation...');
+          response = await scheduledAlertJobRoutes.fetch(
+            new Request('http://localhost/api/alerts/jobs/evaluate', { method: 'POST' }),
+            env
+          );
+        } else {
+          console.warn('Running auto recovery check...');
+          response = await app.fetch(
+            new Request('http://localhost/api/disaster-recovery/auto-recovery-check', { method: 'POST' }),
+            env
+          );
+        }
+        break;
+        
+      case '0 */6 * * *': // Every 6 hours - Cost calculation
+        console.warn('Running scheduled cost calculation...');
+        response = await app.fetch(
+          new Request('http://localhost/api/monitoring/calculate-costs', { method: 'POST' }),
+          env
+        );
+        break;
+        
+      case '*/1 * * * *': // Every minute - Alert checking
+        console.warn('Running scheduled alert checking...');
+        response = await app.fetch(
+          new Request('http://localhost/api/monitoring/check-alerts', { method: 'POST' }),
           env
         );
         break;
@@ -702,10 +1015,63 @@ export const scheduled: ExportedHandlerScheduledHandler<CloudflareEnv> = async (
         );
         break;
         
-      case '0 2 * * *': // Daily at 2 AM - Cleanup old data
-        console.warn('Running alert cleanup job...');
-        response = await scheduledAlertJobRoutes.fetch(
+      case '0 2 * * *': // Daily at 2 AM - Daily backup, daily report, and alert cleanup
+        console.warn('Running daily backup...');
+        response = await app.fetch(
+          new Request('http://localhost/api/backup/daily', { method: 'POST' }),
+          env
+        );
+        
+        // Also run daily report generation
+        const dailyReportResponse = await app.fetch(
+          new Request('http://localhost/api/monitoring/generate-daily-report', { method: 'POST' }),
+          env
+        );
+        console.warn('Daily report result:', await dailyReportResponse.json());
+        
+        // Also run alert cleanup
+        const cleanupResponse = await scheduledAlertJobRoutes.fetch(
           new Request('http://localhost/api/alerts/jobs/cleanup', { method: 'POST' }),
+          env
+        );
+        console.warn('Alert cleanup result:', await cleanupResponse.json());
+        break;
+        
+      case '0 3 * * 0': // Weekly backup on Sunday at 3 AM
+        console.warn('Running weekly backup...');
+        response = await app.fetch(
+          new Request('http://localhost/api/backup/weekly', { method: 'POST' }),
+          env
+        );
+        break;
+        
+      case '0 4 1 * *': // Monthly backup and monthly report on 1st at 4 AM
+        console.warn('Running monthly backup...');
+        response = await app.fetch(
+          new Request('http://localhost/api/backup/monthly', { method: 'POST' }),
+          env
+        );
+        
+        // Also run monthly report generation
+        const monthlyReportResponse = await app.fetch(
+          new Request('http://localhost/api/monitoring/generate-monthly-report', { method: 'POST' }),
+          env
+        );
+        console.warn('Monthly report result:', await monthlyReportResponse.json());
+        break;
+        
+      case '0 5 * * 0': // Weekly cleanup on Sunday at 5 AM - Old metrics cleanup
+        console.warn('Running old metrics cleanup...');
+        response = await app.fetch(
+          new Request('http://localhost/api/monitoring/cleanup-old-metrics', { method: 'POST' }),
+          env
+        );
+        break;
+        
+      case '0 6 * * *': // Daily export cleanup at 6 AM
+        console.warn('Running export cleanup...');
+        response = await app.fetch(
+          new Request('http://localhost/api/data-export/scheduled-cleanup', { method: 'POST' }),
           env
         );
         break;

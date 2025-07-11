@@ -24,11 +24,20 @@ export interface CloudflareEnv {
   AUTH_TOKENS?: KVNamespace; // Optional - commented out in wrangler.toml
   ANALYTICS?: AnalyticsEngineDataset; // Optional - commented out in wrangler.toml
   
+  // Backup and Recovery Bindings
+  BACKUP_STORAGE?: R2Bucket; // Cross-region backup storage (optional - not yet created)
+  BACKUP_STORAGE_SECONDARY?: R2Bucket; // Secondary backup storage for redundancy
+  BACKUP_DATABASE?: D1Database; // Cross-region backup database (optional - not yet created)
+  BACKUP_CONFIG?: KVNamespace; // Backup configuration and metadata (optional - not yet created)
+  
   // Security-specific bindings
   CUTTY_SECURITY_CONFIG: KVNamespace;
   CUTTY_SECURITY_EVENTS: KVNamespace;
   CUTTY_SECURITY_METRICS: KVNamespace;
   CUTTY_QUOTA_TRACKING: KVNamespace;
+  
+  // Performance Optimization Bindings - Issue #69
+  CACHE_KV?: KVNamespace; // Multi-layer caching for performance optimization (optional - not yet created)
   
   // Optional bindings
   RATE_LIMITER?: DurableObjectNamespace;
