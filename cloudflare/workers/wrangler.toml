@@ -38,11 +38,23 @@ database_name = "cutty-dev"
 database_id = "2f87e313-31ff-4298-ab18-552fa5a1ce0e"
 migrations_dir = "./migrations"
 
+# Backup D1 Database (Cross-region)
+[[d1_databases]]
+binding = "BACKUP_DATABASE"
+database_name = "cutty-backup-dev"
+database_id = "backup-db-id-placeholder"
+
 # R2 Storage bindings
 [[r2_buckets]]
 binding = "FILE_STORAGE"
 bucket_name = "cutty-files-dev"
 preview_bucket_name = "cutty-files-dev"
+
+# Backup R2 Storage (Cross-region)
+[[r2_buckets]]
+binding = "BACKUP_STORAGE"
+bucket_name = "cutty-backup-dev"
+preview_bucket_name = "cutty-backup-dev"
 
 # Security KV Namespaces (Development)
 [[kv_namespaces]]
@@ -65,68 +77,106 @@ binding = "CUTTY_QUOTA_TRACKING"
 id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 
+# Backup Configuration KV Namespace
+[[kv_namespaces]]
+binding = "BACKUP_CONFIG"
+id = "backup-config-kv-id-placeholder"
+preview_id = "backup-config-kv-id-placeholder"
+
+# Performance Optimization Cache KV Namespace - Issue #69
+[[kv_namespaces]]
+binding = "CACHE_KV"
+id = "performance-cache-kv-id-placeholder"
+preview_id = "performance-cache-kv-id-placeholder"
+
 # AUTH_TOKENS KV namespace (commented out - create namespace first)
 # [[kv_namespaces]]
 # binding = "AUTH_TOKENS"
 # id = "your-auth-tokens-kv-namespace-id-here"
 # preview_id = "your-auth-tokens-kv-namespace-id-here"
 
-# Analytics Engine binding (temporarily commented out for debugging)
-# [[analytics_engine_datasets]]
-# binding = "ANALYTICS"
-# dataset = "cutty-metrics"
+# Analytics Engine binding - Required for monitoring
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "cutty-metrics"
 
-# Cron triggers for storage metrics aggregation (temporarily commented out for debugging)
-# # Daily aggregation at 2 AM UTC
-# [[triggers.crons]]
-# cron = "0 2 * * *"
-# endpoint = "/api/metrics/jobs/daily-aggregation"
+# Cron triggers for storage metrics aggregation and monitoring
+# Collect metrics every 5 minutes
+[[triggers.crons]]
+cron = "*/5 * * * *"
+endpoint = "/api/monitoring/collect-metrics"
 
-# # Daily snapshots at 1 AM UTC
-# [[triggers.crons]]
-# cron = "0 1 * * *"
-# endpoint = "/api/metrics/jobs/update-daily-snapshots"
+# Calculate costs every 6 hours
+[[triggers.crons]]
+cron = "0 */6 * * *"
+endpoint = "/api/monitoring/calculate-costs"
 
-# # Weekly aggregation every Monday at 3 AM UTC
-# [[triggers.crons]]
-# cron = "0 3 * * 1"
-# endpoint = "/api/metrics/jobs/weekly-aggregation"
+# Generate daily reports at 2 AM UTC
+[[triggers.crons]]
+cron = "0 2 * * *"
+endpoint = "/api/monitoring/generate-daily-report"
 
-# # Monthly aggregation on 1st of month at 4 AM UTC
-# [[triggers.crons]]
-# cron = "0 4 1 * *"
-# endpoint = "/api/metrics/jobs/monthly-aggregation"
+# Generate monthly reports on 1st of month at 4 AM UTC
+[[triggers.crons]]
+cron = "0 4 1 * *"
+endpoint = "/api/monitoring/generate-monthly-report"
 
-# # Cleanup old metrics every Sunday at 5 AM UTC
-# [[triggers.crons]]
-# cron = "0 5 * * 0"
-# endpoint = "/api/metrics/jobs/cleanup-old-metrics"
+# Check alerts every minute
+[[triggers.crons]]
+cron = "*/1 * * * *"
+endpoint = "/api/monitoring/check-alerts"
 
-# # Metrics health check every 5 minutes
-# [[triggers.crons]]
-# cron = "*/5 * * * *"
-# endpoint = "/api/metrics/jobs/health-check"
+# Cleanup old metrics every Sunday at 5 AM UTC
+[[triggers.crons]]
+cron = "0 5 * * 0"
+endpoint = "/api/monitoring/cleanup-old-metrics"
 
-# # Alert system cron triggers
-# # Alert evaluation every 5 minutes
-# [[triggers.crons]]
-# cron = "*/5 * * * *"
-# endpoint = "/api/alerts/jobs/evaluate"
+# Alert system cron triggers
+# Alert evaluation every 5 minutes
+[[triggers.crons]]
+cron = "*/5 * * * *"
+endpoint = "/api/alerts/jobs/evaluate"
 
-# # Retry failed notifications every 15 minutes
-# [[triggers.crons]]
-# cron = "*/15 * * * *"
-# endpoint = "/api/alerts/jobs/retry-notifications"
+# Retry failed notifications every 15 minutes
+[[triggers.crons]]
+cron = "*/15 * * * *"
+endpoint = "/api/alerts/jobs/retry-notifications"
 
-# # Alert cleanup daily at 3 AM UTC
-# [[triggers.crons]]
-# cron = "0 3 * * *"
-# endpoint = "/api/alerts/jobs/cleanup"
+# Alert cleanup daily at 3 AM UTC
+[[triggers.crons]]
+cron = "0 3 * * *"
+endpoint = "/api/alerts/jobs/cleanup"
 
-# # Alert health check every 10 minutes
-# [[triggers.crons]]
-# cron = "*/10 * * * *"
-# endpoint = "/api/alerts/jobs/health-check"
+# Alert health check every 10 minutes
+[[triggers.crons]]
+cron = "*/10 * * * *"
+endpoint = "/api/alerts/jobs/health-check"
+
+# Backup system cron triggers
+# Daily backup at 2 AM UTC
+[[triggers.crons]]
+cron = "0 2 * * *"
+endpoint = "/api/backup/daily"
+
+# Weekly backup on Sunday at 3 AM UTC
+[[triggers.crons]]
+cron = "0 3 * * 0"
+endpoint = "/api/backup/weekly"
+
+# Monthly backup on 1st at 4 AM UTC
+[[triggers.crons]]
+cron = "0 4 1 * *"
+endpoint = "/api/backup/monthly"
+
+# Auto recovery check every 5 minutes
+[[triggers.crons]]
+cron = "*/5 * * * *"
+endpoint = "/api/disaster-recovery/auto-recovery-check"
+
+# Export cleanup daily at 6 AM UTC
+[[triggers.crons]]
+cron = "0 6 * * *"
+endpoint = "/api/data-export/scheduled-cleanup"
 
 # Staging environment
 [env.staging]
@@ -151,9 +201,9 @@ binding = "FILE_STORAGE"
 bucket_name = "cutty-files-staging"
 preview_bucket_name = "cutty-files-preview"
 
-# [[env.staging.analytics_engine_datasets]]
-# binding = "ANALYTICS"
-# dataset = "cutty-metrics-staging"
+[[env.staging.analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "cutty-metrics-staging"
 
 # KV configuration for staging will be added when needed
 
@@ -175,9 +225,9 @@ binding = "FILE_STORAGE"
 bucket_name = "cutty-files-prod"
 preview_bucket_name = "cutty-files-dev"
 
-# [[env.production.analytics_engine_datasets]]
-# binding = "ANALYTICS"
-# dataset = "cutty-metrics-production"
+[[env.production.analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "cutty-metrics-production"
 
 # KV configuration for production will be added when needed
 
