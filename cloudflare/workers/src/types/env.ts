@@ -25,7 +25,7 @@ export interface CloudflareEnv {
   ANALYTICS?: AnalyticsEngineDataset; // Optional - commented out in wrangler.toml
   
   // Backup and Recovery Bindings
-  BACKUP_STORAGE: R2Bucket; // Cross-region backup storage
+  BACKUP_STORAGE?: R2Bucket; // Cross-region backup storage (optional - not yet created)
   BACKUP_STORAGE_SECONDARY?: R2Bucket; // Secondary backup storage for redundancy
   BACKUP_DATABASE?: D1Database; // Cross-region backup database (optional - not yet created)
   BACKUP_CONFIG?: KVNamespace; // Backup configuration and metadata (optional - not yet created)

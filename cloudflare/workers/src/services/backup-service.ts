@@ -59,6 +59,10 @@ export class ComprehensiveBackupService implements BackupService {
   }
 
   async createFullBackup(): Promise<BackupResult> {
+    if (!this.env.BACKUP_STORAGE) {
+      throw new Error('Backup storage not configured - cannot perform backup operations');
+    }
+    
     const backupId = this.generateBackupId();
     const startTime = Date.now();
     
@@ -140,6 +144,10 @@ export class ComprehensiveBackupService implements BackupService {
   }
 
   async createIncrementalBackup(lastBackupId: string): Promise<BackupResult> {
+    if (!this.env.BACKUP_STORAGE) {
+      throw new Error('Backup storage not configured - cannot perform backup operations');
+    }
+    
     const backupId = this.generateBackupId();
     const startTime = Date.now();
     
@@ -223,6 +231,10 @@ export class ComprehensiveBackupService implements BackupService {
   }
 
   async backupDatabase(): Promise<DatabaseBackupResult> {
+    if (!this.env.BACKUP_STORAGE) {
+      throw new Error('Backup storage not configured - cannot perform database backup');
+    }
+    
     console.log('Starting database backup');
     
     // 1. Export all database tables
@@ -275,6 +287,10 @@ export class ComprehensiveBackupService implements BackupService {
   }
 
   async backupFileStorage(): Promise<FileBackupResult> {
+    if (!this.env.BACKUP_STORAGE) {
+      throw new Error('Backup storage not configured - cannot perform file storage backup');
+    }
+    
     console.log('Starting file storage backup');
     
     // 1. Get list of all files
@@ -335,6 +351,10 @@ export class ComprehensiveBackupService implements BackupService {
   }
 
   async backupConfiguration(): Promise<ConfigBackupResult> {
+    if (!this.env.BACKUP_STORAGE) {
+      throw new Error('Backup storage not configured - cannot perform configuration backup');
+    }
+    
     console.log('Starting configuration backup');
     
     // 1. Gather configuration settings

@@ -16,6 +16,10 @@ export class BackupVerificationService {
   }
 
   async verifyBackupIntegrity(manifest: BackupManifest): Promise<VerificationResult> {
+    if (!this.env.BACKUP_STORAGE) {
+      throw new Error('Backup storage not configured - cannot verify backup integrity');
+    }
+    
     console.log(`Starting backup integrity verification for: ${manifest.backupId}`);
     
     const verificationResults: VerificationResult = {

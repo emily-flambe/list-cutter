@@ -303,10 +303,18 @@ export class DisasterRecoveryService {
       }
       
       // Check bindings
-      const criticalBindings = ['DB', 'FILE_STORAGE', 'BACKUP_STORAGE'];
+      const criticalBindings = ['DB', 'FILE_STORAGE'];
       for (const binding of criticalBindings) {
         if (!this.env[binding as keyof CloudflareEnv]) {
           issues.push(`Critical binding missing: ${binding}`);
+        }
+      }
+      
+      // Check optional bindings (warn but don't fail)
+      const optionalBindings = ['BACKUP_STORAGE'];
+      for (const binding of optionalBindings) {
+        if (!this.env[binding as keyof CloudflareEnv]) {
+          console.warn(`Optional binding not configured: ${binding}`);
         }
       }
       

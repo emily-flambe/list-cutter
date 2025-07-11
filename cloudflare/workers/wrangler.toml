@@ -50,11 +50,11 @@ binding = "FILE_STORAGE"
 bucket_name = "cutty-files-dev"
 preview_bucket_name = "cutty-files-dev"
 
-# Backup R2 Storage (Cross-region)
-[[r2_buckets]]
-binding = "BACKUP_STORAGE"
-bucket_name = "cutty-backup-dev"
-preview_bucket_name = "cutty-backup-dev"
+# Backup R2 Storage (Cross-region) - TODO: Create actual backup bucket
+# [[r2_buckets]]
+# binding = "BACKUP_STORAGE"
+# bucket_name = "cutty-backup-dev"
+# preview_bucket_name = "cutty-backup-dev"
 
 # Security KV Namespaces (Development)
 [[kv_namespaces]]
