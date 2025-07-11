@@ -12,7 +12,7 @@ import { PerformanceMonitoringService } from '../services/performance-monitoring
 import { CachingMiddleware } from '../middleware/caching-middleware';
 import { MetricsService } from '../services/monitoring/metrics-service';
 import { EnhancedMetricsService } from '../services/monitoring/enhanced-metrics-service';
-import { AlertService } from '../services/monitoring/alert-management-service';
+import { AlertManagementService } from '../services/monitoring/alert-management-service';
 import { R2StorageService } from '../services/storage/r2-service';
 import { SecurityAuditLogger } from '../services/security/audit-logger';
 import { QuotaManager } from '../services/security/quota-manager';
@@ -94,7 +94,7 @@ app.use('*', async (c, next) => {
       );
       
       // Initialize alert service
-      const alertService = new AlertService(env.DB, env.ANALYTICS);
+      const alertService = new AlertManagementService(env.DB, env.ANALYTICS);
       
       // Initialize performance monitoring service
       const performanceMonitoringService = new PerformanceMonitoringService(

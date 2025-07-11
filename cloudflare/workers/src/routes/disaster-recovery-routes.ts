@@ -344,7 +344,6 @@ app.get('/business-continuity/plan', async (c) => {
     const verificationService = new BackupVerificationService(c.env);
     const degradedModeService = new DegradedModeService(c.env);
     const disasterRecoveryService = new DisasterRecoveryService(c.env, backupService, verificationService, degradedModeService);
-    const degradedModeService = new DegradedModeService(c.env);
     const dataExportService = new DataExportService(c.env);
     const businessContinuityService = new BusinessContinuityService(
       c.env, 
@@ -375,7 +374,6 @@ app.post('/business-continuity/test', async (c) => {
     const verificationService = new BackupVerificationService(c.env);
     const degradedModeService = new DegradedModeService(c.env);
     const disasterRecoveryService = new DisasterRecoveryService(c.env, backupService, verificationService, degradedModeService);
-    const degradedModeService = new DegradedModeService(c.env);
     const dataExportService = new DataExportService(c.env);
     const businessContinuityService = new BusinessContinuityService(
       c.env, 
