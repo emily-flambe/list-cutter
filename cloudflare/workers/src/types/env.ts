@@ -26,6 +26,7 @@ export interface CloudflareEnv {
   
   // Backup and Recovery Bindings
   BACKUP_STORAGE: R2Bucket; // Cross-region backup storage
+  BACKUP_STORAGE_SECONDARY?: R2Bucket; // Secondary backup storage for redundancy
   BACKUP_DATABASE: D1Database; // Cross-region backup database
   BACKUP_CONFIG: KVNamespace; // Backup configuration and metadata
   
