@@ -10,12 +10,15 @@ import {
   UserExportMetadata 
 } from '../types/backup';
 import { CloudflareEnv } from '../types/env';
+import { CompressionService } from './compression-service';
 
 export class DataExportService {
   private readonly env: CloudflareEnv;
+  private readonly compressionService: CompressionService;
 
   constructor(env: CloudflareEnv) {
     this.env = env;
+    this.compressionService = new CompressionService();
   }
 
   async exportUserData(userId: string, format: ExportFormat = { type: 'json', compression: 'gzip', encrypted: true }): Promise<ExportResult> {
@@ -612,15 +615,86 @@ export class DataExportService {
   }
 
   private async compressExportData(data: Uint8Array, format: ExportFormat): Promise<Uint8Array> {
-    // Placeholder for compression
-    // In production, implement actual compression based on format.compression
-    return data;
+    if (format.compression === 'none') {
+      return data;
+    }
+    
+    try {
+      const compressionResult = await this.compressionService.compressFile(
+        data.buffer,
+        { contentType: 'application/octet-stream' }
+      );
+      
+      if (compressionResult.success && compressionResult.data) {
+        console.log(`Export data compressed: ${compressionResult.algorithm}, ratio: ${compressionResult.compressionRatio}`);
+        return new Uint8Array(compressionResult.data);
+      } else {
+        console.warn('Compression failed or not beneficial, using original data');
+        return data;
+      }
+    } catch (error) {
+      console.error('Compression failed:', error);
+      return data;
+    }
   }
 
   private async encryptExportData(data: Uint8Array): Promise<Uint8Array> {
-    // Placeholder for encryption
-    // In production, implement actual encryption
-    return data;
+    try {
+      // Generate encryption key using Web Crypto API
+      const key = await crypto.subtle.generateKey(
+        {
+          name: 'AES-GCM',
+          length: 256
+        },
+        true,
+        ['encrypt', 'decrypt']
+      );
+      
+      // Generate random IV
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      
+      // Encrypt the data
+      const encryptedData = await crypto.subtle.encrypt(
+        {
+          name: 'AES-GCM',
+          iv: iv
+        },
+        key,
+        data
+      );
+      
+      // Export the key for storage
+      const exportedKey = await crypto.subtle.exportKey('raw', key);
+      
+      // Combine IV + encrypted data
+      const result = new Uint8Array(iv.length + encryptedData.byteLength);
+      result.set(iv);
+      result.set(new Uint8Array(encryptedData), iv.length);
+      
+      // Store encryption key securely (in production, use proper key management)
+      await this.storeExportEncryptionKey(exportedKey);
+      
+      console.log('Export data encrypted with AES-256-GCM');
+      return result;
+    } catch (error) {
+      console.error('Encryption failed, using unencrypted data:', error);
+      return data;
+    }
+  }
+
+  private async storeExportEncryptionKey(key: ArrayBuffer): Promise<void> {
+    try {
+      // Store encryption key securely
+      const keyId = `export-key-${Date.now()}`;
+      const keyData = new Uint8Array(key);
+      
+      // Store key in file storage (in production, use dedicated key management)
+      await this.env.FILE_STORAGE.put(`export-keys/${keyId}`, keyData);
+      
+      console.log(`Export encryption key stored: ${keyId}`);
+    } catch (error) {
+      console.error('Failed to store export encryption key:', error);
+    }
   }
 
   private getFileExtension(format: ExportFormat): string {

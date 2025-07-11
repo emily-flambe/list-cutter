@@ -814,4 +814,72 @@ export class DisasterRecoveryService {
     // Record metrics in monitoring system
     console.log('Recovery metrics recorded:', metrics);
   }
+
+  private async detectDisasterScenario(systemHealth: SystemHealthStatus): Promise<DisasterScenario | null> {
+    const unhealthyServices = [];
+    const degradedServices = [];
+    
+    // Check each service health
+    if (systemHealth.database.status === 'unhealthy') {
+      unhealthyServices.push('database');
+    } else if (systemHealth.database.status === 'degraded') {
+      degradedServices.push('database');
+    }
+    
+    if (systemHealth.fileStorage.status === 'unhealthy') {
+      unhealthyServices.push('file_storage');
+    } else if (systemHealth.fileStorage.status === 'degraded') {
+      degradedServices.push('file_storage');
+    }
+    
+    if (systemHealth.api.status === 'unhealthy') {
+      unhealthyServices.push('api_gateway');
+    } else if (systemHealth.api.status === 'degraded') {
+      degradedServices.push('api_gateway');
+    }
+    
+    if (systemHealth.monitoring.status === 'unhealthy') {
+      unhealthyServices.push('monitoring');
+    } else if (systemHealth.monitoring.status === 'degraded') {
+      degradedServices.push('monitoring');
+    }
+    
+    // Determine disaster scenario based on affected services
+    if (unhealthyServices.length >= 3) {
+      return {
+        type: 'complete_system_failure',
+        severity: 'critical',
+        affectedServices: unhealthyServices,
+        estimatedDowntime: 4 * 60 * 60 * 1000, // 4 hours
+        description: `Complete system failure detected. Unhealthy services: ${unhealthyServices.join(', ')}`
+      };
+    } else if (unhealthyServices.includes('database')) {
+      return {
+        type: 'database_corruption',
+        severity: 'high',
+        affectedServices: ['database', 'api_gateway'],
+        estimatedDowntime: 2 * 60 * 60 * 1000, // 2 hours
+        description: 'Database corruption or failure detected'
+      };
+    } else if (unhealthyServices.includes('file_storage')) {
+      return {
+        type: 'file_storage_failure',
+        severity: 'high',
+        affectedServices: ['file_storage', 'api_gateway'],
+        estimatedDowntime: 3 * 60 * 60 * 1000, // 3 hours
+        description: 'File storage failure detected'
+      };
+    } else if (unhealthyServices.length > 0 || degradedServices.length > 0) {
+      return {
+        type: 'partial_outage',
+        severity: 'medium',
+        affectedServices: [...unhealthyServices, ...degradedServices],
+        estimatedDowntime: 1 * 60 * 60 * 1000, // 1 hour
+        description: `Partial outage detected. Affected services: ${[...unhealthyServices, ...degradedServices].join(', ')}`
+      };
+    }
+    
+    // No disaster scenario detected
+    return null;
+  }
 }

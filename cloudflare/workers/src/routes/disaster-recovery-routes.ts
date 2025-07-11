@@ -25,7 +25,8 @@ app.post('/initiate', async (c) => {
     
     const backupService = new ComprehensiveBackupService(c.env);
     const verificationService = new BackupVerificationService(c.env);
-    const disasterRecoveryService = new DisasterRecoveryService(c.env, backupService, verificationService);
+    const degradedModeService = new DegradedModeService(c.env);
+    const disasterRecoveryService = new DisasterRecoveryService(c.env, backupService, verificationService, degradedModeService);
     
     const result = await disasterRecoveryService.initiateDisasterRecovery(scenario);
     
@@ -35,6 +36,28 @@ app.post('/initiate', async (c) => {
     });
   } catch (error) {
     console.error('Disaster recovery initiation failed:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+app.post('/auto-recovery', async (c) => {
+  try {
+    const backupService = new ComprehensiveBackupService(c.env);
+    const verificationService = new BackupVerificationService(c.env);
+    const degradedModeService = new DegradedModeService(c.env);
+    const disasterRecoveryService = new DisasterRecoveryService(c.env, backupService, verificationService, degradedModeService);
+    
+    const result = await disasterRecoveryService.initiateAutomatedDisasterRecovery();
+    
+    return c.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error('Automated disaster recovery failed:', error);
     return c.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -319,7 +342,8 @@ app.get('/business-continuity/plan', async (c) => {
   try {
     const backupService = new ComprehensiveBackupService(c.env);
     const verificationService = new BackupVerificationService(c.env);
-    const disasterRecoveryService = new DisasterRecoveryService(c.env, backupService, verificationService);
+    const degradedModeService = new DegradedModeService(c.env);
+    const disasterRecoveryService = new DisasterRecoveryService(c.env, backupService, verificationService, degradedModeService);
     const degradedModeService = new DegradedModeService(c.env);
     const dataExportService = new DataExportService(c.env);
     const businessContinuityService = new BusinessContinuityService(
@@ -349,7 +373,8 @@ app.post('/business-continuity/test', async (c) => {
   try {
     const backupService = new ComprehensiveBackupService(c.env);
     const verificationService = new BackupVerificationService(c.env);
-    const disasterRecoveryService = new DisasterRecoveryService(c.env, backupService, verificationService);
+    const degradedModeService = new DegradedModeService(c.env);
+    const disasterRecoveryService = new DisasterRecoveryService(c.env, backupService, verificationService, degradedModeService);
     const degradedModeService = new DegradedModeService(c.env);
     const dataExportService = new DataExportService(c.env);
     const businessContinuityService = new BusinessContinuityService(
