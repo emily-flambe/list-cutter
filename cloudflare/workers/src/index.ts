@@ -964,8 +964,16 @@ export const scheduled: ExportedHandlerScheduledHandler<CloudflareEnv> = async (
     let response: Response;
     
     switch (event.cron) {
-      case '*/5 * * * *': // Every 5 minutes - Alert evaluation and auto recovery check
-        if (event.scheduledTime % 2 === 0) { // Alternate between alert evaluation and auto recovery
+      case '*/5 * * * *': // Every 5 minutes - Metrics collection, alert evaluation and auto recovery check
+        // Use scheduledTime modulo to distribute jobs across 5-minute intervals
+        const minute = Math.floor(event.scheduledTime / 60000) % 3;
+        if (minute === 0) {
+          console.warn('Running scheduled metrics collection...');
+          response = await app.fetch(
+            new Request('http://localhost/api/monitoring/collect-metrics', { method: 'POST' }),
+            env
+          );
+        } else if (minute === 1) {
           console.warn('Running scheduled alert evaluation...');
           response = await scheduledAlertJobRoutes.fetch(
             new Request('http://localhost/api/alerts/jobs/evaluate', { method: 'POST' }),
@@ -980,6 +988,22 @@ export const scheduled: ExportedHandlerScheduledHandler<CloudflareEnv> = async (
         }
         break;
         
+      case '0 */6 * * *': // Every 6 hours - Cost calculation
+        console.warn('Running scheduled cost calculation...');
+        response = await app.fetch(
+          new Request('http://localhost/api/monitoring/calculate-costs', { method: 'POST' }),
+          env
+        );
+        break;
+        
+      case '*/1 * * * *': // Every minute - Alert checking
+        console.warn('Running scheduled alert checking...');
+        response = await app.fetch(
+          new Request('http://localhost/api/monitoring/check-alerts', { method: 'POST' }),
+          env
+        );
+        break;
+        
       case '*/15 * * * *': // Every 15 minutes - Retry failed notifications  
         console.warn('Running notification retry job...');
         response = await scheduledAlertJobRoutes.fetch(
@@ -988,12 +1012,19 @@ export const scheduled: ExportedHandlerScheduledHandler<CloudflareEnv> = async (
         );
         break;
         
-      case '0 2 * * *': // Daily at 2 AM - Daily backup and alert cleanup
+      case '0 2 * * *': // Daily at 2 AM - Daily backup, daily report, and alert cleanup
         console.warn('Running daily backup...');
         response = await app.fetch(
           new Request('http://localhost/api/backup/daily', { method: 'POST' }),
           env
         );
+        
+        // Also run daily report generation
+        const dailyReportResponse = await app.fetch(
+          new Request('http://localhost/api/monitoring/generate-daily-report', { method: 'POST' }),
+          env
+        );
+        console.warn('Daily report result:', await dailyReportResponse.json());
         
         // Also run alert cleanup
         const cleanupResponse = await scheduledAlertJobRoutes.fetch(
@@ -1011,10 +1042,25 @@ export const scheduled: ExportedHandlerScheduledHandler<CloudflareEnv> = async (
         );
         break;
         
-      case '0 4 1 * *': // Monthly backup on 1st at 4 AM
+      case '0 4 1 * *': // Monthly backup and monthly report on 1st at 4 AM
         console.warn('Running monthly backup...');
         response = await app.fetch(
           new Request('http://localhost/api/backup/monthly', { method: 'POST' }),
+          env
+        );
+        
+        // Also run monthly report generation
+        const monthlyReportResponse = await app.fetch(
+          new Request('http://localhost/api/monitoring/generate-monthly-report', { method: 'POST' }),
+          env
+        );
+        console.warn('Monthly report result:', await monthlyReportResponse.json());
+        break;
+        
+      case '0 5 * * 0': // Weekly cleanup on Sunday at 5 AM - Old metrics cleanup
+        console.warn('Running old metrics cleanup...');
+        response = await app.fetch(
+          new Request('http://localhost/api/monitoring/cleanup-old-metrics', { method: 'POST' }),
           env
         );
         break;

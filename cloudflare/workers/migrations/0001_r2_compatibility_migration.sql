@@ -28,12 +28,12 @@ CREATE TABLE IF NOT EXISTS files (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_files_user_id ON files(user_id);
-CREATE INDEX idx_files_r2_key ON files(r2_key);
-CREATE INDEX idx_files_created_at ON files(created_at);
-CREATE INDEX idx_files_status ON files(upload_status);
-CREATE INDEX idx_files_checksum ON files(checksum);
-CREATE INDEX idx_files_storage_class ON files(storage_class);
+CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id);
+CREATE INDEX IF NOT EXISTS idx_files_r2_key ON files(r2_key);
+CREATE INDEX IF NOT EXISTS idx_files_created_at ON files(created_at);
+CREATE INDEX IF NOT EXISTS idx_files_status ON files(upload_status);
+CREATE INDEX IF NOT EXISTS idx_files_checksum ON files(checksum);
+CREATE INDEX IF NOT EXISTS idx_files_storage_class ON files(storage_class);
 
 -- Create saved_filters table (required for filtering operations)
 CREATE TABLE IF NOT EXISTS saved_filters (
@@ -51,8 +51,8 @@ CREATE TABLE IF NOT EXISTS saved_filters (
     FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_saved_filters_user_id ON saved_filters(user_id);
-CREATE INDEX idx_saved_filters_file_id ON saved_filters(file_id);
+CREATE INDEX IF NOT EXISTS idx_saved_filters_user_id ON saved_filters(user_id);
+CREATE INDEX IF NOT EXISTS idx_saved_filters_file_id ON saved_filters(file_id);
 
 -- Create API keys table (required for authentication)
 CREATE TABLE IF NOT EXISTS api_keys (
@@ -68,8 +68,8 @@ CREATE TABLE IF NOT EXISTS api_keys (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_api_keys_user_id ON api_keys(user_id);
-CREATE INDEX idx_api_keys_key_hash ON api_keys(key_hash);
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash);
 
 -- Create audit_logs table (required for security tracking)
 CREATE TABLE IF NOT EXISTS audit_logs (
@@ -85,9 +85,9 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
-CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 
 -- Create multipart_uploads table (required for large file uploads)
 CREATE TABLE IF NOT EXISTS multipart_uploads (
@@ -109,13 +109,13 @@ CREATE TABLE IF NOT EXISTS multipart_uploads (
     FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_multipart_uploads_user_id ON multipart_uploads(user_id);
-CREATE INDEX idx_multipart_uploads_upload_id ON multipart_uploads(upload_id);
-CREATE INDEX idx_multipart_uploads_status ON multipart_uploads(status);
-CREATE INDEX idx_multipart_uploads_expires_at ON multipart_uploads(expires_at);
+CREATE INDEX IF NOT EXISTS idx_multipart_uploads_user_id ON multipart_uploads(user_id);
+CREATE INDEX IF NOT EXISTS idx_multipart_uploads_upload_id ON multipart_uploads(upload_id);
+CREATE INDEX IF NOT EXISTS idx_multipart_uploads_status ON multipart_uploads(status);
+CREATE INDEX IF NOT EXISTS idx_multipart_uploads_expires_at ON multipart_uploads(expires_at);
 
 -- Create file_access_logs table (required for security and monitoring)
-CREATE TABLE file_access_logs (
+CREATE TABLE IF NOT EXISTS file_access_logs (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     file_id TEXT NOT NULL,
     user_id INTEGER,
@@ -138,7 +138,7 @@ CREATE INDEX idx_file_access_logs_action ON file_access_logs(action);
 CREATE INDEX idx_file_access_logs_created_at ON file_access_logs(created_at);
 
 -- Create file_processing_queue table (required for async operations)
-CREATE TABLE file_processing_queue (
+CREATE TABLE IF NOT EXISTS file_processing_queue (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     file_id TEXT NOT NULL,
     user_id INTEGER NOT NULL,
@@ -188,20 +188,20 @@ CREATE INDEX IF NOT EXISTS idx_file_migrations_status ON file_migrations(status)
 CREATE INDEX IF NOT EXISTS idx_file_migrations_file_id ON file_migrations(file_id);
 
 -- Create triggers for updated_at timestamps
-CREATE TRIGGER update_files_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_files_timestamp 
 AFTER UPDATE ON files
 BEGIN
     UPDATE files SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_saved_filters_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_saved_filters_timestamp 
 AFTER UPDATE ON saved_filters
 BEGIN
     UPDATE saved_filters SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
 -- Auto-cleanup trigger for expired multipart uploads
-CREATE TRIGGER cleanup_expired_multipart_uploads
+CREATE TRIGGER IF NOT EXISTS cleanup_expired_multipart_uploads
 AFTER INSERT ON multipart_uploads
 WHEN NEW.expires_at < datetime('now')
 BEGIN
