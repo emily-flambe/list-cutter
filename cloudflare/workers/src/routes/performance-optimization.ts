@@ -60,7 +60,7 @@ app.use('*', async (c, next) => {
       // Initialize cache service
       const cacheService = new MultiLayerCacheService(
         caches.default, // Edge cache
-        env.CACHE_KV, // KV cache
+        env.CACHE_KV || null, // KV cache (optional)
         1000 // Max memory entries
       );
       

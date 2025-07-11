@@ -38,11 +38,11 @@ database_name = "cutty-dev"
 database_id = "2f87e313-31ff-4298-ab18-552fa5a1ce0e"
 migrations_dir = "./migrations"
 
-# Backup D1 Database (Cross-region)
-[[d1_databases]]
-binding = "BACKUP_DATABASE"
-database_name = "cutty-backup-dev"
-database_id = "backup-db-id-placeholder"
+# Backup D1 Database (Cross-region) - TODO: Create actual backup database
+# [[d1_databases]]
+# binding = "BACKUP_DATABASE"
+# database_name = "cutty-backup-dev"
+# database_id = "backup-db-id-placeholder"
 
 # R2 Storage bindings
 [[r2_buckets]]
@@ -77,17 +77,17 @@ binding = "CUTTY_QUOTA_TRACKING"
 id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 
-# Backup Configuration KV Namespace
-[[kv_namespaces]]
-binding = "BACKUP_CONFIG"
-id = "backup-config-kv-id-placeholder"
-preview_id = "backup-config-kv-id-placeholder"
+# Backup Configuration KV Namespace - TODO: Create actual KV namespace
+# [[kv_namespaces]]
+# binding = "BACKUP_CONFIG"
+# id = "backup-config-kv-id-placeholder"
+# preview_id = "backup-config-kv-id-placeholder"
 
-# Performance Optimization Cache KV Namespace - Issue #69
-[[kv_namespaces]]
-binding = "CACHE_KV"
-id = "performance-cache-kv-id-placeholder"
-preview_id = "performance-cache-kv-id-placeholder"
+# Performance Optimization Cache KV Namespace - Issue #69 - TODO: Create actual KV namespace
+# [[kv_namespaces]]
+# binding = "CACHE_KV"
+# id = "performance-cache-kv-id-placeholder"
+# preview_id = "performance-cache-kv-id-placeholder"
 
 # AUTH_TOKENS KV namespace (commented out - create namespace first)
 # [[kv_namespaces]]

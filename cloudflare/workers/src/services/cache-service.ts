@@ -13,7 +13,7 @@ export class MultiLayerCacheService implements CacheService {
 
   constructor(
     private edgeCache: Cache,        // Cloudflare Edge Cache
-    private kvCache: KVNamespace,    // KV for distributed caching
+    private kvCache: KVNamespace | null,    // KV for distributed caching (optional)
     private maxMemoryEntries: number = 1000 // Memory cache size limit
   ) {}
   
@@ -32,15 +32,17 @@ export class MultiLayerCacheService implements CacheService {
       // 1. Cache in edge cache for global distribution
       await this.edgeCache.put(cacheKey, response.clone());
       
-      // 2. Cache in KV for persistence
-      const kvValue = {
-        data: Array.from(new Uint8Array(content)),
-        timestamp: Date.now(),
-        ttl: ttl * 1000
-      };
-      await this.kvCache.put(cacheKey, JSON.stringify(kvValue), { 
-        expirationTtl: ttl 
-      });
+      // 2. Cache in KV for persistence (if available)
+      if (this.kvCache) {
+        const kvValue = {
+          data: Array.from(new Uint8Array(content)),
+          timestamp: Date.now(),
+          ttl: ttl * 1000
+        };
+        await this.kvCache.put(cacheKey, JSON.stringify(kvValue), { 
+          expirationTtl: ttl 
+        });
+      }
       
       // 3. Cache in memory for fastest access
       this.setMemoryCache(cacheKey, {
@@ -118,10 +120,12 @@ export class MultiLayerCacheService implements CacheService {
     try {
       const serializedResult = JSON.stringify(result);
       
-      // Cache in KV for persistence
-      await this.kvCache.put(cacheKey, serializedResult, { 
-        expirationTtl: ttl 
-      });
+      // Cache in KV for persistence (if available)
+      if (this.kvCache) {
+        await this.kvCache.put(cacheKey, serializedResult, { 
+          expirationTtl: ttl 
+        });
+      }
       
       // Cache in memory for speed
       this.setMemoryCache(cacheKey, {
@@ -148,23 +152,25 @@ export class MultiLayerCacheService implements CacheService {
       }
       this.cacheStats.memory.misses++;
       
-      // Check KV cache
-      this.cacheStats.kv.requests++;
-      const kvResult = await this.kvCache.get(cacheKey);
-      if (kvResult) {
-        this.cacheStats.kv.hits++;
-        const data = JSON.parse(kvResult);
-        
-        // Populate memory cache
-        this.setMemoryCache(cacheKey, {
-          data,
-          timestamp: Date.now(),
-          ttl: 300000 // 5 minutes
-        });
-        
-        return data;
+      // Check KV cache (if available)
+      if (this.kvCache) {
+        this.cacheStats.kv.requests++;
+        const kvResult = await this.kvCache.get(cacheKey);
+        if (kvResult) {
+          this.cacheStats.kv.hits++;
+          const data = JSON.parse(kvResult);
+          
+          // Populate memory cache
+          this.setMemoryCache(cacheKey, {
+            data,
+            timestamp: Date.now(),
+            ttl: 300000 // 5 minutes
+          });
+          
+          return data;
+        }
+        this.cacheStats.kv.misses++;
       }
-      this.cacheStats.kv.misses++;
       
     } catch (error) {
       console.error('Query cache retrieval failed:', error);
@@ -179,10 +185,12 @@ export class MultiLayerCacheService implements CacheService {
     try {
       const serializedMetadata = JSON.stringify(metadata);
       
-      // Cache in KV for persistence
-      await this.kvCache.put(cacheKey, serializedMetadata, { 
-        expirationTtl: ttl 
-      });
+      // Cache in KV for persistence (if available)
+      if (this.kvCache) {
+        await this.kvCache.put(cacheKey, serializedMetadata, { 
+          expirationTtl: ttl 
+        });
+      }
       
       // Cache in memory for speed
       this.setMemoryCache(cacheKey, {
@@ -209,23 +217,25 @@ export class MultiLayerCacheService implements CacheService {
       }
       this.cacheStats.memory.misses++;
       
-      // Check KV cache
-      this.cacheStats.kv.requests++;
-      const kvResult = await this.kvCache.get(cacheKey);
-      if (kvResult) {
-        this.cacheStats.kv.hits++;
-        const data = JSON.parse(kvResult);
-        
-        // Populate memory cache
-        this.setMemoryCache(cacheKey, {
-          data,
-          timestamp: Date.now(),
-          ttl: 300000 // 5 minutes
-        });
-        
-        return data;
+      // Check KV cache (if available)
+      if (this.kvCache) {
+        this.cacheStats.kv.requests++;
+        const kvResult = await this.kvCache.get(cacheKey);
+        if (kvResult) {
+          this.cacheStats.kv.hits++;
+          const data = JSON.parse(kvResult);
+          
+          // Populate memory cache
+          this.setMemoryCache(cacheKey, {
+            data,
+            timestamp: Date.now(),
+            ttl: 300000 // 5 minutes
+          });
+          
+          return data;
+        }
+        this.cacheStats.kv.misses++;
       }
-      this.cacheStats.kv.misses++;
       
     } catch (error) {
       console.error('Metadata cache retrieval failed:', error);

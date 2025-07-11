@@ -27,8 +27,8 @@ export interface CloudflareEnv {
   // Backup and Recovery Bindings
   BACKUP_STORAGE: R2Bucket; // Cross-region backup storage
   BACKUP_STORAGE_SECONDARY?: R2Bucket; // Secondary backup storage for redundancy
-  BACKUP_DATABASE: D1Database; // Cross-region backup database
-  BACKUP_CONFIG: KVNamespace; // Backup configuration and metadata
+  BACKUP_DATABASE?: D1Database; // Cross-region backup database (optional - not yet created)
+  BACKUP_CONFIG?: KVNamespace; // Backup configuration and metadata (optional - not yet created)
   
   // Security-specific bindings
   CUTTY_SECURITY_CONFIG: KVNamespace;
@@ -37,7 +37,7 @@ export interface CloudflareEnv {
   CUTTY_QUOTA_TRACKING: KVNamespace;
   
   // Performance Optimization Bindings - Issue #69
-  CACHE_KV: KVNamespace; // Multi-layer caching for performance optimization
+  CACHE_KV?: KVNamespace; // Multi-layer caching for performance optimization (optional - not yet created)
   
   // Optional bindings
   RATE_LIMITER?: DurableObjectNamespace;

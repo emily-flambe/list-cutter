@@ -131,7 +131,7 @@ export class PerformanceIntegrationService {
     // Initialize caching service
     this.cacheService = new MultiLayerCacheService(
       caches.default, // Edge cache
-      this.env.CACHE_KV, // KV cache
+      this.env.CACHE_KV || null, // KV cache (optional - fallback to memory/edge only)
       this.config.caching.maxMemoryEntries
     );
     
