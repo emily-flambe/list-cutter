@@ -3,39 +3,81 @@ main = "dist/index.js"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
+[build]
+command = "npm run build"
+
+# Development Environment
 [env.development]
 name = "list-cutter-workers-dev"
+vars = { ENVIRONMENT = "development", MAX_FILE_SIZE = "10485760" }
 
-[env.staging]
-name = "list-cutter-workers-staging"
-
-[env.production]
-name = "list-cutter-workers-prod"
-
-# KV for session/token management
-[[kv_namespaces]]
+[[env.development.kv_namespaces]]
 binding = "AUTH_KV"
-preview_id = "your-preview-kv-namespace-id"
-id = "your-kv-namespace-id"
+id = "REPLACE_WITH_ACTUAL_DEV_KV_ID"
 
-[[r2_buckets]]
+[[env.development.r2_buckets]]
 binding = "R2_BUCKET"
-bucket_name = "list-cutter-files"
-preview_bucket_name = "list-cutter-files-preview"
+bucket_name = "list-cutter-files-dev"
 
-[[d1_databases]]
+[[env.development.d1_databases]]
 binding = "DB"
-database_name = "list-cutter-db"
-database_id = "YOUR_D1_DATABASE_ID"
+database_name = "list-cutter-db-dev"
+database_id = "REPLACE_WITH_ACTUAL_DEV_DB_ID"
 
-# Rate limiting (beta feature)
-[[unsafe.bindings]]
+[[env.development.unsafe.bindings]]
 name = "RATE_LIMITER"
 type = "ratelimit"
 namespace_id = "1001"
-simple = { limit = 60, period = 60 }  # 60 requests per minute
+simple = { limit = 60, period = 60 }
 
-[vars]
-JWT_SECRET = "your-jwt-secret-here"
-MAX_FILE_SIZE = "10485760"
-ENVIRONMENT = "development"
+# Staging Environment
+[env.staging]
+name = "list-cutter-workers-staging"
+vars = { ENVIRONMENT = "staging", MAX_FILE_SIZE = "10485760" }
+
+[[env.staging.kv_namespaces]]
+binding = "AUTH_KV"
+id = "REPLACE_WITH_ACTUAL_STAGING_KV_ID"
+
+[[env.staging.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "list-cutter-files-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "list-cutter-db-staging"
+database_id = "REPLACE_WITH_ACTUAL_STAGING_DB_ID"
+
+[[env.staging.unsafe.bindings]]
+name = "RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1002"
+simple = { limit = 120, period = 60 }
+
+# Production Environment
+[env.production]
+name = "list-cutter-workers-prod"
+vars = { ENVIRONMENT = "production", MAX_FILE_SIZE = "10485760" }
+routes = [
+  { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" },
+  { pattern = "list-cutter.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+]
+
+[[env.production.kv_namespaces]]
+binding = "AUTH_KV"
+id = "REPLACE_WITH_ACTUAL_PROD_KV_ID"
+
+[[env.production.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "list-cutter-files-prod"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "list-cutter-db-prod"
+database_id = "REPLACE_WITH_ACTUAL_PROD_DB_ID"
+
+[[env.production.unsafe.bindings]]
+name = "RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1003"
+simple = { limit = 200, period = 60 }

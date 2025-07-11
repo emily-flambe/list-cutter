@@ -1,7 +1,7 @@
 import type { Env } from './types';
 import { errorHandler } from './middleware/error';
 import { addCorsHeaders, corsHeaders } from './middleware/cors';
-import { securityMiddleware, addSecurityHeaders } from './middleware/security';
+import { securityMiddleware, securityResponseMiddleware, addSecurityHeaders } from './middleware/security';
 import { handleHome } from './routes/home';
 import { handleCsvCutterUpload } from './routes/list_cutter/csv_cutter';
 import { handleExportCsv } from './routes/list_cutter/export_csv';
@@ -18,6 +18,17 @@ import { handleSaveGeneratedFile } from './routes/list_cutter/save_generated_fil
 import { handleFetchSavedFile } from './routes/list_cutter/fetch_saved_file';
 import { handleUpdateTags } from './routes/list_cutter/update_tags';
 import { handleFetchFileLineage } from './routes/list_cutter/fetch_file_lineage';
+import { 
+  getSecurityAnalytics, 
+  getSecurityMetrics, 
+  getSecurityEvents, 
+  getBlockedIPs, 
+  blockIP, 
+  unblockIP, 
+  triggerAggregation 
+} from './routes/analytics/security';
+import { handleAPIKeyRoutes, isAPIKeyRoute } from './routes/api-keys/index';
+import { handleDocsRoutes, isDocsRoute } from './routes/docs/api';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -41,7 +52,54 @@ export default {
 
       let response: Response;
 
-      if (pathname === '/' && method === 'GET') {
+      // Health check endpoints
+      if (pathname === '/health' && method === 'GET') {
+        response = new Response(JSON.stringify({
+          status: 'healthy',
+          timestamp: new Date().toISOString(),
+          environment: env.ENVIRONMENT || 'unknown',
+          version: '1.0.0'
+        }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } else if (pathname === '/health/auth' && method === 'GET') {
+        // Test database and KV connectivity
+        try {
+          // Test database connection
+          await env.DB.prepare('SELECT 1 as test').first();
+          
+          // Test KV connectivity
+          await env.AUTH_KV.get('health_check_test');
+          
+          response = new Response(JSON.stringify({
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            environment: env.ENVIRONMENT || 'unknown',
+            services: {
+              database: 'connected',
+              kv: 'available',
+              r2: 'available'
+            }
+          }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } catch (error) {
+          response = new Response(JSON.stringify({
+            status: 'unhealthy',
+            timestamp: new Date().toISOString(),
+            environment: env.ENVIRONMENT || 'unknown',
+            error: error instanceof Error ? error.message : 'Service connectivity failed',
+            services: {
+              database: 'error',
+              kv: 'error',
+              r2: 'unknown'
+            }
+          }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      } else if (pathname === '/' && method === 'GET') {
         response = handleHome();
       } else if (pathname === '/api/list_cutter/csv_cutter' && method === 'POST') {
         response = await handleCsvCutterUpload(request, env);
@@ -113,6 +171,42 @@ export default {
         } else {
           response = await handleFetchFileLineage(request, env, fileId);
         }
+      } else if (pathname === '/api/analytics/security' && method === 'GET') {
+        response = await getSecurityAnalytics(request, env);
+      } else if (pathname === '/api/analytics/security/metrics' && method === 'GET') {
+        response = await getSecurityMetrics(request, env);
+      } else if (pathname === '/api/analytics/security/events' && method === 'GET') {
+        response = await getSecurityEvents(request, env);
+      } else if (pathname === '/api/analytics/security/blocked-ips' && method === 'GET') {
+        response = await getBlockedIPs(request, env);
+      } else if (pathname === '/api/analytics/security/block-ip' && method === 'POST') {
+        response = await blockIP(request, env);
+      } else if (pathname === '/api/analytics/security/unblock-ip' && method === 'POST') {
+        response = await unblockIP(request, env);
+      } else if (pathname === '/api/analytics/security/aggregate' && method === 'POST') {
+        response = await triggerAggregation(request, env);
+      } else if (isAPIKeyRoute(pathname)) {
+        // Handle API key management routes
+        const apiKeyResponse = await handleAPIKeyRoutes(request, env, pathname, method);
+        if (apiKeyResponse) {
+          response = apiKeyResponse;
+        } else {
+          response = new Response(JSON.stringify({ error: 'API key route not found' }), {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      } else if (isDocsRoute(pathname)) {
+        // Handle API documentation routes
+        const docsResponse = await handleDocsRoutes(request, env, pathname);
+        if (docsResponse) {
+          response = docsResponse;
+        } else {
+          response = new Response(JSON.stringify({ error: 'Documentation route not found' }), {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
       } else {
         response = new Response(JSON.stringify({ error: 'Not found' }), {
           status: 404,
@@ -120,7 +214,8 @@ export default {
         });
       }
 
-      // Apply security headers and CORS to all responses
+      // Apply security response monitoring and headers
+      response = await securityResponseMiddleware(request, response, env);
       response = addSecurityHeaders(response, pathname);
       return addCorsHeaders(response);
     } catch (error) {

@@ -1,5 +1,8 @@
 import type { Env } from '../types';
 import { verifyJWT, isTokenBlacklisted } from '../services/auth/jwt';
+import { SecurityLogger } from '../services/security/logger';
+import { ThreatDetector } from '../services/security/threats';
+import { MetricsCollector, RequestTimer } from '../services/security/metrics';
 
 export interface SecurityContext {
   user_id?: number;
@@ -8,7 +11,45 @@ export interface SecurityContext {
 }
 
 /**
- * Main security middleware that applies comprehensive security checks
+ * Security monitoring middleware for response handling
+ */
+export async function securityResponseMiddleware(
+  request: Request,
+  response: Response,
+  env: Env
+): Promise<Response> {
+  // Extract request timer that was attached during request processing
+  // This timer tracks request duration and other performance metrics
+  const timer = (request as any).securityTimer as RequestTimer | undefined;
+  const userId = (timer as any)?.userId;
+  
+  // Finalize performance metrics collection if timer exists
+  // This records response time, status code, and other request metadata
+  if (timer) {
+    try {
+      await timer.finish(request, response, userId);
+    } catch (error) {
+      // Don't let metrics collection failures break the response
+      console.error('Failed to record request metrics:', error);
+    }
+  }
+  
+  // Log the completed API request for security monitoring and audit trail
+  // This creates entries in the security events table for compliance and analysis
+  const logger = new SecurityLogger(env);
+  try {
+    await logger.logAPIRequest(request, response, userId);
+  } catch (error) {
+    // Security logging is important but shouldn't break the user experience
+    console.error('Failed to log API request:', error);
+  }
+  
+  // Return the original response unchanged - this middleware only observes
+  return response;
+}
+
+/**
+ * Main security middleware that applies comprehensive security checks and monitoring
  */
 export async function securityMiddleware(
   request: Request,
@@ -16,29 +57,83 @@ export async function securityMiddleware(
   _ctx: ExecutionContext
 ): Promise<Response | null> {
   const url = new URL(request.url);
+  const logger = new SecurityLogger(env);
+  const threatDetector = new ThreatDetector(env, logger);
+  const metrics = new MetricsCollector(env);
+  const timer = new RequestTimer(metrics);
   
-  // 1. Apply rate limiting
-  const rateLimitResponse = await applyRateLimit(request, env);
-  if (rateLimitResponse) {
-    return addSecurityHeaders(rateLimitResponse, url.pathname);
-  }
+  const ipAddress = getClientIP(request);
   
-  // 2. Check authentication for protected routes
-  if (requiresAuth(url.pathname)) {
-    const authResponse = await validateAuthentication(request, env);
-    if (authResponse) {
-      return addSecurityHeaders(authResponse, url.pathname);
+  try {
+    // 1. Check if IP is blocked
+    const isBlocked = await threatDetector.isIPBlocked(ipAddress);
+    if (isBlocked) {
+      await logger.logSecurityViolation('blocked_ip_attempt', request, {
+        block_reason: 'IP address is currently blocked'
+      });
+      
+      return addSecurityHeaders(new Response(JSON.stringify({ 
+        error: 'Access denied' 
+      }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      }), url.pathname);
     }
+    
+    // 2. Apply rate limiting with monitoring
+    const rateLimitResponse = await applyRateLimit(request, env, logger);
+    if (rateLimitResponse) {
+      return addSecurityHeaders(rateLimitResponse, url.pathname);
+    }
+    
+    // 3. Check authentication for protected routes with monitoring
+    if (requiresAuth(url.pathname)) {
+      const authResponse = await validateAuthentication(request, env, logger);
+      if (authResponse) {
+        return addSecurityHeaders(authResponse, url.pathname);
+      }
+    }
+    
+    // 4. Track active users if authenticated
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const payload = await verifyJWT(token, env.JWT_SECRET);
+      if (payload && !await isTokenBlacklisted(token, env)) {
+        await metrics.trackActiveUser(payload.user_id);
+        
+        // Store user context for request timing
+        (timer as any).userId = payload.user_id;
+      }
+    }
+    
+    // Store timer for later use
+    (request as any).securityTimer = timer;
+    
+    // Continue to route handler
+    return null;
+    
+  } catch (error) {
+    await logger.logEvent({
+      timestamp: Date.now(),
+      event_type: 'security_middleware_error',
+      ip_address: ipAddress,
+      endpoint: url.pathname,
+      method: request.method,
+      success: false,
+      error_message: error instanceof Error ? error.message : 'Unknown error'
+    });
+    
+    // Don't block on security middleware errors
+    console.error('Security middleware error:', error);
+    return null;
   }
-  
-  // Continue to route handler
-  return null;
 }
 
 /**
- * Apply rate limiting using Cloudflare Workers native rate limiter
+ * Apply rate limiting using Cloudflare Workers native rate limiter with monitoring
  */
-async function applyRateLimit(request: Request, env: Env): Promise<Response | null> {
+async function applyRateLimit(request: Request, env: Env, logger: SecurityLogger): Promise<Response | null> {
   try {
     // Get client identifier (IP address or user ID)
     const clientId = getClientId(request);
@@ -47,6 +142,12 @@ async function applyRateLimit(request: Request, env: Env): Promise<Response | nu
     const { success } = await env.RATE_LIMITER.limit({ key: clientId });
     
     if (!success) {
+      // Log rate limit violation
+      await logger.logSecurityViolation('rate_limit_exceeded', request, {
+        client_id: clientId,
+        rate_limiter: 'cloudflare_native'
+      });
+      
       return new Response(JSON.stringify({ 
         error: 'Too many requests. Please try again later.' 
       }), {
@@ -61,18 +162,35 @@ async function applyRateLimit(request: Request, env: Env): Promise<Response | nu
     return null; // Continue processing
   } catch (error) {
     console.error('Rate limiting error:', error);
+    
+    // Log rate limiting error
+    await logger.logEvent({
+      timestamp: Date.now(),
+      event_type: 'rate_limit_error',
+      ip_address: getClientIP(request),
+      endpoint: new URL(request.url).pathname,
+      method: request.method,
+      success: false,
+      error_message: error instanceof Error ? error.message : 'Unknown error'
+    });
+    
     // Don't block on rate limiting errors
     return null;
   }
 }
 
 /**
- * Validate JWT authentication for protected routes
+ * Validate JWT authentication for protected routes with monitoring
  */
-async function validateAuthentication(request: Request, env: Env): Promise<Response | null> {
+async function validateAuthentication(request: Request, env: Env, logger: SecurityLogger): Promise<Response | null> {
   const authHeader = request.headers.get('Authorization');
+  const url = new URL(request.url);
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    await logger.logSecurityViolation('unauthorized_access', request, {
+      reason: 'Missing or invalid Authorization header'
+    });
+    
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 
@@ -87,6 +205,10 @@ async function validateAuthentication(request: Request, env: Env): Promise<Respo
   // Verify JWT token
   const payload = await verifyJWT(token, env.JWT_SECRET);
   if (!payload) {
+    await logger.logSecurityViolation('invalid_token', request, {
+      reason: 'JWT verification failed'
+    });
+    
     return new Response(JSON.stringify({ error: 'Invalid token' }), {
       status: 401,
       headers: { 
@@ -98,6 +220,11 @@ async function validateAuthentication(request: Request, env: Env): Promise<Respo
   
   // Check if token is blacklisted
   if (await isTokenBlacklisted(token, env)) {
+    await logger.logSecurityViolation('invalid_token', request, {
+      reason: 'Token is blacklisted',
+      user_id: payload.user_id
+    });
+    
     return new Response(JSON.stringify({ error: 'Token has been revoked' }), {
       status: 401,
       headers: { 
@@ -106,6 +233,22 @@ async function validateAuthentication(request: Request, env: Env): Promise<Respo
       }
     });
   }
+  
+  // Log successful authentication
+  await logger.logEvent({
+    timestamp: Date.now(),
+    event_type: 'auth_success',
+    user_id: payload.user_id,
+    ip_address: getClientIP(request),
+    user_agent: request.headers.get('User-Agent') || undefined,
+    endpoint: url.pathname,
+    method: request.method,
+    success: true,
+    metadata: {
+      token_type: payload.token_type,
+      username: payload.username
+    }
+  });
   
   // Attach user context to request headers for downstream handlers
   const mutableRequest = new Request(request);
@@ -163,22 +306,24 @@ export function addSecurityHeaders(response: Response, pathname: string): Respon
 function generateCSP(pathname: string): string {
   const isAPI = pathname.startsWith('/api/');
   
+  // API endpoints get minimal CSP to prevent any injection attacks
+  // We deny all content loading since APIs should only return JSON
   if (isAPI) {
-    // Strict CSP for API endpoints
     return "default-src 'none'; frame-ancestors 'none';";
   }
   
-  // CSP for frontend
+  // Frontend routes get a more permissive CSP that allows React to function
+  // Each directive is carefully chosen to balance security with functionality
   return [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",  // For React
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
-    "font-src 'self'",
-    "connect-src 'self'",  // API calls to same origin
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
+    "default-src 'self'",                              // Only load resources from same origin by default
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // React requires inline scripts and eval for development
+    "style-src 'self' 'unsafe-inline'",               // Allow inline styles for CSS-in-JS libraries
+    "img-src 'self' data: https:",                    // Images from self, data URLs, and HTTPS sources
+    "font-src 'self'",                                // Fonts only from same origin
+    "connect-src 'self'",                             // XHR/fetch requests only to same origin (API calls)
+    "frame-ancestors 'none'",                         // Prevent embedding in frames (clickjacking protection)
+    "base-uri 'self'",                                // Restrict <base> tag to same origin
+    "form-action 'self'"                              // Forms can only submit to same origin
   ].join('; ');
 }
 
@@ -203,6 +348,16 @@ function requiresAuth(pathname: string): boolean {
 }
 
 /**
+ * Get client IP address from request headers
+ */
+function getClientIP(request: Request): string {
+  return request.headers.get('CF-Connecting-IP') || 
+         request.headers.get('X-Forwarded-For') || 
+         request.headers.get('X-Real-IP') ||
+         'unknown';
+}
+
+/**
  * Get client identifier for rate limiting
  */
 function getClientId(request: Request): string {
@@ -216,10 +371,7 @@ function getClientId(request: Request): string {
   }
   
   // Fall back to IP address
-  const ip = request.headers.get('CF-Connecting-IP') || 
-           request.headers.get('X-Forwarded-For') || 
-           'unknown';
-  
+  const ip = getClientIP(request);
   return `ip:${ip}`;
 }
 

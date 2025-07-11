@@ -1,0 +1,1142 @@
+openapi: 3.0.3
+info:
+  title: Cutty Authentication & File Management API
+  description: |
+    Comprehensive authentication, security, and file management API for the Cutty application.
+    
+    ## Features
+    - **JWT Authentication**: Secure token-based authentication with access/refresh tokens
+    - **API Key Management**: Programmatic access with granular permissions
+    - **Security Monitoring**: Real-time threat detection and security analytics
+    - **File Management**: CSV processing, upload, and lineage tracking
+    - **Rate Limiting**: Comprehensive rate limiting with IP and user-based controls
+
+    ## Authentication
+    This API supports two authentication methods:
+    1. **JWT Bearer Tokens**: For user sessions (obtained via login)
+    2. **API Keys**: For programmatic access (prefix: `cutty_`)
+
+    ## Rate Limiting
+    - **Default**: 100 requests per minute per IP
+    - **Authenticated users**: 60 requests per minute
+    - **API keys**: Custom limits available (1-10,000 req/min)
+
+    ## Security Features
+    - Password security with PBKDF2 hashing (600,000 iterations)
+    - Token blacklisting and rotation
+    - Brute force protection
+    - Account enumeration prevention
+    - Comprehensive security event logging
+
+  version: 1.0.0
+  contact:
+    name: API Support
+    url: https://cutty.emilycogsdill.com/support
+    email: support@cutty.emilycogsdill.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://cutty.emilycogsdill.com/terms
+
+servers:
+  - url: https://cutty.emilycogsdill.com
+    description: Production server
+  - url: https://cutty-staging.emilycogsdill.com
+    description: Staging server
+  - url: http://localhost:8787
+    description: Local development server
+
+paths:
+  # Authentication Endpoints
+  /api/accounts/register:
+    post:
+      summary: Register a new user
+      description: |
+        Create a new user account with username, email, and password.
+        Returns JWT token pair for immediate authentication.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+            examples:
+              valid_registration:
+                summary: Valid user registration
+                value:
+                  username: "newuser"
+                  email: "newuser@example.com"
+                  password: "SecurePassword123!"
+                  password2: "SecurePassword123!"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationResponse'
+              examples:
+                successful_registration:
+                  summary: Successful registration
+                  value:
+                    message: "User created successfully"
+                    user:
+                      id: 1
+                      username: "newuser"
+                      email: "newuser@example.com"
+                    access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                password_mismatch:
+                  summary: Password confirmation mismatch
+                  value:
+                    error: "Passwords do not match"
+                    code: "PASSWORD_VALIDATION"
+                missing_fields:
+                  summary: Missing required fields
+                  value:
+                    error: "Username, password, and password confirmation are required"
+                    code: "MISSING_FIELDS"
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                username_exists:
+                  summary: Username already taken
+                  value:
+                    error: "Username already exists"
+                    code: "USERNAME_EXISTS"
+      security: []
+
+  /api/accounts/login:
+    post:
+      summary: User login
+      description: |
+        Authenticate user and return JWT token pair.
+        Updates last login timestamp and logs security event.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+            examples:
+              valid_login:
+                summary: Valid user login
+                value:
+                  username: "existinguser"
+                  password: "SecurePassword123!"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationResponse'
+              examples:
+                successful_login:
+                  summary: Successful login
+                  value:
+                    message: "Login successful"
+                    user:
+                      id: 1
+                      username: "existinguser"
+                      email: "user@example.com"
+                    access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_credentials:
+                  summary: Invalid username or password
+                  value:
+                    error: "Invalid username or password"
+                    code: "INVALID_CREDENTIALS"
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rate_limited:
+                  summary: Too many login attempts
+                  value:
+                    error: "Too many requests. Please try again later."
+                    code: "RATE_LIMIT_EXCEEDED"
+      security: []
+
+  /api/accounts/token/refresh:
+    post:
+      summary: Refresh access token
+      description: |
+        Get new access token using refresh token.
+        Implements token rotation - old refresh token is blacklisted.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  description: Valid refresh token
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              examples:
+                successful_refresh:
+                  summary: Token refreshed
+                  value:
+                    message: "Token refreshed successfully"
+                    access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_token:
+                  summary: Invalid refresh token
+                  value:
+                    error: "Invalid or expired refresh token"
+                    code: "INVALID_TOKEN"
+      security: []
+
+  /api/accounts/logout:
+    post:
+      summary: User logout
+      description: |
+        Invalidate current refresh token by adding it to blacklist.
+        Client should discard both access and refresh tokens.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  description: Refresh token to invalidate
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logout successful"
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - JWTAuth: []
+
+  /api/accounts/user:
+    get:
+      summary: Get current user info
+      description: |
+        Retrieve information about the authenticated user.
+        Requires valid JWT access token.
+      tags:
+        - User Management
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+              examples:
+                user_info:
+                  summary: User information
+                  value:
+                    id: 1
+                    username: "johndoe"
+                    email: "john@example.com"
+                    created_at: "2024-01-15T10:30:00Z"
+                    last_login: "2024-01-20T14:22:00Z"
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - JWTAuth: []
+
+  # API Key Management
+  /api/api-keys/info:
+    get:
+      summary: Get API key information
+      description: |
+        Get available permissions and API key configuration.
+        This endpoint does not require authentication.
+      tags:
+        - API Keys
+      responses:
+        '200':
+          description: API key information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available_permissions:
+                    type: array
+                    items:
+                      type: string
+                    description: List of available permissions
+                  rate_limits:
+                    type: object
+                    properties:
+                      default:
+                        type: integer
+                        description: Default rate limit (requests per minute)
+                      maximum:
+                        type: integer
+                        description: Maximum configurable rate limit
+                  key_format:
+                    type: object
+                    properties:
+                      prefix:
+                        type: string
+                        description: Required key prefix
+                      total_length:
+                        type: integer
+                        description: Total key length including prefix
+              examples:
+                api_key_info:
+                  summary: API key configuration
+                  value:
+                    available_permissions:
+                      - "auth:read"
+                      - "auth:write"
+                      - "files:read"
+                      - "files:write"
+                      - "files:delete"
+                      - "list:process"
+                      - "list:export"
+                      - "analytics:read"
+                    rate_limits:
+                      default: 60
+                      maximum: 10000
+                    key_format:
+                      prefix: "cutty_"
+                      total_length: 38
+      security: []
+
+  /api/api-keys:
+    get:
+      summary: List API keys
+      description: |
+        Get all API keys for the authenticated user.
+        Returns key metadata but not the actual key values.
+      tags:
+        - API Keys
+      responses:
+        '200':
+          description: API keys retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  api_keys:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/APIKeyInfo'
+              examples:
+                api_keys_list:
+                  summary: User's API keys
+                  value:
+                    api_keys:
+                      - key_id: "550e8400-e29b-41d4-a716-446655440000"
+                        name: "Production API Key"
+                        permissions: ["files:read", "files:write", "list:process"]
+                        created_at: 1642694400000
+                        last_used: 1642780800000
+                        expires_at: 1673974400000
+                        is_active: true
+                        rate_limit_override: 100
+      security:
+        - JWTAuth: []
+
+    post:
+      summary: Create API key
+      description: |
+        Generate a new API key with specified permissions.
+        The actual API key is only returned once and cannot be retrieved again.
+      tags:
+        - API Keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIKeyCreate'
+            examples:
+              create_api_key:
+                summary: Create new API key
+                value:
+                  name: "Mobile App Key"
+                  permissions: ["files:read", "files:write", "list:process"]
+                  expires_in_days: 90
+                  rate_limit_override: 120
+      responses:
+        '201':
+          description: API key created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeyResponse'
+              examples:
+                created_api_key:
+                  summary: New API key created
+                  value:
+                    message: "API key created successfully"
+                    key_id: "550e8400-e29b-41d4-a716-446655440000"
+                    api_key: "cutty_YWJjZGVmZ2hpams123456789012345678"
+                    name: "Mobile App Key"
+                    permissions: ["files:read", "files:write", "list:process"]
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_permissions:
+                  summary: Invalid permissions
+                  value:
+                    error: "Invalid permissions specified"
+                    code: "INVALID_PERMISSIONS"
+      security:
+        - JWTAuth: []
+
+  /api/api-keys/{keyId}:
+    get:
+      summary: Get API key details
+      description: |
+        Get details for a specific API key.
+        Only returns metadata, not the actual key value.
+      tags:
+        - API Keys
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: API key ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: API key details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeyInfo'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - JWTAuth: []
+
+    delete:
+      summary: Revoke API key
+      description: |
+        Permanently revoke an API key.
+        Revoked keys cannot be reactivated.
+      tags:
+        - API Keys
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: API key ID to revoke
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: API key revoked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "API key revoked successfully"
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - JWTAuth: []
+
+  /api/api-keys/{keyId}/usage:
+    get:
+      summary: Get API key usage statistics
+      description: |
+        Get usage statistics for a specific API key.
+        Includes request counts, success rates, and performance metrics.
+      tags:
+        - API Keys
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: API key ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 90
+            default: 30
+          description: Number of days to include in statistics
+        - name: details
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Include hourly breakdown
+      responses:
+        '200':
+          description: Usage statistics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeyUsageStats'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - JWTAuth: []
+
+  /api/api-keys/{keyId}/requests:
+    get:
+      summary: Get recent API key requests
+      description: |
+        Get recent requests made with a specific API key.
+        Useful for debugging and monitoring API usage.
+      tags:
+        - API Keys
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: API key ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+          description: Number of recent requests to return
+      responses:
+        '200':
+          description: Recent requests retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requests:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/APIKeyRequest'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - JWTAuth: []
+
+  # Health Check Endpoints
+  /health:
+    get:
+      summary: Basic health check
+      description: |
+        Basic health check endpoint.
+        Returns service status and version information.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-20T14:30:00Z"
+                  environment:
+                    type: string
+                    example: "production"
+                  version:
+                    type: string
+                    example: "1.0.0"
+      security: []
+
+  /health/auth:
+    get:
+      summary: Authentication system health check
+      description: |
+        Comprehensive health check for authentication system.
+        Tests database, KV storage, and other dependencies.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Authentication system is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  environment:
+                    type: string
+                    example: "production"
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        example: "connected"
+                      kv:
+                        type: string
+                        example: "available"
+                      r2:
+                        type: string
+                        example: "available"
+        '503':
+          description: Authentication system is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "unhealthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  environment:
+                    type: string
+                  error:
+                    type: string
+                    example: "Database connection failed"
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        example: "error"
+                      kv:
+                        type: string
+                        example: "error"
+                      r2:
+                        type: string
+                        example: "unknown"
+      security: []
+
+components:
+  securitySchemes:
+    JWTAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT access token obtained from login or token refresh endpoint.
+        Format: `Bearer <access_token>`
+        
+        Access tokens expire after 10 minutes.
+        Use refresh token to obtain new access token.
+    
+    APIKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: |
+        API key for programmatic access.
+        Format: `Bearer cutty_<key_data>`
+        
+        API keys must start with "cutty_" prefix.
+        Custom rate limits and permissions can be configured.
+
+  schemas:
+    UserRegistration:
+      type: object
+      required:
+        - username
+        - password
+        - password2
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: '^[a-zA-Z0-9_-]+$'
+          description: |
+            Unique username (alphanumeric, underscore, dash only).
+            Used for login and must be unique across all users.
+          example: "johndoe"
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: |
+            Valid email address (optional).
+            If provided, must be unique across all users.
+          example: "john@example.com"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          description: |
+            Password (minimum 8 characters).
+            Should contain mix of letters, numbers, and symbols.
+          example: "SecurePassword123!"
+        password2:
+          type: string
+          description: |
+            Password confirmation (must match password).
+            Used to prevent typos during registration.
+          example: "SecurePassword123!"
+
+    UserLogin:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: |
+            Username or email address for login.
+            Case-sensitive for usernames.
+          example: "johndoe"
+        password:
+          type: string
+          description: User password
+          example: "SecurePassword123!"
+
+    AuthenticationResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+          example: "Login successful"
+        user:
+          $ref: '#/components/schemas/UserInfo'
+        access_token:
+          type: string
+          description: |
+            JWT access token (10 minute expiry).
+            Use for API authentication in Authorization header.
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          description: |
+            JWT refresh token (1 day expiry).
+            Use to obtain new access tokens.
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    TokenResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Token refreshed successfully"
+        access_token:
+          type: string
+          description: New JWT access token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          description: New JWT refresh token (rotated)
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique user ID
+          example: 1
+        username:
+          type: string
+          description: Username
+          example: "johndoe"
+        email:
+          type: string
+          description: Email address (if provided)
+          example: "john@example.com"
+        created_at:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: "2024-01-15T10:30:00Z"
+        last_login:
+          type: string
+          format: date-time
+          description: Last login timestamp
+          example: "2024-01-20T14:22:00Z"
+
+    APIKeyInfo:
+      type: object
+      properties:
+        key_id:
+          type: string
+          format: uuid
+          description: Unique API key identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          description: Human-readable name for the API key
+          example: "Mobile App Key"
+        permissions:
+          type: array
+          items:
+            type: string
+            enum:
+              - auth:read
+              - auth:write
+              - files:read
+              - files:write
+              - files:delete
+              - list:process
+              - list:export
+              - analytics:read
+              - admin:read
+              - admin:write
+          description: List of granted permissions
+          example: ["files:read", "files:write", "list:process"]
+        created_at:
+          type: integer
+          description: Creation timestamp (Unix)
+          example: 1642694400000
+        last_used:
+          type: integer
+          description: Last usage timestamp (Unix)
+          example: 1642780800000
+        expires_at:
+          type: integer
+          description: Expiration timestamp (Unix, null if no expiration)
+          example: 1673974400000
+        is_active:
+          type: boolean
+          description: Whether the key is active
+          example: true
+        rate_limit_override:
+          type: integer
+          description: Custom rate limit (requests per minute)
+          example: 120
+
+    APIKeyCreate:
+      type: object
+      required:
+        - name
+        - permissions
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Human-readable name for the API key
+          example: "Mobile App Key"
+        permissions:
+          type: array
+          items:
+            type: string
+            enum:
+              - auth:read
+              - auth:write
+              - files:read
+              - files:write
+              - files:delete
+              - list:process
+              - list:export
+              - analytics:read
+              - admin:read
+              - admin:write
+          minItems: 1
+          description: List of permissions to grant
+          example: ["files:read", "files:write", "list:process"]
+        expires_in_days:
+          type: integer
+          minimum: 1
+          maximum: 365
+          description: Number of days until expiration (optional)
+          example: 90
+        rate_limit_override:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          description: Custom rate limit for this key (requests per minute)
+          example: 120
+
+    APIKeyResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "API key created successfully"
+        key_id:
+          type: string
+          format: uuid
+          description: Unique API key identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        api_key:
+          type: string
+          description: |
+            The actual API key (shown only once).
+            Store securely - cannot be retrieved again.
+          example: "cutty_YWJjZGVmZ2hpams123456789012345678"
+        name:
+          type: string
+          description: API key name
+          example: "Mobile App Key"
+        permissions:
+          type: array
+          items:
+            type: string
+          description: Granted permissions
+          example: ["files:read", "files:write", "list:process"]
+
+    APIKeyUsageStats:
+      type: object
+      properties:
+        key_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        period_days:
+          type: integer
+          description: Number of days included in statistics
+          example: 30
+        total_requests:
+          type: integer
+          description: Total number of requests
+          example: 1543
+        successful_requests:
+          type: integer
+          description: Number of successful requests (2xx status)
+          example: 1489
+        error_requests:
+          type: integer
+          description: Number of error requests (4xx/5xx status)
+          example: 54
+        avg_response_time:
+          type: number
+          description: Average response time in milliseconds
+          example: 125.6
+        max_response_time:
+          type: number
+          description: Maximum response time in milliseconds
+          example: 2340.2
+        first_request:
+          type: integer
+          description: Timestamp of first request in period
+          example: 1642694400000
+        last_request:
+          type: integer
+          description: Timestamp of last request in period
+          example: 1642780800000
+        daily_breakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              requests:
+                type: integer
+              errors:
+                type: integer
+          description: Daily request breakdown (if details=true)
+
+    APIKeyRequest:
+      type: object
+      properties:
+        timestamp:
+          type: integer
+          description: Request timestamp (Unix)
+          example: 1642780800000
+        endpoint:
+          type: string
+          description: API endpoint path
+          example: "/api/list_cutter/upload"
+        method:
+          type: string
+          description: HTTP method
+          example: "POST"
+        response_status:
+          type: integer
+          description: HTTP response status code
+          example: 200
+        response_time:
+          type: number
+          description: Response time in milliseconds
+          example: 156.3
+        ip_address:
+          type: string
+          description: Client IP address (truncated for privacy)
+          example: "192.168.1.xxx"
+        user_agent:
+          type: string
+          description: Client user agent (truncated)
+          example: "Mozilla/5.0..."
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Invalid username or password"
+        code:
+          type: string
+          description: Machine-readable error code
+          example: "INVALID_CREDENTIALS"
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+          example: "2024-01-20T14:30:00Z"
+        details:
+          type: object
+          description: Additional error details (optional)
+          additionalProperties: true
+
+tags:
+  - name: Authentication
+    description: |
+      User authentication and session management.
+      
+      **JWT Tokens**: Short-lived access tokens (10 min) with longer refresh tokens (1 day).
+      **Token Rotation**: Refresh tokens are rotated on each use for security.
+      **Blacklisting**: Logout immediately blacklists refresh tokens.
+
+  - name: User Management
+    description: |
+      User account operations and profile management.
+      
+      **Registration**: Username and email must be unique.
+      **Password Security**: PBKDF2 with 600,000 iterations.
+      **Account Info**: Retrieve current user details.
+
+  - name: API Keys
+    description: |
+      API key management for programmatic access.
+      
+      **Permissions**: Granular permission system for API access.
+      **Rate Limiting**: Custom rate limits per key (1-10,000 req/min).
+      **Usage Tracking**: Comprehensive usage statistics and request logs.
+      **Security**: Keys are hashed and cannot be retrieved after creation.
+
+  - name: Health
+    description: |
+      System health and status monitoring.
+      
+      **Basic Health**: Simple up/down status check.
+      **Auth Health**: Comprehensive check of authentication dependencies.
+      **Monitoring**: Use for load balancer health checks and monitoring.
+
+x-readme:
+  samples-languages:
+    - javascript
+    - python
+    - curl
+    - php
+    - java
+  code-samples:
+    - lang: curl
+      label: cURL
+    - lang: javascript
+      label: JavaScript
+    - lang: python
+      label: Python

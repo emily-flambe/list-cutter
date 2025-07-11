@@ -4,6 +4,9 @@ export interface Env {
   AUTH_KV: KVNamespace;
   RATE_LIMITER: any; // Rate limiting binding (beta)
   JWT_SECRET: string;
+  ENCRYPTION_KEY?: string;
+  API_KEY_SALT?: string;
+  DB_ENCRYPTION_KEY?: string;
   MAX_FILE_SIZE: string;
   ENVIRONMENT: string;
 }
@@ -90,4 +93,31 @@ export interface RefreshTokenData {
 export interface BlacklistedToken {
   reason: string;
   blacklisted_at: number;
+}
+
+export interface APIKey {
+  key_id: string;
+  user_id: number;
+  name: string;
+  key_hash: string;
+  key_prefix: string;
+  permissions: string[]; // APIPermission enum values
+  created_at: number;
+  last_used?: number;
+  expires_at?: number;
+  is_active: boolean;
+  rate_limit_override?: number;
+}
+
+export interface APIKeyCreateRequest {
+  name: string;
+  permissions: string[];
+  expires_in_days?: number;
+  rate_limit_override?: number;
+}
+
+export interface APIKeyAuthContext {
+  api_key: APIKey;
+  user_id: number;
+  permissions: string[];
 }
