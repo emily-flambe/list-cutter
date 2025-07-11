@@ -68,12 +68,6 @@ let securityHeadersMiddleware: SecurityHeadersMiddleware;
 let productionSecurityMiddleware: ProductionSecurityMiddleware;
 let securityEventLogger: SecurityEventLogger;
 
-// Initialize dashboard and alert services
-let dashboardAPI: IntegratedDashboardAPI;
-let alertRoutes: HonoApp;
-let alertDashboardRoutes: HonoApp;
-let alertJobRoutes: HonoApp;
-
 // Security initialization middleware
 app.use('*', async (c, next): Promise<void> => {
   // Initialize security services if not already done
@@ -186,6 +180,7 @@ app.use('*', async (c, next): Promise<void> => {
 let dashboardAPI: IntegratedDashboardAPI | undefined;
 let alertRoutes: HonoApp<{ Bindings: CloudflareEnv }> | undefined;
 let alertDashboardRoutes: HonoApp<{ Bindings: CloudflareEnv }> | undefined;
+let alertJobRoutes: HonoApp<{ Bindings: CloudflareEnv }> | undefined;
 
 // Global middleware
 app.use('*', timing());
