@@ -14,7 +14,7 @@ const LoadPersonRecords = () => {
   useEffect(() => {
     const fetchSavedFiles = async () => {
       try {
-        const response = await api.get('/api/list_cutter/list_saved_files/', {
+        const response = await api.get('/api/cutty/list_saved_files/', {
           headers: { Authorization: `Bearer ${token.token}` }
         });
         setSavedFiles(response.data.files);
@@ -34,7 +34,7 @@ const LoadPersonRecords = () => {
     if (selectedFileID) {
       try {
         const response = await api.get(
-          `/api/list_cutter/fetch_saved_file/${encodeURIComponent(selectedFileID)}`,
+          `/api/cutty/fetch_saved_file/${encodeURIComponent(selectedFileID)}`,
           { headers: { Authorization: `Bearer ${token.token}` } }
         );
         setColumns(response.data.columns);

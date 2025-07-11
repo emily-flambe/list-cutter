@@ -1,311 +1,525 @@
-# List Cutter Deployment Scripts
+# Production Migration Tools for Issue #66
 
-This directory contains all the deployment, validation, and cutover scripts for migrating List Cutter to the unified Cloudflare Workers architecture.
+This directory contains a comprehensive suite of production-ready migration tools for zero-downtime Django to Cloudflare R2 file migration.
 
-## Overview
+## 🚀 Overview
 
-The deployment process follows the Phase 8 implementation plan and provides a complete production deployment and cutover solution with comprehensive validation, monitoring, and rollback capabilities.
+The migration system provides a complete solution for migrating Django media files to Cloudflare R2 storage with zero downtime, comprehensive safety features, and automated rollback capabilities.
 
-## Scripts
+## 📋 Core Components
 
-### 1. Production Deployment
-- **`deploy-production.sh`** - Main production deployment script
-  - Runs comprehensive pre-deployment checks
-  - Deploys to staging for validation
-  - Deploys to production with validation
-  - Includes automatic rollback on failure
+### 1. Production Migration Orchestrator
+**File:** `production_migration_orchestrator.py`
+- Central coordination system for zero-downtime migrations
+- Comprehensive state management with checkpoints
+- Automated failure recovery and rollback
+- Real-time progress monitoring and alerting
 
-### 2. Environment Validation
-- **`validate-staging.sh`** - Staging environment validation
-  - Comprehensive health checks
-  - API endpoint testing
-  - Security header validation
-  - Performance monitoring
-  
-- **`validate-production.sh`** - Production environment validation
-  - Stricter validation criteria for production
-  - Component health verification
-  - SSL/HTTPS validation
-  - Extended monitoring
+### 2. Batch Migration Engine
+**File:** `batch_migration_engine.py`
+- High-performance parallel file processing
+- Intelligent error handling and retry logic
+- Rate limiting and bandwidth management
+- Memory-efficient streaming for large files
 
-### 3. Cutover Execution
-- **`execute-cutover.sh`** - Complete cutover from Django to Workers
-  - Pre-cutover checklist verification
-  - Staged deployment with validation
-  - DNS configuration updates
-  - Extended monitoring and validation
-  - Automatic rollback on issues
+### 3. Comprehensive Integrity Checker
+**File:** `comprehensive_integrity_checker.py`
+- Multi-layer integrity verification (checksum, size, metadata)
+- Database consistency checks between PostgreSQL and D1
+- R2 storage accessibility and performance testing
+- Automated remediation suggestions
 
-### 4. Emergency Response
-- **`rollback-production.sh`** - Emergency production rollback
-  - Immediate rollback using Wrangler
-  - System verification after rollback
-  - Extended monitoring
-  - Notification and logging
+### 4. Migration State Manager
+**File:** `migration_state_manager.py`
+- SQLite-based persistent state storage
+- Checkpoint creation and recovery
+- Error and metric recording
+- Recovery point management
 
-### 5. DNS Management
-- **`setup-dns.sh`** - DNS configuration for unified Workers
-  - Configures all domain records
-  - Sets up security records (SPF, DMARC)
-  - Optimizes Cloudflare settings
-  - Verifies DNS propagation
+### 5. Disaster Recovery Procedures
+**File:** `disaster_recovery_procedures.py`
+- Automated critical failure detection
+- Emergency rollback procedures with data preservation
+- Service availability restoration
+- Incident response automation and escalation
 
-### 6. Notifications
-- **`notify-deployment.sh`** - Deployment status notifications
-  - Multi-channel notifications (email, Slack, Discord, Teams)
-  - Deployment record keeping
-  - Status tracking
+### 6. Migration Monitoring System
+**File:** `migration_monitoring.py`
+- Real-time migration progress tracking
+- Performance monitoring with bottleneck detection
+- Comprehensive alerting system with escalation
+- Interactive monitoring dashboard
 
-## Usage
+### 7. Production Migration Playbook
+**File:** `production_migration_playbook.py`
+- Complete migration orchestration with checklists
+- Step-by-step migration execution with checkpoints
+- Team coordination and communication tools
+- Comprehensive documentation and reporting
 
-### Prerequisites
+### 8. Unified Execution Script
+**File:** `execute_production_migration.py`
+- Single entry point for complete migration execution
+- Coordinated execution of all migration components
+- Comprehensive pre-migration validation
+- Detailed reporting and documentation
 
-1. **Environment Variables**:
-   ```bash
-   export CLOUDFLARE_API_TOKEN=your_token_here
-   export CLOUDFLARE_ZONE_ID=your_zone_id_here
-   ```
+### 9. Comprehensive Test Suite
+**File:** `test_migration_tools.py`
+- Unit tests for individual components
+- Integration tests for component interactions
+- End-to-end migration workflow tests
+- Performance and load testing
 
-2. **Optional Notification Configuration**:
-   ```bash
-   export NOTIFICATION_EMAIL=admin@list-cutter.com
-   export SLACK_WEBHOOK_URL=https://hooks.slack.com/...
-   export DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
-   export TEAMS_WEBHOOK_URL=https://outlook.office.com/webhook/...
-   ```
+## 🔧 Quick Start
 
-3. **Required Tools**:
-   - `wrangler` CLI
-   - `curl`
-   - `jq`
-   - `bc`
-   - `dig`
-
-### Deployment Workflow
-
-#### 1. DNS Setup (One-time)
-```bash
-./scripts/setup-dns.sh
-```
-
-#### 2. Standard Production Deployment
-```bash
-./scripts/deploy-production.sh
-```
-
-#### 3. Complete Cutover (Django → Workers)
-```bash
-./scripts/execute-cutover.sh
-```
-
-#### 4. Emergency Rollback (if needed)
-```bash
-./scripts/rollback-production.sh
-```
-
-### Validation Only
-
-To run validation without deployment:
+### 1. Installation
 
 ```bash
-# Staging validation
-./scripts/validate-staging.sh
+# Install dependencies
+pip install -r requirements.txt
 
-# Production validation
-./scripts/validate-production.sh
+# Copy configuration template
+cp production_migration_config.example.json production_migration_config.json
 ```
 
-## Deployment Strategy
+### 2. Configuration
 
-### 1. Development → Staging
-- Automated deployment to staging
-- Comprehensive validation suite
-- Performance benchmarking
-- Security testing
+Edit `production_migration_config.json` with your environment settings:
 
-### 2. Staging → Production
-- Pre-deployment checklist verification
-- Staged production deployment
-- Real-time monitoring
-- Automatic rollback on failure
-
-### 3. Blue-Green Deployment
-- Leverages Wrangler's built-in versioning
-- Zero-downtime deployments
-- Instant rollback capability
-- Traffic monitoring
-
-## Monitoring and Validation
-
-### Health Checks
-- Basic health endpoints
-- Detailed system component checks
-- Readiness and liveness probes
-- Performance monitoring
-
-### Security Validation
-- SSL/HTTPS configuration
-- Security headers verification
-- CORS validation
-- Rate limiting verification
-
-### Performance Testing
-- Response time monitoring
-- Throughput validation
-- Error rate tracking
-- System stability testing
-
-## Error Handling and Recovery
-
-### Automatic Rollback Triggers
-- Failed health checks
-- High error rates (>5%)
-- Extended response times (>2s)
-- System component failures
-
-### Manual Rollback
-- Emergency rollback script
-- Immediate system restoration
-- Extended post-rollback monitoring
-- Incident documentation
-
-### Notification System
-- Real-time deployment status
-- Multi-channel alerts
-- Deployment record keeping
-- Team notifications
-
-## File Structure
-
-```
-scripts/
-├── README.md                    # This file
-├── deploy-production.sh         # Main deployment script
-├── validate-staging.sh          # Staging validation
-├── validate-production.sh       # Production validation
-├── execute-cutover.sh           # Complete cutover execution
-├── rollback-production.sh       # Emergency rollback
-├── setup-dns.sh                 # DNS configuration
-├── notify-deployment.sh         # Notification system
-└── deployments/                 # Deployment records (auto-created)
-    ├── cutover_success_*.txt    # Cutover records
-    ├── rollback_*.txt           # Rollback records
-    └── dns_config_*.txt         # DNS configuration records
+```json
+{
+  "database": {
+    "postgres_config": {
+      "host": "your-postgres-host",
+      "database": "your-database",
+      "user": "your-user",
+      "password": "your-password"
+    }
+  },
+  "storage": {
+    "r2_config": {
+      "api_endpoint": "https://your-r2-endpoint",
+      "api_token": "your-r2-token",
+      "bucket_name": "your-bucket"
+    },
+    "django_media_root": "/path/to/your/media"
+  }
+}
 ```
 
-## Configuration Files
+### 3. Pre-Migration Assessment
 
-### Wrangler Configuration
-The unified Worker uses environment-specific configuration in `unified-worker/wrangler.toml`:
-- Development environment
-- Staging environment
-- Production environment
+```bash
+# Run enhanced migration assessment
+python enhanced_migration_assessment.py assess --media-root /path/to/media
+
+# Generate migration playbook
+python production_migration_playbook.py generate --config-file production_migration_config.json
+```
+
+### 4. Execute Migration
+
+```bash
+# Execute complete production migration
+python execute_production_migration.py execute production_migration_config.json
+
+# Or run in dry-run mode first
+python execute_production_migration.py execute production_migration_config.json --dry-run
+```
+
+### 5. Monitor Progress
+
+```bash
+# Monitor migration progress
+python migration_monitoring.py monitor --config-file production_migration_config.json --dashboard
+
+# Check migration status
+python execute_production_migration.py status <execution-id>
+```
+
+## 🛠️ Advanced Usage
+
+### Individual Component Usage
+
+#### 1. State Management
+```bash
+# Initialize migration state
+python migration_state_manager.py init
+
+# List migration sessions
+python migration_state_manager.py list-sessions
+
+# Show session details
+python migration_state_manager.py show <session-id>
+```
+
+#### 2. Batch Processing
+```bash
+# Generate migration tasks
+python batch_migration_engine.py generate-tasks /path/to/media tasks.json
+
+# Execute batch migration
+python batch_migration_engine.py migrate tasks.json --max-workers 10
+```
+
+#### 3. Integrity Verification
+```bash
+# Verify file integrity
+python comprehensive_integrity_checker.py verify files.json
+
+# Verify single file
+python comprehensive_integrity_checker.py verify-single <file-id> <source-path> <r2-key>
+```
+
+#### 4. Disaster Recovery
+```bash
+# Start disaster recovery monitoring
+python disaster_recovery_procedures.py monitor --config-file dr_config.json
+
+# Simulate incident for testing
+python disaster_recovery_procedures.py simulate-incident migration_failure critical "Test incident"
+```
+
+#### 5. Monitoring and Alerting
+```bash
+# Start monitoring
+python migration_monitoring.py monitor --config-file monitoring_config.json
+
+# Test alert system
+python migration_monitoring.py test-alert --alert-type performance_degradation --level warning
+```
+
+### Playbook Execution
+
+```bash
+# Generate custom playbook
+python production_migration_playbook.py generate --config-file config.json --team-members "Alice,Bob,Charlie"
+
+# Execute playbook
+python production_migration_playbook.py execute playbook.json --interactive
+
+# Execute specific phase
+python production_migration_playbook.py execute playbook.json --phase migration_execution
+
+# Check playbook status
+python production_migration_playbook.py status playbook.json
+```
+
+## 🧪 Testing
+
+### Run Test Suite
+
+```bash
+# Run all tests
+python test_migration_tools.py run
+
+# Run specific test suite
+python test_migration_tools.py run --suite unit
+python test_migration_tools.py run --suite integration
+python test_migration_tools.py run --suite e2e
+python test_migration_tools.py run --suite performance
+
+# Generate test data
+python test_migration_tools.py generate-test-data --count 1000 --output-dir ./test_data
+```
+
+### Test Categories
+
+- **Unit Tests**: Individual component testing
+- **Integration Tests**: Component interaction testing
+- **End-to-End Tests**: Complete workflow testing
+- **Performance Tests**: Load and performance validation
+
+## 📊 Monitoring and Alerting
+
+### Dashboard Features
+
+- Real-time migration progress tracking
+- System health monitoring (CPU, memory, disk)
+- Performance metrics and bottleneck detection
+- Active alerts and escalation status
+- Historical data analysis and trends
+
+### Alert Types
+
+- **Performance Degradation**: Slow transfer rates, high error rates
+- **Resource Exhaustion**: High CPU/memory/disk usage
+- **Migration Stalled**: No progress for extended periods
+- **Integrity Failures**: Checksum mismatches, corruption
+- **System Failures**: Database connectivity, R2 access issues
+
+### Notification Channels
+
+- Email notifications
+- Slack integration
+- Webhook endpoints
+- SMS alerts (for critical issues)
+- Console logging
+
+## 🔒 Security Features
+
+- **Encryption**: All data encrypted at rest and in transit
+- **Access Control**: Role-based access management
+- **Audit Logging**: Complete audit trail of all operations
+- **Secure Deletion**: Secure removal of sensitive data
+- **API Security**: Token-based authentication for all APIs
+
+## 🎯 Zero-Downtime Strategy
+
+### Migration Phases
+
+1. **Preparation**: Team assembly, infrastructure validation
+2. **Pre-Migration**: Assessment, backups, schema validation
+3. **Migration Execution**: Dual-write setup, background migration
+4. **Post-Migration**: Integrity verification, performance testing
+5. **Cutover**: Traffic switch, health monitoring
+6. **Validation**: System tests, data consistency checks
+7. **Cleanup**: Archive old files, documentation updates
+
+### Rollback Capabilities
+
+- **Automated Rollback**: Triggered by failure conditions
+- **Manual Rollback**: Operator-initiated rollback
+- **Partial Rollback**: Rollback to specific checkpoints
+- **Emergency Rollback**: Fast rollback for critical issues
+
+## 📈 Performance Optimization
+
+### Batch Processing
+
+- Configurable batch sizes for optimal performance
+- Parallel processing with worker pools
+- Memory-efficient streaming for large files
+- Intelligent retry logic with exponential backoff
+
+### Resource Management
+
+- Connection pooling for database operations
+- Rate limiting for API calls
+- Memory usage monitoring and optimization
+- Disk space management and cleanup
+
+## 🔧 Configuration Reference
+
+### Core Settings
+
+```json
+{
+  "migration_settings": {
+    "batch_size": 50,
+    "max_workers": 10,
+    "max_retries": 3,
+    "retry_delay": 5,
+    "rate_limit_mbps": 100,
+    "dual_write_enabled": true
+  },
+  "monitoring": {
+    "enabled": true,
+    "system_check_interval": 30,
+    "migration_check_interval": 10,
+    "dashboard_enabled": true
+  },
+  "disaster_recovery": {
+    "enabled": true,
+    "auto_rollback_enabled": true,
+    "monitoring_interval": 30,
+    "failure_threshold": 3
+  }
+}
+```
 
 ### Environment Variables
-Required for production deployment:
-```bash
-# Cloudflare API credentials
-CLOUDFLARE_API_TOKEN=your_api_token
-CLOUDFLARE_ZONE_ID=your_zone_id
 
-# Optional notification settings
-NOTIFICATION_EMAIL=admin@example.com
-SLACK_WEBHOOK_URL=https://hooks.slack.com/...
+```bash
+# Database Configuration
+export POSTGRES_HOST=your-postgres-host
+export POSTGRES_DB=your-database
+export POSTGRES_USER=your-user
+export POSTGRES_PASSWORD=your-password
+
+# R2 Storage Configuration
+export R2_API_ENDPOINT=https://your-r2-endpoint
+export R2_API_TOKEN=your-r2-token
+export R2_BUCKET_NAME=your-bucket
+
+# Django Configuration
+export DJANGO_MEDIA_ROOT=/path/to/your/media
+
+# Notification Configuration
+export SMTP_SERVER=your-smtp-server
+export NOTIFICATION_EMAIL=your-email@domain.com
+export SLACK_WEBHOOK_URL=your-slack-webhook
 ```
 
-## Security Considerations
+## 📚 Documentation
 
-### Script Security
-- All scripts validate input parameters
-- Environment variables are required, not hardcoded
-- API tokens are masked in logs
-- Comprehensive error handling
+### Architecture Documentation
 
-### Deployment Security
-- Pre-deployment security validation
-- HTTPS enforcement
-- Security header verification
-- Rate limiting validation
+- **Migration Strategy**: Zero-downtime dual-write approach
+- **Component Architecture**: Modular design with clear interfaces
+- **Data Flow**: End-to-end data flow and transformation
+- **Error Handling**: Comprehensive error handling and recovery
+- **Performance Optimization**: Optimization strategies and tuning
 
-### Rollback Security
-- Immediate rollback capability
-- System verification after rollback
-- Audit trail maintenance
-- Incident documentation
+### Operational Documentation
 
-## Troubleshooting
+- **Deployment Guide**: Step-by-step deployment instructions
+- **Monitoring Guide**: Monitoring setup and configuration
+- **Troubleshooting Guide**: Common issues and solutions
+- **Recovery Procedures**: Disaster recovery and rollback procedures
+
+## 🚨 Troubleshooting
 
 ### Common Issues
 
-1. **API Token Issues**
-   ```bash
-   # Verify token has correct permissions
-   curl -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
-     -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
-   ```
+1. **Database Connection Issues**
+   - Check connection parameters
+   - Verify network connectivity
+   - Check database permissions
 
-2. **DNS Propagation**
-   ```bash
-   # Check DNS propagation
-   dig +short list-cutter.com
-   dig +short www.list-cutter.com
-   ```
+2. **R2 Storage Access Issues**
+   - Verify API tokens and endpoints
+   - Check bucket permissions
+   - Test connectivity with simple requests
 
-3. **SSL Certificate Issues**
-   ```bash
-   # Verify SSL certificate
-   curl -I https://list-cutter.com/
-   ```
+3. **Migration Stalled**
+   - Check system resources
+   - Review error logs
+   - Verify file accessibility
 
-4. **Worker Deployment Issues**
-   ```bash
-   # Check Wrangler configuration
-   cd unified-worker
-   wrangler whoami
-   wrangler dev --env production --dry-run
-   ```
+4. **Integrity Check Failures**
+   - Re-verify file checksums
+   - Check for network issues during transfer
+   - Validate R2 storage consistency
 
-### Log Files
+### Getting Help
 
-All deployment activities are logged:
-- `cutover_YYYYMMDD_HHMMSS.log` - Complete cutover logs
-- `deployments/` directory - Deployment records
-- Console output with timestamps
+- Review log files in `./logs/` directory
+- Check migration state with state manager
+- Use monitoring dashboard for real-time status
+- Run integrity checks for data validation
 
-### Support Contacts
+## 🤝 Contributing
 
-For deployment issues:
-1. Check the deployment logs
-2. Review the health check endpoints
-3. Verify environment configuration
-4. Contact the development team
+### Development Setup
 
-## Success Criteria
+```bash
+# Install development dependencies
+pip install -r requirements.txt
 
-### Deployment Success
-- ✅ All pre-deployment checks pass
-- ✅ Staging validation successful
-- ✅ Production deployment completes
-- ✅ Health checks return healthy status
-- ✅ All critical endpoints responsive
-- ✅ Security validation passes
+# Run tests
+python test_migration_tools.py run
 
-### Cutover Success
-- ✅ Zero-downtime migration
-- ✅ All user data preserved
-- ✅ Performance meets requirements (<100ms response time)
-- ✅ System stability confirmed (10+ minutes monitoring)
-- ✅ Rollback capability verified
-- ✅ Team notifications sent
+# Run linting
+flake8 *.py
 
-## Future Enhancements
+# Run type checking
+mypy *.py
+```
 
-- Integration with CI/CD pipelines
-- Automated testing integration
-- Enhanced monitoring and alerting
-- Canary deployment support
-- Advanced blue-green deployment features
+### Code Quality
+
+- Follow PEP 8 style guidelines
+- Write comprehensive docstrings
+- Include unit tests for new features
+- Maintain backwards compatibility
+
+## 📄 License
+
+This migration system is part of the List Cutter project and follows the same licensing terms.
+
+## 🏷️ Version History
+
+- **v1.0.0**: Initial production release with complete migration suite
+- **v0.9.0**: Beta release with core functionality
+- **v0.8.0**: Alpha release with basic migration tools
 
 ---
 
-*This deployment system provides production-ready deployment capabilities with comprehensive validation, monitoring, and rollback procedures for the List Cutter unified Cloudflare Workers architecture.*
+For more information, see the individual script documentation and the project's main README.
+
+## Legacy Migration Tools
+
+This directory also contains legacy migration tools for reference:
+
+### migrate_to_r2.py
+Original migration script with basic functionality
+
+### rollback_migration.py
+Comprehensive rollback script for legacy migrations
+
+### validate_migration.py
+Validation tools for migration integrity
+
+### Enhanced Migration Assessment
+**File:** `enhanced_migration_assessment.py`
+- Comprehensive file analysis and migration planning
+- Performance estimation and resource requirements
+- Migration readiness assessment
+- Detailed reporting and recommendations
+
+For complete legacy documentation, see the sections below.
+
+---
+
+## Legacy Documentation
+
+### Migration Script (`migrate_to_r2.py`)
+- **Batch Processing**: Process files in configurable batches (default 50 files)
+- **Real-time Progress Tracking**: Monitor migration progress with detailed reporting
+- **Automatic Retry Logic**: Retry failed migrations up to 3 times with exponential backoff
+- **Checksum Verification**: Verify file integrity using SHA-256 checksums
+- **Resumable Migrations**: Resume interrupted migrations from where they left off
+- **Dry-run Mode**: Test migrations without actually moving files
+- **Comprehensive Logging**: Detailed logging to both file and console
+- **Database Integration**: Updates PostgreSQL database with migration status and R2 keys
+
+### Rollback Script (`rollback_migration.py`)
+- **Multiple Rollback Types**: Database-only, R2-only, batch, selective, and full rollbacks
+- **Safety Features**: Dry-run mode, explicit confirmations, and database backups
+- **Comprehensive Verification**: Verify original files exist before R2 cleanup
+- **Audit Trail**: Complete audit logs of all rollback operations
+- **Progress Tracking**: Real-time progress for large rollback operations
+- **Error Recovery**: Graceful error handling with detailed reporting
+- **Multi-database Support**: Works with both PostgreSQL and D1 databases
+- **Rich Console Output**: Beautiful console output with tables and progress bars
+
+### Validation Script (`validate_migration.py`)
+A production-ready Python script that validates:
+- File integrity using SHA-256 checksums
+- Database consistency between PostgreSQL and D1
+- R2 storage accessibility
+- Workers API functionality
+- Metadata preservation
+- User association integrity
+- Batch completeness
+
+### Shell Wrapper (`validate_migration.sh`)
+A convenient shell wrapper that provides:
+- Environment setup and dependency management
+- Configuration file management
+- Easy command-line interface
+- Progress monitoring
+- Error handling and reporting
+
+### Legacy Usage Examples
+
+```bash
+# Basic migration
+python scripts/migrate_to_r2.py
+
+# Dry run (recommended first)
+python scripts/migrate_to_r2.py --dry-run
+
+# Custom batch size
+python scripts/migrate_to_r2.py --batch-size 25
+
+# Rollback migration
+python scripts/rollback_migration.py rollback --batch-id abc123
+
+# Validate migration
+python scripts/validate_migration.py --full-validation
+```
+
+The legacy tools complement the new production migration system and provide backwards compatibility for existing workflows.

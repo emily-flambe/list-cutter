@@ -1,0 +1,67 @@
+# Requirements for Production Migration Tools - Issue #66
+# Complete Django to R2 file migration system with zero-downtime capabilities
+
+# Core CLI framework
+click>=8.0.0
+
+# Rich console output, formatting, and progress bars
+rich>=13.0.0
+
+# Database connections
+psycopg2-binary>=2.9.0  # PostgreSQL adapter for Django database
+# sqlite3 is built-in for D1 database support
+
+# HTTP/API requests for Cloudflare services
+requests>=2.25.0       # Synchronous HTTP requests
+aiohttp>=3.8.0         # Async HTTP requests for performance
+
+# Async file operations for high-performance migrations
+aiofiles>=0.8.0
+
+# System monitoring and resource tracking
+psutil>=5.9.0          # System and process utilities
+
+# Scientific computing for metrics and analysis
+numpy>=1.21.0          # Numerical operations for integrity checking
+
+# Email notifications for alerts
+# smtplib is built-in
+
+# Data serialization and validation
+pydantic>=1.10.0       # Data validation and settings management (optional)
+
+# Built-in Python modules (no installation required):
+# - asyncio (async support)
+# - dataclasses (Python 3.7+)
+# - enum (enumerations)
+# - typing (type hints)
+# - pathlib (path operations)
+# - json (JSON handling)
+# - datetime (date/time operations)
+# - logging (logging framework)
+# - os, sys (system operations)
+# - hashlib (hash calculations)
+# - glob (file pattern matching)
+# - uuid (unique identifiers)
+# - threading (thread operations)
+# - sqlite3 (SQLite database)
+# - smtplib (email sending)
+# - socket (network operations)
+# - subprocess (process execution)
+# - time (time operations)
+# - collections (data structures)
+# - statistics (statistical functions)
+
+# Development and testing dependencies
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+
+# Code quality tools
+black>=22.0.0          # Code formatting
+flake8>=5.0.0          # Linting
+mypy>=1.0.0            # Type checking
+
+# Optional: Performance and monitoring
+# prometheus_client>=0.14.0  # Metrics export (optional)
+# grafana-api>=1.0.3         # Dashboard integration (optional)

@@ -4,7 +4,7 @@
 
 set -e
 
-STAGING_URL="https://staging.list-cutter.com"
+STAGING_URL="https://staging.cutty.com"
 MAX_RETRIES=30
 RETRY_DELAY=10
 

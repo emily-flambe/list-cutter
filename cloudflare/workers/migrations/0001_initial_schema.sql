@@ -2,7 +2,7 @@
 PRAGMA foreign_keys = ON;
 
 -- Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     email TEXT UNIQUE NOT NULL,
     username TEXT UNIQUE NOT NULL,
@@ -16,11 +16,11 @@ CREATE TABLE users (
     last_login DATETIME
 );
 
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
 -- Files table
-CREATE TABLE files (
+CREATE TABLE IF NOT EXISTS files (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id TEXT NOT NULL,
     filename TEXT NOT NULL,
@@ -28,6 +28,7 @@ CREATE TABLE files (
     file_size INTEGER NOT NULL,
     mime_type TEXT NOT NULL,
     r2_key TEXT UNIQUE NOT NULL,
+    checksum TEXT,
     upload_status TEXT DEFAULT 'pending' CHECK (upload_status IN ('pending', 'processing', 'completed', 'failed')),
     processing_error TEXT,
     row_count INTEGER,
@@ -40,12 +41,14 @@ CREATE TABLE files (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_files_user_id ON files(user_id);
-CREATE INDEX idx_files_created_at ON files(created_at);
-CREATE INDEX idx_files_status ON files(upload_status);
+CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id);
+CREATE INDEX IF NOT EXISTS idx_files_r2_key ON files(r2_key);
+CREATE INDEX IF NOT EXISTS idx_files_created_at ON files(created_at);
+CREATE INDEX IF NOT EXISTS idx_files_status ON files(upload_status);
+CREATE INDEX IF NOT EXISTS idx_files_checksum ON files(checksum);
 
 -- Saved filters table
-CREATE TABLE saved_filters (
+CREATE TABLE IF NOT EXISTS saved_filters (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id TEXT NOT NULL,
     file_id TEXT NOT NULL,
@@ -60,11 +63,11 @@ CREATE TABLE saved_filters (
     FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_saved_filters_user_id ON saved_filters(user_id);
-CREATE INDEX idx_saved_filters_file_id ON saved_filters(file_id);
+CREATE INDEX IF NOT EXISTS idx_saved_filters_user_id ON saved_filters(user_id);
+CREATE INDEX IF NOT EXISTS idx_saved_filters_file_id ON saved_filters(file_id);
 
 -- API keys table (for future use)
-CREATE TABLE api_keys (
+CREATE TABLE IF NOT EXISTS api_keys (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id TEXT NOT NULL,
     key_hash TEXT UNIQUE NOT NULL,
@@ -77,11 +80,11 @@ CREATE TABLE api_keys (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_api_keys_user_id ON api_keys(user_id);
-CREATE INDEX idx_api_keys_key_hash ON api_keys(key_hash);
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash);
 
 -- Audit log table
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id TEXT,
     action TEXT NOT NULL,
@@ -94,24 +97,24 @@ CREATE TABLE audit_logs (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
-CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 
 -- Create triggers for updated_at
-CREATE TRIGGER update_users_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_users_timestamp 
 AFTER UPDATE ON users
 BEGIN
     UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_files_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_files_timestamp 
 AFTER UPDATE ON files
 BEGIN
     UPDATE files SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_saved_filters_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_saved_filters_timestamp 
 AFTER UPDATE ON saved_filters
 BEGIN
     UPDATE saved_filters SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;

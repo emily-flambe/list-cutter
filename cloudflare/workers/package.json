@@ -1,5 +1,5 @@
 {
-  "name": "list-cutter-workers",
+  "name": "cutty-workers",
   "version": "0.1.0",
   "type": "module",
   "main": "src/index.ts",
@@ -30,11 +30,11 @@
     "prettier": "^3.4.2",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8",
-    "wrangler": "^3.98.0"
+    "wrangler": "^4.23.0"
   },
   "dependencies": {
-    "hono": "^4.6.16",
     "drizzle-orm": "^0.38.4",
+    "hono": "^4.6.16",
     "jose": "^5.10.0",
     "zod": "^3.24.1"
   }
