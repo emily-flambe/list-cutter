@@ -27,6 +27,14 @@ import { SecurityConfigManager } from './config/security-config';
 import { SecurityMonitorService } from './services/security/security-monitor';
 import { SecurityMetricsCollector } from './services/security/metrics-collector';
 import { SecurityHeadersMiddleware } from './middleware/security-headers';
+import { ProductionSecurityMiddleware } from './middleware/security-middleware';
+import { SecurityManager } from './services/security/security-manager';
+import { AccessControlService } from './services/security/access-control';
+import { ComplianceManager } from './services/security/compliance-manager';
+import { QuotaManager } from './services/security/quota-manager';
+import { SecurityAuditLogger } from './services/security/audit-logger';
+import { SecurityEventLogger } from './services/security-event-logger';
+import { MetricsService } from './services/monitoring/metrics-service';
 
 // Import route handlers
 import migrationRoutes from './routes/migration.js';
@@ -44,6 +52,9 @@ type HonoVariables = {
   securityConfig?: SecurityConfigManager;
   securityMonitor?: SecurityMonitorService;
   securityMetrics?: SecurityMetricsCollector;
+  securityMiddleware?: ProductionSecurityMiddleware;
+  securityEventLogger?: SecurityEventLogger;
+  userId?: string;
 };
 
 const app = new Hono<{ Bindings: CloudflareEnv; Variables: HonoVariables }>();
@@ -53,6 +64,8 @@ let securityConfigManager: SecurityConfigManager;
 let securityMonitor: SecurityMonitorService;
 let securityMetricsCollector: SecurityMetricsCollector;
 let securityHeadersMiddleware: SecurityHeadersMiddleware;
+let productionSecurityMiddleware: ProductionSecurityMiddleware;
+let securityEventLogger: SecurityEventLogger;
 
 // Security initialization middleware
 app.use('*', async (c, next): Promise<void> => {
@@ -123,6 +136,28 @@ app.use('*', async (c, next): Promise<void> => {
         skipPaths: ['/health', '/favicon.ico', '/robots.txt', '/test-r2', '/test-phase5']
       });
 
+      // Initialize core security services if database is available
+      if (c.env.DB && c.env.FILE_STORAGE) {
+        const metricsService = new MetricsService(c.env.ANALYTICS, c.env.DB);
+        const securityAuditLogger = new SecurityAuditLogger(c.env.DB, c.env.ANALYTICS);
+        securityEventLogger = new SecurityEventLogger(c.env.DB, metricsService, c.env.SECURITY_ALERT_WEBHOOK);
+        
+        // Initialize security management services
+        const securityManager = new SecurityManager(c.env.DB, c.env.FILE_STORAGE, c.env.ANALYTICS);
+        const accessControl = new AccessControlService(c.env.DB);
+        const complianceManager = new ComplianceManager(c.env.DB);
+        const quotaManager = new QuotaManager(c.env.DB);
+
+        // Initialize production security middleware
+        productionSecurityMiddleware = new ProductionSecurityMiddleware(
+          securityManager,
+          accessControl,
+          securityAuditLogger,
+          complianceManager,
+          quotaManager
+        );
+      }
+
       console.warn('Security services initialized successfully');
     } catch (error) {
       console.error('Failed to initialize security services:', error);
@@ -134,6 +169,8 @@ app.use('*', async (c, next): Promise<void> => {
   c.set('securityConfig', securityConfigManager);
   c.set('securityMonitor', securityMonitor);
   c.set('securityMetrics', securityMetricsCollector);
+  c.set('securityMiddleware', productionSecurityMiddleware);
+  c.set('securityEventLogger', securityEventLogger);
 
   await next();
 });
