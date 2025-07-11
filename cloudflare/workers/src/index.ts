@@ -195,6 +195,113 @@ app.use('*', async (c, next): Promise<void> => {
   }
 });
 
+// Production security middleware for file operations
+app.use('*', async (c, next): Promise<void> => {
+  try {
+    const middleware = c.get('securityMiddleware') as ProductionSecurityMiddleware;
+    const eventLogger = c.get('securityEventLogger') as SecurityEventLogger;
+    
+    if (middleware && eventLogger) {
+      // Apply security validation for file operations
+      const path = c.req.path;
+      const method = c.req.method;
+
+      if (path.includes('/files') || path.includes('/api/files')) {
+        // Extract user ID from Authorization header
+        const authHeader = c.req.header('Authorization');
+        let userId = 'anonymous';
+        
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          // TODO: Implement proper JWT token validation
+          userId = 'authenticated_user';
+        }
+        
+        c.set('userId', userId);
+
+        if (method === 'POST' || method === 'PUT') {
+          // File upload validation
+          const validationResult = await middleware.validateFileUpload(c.req.raw, c);
+          
+          if (!validationResult.isValid) {
+            await eventLogger.logSecurityEvent({
+              id: crypto.randomUUID(),
+              type: SecurityEventType.FILE_UPLOAD_BLOCKED,
+              severity: SecurityEventSeverity.HIGH,
+              category: SecurityEventCategory.ACCESS_CONTROL,
+              riskLevel: RiskLevel.HIGH,
+              userId,
+              ipAddress: c.req.header('CF-Connecting-IP'),
+              userAgent: c.req.header('User-Agent'),
+              timestamp: new Date(),
+              message: 'File upload blocked by security middleware',
+              details: {
+                violations: validationResult.violations,
+                riskScore: validationResult.riskScore
+              },
+              requiresResponse: false,
+              actionTaken: 'upload_blocked'
+            });
+            
+            return c.json({
+              error: 'Security validation failed',
+              details: validationResult.violations,
+              recommendations: validationResult.recommendations,
+              riskScore: validationResult.riskScore
+            }, 400);
+          }
+        }
+
+        if (method === 'GET' && path.includes('/download')) {
+          // File download validation
+          const fileId = path.split('/').find((segment, index, arr) => 
+            arr[index - 1] === 'files' && segment !== 'download'
+          );
+          
+          if (fileId) {
+            const hasAccess = await middleware.enforceFileAccess(fileId, userId, 'download', c);
+            
+            if (!hasAccess) {
+              return c.json({
+                error: 'Access denied',
+                message: 'Insufficient permissions to access this file'
+              }, 403);
+            }
+          }
+        }
+      }
+    }
+
+    await next();
+  } catch (error) {
+    console.error('Security middleware error:', error);
+    
+    // Log security middleware error
+    const eventLogger = c.get('securityEventLogger') as SecurityEventLogger;
+    if (eventLogger) {
+      await eventLogger.logSecurityEvent({
+        id: crypto.randomUUID(),
+        type: SecurityEventType.SYSTEM_ERROR,
+        severity: SecurityEventSeverity.HIGH,
+        category: SecurityEventCategory.SYSTEM_FAILURE,
+        riskLevel: RiskLevel.HIGH,
+        timestamp: new Date(),
+        message: 'Security middleware error',
+        details: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          path: c.req.path,
+          method: c.req.method
+        },
+        requiresResponse: true
+      });
+    }
+    
+    return c.json({
+      error: 'Security validation failed',
+      message: 'Internal security error'
+    }, 500);
+  }
+});
+
 app.use('*', prettyJSON());
 
 // CORS configuration
