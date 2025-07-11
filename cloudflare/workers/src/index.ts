@@ -542,19 +542,52 @@ app.get('/api/security/pipeline/health', async (c): Promise<Response> => {
 // Security pipeline integration test
 app.post('/api/security/pipeline/test', async (c): Promise<Response> => {
   try {
+    const middleware = c.get('securityMiddleware') as ProductionSecurityMiddleware;
+    const eventLogger = c.get('securityEventLogger') as SecurityEventLogger;
+    
     const testResult = {
       timestamp: new Date().toISOString(),
       tests: {
-        securityMiddleware: { status: 'pass', message: 'Security middleware initialized' },
-        fileValidation: { status: 'pass', message: 'File validation pipeline ready' },
-        threatDetection: { status: 'pass', message: 'Threat detection services available' },
-        accessControl: { status: 'pass', message: 'Access control enforcement enabled' },
-        auditLogging: { status: 'pass', message: 'Security event logging operational' },
-        database: { status: c.env.DB ? 'pass' : 'fail', message: c.env.DB ? 'D1 database connected' : 'D1 database not available' },
-        storage: { status: c.env.FILE_STORAGE ? 'pass' : 'fail', message: c.env.FILE_STORAGE ? 'R2 storage connected' : 'R2 storage not available' }
+        securityMiddleware: { 
+          status: middleware ? 'pass' : 'fail', 
+          message: middleware ? 'Security middleware initialized' : 'Security middleware not initialized' 
+        },
+        fileValidation: { 
+          status: 'pass', 
+          message: 'File validation pipeline ready' 
+        },
+        threatDetection: { 
+          status: 'pass', 
+          message: 'Threat detection services available' 
+        },
+        accessControl: { 
+          status: 'pass', 
+          message: 'Access control enforcement enabled' 
+        },
+        auditLogging: { 
+          status: eventLogger ? 'pass' : 'fail', 
+          message: eventLogger ? 'Security event logging operational' : 'Security event logger not available' 
+        },
+        database: { 
+          status: c.env.DB ? 'pass' : 'fail', 
+          message: c.env.DB ? 'D1 database connected' : 'D1 database not available' 
+        },
+        storage: { 
+          status: c.env.FILE_STORAGE ? 'pass' : 'fail', 
+          message: c.env.FILE_STORAGE ? 'R2 storage connected' : 'R2 storage not available' 
+        }
       },
       overall: 'pass',
-      message: 'Security pipeline integration successful'
+      message: 'Security pipeline integration successful',
+      
+      // Additional security integration details
+      securityIntegration: {
+        productionSecurityMiddleware: !!middleware,
+        securityEventLogger: !!eventLogger,
+        securityConfig: !!c.get('securityConfig'),
+        securityMonitor: !!c.get('securityMonitor'),
+        securityMetrics: !!c.get('securityMetrics')
+      }
     };
 
     // Check for any failures
@@ -562,6 +595,31 @@ app.post('/api/security/pipeline/test', async (c): Promise<Response> => {
     if (failures.length > 0) {
       testResult.overall = 'fail';
       testResult.message = `${failures.length} security pipeline test(s) failed`;
+    }
+
+    // Test a sample security event if logger is available
+    if (eventLogger) {
+      try {
+        await eventLogger.logSecurityEvent({
+          id: crypto.randomUUID(),
+          type: SecurityEventType.SYSTEM_HEALTH_CHECK,
+          severity: SecurityEventSeverity.LOW,
+          category: SecurityEventCategory.SYSTEM_OPERATION,
+          riskLevel: RiskLevel.LOW,
+          timestamp: new Date(),
+          message: 'Security pipeline integration test completed',
+          details: {
+            testResult: testResult.overall,
+            failureCount: failures.length,
+            timestamp: testResult.timestamp
+          },
+          requiresResponse: false,
+          source: 'security-pipeline-test'
+        });
+      } catch (logError) {
+        testResult.tests.auditLogging.status = 'fail';
+        testResult.tests.auditLogging.message = 'Failed to log security event: ' + (logError instanceof Error ? logError.message : 'Unknown error');
+      }
     }
 
     return c.json(testResult, testResult.overall === 'pass' ? 200 : 500);

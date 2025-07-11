@@ -6,7 +6,7 @@
 PRAGMA foreign_keys = ON;
 
 -- Create the files table (required for R2 operations)
-CREATE TABLE files (
+CREATE TABLE IF NOT EXISTS files (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id INTEGER NOT NULL,
     filename TEXT NOT NULL,
@@ -36,7 +36,7 @@ CREATE INDEX idx_files_checksum ON files(checksum);
 CREATE INDEX idx_files_storage_class ON files(storage_class);
 
 -- Create saved_filters table (required for filtering operations)
-CREATE TABLE saved_filters (
+CREATE TABLE IF NOT EXISTS saved_filters (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id INTEGER NOT NULL,
     file_id TEXT NOT NULL,
@@ -55,7 +55,7 @@ CREATE INDEX idx_saved_filters_user_id ON saved_filters(user_id);
 CREATE INDEX idx_saved_filters_file_id ON saved_filters(file_id);
 
 -- Create API keys table (required for authentication)
-CREATE TABLE api_keys (
+CREATE TABLE IF NOT EXISTS api_keys (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id INTEGER NOT NULL,
     key_hash TEXT UNIQUE NOT NULL,
@@ -72,7 +72,7 @@ CREATE INDEX idx_api_keys_user_id ON api_keys(user_id);
 CREATE INDEX idx_api_keys_key_hash ON api_keys(key_hash);
 
 -- Create audit_logs table (required for security tracking)
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id INTEGER,
     action TEXT NOT NULL,
@@ -90,7 +90,7 @@ CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 
 -- Create multipart_uploads table (required for large file uploads)
-CREATE TABLE multipart_uploads (
+CREATE TABLE IF NOT EXISTS multipart_uploads (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     upload_id TEXT UNIQUE NOT NULL, -- R2 multipart upload ID
     file_id TEXT NOT NULL,
