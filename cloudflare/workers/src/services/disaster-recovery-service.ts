@@ -18,20 +18,72 @@ import {
 import { CloudflareEnv } from '../types/env';
 import { BackupService } from './backup-service';
 import { BackupVerificationService } from './backup-verification-service';
+import { DegradedModeService } from './degraded-mode-service';
 
 export class DisasterRecoveryService {
   private readonly env: CloudflareEnv;
   private readonly backupService: BackupService;
   private readonly verificationService: BackupVerificationService;
+  private readonly degradedModeService: DegradedModeService;
 
   constructor(
     env: CloudflareEnv,
     backupService: BackupService,
-    verificationService: BackupVerificationService
+    verificationService: BackupVerificationService,
+    degradedModeService: DegradedModeService
   ) {
     this.env = env;
     this.backupService = backupService;
     this.verificationService = verificationService;
+    this.degradedModeService = degradedModeService;
+  }
+
+  async initiateAutomatedDisasterRecovery(): Promise<RecoveryResult> {
+    console.log('Starting automated disaster recovery assessment');
+    
+    try {
+      // 1. Assess current system health
+      const systemHealth = await this.getSystemHealthStatus();
+      
+      // 2. Determine if disaster recovery is needed
+      const scenario = await this.detectDisasterScenario(systemHealth);
+      
+      if (!scenario) {
+        console.log('No disaster scenario detected, system is healthy');
+        return {
+          recoveryId: 'no-recovery-needed',
+          scenario: {
+            type: 'partial_outage',
+            severity: 'low',
+            affectedServices: [],
+            estimatedDowntime: 0,
+            description: 'System is healthy'
+          },
+          strategy: { type: 'partial_restore', steps: [], estimatedTime: 0, prerequisites: [] },
+          duration: 0,
+          status: 'completed',
+          verification: {
+            isSuccessful: true,
+            systemHealth,
+            functionalTests: [],
+            dataIntegrity: await this.getDataIntegrityStatus()
+          },
+          metadata: {
+            dataRecovered: 0,
+            servicesRestored: [],
+            degradedServices: [],
+            rollbackRequired: false
+          }
+        };
+      }
+      
+      // 3. Initiate disaster recovery
+      return await this.initiateDisasterRecovery(scenario);
+      
+    } catch (error) {
+      console.error('Automated disaster recovery failed:', error);
+      throw error;
+    }
   }
 
   async initiateDisasterRecovery(scenario: DisasterScenario): Promise<RecoveryResult> {

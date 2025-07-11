@@ -44,6 +44,7 @@ import dashboardMonitoringRoutes from './routes/dashboard-monitoring.js';
 import backupRoutes from './routes/backup-routes.js';
 import disasterRecoveryRoutes from './routes/disaster-recovery-routes.js';
 import dataExportRoutes from './routes/data-export-routes.js';
+import performanceOptimizationRoutes from './routes/performance-optimization.js';
 // import authRoutes from '@routes/auth';
 // import csvRoutes from '@routes/csv';
 // import userRoutes from '@routes/users';
@@ -918,6 +919,7 @@ v1.route('/dashboard', dashboardMonitoringRoutes); // Dashboard monitoring route
 v1.route('/backup', backupRoutes); // Backup routes at /api/backup/*
 v1.route('/disaster-recovery', disasterRecoveryRoutes); // Disaster recovery routes at /api/disaster-recovery/*
 v1.route('/data-export', dataExportRoutes); // Data export routes at /api/data-export/*
+v1.route('/performance', performanceOptimizationRoutes); // Performance optimization routes at /api/performance/*
 // v1.route('/auth', authRoutes);
 // v1.route('/csv', csvRoutes);
 // v1.route('/users', userRoutes);

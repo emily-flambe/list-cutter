@@ -15,6 +15,7 @@ import {
   BackupMonitoringMetrics
 } from '../types/backup';
 import { CloudflareEnv } from '../types/env';
+import { CompressionService } from './compression-service';
 
 export interface BackupService {
   // Full system backup
@@ -44,9 +45,11 @@ export interface BackupService {
 export class ComprehensiveBackupService implements BackupService {
   private readonly env: CloudflareEnv;
   private readonly retentionPolicy: RetentionPolicy;
+  private readonly compressionService: CompressionService;
 
   constructor(env: CloudflareEnv) {
     this.env = env;
+    this.compressionService = new CompressionService();
     this.retentionPolicy = {
       dailyRetentionDays: 30,
       weeklyRetentionWeeks: 12,
@@ -253,20 +256,20 @@ export class ComprehensiveBackupService implements BackupService {
     };
     
     // 3. Compress and encrypt backup
-    const compressedData = await this.compressBackup(backupData);
-    const encryptedData = await this.encryptBackup(compressedData);
+    const compressionResult = await this.compressBackup(backupData);
+    const encryptionResult = await this.encryptBackup(compressionResult.compressed);
     
     // 4. Store backup in cross-region bucket
     const backupKey = `database-backups/${Date.now()}-${this.generateBackupId()}-database-backup.enc`;
-    await this.env.BACKUP_STORAGE.put(backupKey, encryptedData);
+    await this.storeBackupWithRedundancy(backupKey, encryptionResult.encrypted);
     
-    console.log(`Database backup completed: ${backupKey}, Size: ${encryptedData.length}`);
+    console.log(`Database backup completed: ${backupKey}, Size: ${encryptionResult.encrypted.length}`);
     
     return {
       backupKey,
-      size: encryptedData.length,
+      size: encryptionResult.encrypted.length,
       itemCount: totalItems,
-      checksum: await this.calculateChecksum(encryptedData),
+      checksum: await this.calculateChecksum(encryptionResult.encrypted),
       tables: exportedTables
     };
   }
@@ -370,19 +373,19 @@ export class ComprehensiveBackupService implements BackupService {
     };
     
     // 3. Compress and encrypt configuration
-    const compressedData = await this.compressBackup(configData);
-    const encryptedData = await this.encryptBackup(compressedData);
+    const compressionResult = await this.compressBackup(configData);
+    const encryptionResult = await this.encryptBackup(compressionResult.compressed);
     
     // 4. Store configuration backup
     const configKey = `config-backups/${Date.now()}-config-backup.enc`;
-    await this.env.BACKUP_STORAGE.put(configKey, encryptedData);
+    await this.storeBackupWithRedundancy(configKey, encryptionResult.encrypted);
     
     console.log(`Configuration backup completed: ${configKey}`);
     
     return {
       configKey,
-      size: encryptedData.length,
-      checksum: await this.calculateChecksum(encryptedData),
+      size: encryptionResult.encrypted.length,
+      checksum: await this.calculateChecksum(encryptionResult.encrypted),
       settings
     };
   }
@@ -575,6 +578,57 @@ export class ComprehensiveBackupService implements BackupService {
     };
   }
 
+  private async storeEncryptionKey(key: ArrayBuffer): Promise<void> {
+    try {
+      // Store encryption key securely
+      // In production, use a proper key management service
+      const keyId = `backup-key-${Date.now()}`;
+      const keyData = new Uint8Array(key);
+      
+      // Store key in backup storage (in production, use dedicated key management)
+      await this.env.BACKUP_STORAGE.put(`keys/${keyId}`, keyData);
+      
+      console.log(`Encryption key stored: ${keyId}`);
+    } catch (error) {
+      console.error('Failed to store encryption key:', error);
+    }
+  }
+
+  private async storeBackupWithRedundancy(backupKey: string, data: Uint8Array): Promise<void> {
+    try {
+      // Primary backup storage
+      await this.env.BACKUP_STORAGE.put(backupKey, data);
+      
+      // Cross-region redundancy (if secondary backup storage is available)
+      if (this.env.BACKUP_STORAGE_SECONDARY) {
+        try {
+          await this.env.BACKUP_STORAGE_SECONDARY.put(backupKey, data);
+          console.log(`Cross-region backup stored: ${backupKey}`);
+        } catch (secondaryError) {
+          console.error('Secondary backup storage failed:', secondaryError);
+          // Continue with primary backup even if secondary fails
+        }
+      }
+      
+      // Additional redundancy: store backup metadata for recovery
+      const metadataKey = `${backupKey}.metadata`;
+      const metadata = {
+        originalKey: backupKey,
+        size: data.length,
+        created: new Date().toISOString(),
+        checksum: await this.calculateChecksum(data),
+        redundancy: this.env.BACKUP_STORAGE_SECONDARY ? 'cross-region' : 'single-region'
+      };
+      
+      await this.env.BACKUP_STORAGE.put(metadataKey, JSON.stringify(metadata));
+      
+      console.log(`Backup stored with redundancy: ${backupKey}`);
+    } catch (error) {
+      console.error('Failed to store backup with redundancy:', error);
+      throw error;
+    }
+  }
+
   private createBackupManifest(backupId: string, data: {
     database: DatabaseBackupResult;
     files: FileBackupResult;
@@ -656,16 +710,117 @@ export class ComprehensiveBackupService implements BackupService {
     return await this.backupFileStorage();
   }
 
-  private async compressBackup(data: unknown): Promise<Uint8Array> {
-    // Simple compression using gzip
+  private async compressBackup(data: unknown): Promise<{
+    compressed: Uint8Array;
+    metadata: CompressionMetadata;
+  }> {
     const jsonData = JSON.stringify(data);
     const encoder = new TextEncoder();
-    return encoder.encode(jsonData); // In production, use actual compression
+    const originalData = encoder.encode(jsonData);
+    const originalSize = originalData.length;
+    
+    try {
+      // Use real compression service
+      const compressionResult = await this.compressionService.compressFile(
+        originalData.buffer,
+        { contentType: 'application/json' }
+      );
+      
+      if (compressionResult.success && compressionResult.data) {
+        const compressedData = new Uint8Array(compressionResult.data);
+        return {
+          compressed: compressedData,
+          metadata: {
+            algorithm: compressionResult.algorithm,
+            originalSize: originalSize,
+            compressedSize: compressedData.length,
+            compressionRatio: compressionResult.compressionRatio
+          }
+        };
+      } else {
+        // Fallback to uncompressed if compression fails
+        return {
+          compressed: originalData,
+          metadata: {
+            algorithm: 'none',
+            originalSize: originalSize,
+            compressedSize: originalSize,
+            compressionRatio: 1.0
+          }
+        };
+      }
+    } catch (error) {
+      console.error('Compression failed, using uncompressed data:', error);
+      return {
+        compressed: originalData,
+        metadata: {
+          algorithm: 'none',
+          originalSize: originalSize,
+          compressedSize: originalSize,
+          compressionRatio: 1.0
+        }
+      };
+    }
   }
 
-  private async encryptBackup(data: Uint8Array): Promise<Uint8Array> {
-    // Simple encryption placeholder - in production use proper encryption
-    return data;
+  private async encryptBackup(data: Uint8Array): Promise<{
+    encrypted: Uint8Array;
+    metadata: EncryptionMetadata;
+  }> {
+    try {
+      // Generate encryption key using Web Crypto API
+      const key = await crypto.subtle.generateKey(
+        {
+          name: 'AES-GCM',
+          length: 256
+        },
+        true,
+        ['encrypt', 'decrypt']
+      );
+      
+      // Generate random IV
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      
+      // Encrypt the data
+      const encryptedData = await crypto.subtle.encrypt(
+        {
+          name: 'AES-GCM',
+          iv: iv
+        },
+        key,
+        data
+      );
+      
+      // Export the key for storage
+      const exportedKey = await crypto.subtle.exportKey('raw', key);
+      
+      // Combine IV + encrypted data
+      const result = new Uint8Array(iv.length + encryptedData.byteLength);
+      result.set(iv);
+      result.set(new Uint8Array(encryptedData), iv.length);
+      
+      // Store encryption key securely (in production, use proper key management)
+      await this.storeEncryptionKey(exportedKey);
+      
+      return {
+        encrypted: result,
+        metadata: {
+          algorithm: 'AES-256-GCM',
+          keyVersion: '1',
+          encrypted: true
+        }
+      };
+    } catch (error) {
+      console.error('Encryption failed, using unencrypted data:', error);
+      return {
+        encrypted: data,
+        metadata: {
+          algorithm: 'none',
+          keyVersion: '1',
+          encrypted: false
+        }
+      };
+    }
   }
 
   private async calculateChecksum(data: string | Uint8Array): Promise<string> {
