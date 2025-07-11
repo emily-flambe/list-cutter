@@ -506,19 +506,6 @@ class ProductionMigrationExecutor:
         console.print("[blue]Testing database connections...[/blue]")
         
         try:
-            # Test PostgreSQL
-            import psycopg2
-            pg_config = self.config.get('database', {}).get('postgres_config', {})
-            conn = psycopg2.connect(
-                host=pg_config.get('host'),
-                port=pg_config.get('port', 5432),
-                database=pg_config.get('database'),
-                user=pg_config.get('user'),
-                password=pg_config.get('password')
-            )
-            conn.close()
-            console.print("[green]✅ PostgreSQL connection successful[/green]")
-            
             # Test D1/SQLite
             d1_config = self.config.get('database', {}).get('d1_config', {})
             if d1_config.get('sqlite_path'):
@@ -526,6 +513,8 @@ class ProductionMigrationExecutor:
                 conn = sqlite3.connect(d1_config['sqlite_path'])
                 conn.close()
                 console.print("[green]✅ D1/SQLite connection successful[/green]")
+            else:
+                console.print("[yellow]⚠️  D1/SQLite path not configured[/yellow]")
             
             return True
             

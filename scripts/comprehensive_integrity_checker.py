@@ -41,7 +41,6 @@ import uuid
 import aiohttp
 import aiofiles
 import click
-import psycopg2
 import numpy as np
 from rich.console import Console
 from rich.table import Table

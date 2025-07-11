@@ -38,7 +38,6 @@ from collections import defaultdict, Counter
 import sqlite3
 
 import click
-import psycopg2
 import requests
 from rich.console import Console
 from rich.table import Table

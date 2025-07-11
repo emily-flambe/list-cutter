@@ -65,8 +65,8 @@ export class ComprehensiveBackupService implements BackupService {
     try {
       console.log(`Starting full backup: ${backupId}`);
       
-      // 1. Create backup metadata
-      const backupMetadata = this.createBackupMetadata(backupId, 'full');
+      // 1. Create backup metadata (will be updated with real metadata after compression/encryption)
+      let backupMetadata = this.createBackupMetadata(backupId, 'full');
       
       // 2. Backup database
       const dbBackup = await this.backupDatabase();
@@ -557,19 +557,24 @@ export class ComprehensiveBackupService implements BackupService {
     return `backup-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private createBackupMetadata(backupId: string, type: 'full' | 'incremental' | 'differential'): BackupMetadata {
+  private createBackupMetadata(
+    backupId: string, 
+    type: 'full' | 'incremental' | 'differential',
+    compressionMetadata?: CompressionMetadata,
+    encryptionMetadata?: EncryptionMetadata
+  ): BackupMetadata {
     return {
       timestamp: new Date().toISOString(),
       version: '1.0',
       environment: this.env.ENVIRONMENT,
       createdBy: 'system',
       retention: this.retentionPolicy,
-      encryption: {
+      encryption: encryptionMetadata || {
         algorithm: 'AES-256-GCM',
         keyVersion: '1',
         encrypted: true
       },
-      compression: {
+      compression: compressionMetadata || {
         algorithm: 'gzip',
         originalSize: 0,
         compressedSize: 0,
