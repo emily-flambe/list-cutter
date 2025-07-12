@@ -122,10 +122,9 @@ dataset = "cutty-metrics"
 # Due to API parsing issues with complex cron configs in wrangler.toml,
 # these will be set up separately using: wrangler triggers deploy
 
-# Staging environment
+# Staging environment - same worker, different routes and vars
 [env.staging]
-name = "cutty-staging"
-vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://staging.cutty.emilycogsdill.com" }
+vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://cutty-staging.emilycogsdill.com" }
 routes = [
   { pattern = "cutty-staging.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
@@ -157,9 +156,8 @@ dataset = "cutty-metrics-staging"
 
 # KV configuration for staging will be added when needed
 
-# Production environment
+# Production environment - same worker, different routes and vars
 [env.production]
-name = "cutty-production"
 vars = { ENVIRONMENT = "production", CORS_ORIGIN = "https://cutty.emilycogsdill.com" }
 routes = [
   { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }

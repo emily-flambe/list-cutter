@@ -104,25 +104,18 @@ create_or_update_dns_record() {
     fi
 }
 
-# 1. Frontend Worker - points to Cloudflare Pages
-print_status "🎯 Configuring frontend domain records..."
+# 1. Unified Worker - points to single Cloudflare Worker
+print_status "🎯 Configuring unified worker domain records..."
 
-# Frontend subdomain (cutty.emilycogsdill.com)
-create_or_update_dns_record "CNAME" "cutty" "cutty-frontend.pages.dev" true 1
-
-# List-cutter subdomain (list-cutter.emilycogsdill.com)
-create_or_update_dns_record "CNAME" "list-cutter" "cutty-frontend.pages.dev" true 1
-
-# 2. Backend Worker - points to Cloudflare Workers
-print_status "🔧 Configuring backend API domain records..."
-
-# API subdomain (cutty.emilycogsdill.com)
+# Main subdomain (cutty.emilycogsdill.com) - unified worker handles all traffic
 create_or_update_dns_record "CNAME" "cutty" "cutty.workers.dev" true 1
 
-# 3. Staging subdomains (for testing)
-print_status "🧪 Configuring staging subdomains..."
-create_or_update_dns_record "CNAME" "cutty-staging" "cutty-frontend-staging.pages.dev" true 300
-create_or_update_dns_record "CNAME" "cutty-staging" "cutty-staging.workers.dev" true 300
+# List-cutter subdomain (list-cutter.emilycogsdill.com) - redirect to main
+create_or_update_dns_record "CNAME" "list-cutter" "cutty.workers.dev" true 1
+
+# 2. Staging environment (for testing)
+print_status "🧪 Configuring staging subdomain..."
+create_or_update_dns_record "CNAME" "cutty-staging" "cutty.workers.dev" true 300
 
 # 4. TXT records for verification and security
 print_status "🔒 Configuring security and verification records..."
@@ -219,12 +212,9 @@ print_success "🎉 DNS configuration completed!"
 echo ""
 echo "DNS Configuration Summary:"
 echo "========================="
-echo "✅ Root domain: $DOMAIN → Unified Worker"
-echo "✅ WWW subdomain: www.$DOMAIN → Unified Worker"
-echo "✅ Staging subdomain: staging.$DOMAIN → Staging Worker"
-echo "✅ API subdomain: api.$DOMAIN → Unified Worker"
-echo "✅ Admin subdomain: admin.$DOMAIN → Unified Worker"
-echo "✅ Status subdomain: status.$DOMAIN → Unified Worker"
+echo "✅ Main domain: cutty.$DOMAIN → Unified Worker"
+echo "✅ List-cutter domain: list-cutter.$DOMAIN → Unified Worker"
+echo "✅ Staging subdomain: cutty-staging.$DOMAIN → Unified Worker (staging env)"
 echo "✅ Security records: SPF, DMARC configured"
 echo "✅ SSL configuration: Full (strict) mode"
 echo "✅ Performance optimization: Enabled"
@@ -232,8 +222,8 @@ echo ""
 print_warning "📝 Important notes:"
 echo "• DNS propagation may take up to 24 hours globally"
 echo "• SSL certificates may take a few minutes to provision"
-echo "• All traffic now routes through the unified Worker"
-echo "• Old separate frontend/backend architecture is replaced"
+echo "• All traffic routes through the single unified Worker"
+echo "• Environment routing handled by worker environment variables"
 echo ""
 print_success "🌐 Domain configuration ready for unified Workers deployment!"
 
@@ -249,12 +239,9 @@ Domain: $DOMAIN
 Zone ID: $ZONE_ID
 
 Records Configured:
-- @ (root) → cutty-production.workers.dev (proxied)
-- www → cutty-production.workers.dev (proxied)
-- staging → cutty-staging.workers.dev (proxied)
-- api → cutty-production.workers.dev (proxied)
-- admin → cutty-production.workers.dev (proxied)
-- status → cutty-production.workers.dev (proxied)
+- cutty → cutty.workers.dev (proxied)
+- list-cutter → cutty.workers.dev (proxied)
+- cutty-staging → cutty.workers.dev (proxied)
 
 Security Records:
 - SPF: v=spf1 include:_spf.cloudflare.com ~all

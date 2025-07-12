@@ -60,13 +60,9 @@ test_worker() {
     cd - > /dev/null
 }
 
-# Test backend worker
-echo -e "\n${YELLOW}=== Testing Backend Worker ===${NC}"
+# Test unified worker
+echo -e "\n${YELLOW}=== Testing Unified Worker ===${NC}"
 test_worker "cloudflare/workers" "cutty"
 
-# Test frontend worker
-echo -e "\n${YELLOW}=== Testing Frontend Worker ===${NC}"
-test_worker "app/frontend" "cutty-frontend"
-
 echo -e "\n${GREEN}Testing complete!${NC}"
-echo "If both workers deployed successfully, your preview deployment setup is working correctly."
+echo "If the unified worker deployed successfully, your preview deployment setup is working correctly."
