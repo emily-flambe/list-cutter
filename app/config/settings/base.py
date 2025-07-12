@@ -225,8 +225,9 @@ NEOMODEL_SIGNALS = False  # optional, depending on your use-case
 
 NEO4J_PASSWORD = get_env_variable("NEO4J_PASSWORD", "password")
 NEO4J_HOST = get_env_variable("NEO4J_HOST", "HOST_NOT_SET__RIP")
-# Local connection (like, from my computer)
-neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@host.docker.internal:7687'
+# Neo4j connection - updated for Cloudflare deployment (removed Docker-specific host.docker.internal)
+# This should be overridden in dev.py and prod.py with appropriate host settings
+# neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@{NEO4J_HOST}:7687'
 
 # D1 Database settings (Phase 4+)
 D1_DATABASE_CONFIG = {
