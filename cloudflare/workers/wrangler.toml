@@ -128,10 +128,14 @@ routes = [
 # binding = "ANALYTICS"
 # dataset = "cutty_analytics"
 
+# Staging D1 Database - DEPLOYMENT PREREQUISITE
+# Before deploying to staging, create the database with:
+# wrangler d1 create cutty-staging --env staging
+# Then update the database_id below with the returned ID
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "cutty-staging"
-database_id = "staging-database-id-placeholder"
+database_id = "REPLACE_WITH_ACTUAL_STAGING_DB_ID"
 
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"

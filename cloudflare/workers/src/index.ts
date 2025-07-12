@@ -220,6 +220,29 @@ app.use('*', async (c, next): Promise<void> => {
             const payload = await verifyJWT(token, c.env.JWT_SECRET, c.env);
             userId = payload.user_id.toString();
           } catch (error) {
+            // Log failed auth attempts for security monitoring
+            const eventLogger = c.get('securityEventLogger') as SecurityEventLogger;
+            if (eventLogger) {
+              await eventLogger.logSecurityEvent({
+                id: crypto.randomUUID(),
+                type: SecurityEventType.AUTHENTICATION_FAILURE,
+                severity: SecurityEventSeverity.MEDIUM,
+                category: SecurityEventCategory.ACCESS_CONTROL,
+                riskLevel: RiskLevel.MEDIUM,
+                userId: 'anonymous',
+                ipAddress: c.req.header('CF-Connecting-IP'),
+                userAgent: c.req.header('User-Agent'),
+                timestamp: new Date(),
+                message: 'JWT token verification failed',
+                details: {
+                  error: error instanceof Error ? error.message : 'Unknown error',
+                  path,
+                  method
+                },
+                requiresResponse: false,
+                actionTaken: 'access_denied'
+              });
+            }
             // Invalid token, keep as anonymous
             userId = 'anonymous';
           }
