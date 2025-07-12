@@ -1,6 +1,14 @@
 import type { Env, APIKey, APIKeyCreateRequest } from '../../types';
 import { APIPermission } from '../../types/permissions';
 import { SecurityLogger } from '../security/logger';
+import { 
+  APIKeyError, 
+  APIKeyNotFoundError, 
+  APIKeyExpiredError, 
+  APIKeyInactiveError,
+  EnvironmentError,
+  ValidationError 
+} from '../../types/errors';
 
 /**
  * API Key Service for programmatic authentication
@@ -242,6 +250,91 @@ export class APIKeyService {
       return null;
     }
   }
+
+  /**
+   * Enhanced API key validation with specific error types
+   * 
+   * This function provides the same functionality as validateAPIKey but throws
+   * specific error types instead of returning null, enabling better error
+   * handling and debugging in calling code.
+   * 
+   * @param apiKey - Full API key string including 'cutty_' prefix
+   * @returns Promise resolving to API key object
+   * @throws {ValidationError} When API key format is invalid
+   * @throws {APIKeyNotFoundError} When API key is not found
+   * @throws {APIKeyExpiredError} When API key has expired
+   * @throws {APIKeyInactiveError} When API key is inactive
+   * @throws {EnvironmentError} When salt configuration is invalid
+   */
+  async validateAPIKeyWithErrors(apiKey: string): Promise<APIKey> {
+    // Validate format
+    if (!apiKey) {
+      throw new ValidationError('API key is required', 'apiKey', apiKey);
+    }
+    
+    if (!apiKey.startsWith('cutty_')) {
+      throw new ValidationError('Invalid API key format - must start with cutty_', 'apiKey', apiKey);
+    }
+    
+    try {
+      // Hash the provided key (this will throw if salt is invalid)
+      const keyHash = await this.hashAPIKey(apiKey);
+      
+      // Look up in database without filtering for expiration/active status
+      const result = await this.env.DB.prepare(`
+        SELECT * FROM api_keys WHERE key_hash = ?
+      `).bind(keyHash).first();
+      
+      if (!result) {
+        throw new APIKeyNotFoundError();
+      }
+      
+      // Check if key is active
+      if (!result.is_active) {
+        throw new APIKeyInactiveError(result.key_id as string);
+      }
+      
+      // Check if key is expired
+      if (result.expires_at && result.expires_at <= Date.now()) {
+        throw new APIKeyExpiredError(result.key_id as string);
+      }
+      
+      // Update last_used timestamp
+      await this.env.DB.prepare(`
+        UPDATE api_keys SET last_used = ? WHERE key_id = ?
+      `).bind(Date.now(), result.key_id).run();
+      
+      // Return API key object
+      return {
+        key_id: result.key_id as string,
+        user_id: result.user_id as number,
+        name: result.name as string,
+        key_hash: result.key_hash as string,
+        key_prefix: result.key_prefix as string,
+        permissions: JSON.parse(result.permissions as string),
+        created_at: result.created_at as number,
+        last_used: Date.now(),
+        expires_at: result.expires_at as number,
+        is_active: Boolean(result.is_active),
+        rate_limit_override: result.rate_limit_override as number
+      };
+      
+    } catch (error) {
+      // Re-throw known errors
+      if (error instanceof APIKeyError || 
+          error instanceof ValidationError || 
+          error instanceof EnvironmentError) {
+        throw error;
+      }
+      
+      // Handle database errors
+      if (error instanceof Error) {
+        throw new APIKeyError(`API key validation failed: ${error.message}`, 'VALIDATION_ERROR');
+      }
+      
+      throw new APIKeyError('Unknown API key validation error', 'UNKNOWN_ERROR');
+    }
+  }
   
   async revokeAPIKey(keyId: string, userId: number): Promise<boolean> {
     try {
@@ -349,9 +442,23 @@ export class APIKeyService {
   }
   
   private async hashAPIKey(apiKey: string): Promise<string> {
-    const salt = this.env.API_KEY_SALT || 'default-salt-change-in-production';
+    // Ensure API_KEY_SALT is configured in production
+    if (!this.env.API_KEY_SALT) {
+      throw new Error('API_KEY_SALT environment variable is required for secure API key hashing');
+    }
+    
+    // Additional validation for production environments
+    if (this.env.API_KEY_SALT === 'default-salt-change-in-production') {
+      throw new Error('Default salt detected - API_KEY_SALT must be changed for production use');
+    }
+    
+    // Minimum salt length requirement
+    if (this.env.API_KEY_SALT.length < 32) {
+      throw new Error('API_KEY_SALT must be at least 32 characters long for security');
+    }
+    
     const encoder = new TextEncoder();
-    const data = encoder.encode(apiKey + salt);
+    const data = encoder.encode(apiKey + this.env.API_KEY_SALT);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     return btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
   }

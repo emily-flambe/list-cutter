@@ -1,5 +1,11 @@
 import { SignJWT, jwtVerify } from 'jose';
 import type { UserJWTPayload, User, TokenPair, Env, RefreshTokenData, BlacklistedToken } from '../../types';
+import { 
+  TokenValidationError, 
+  InvalidTokenError, 
+  TokenExpiredError,
+  EnvironmentError 
+} from '../../types/errors';
 
 /**
  * JWT Service for authentication token management
@@ -86,6 +92,20 @@ export async function generateJWT(
   secret: string,
   expiresIn: string
 ): Promise<string> {
+  // Validate JWT secret security requirements
+  if (!secret) {
+    throw new Error('JWT_SECRET is required for token generation');
+  }
+  
+  if (secret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters long for security');
+  }
+  
+  // Validate payload requirements
+  if (!payload.user_id || !payload.username) {
+    throw new Error('JWT payload must include user_id and username');
+  }
+  
   const jti = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
   const exp = now + parseExpiresIn(expiresIn);
@@ -149,6 +169,16 @@ export async function generateJWT(
  */
 export async function verifyJWT(token: string, secret: string): Promise<UserJWTPayload | null> {
   try {
+    // Validate inputs
+    if (!token || !secret) {
+      return null;
+    }
+    
+    if (secret.length < 32) {
+      console.error('JWT secret is too short for secure verification');
+      return null;
+    }
+    
     const encoder = new TextEncoder();
     const secretKey = encoder.encode(secret);
     
@@ -165,6 +195,80 @@ export async function verifyJWT(token: string, secret: string): Promise<UserJWTP
   } catch (error) {
     console.error('JWT verification failed:', error);
     return null;
+  }
+}
+
+/**
+ * Enhanced JWT verification with specific error types
+ * 
+ * This function provides the same functionality as verifyJWT but throws
+ * specific error types instead of returning null, enabling better error
+ * handling and debugging in calling code.
+ * 
+ * @param token - JWT token string to verify
+ * @param secret - JWT verification secret
+ * @returns Promise resolving to parsed payload
+ * @throws {InvalidTokenError} When token format is invalid
+ * @throws {TokenExpiredError} When token has expired
+ * @throws {TokenValidationError} When token validation fails
+ * @throws {EnvironmentError} When secret is invalid
+ */
+export async function verifyJWTWithErrors(token: string, secret: string): Promise<UserJWTPayload> {
+  // Validate inputs
+  if (!token) {
+    throw new InvalidTokenError('Token is required for verification');
+  }
+  
+  if (!secret) {
+    throw new EnvironmentError('JWT_SECRET', 'is required for token verification');
+  }
+  
+  if (secret.length < 32) {
+    throw new EnvironmentError('JWT_SECRET', 'must be at least 32 characters long');
+  }
+  
+  try {
+    const encoder = new TextEncoder();
+    const secretKey = encoder.encode(secret);
+    
+    const { payload } = await jwtVerify(token, secretKey, {
+      algorithms: [JWT_ALGORITHM]
+    });
+    
+    // Validate required fields exist
+    if (typeof payload.user_id !== 'number' || typeof payload.username !== 'string') {
+      throw new TokenValidationError('Token payload missing required fields (user_id, username)');
+    }
+    
+    // Check if token is expired
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) {
+      throw new TokenExpiredError('Token has expired');
+    }
+    
+    return payload as unknown as UserJWTPayload;
+  } catch (error) {
+    if (error instanceof TokenValidationError || 
+        error instanceof TokenExpiredError || 
+        error instanceof InvalidTokenError ||
+        error instanceof EnvironmentError) {
+      throw error;
+    }
+    
+    // Handle jose library specific errors
+    if (error instanceof Error) {
+      if (error.message.includes('expired')) {
+        throw new TokenExpiredError('Token has expired');
+      }
+      if (error.message.includes('signature')) {
+        throw new InvalidTokenError('Invalid token signature');
+      }
+      if (error.message.includes('malformed')) {
+        throw new InvalidTokenError('Malformed token format');
+      }
+    }
+    
+    throw new TokenValidationError('Token verification failed', error instanceof Error ? error.message : 'Unknown error');
   }
 }
 
@@ -217,6 +321,15 @@ export async function generateTokenPair(
   user: User,
   env: Env
 ): Promise<TokenPair> {
+  // Validate environment configuration
+  if (!env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  
+  if (!env.AUTH_KV) {
+    throw new Error('AUTH_KV binding is required for token storage');
+  }
+  
   const access_token = await generateJWT(
     {
       user_id: user.id,
