@@ -3,7 +3,7 @@
 
 import { Hono } from 'hono';
 import { timing } from 'hono/timing';
-import { MultiLayerCacheService } from '../services/cache-service';
+import { MultiLayerCacheService } from '../services/cache';
 import { CompressionService } from '../services/compression-service';
 import { OptimizedDatabaseService } from '../services/optimized-database-service';
 import { OptimizedPresignedUrlService } from '../services/optimized-presigned-url-service';
