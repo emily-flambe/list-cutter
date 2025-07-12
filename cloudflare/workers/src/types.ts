@@ -122,6 +122,14 @@ export interface SecurityEvent {
   metadata?: Record<string, any>;
 }
 
+// User registration input type
+export interface UserRegistration {
+  username: string;
+  password: string;
+  password2: string;
+  email?: string;
+}
+
 // Request context types for Hono
 export interface HonoContext {
   user?: User;
