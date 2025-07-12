@@ -128,6 +128,12 @@ routes = [
 # binding = "ANALYTICS"
 # dataset = "cutty_analytics"
 
+# Staging D1 Database
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "cutty-staging"
+database_id = "e16924c6-be97-4012-88ac-79ff31fd5304"
+
 [[env.staging.r2_buckets]]
 binding = "FILE_STORAGE"
 bucket_name = "cutty-files-staging"

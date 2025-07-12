@@ -35,6 +35,7 @@ import { QuotaManager } from './services/security/quota-manager';
 import { SecurityAuditLogger } from './services/security/audit-logger';
 import { SecurityEventLogger } from './services/security-event-logger';
 import { MetricsService } from './services/monitoring/metrics-service';
+import { verifyJWT } from './services/auth/jwt';
 
 // Import route handlers
 import migrationRoutes from './routes/migration.js';
@@ -45,7 +46,7 @@ import backupRoutes from './routes/backup-routes.js';
 import disasterRecoveryRoutes from './routes/disaster-recovery-routes.js';
 import dataExportRoutes from './routes/data-export-routes.js';
 import performanceOptimizationRoutes from './routes/performance-optimization.js';
-// import authRoutes from '@routes/auth';
+import authRoutes from './routes/auth.js';
 // import csvRoutes from '@routes/csv';
 // import userRoutes from '@routes/users';
 
@@ -214,8 +215,37 @@ app.use('*', async (c, next): Promise<void> => {
         let userId = 'anonymous';
         
         if (authHeader && authHeader.startsWith('Bearer ')) {
-          // TODO: Implement proper JWT token validation
-          userId = 'authenticated_user';
+          try {
+            const token = authHeader.substring(7);
+            const payload = await verifyJWT(token, c.env.JWT_SECRET, c.env);
+            userId = payload.user_id.toString();
+          } catch (error) {
+            // Log failed auth attempts for security monitoring
+            const eventLogger = c.get('securityEventLogger') as SecurityEventLogger;
+            if (eventLogger) {
+              await eventLogger.logSecurityEvent({
+                id: crypto.randomUUID(),
+                type: SecurityEventType.AUTHENTICATION_FAILURE,
+                severity: SecurityEventSeverity.MEDIUM,
+                category: SecurityEventCategory.ACCESS_CONTROL,
+                riskLevel: RiskLevel.MEDIUM,
+                userId: 'anonymous',
+                ipAddress: c.req.header('CF-Connecting-IP'),
+                userAgent: c.req.header('User-Agent'),
+                timestamp: new Date(),
+                message: 'JWT token verification failed',
+                details: {
+                  error: error instanceof Error ? error.message : 'Unknown error',
+                  path,
+                  method
+                },
+                requiresResponse: false,
+                actionTaken: 'access_denied'
+              });
+            }
+            // Invalid token, keep as anonymous
+            userId = 'anonymous';
+          }
         }
         
         c.set('userId', userId);
@@ -921,7 +951,7 @@ v1.route('/backup', backupRoutes); // Backup routes at /api/backup/*
 v1.route('/disaster-recovery', disasterRecoveryRoutes); // Disaster recovery routes at /api/disaster-recovery/*
 v1.route('/data-export', dataExportRoutes); // Data export routes at /api/data-export/*
 v1.route('/performance', performanceOptimizationRoutes); // Performance optimization routes at /api/performance/*
-// v1.route('/auth', authRoutes);
+v1.route('/auth', authRoutes);
 // v1.route('/csv', csvRoutes);
 // v1.route('/users', userRoutes);
 
