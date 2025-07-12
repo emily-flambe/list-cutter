@@ -123,6 +123,17 @@ export class ValidationError extends Error {
   }
 }
 
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+    public readonly code?: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 // Utility function to check if an error is of a specific type
 export function isAuthenticationError(error: any): error is AuthenticationError {
   return error instanceof AuthenticationError;
@@ -138,6 +149,10 @@ export function isConfigurationError(error: any): error is ConfigurationError {
 
 export function isSecurityError(error: any): error is SecurityError {
   return error instanceof SecurityError;
+}
+
+export function isApiError(error: any): error is ApiError {
+  return error instanceof ApiError;
 }
 
 // Error handling utilities
@@ -159,6 +174,9 @@ export function createErrorResponse(error: Error, includeStack: boolean = false)
   } else if (isSecurityError(error)) {
     response.securityCode = error.securityCode;
     response.severity = error.severity;
+  } else if (isApiError(error)) {
+    response.status = error.status;
+    response.code = error.code;
   }
 
   if (includeStack && process.env.NODE_ENV === 'development') {
@@ -169,6 +187,10 @@ export function createErrorResponse(error: Error, includeStack: boolean = false)
 }
 
 export function getHttpStatusForError(error: Error): number {
+  if (isApiError(error)) {
+    return error.status;
+  }
+
   if (isAuthenticationError(error)) {
     switch (error.code) {
       case 'TOKEN_EXPIRED':
