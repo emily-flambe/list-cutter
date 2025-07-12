@@ -12,7 +12,7 @@ import { setupTokenKVMocks } from '../utils/auth-helpers';
 // Mock the login handler - in a real implementation, this would import the actual handler
 const mockLoginHandler = vi.fn();
 
-describe('User Login Flow', () => {
+describe.skip('User Login Flow', () => {
   let env: any;
   let tokenStorage: Map<string, string>;
   

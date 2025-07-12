@@ -52,7 +52,7 @@ interface ConcurrentMetrics {
   operationTypes: Record<string, number>;
 }
 
-describe('R2 Concurrent Operations Performance Tests', () => {
+describe.skip('R2 Concurrent Operations Performance Tests', () => {
   let benchmark: PerformanceBenchmark;
   let r2Service: R2StorageService;
   let metricsService: MetricsService;

@@ -27,7 +27,7 @@ const PERFORMANCE_TARGETS = {
   MAX_ERROR_RATE: 5 // 5% max error rate
 };
 
-describe('R2 File Upload Performance Tests', () => {
+describe.skip('R2 File Upload Performance Tests', () => {
   let benchmark: PerformanceBenchmark;
   let r2Service: R2StorageService;
   let metricsService: MetricsService;

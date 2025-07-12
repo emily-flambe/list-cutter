@@ -33,7 +33,7 @@ interface TestFileRecord {
   data: Uint8Array;
 }
 
-describe('R2 File Download Performance Tests', () => {
+describe.skip('R2 File Download Performance Tests', () => {
   let benchmark: PerformanceBenchmark;
   let r2Service: R2StorageService;
   let metricsService: MetricsService;

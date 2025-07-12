@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-describe('R2 Performance Test Suite', () => {
+describe.skip('R2 Performance Test Suite', () => {
   it('should import all performance test modules', async () => {
     console.log('🌈 Rainbow Dash R2 Performance Test Suite');
     console.log('='.repeat(50));

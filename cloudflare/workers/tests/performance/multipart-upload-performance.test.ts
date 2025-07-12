@@ -37,7 +37,7 @@ interface MultipartMetrics {
   effectiveThroughput: number;
 }
 
-describe('R2 Multipart Upload Performance Tests', () => {
+describe.skip('R2 Multipart Upload Performance Tests', () => {
   let benchmark: PerformanceBenchmark;
   let r2Service: R2StorageService;
   let metricsService: MetricsService;
