@@ -1,10 +1,10 @@
-name = "cutty-api"
+name = "cutty"
 main = "cloudflare/workers/src/index.ts"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
 
 routes = [
-  { pattern = "cutty-api.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+  { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
 
 [vars]
@@ -13,7 +13,7 @@ API_VERSION = "v1"
 CORS_ORIGIN = "https://cutty.emilycogsdill.com"
 MAX_FILE_SIZE = "52428800"
 JWT_ISSUER = "cutty"
-JWT_AUDIENCE = "cutty-api"
+JWT_AUDIENCE = "cutty"
 
 [[d1_databases]]
 binding = "DB"
