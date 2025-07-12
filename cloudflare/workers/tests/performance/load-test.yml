@@ -1,0 +1,120 @@
+# Artillery Load Testing Configuration
+# Tests API endpoints under various load conditions
+
+config:
+  target: 'http://localhost:8787'
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 20
+      name: "Ramp up load"
+    - duration: 60
+      arrivalRate: 50
+      name: "Sustained load"
+    - duration: 60
+      arrivalRate: 100
+      name: "Peak load"
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+  processor: './load-test-functions.js'
+
+scenarios:
+  - name: "Authentication Flow"
+    weight: 40
+    flow:
+      - post:
+          url: "/api/v1/auth/register"
+          json:
+            username: "loadtest_{{ $randomString() }}"
+            email: "loadtest_{{ $randomString() }}@example.com"
+            password: "LoadTest123!"
+            confirmPassword: "LoadTest123!"
+          capture:
+            - json: "$.access_token"
+              as: "accessToken"
+            - json: "$.refresh_token"
+              as: "refreshToken"
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            username: "{{ username }}"
+            password: "LoadTest123!"
+          capture:
+            - json: "$.access_token"
+              as: "loginAccessToken"
+
+  - name: "File Operations"
+    weight: 30
+    flow:
+      - function: "generateAuthToken"
+      - post:
+          url: "/api/v1/files/upload"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+          formData:
+            file: "@./test-files/sample.txt"
+          capture:
+            - json: "$.file.id"
+              as: "fileId"
+      - get:
+          url: "/api/v1/files/{{ fileId }}"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+      - delete:
+          url: "/api/v1/files/{{ fileId }}"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+
+  - name: "Dashboard Access"
+    weight: 20
+    flow:
+      - function: "generateAuthToken"
+      - get:
+          url: "/dashboard"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+      - get:
+          url: "/api/v1/analytics/security"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+      - get:
+          url: "/api/v1/metrics"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+
+  - name: "Token Refresh"
+    weight: 10
+    flow:
+      - function: "generateRefreshToken"
+      - post:
+          url: "/api/v1/auth/refresh"
+          json:
+            refresh_token: "{{ refreshToken }}"
+          capture:
+            - json: "$.access_token"
+              as: "newAccessToken"
+      - post:
+          url: "/api/v1/auth/logout"
+          headers:
+            Authorization: "Bearer {{ newAccessToken }}"
+          json:
+            refresh_token: "{{ refreshToken }}"
+
+# Performance expectations
+expect:
+  - statusCode: 200
+  - contentType: json
+  - maxResponseTime: 2000  # 2 seconds max response time
+  - hasProperty: message
+
+# Metrics to track
+metrics:
+  - name: "Response Time"
+    unit: "ms"
+  - name: "Success Rate"
+    unit: "%"
+  - name: "Requests per Second"
+    unit: "req/s"

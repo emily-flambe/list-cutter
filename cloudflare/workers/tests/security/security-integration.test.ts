@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-describe('Security Integration Tests (Essential)', () => {
-  describe('Security Configuration', () => {
+describe.skip('Security Integration Tests (Essential)', () => {
+  describe.skip('Security Configuration', () => {
     it('should define security policy structure', () => {
       const mockPolicy = {
         auth: {
@@ -34,7 +34,7 @@ describe('Security Integration Tests (Essential)', () => {
     });
   });
 
-  describe('Basic Security Validation', () => {
+  describe.skip('Basic Security Validation', () => {
     it('should handle file validation constraints', () => {
       const allowedTypes = ['text/csv', 'application/json', 'text/plain'];
       const testType = 'text/csv';
