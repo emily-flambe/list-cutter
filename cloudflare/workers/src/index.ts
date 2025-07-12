@@ -38,7 +38,7 @@ import { MetricsService } from './services/monitoring/metrics-service';
 import { verifyJWT } from './services/auth/jwt';
 
 // Import route handlers
-import migrationRoutes from './routes/migration.js';
+// import migrationRoutes from './routes/migration.js'; // Removed - file doesn't exist
 import secureFilesRoutes from './routes/secure-files.js';
 import monitoringRoutes from './routes/monitoring.js';
 import dashboardMonitoringRoutes from './routes/dashboard-monitoring.js';
@@ -944,7 +944,7 @@ app.all('/api/dashboard/*', async (c): Promise<Response> => {
 const v1 = app.basePath('/api');
 
 // Mount routes
-v1.route('/migration', migrationRoutes);
+// v1.route('/migration', migrationRoutes); // Removed - migration routes handled by blue-green deployment
 v1.route('/', secureFilesRoutes); // Secure file routes at /api/files/*
 v1.route('/monitoring', monitoringRoutes); // Monitoring routes at /api/monitoring/*
 v1.route('/dashboard', dashboardMonitoringRoutes); // Dashboard monitoring routes at /api/dashboard/*
