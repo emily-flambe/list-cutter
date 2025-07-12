@@ -116,13 +116,13 @@ create_or_update_dns_record "CNAME" "list-cutter" "cutty-frontend.pages.dev" tru
 # 2. Backend Worker - points to Cloudflare Workers
 print_status "🔧 Configuring backend API domain records..."
 
-# API subdomain (cutty-api.emilycogsdill.com)
-create_or_update_dns_record "CNAME" "cutty-api" "cutty-api.workers.dev" true 1
+# API subdomain (cutty.emilycogsdill.com)
+create_or_update_dns_record "CNAME" "cutty" "cutty.workers.dev" true 1
 
 # 3. Staging subdomains (for testing)
 print_status "🧪 Configuring staging subdomains..."
 create_or_update_dns_record "CNAME" "cutty-staging" "cutty-frontend-staging.pages.dev" true 300
-create_or_update_dns_record "CNAME" "cutty-api-staging" "cutty-api-staging.workers.dev" true 300
+create_or_update_dns_record "CNAME" "cutty-staging" "cutty-staging.workers.dev" true 300
 
 # 4. TXT records for verification and security
 print_status "🔒 Configuring security and verification records..."

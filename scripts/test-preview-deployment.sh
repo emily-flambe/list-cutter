@@ -62,7 +62,7 @@ test_worker() {
 
 # Test backend worker
 echo -e "\n${YELLOW}=== Testing Backend Worker ===${NC}"
-test_worker "cloudflare/workers" "cutty-api"
+test_worker "cloudflare/workers" "cutty"
 
 # Test frontend worker
 echo -e "\n${YELLOW}=== Testing Frontend Worker ===${NC}"
