@@ -5,6 +5,7 @@
  * for testing Cloudflare Workers functionality.
  */
 
+import { vi } from 'vitest';
 import type { Env } from '../../src/types';
 
 /**

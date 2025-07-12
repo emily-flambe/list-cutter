@@ -4,6 +4,7 @@
  * Utilities for testing authentication flows, JWT tokens, and auth middleware.
  */
 
+import { vi } from 'vitest';
 import { generateJWT, verifyJWT } from '../../src/services/auth/jwt';
 import type { Env, User, UserJWTPayload } from '../../src/types';
 import { createMockEnv, createMockUser } from './test-env';
