@@ -77,10 +77,10 @@ function getApiOrigins(environment) {
     case 'production':
       return 'https://api.emilycogsdill.com';
     case 'staging':
-      return 'https://cutty-api-staging.facf6619808dc039df729531bbb26d1d.workers.dev';
+      return 'https://cutty-staging.emilycogsdill.com';
     case 'preview':
-      return 'https://cutty-api.facf6619808dc039df729531bbb26d1d.workers.dev';
+      return 'https://cutty-preview.emilycogsdill.com';
     default:
-      return 'http://localhost:8787 https://cutty-api.facf6619808dc039df729531bbb26d1d.workers.dev';
+      return 'http://localhost:8787 https://cutty.emilycogsdill.com';
   }
 }

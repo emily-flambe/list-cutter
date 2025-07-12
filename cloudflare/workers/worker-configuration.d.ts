@@ -7,7 +7,7 @@ interface Env {
 	CORS_ORIGIN: "http://localhost:5173" | "https://staging.cutty.com" | "https://cutty.com";
 	MAX_FILE_SIZE: "52428800";
 	JWT_ISSUER: "cutty";
-	JWT_AUDIENCE: "cutty-api";
+	JWT_AUDIENCE: "cutty";
 	JWT_SECRET: string;
 	JWT_REFRESH_SECRET: string;
 	DB_ENCRYPTION_KEY: string;

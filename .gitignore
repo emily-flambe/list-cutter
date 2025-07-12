@@ -188,4 +188,4 @@ node_modules/
 .wrangler/
 
 # Claude Code project-specific configuration
-.claude/
+# .claude/

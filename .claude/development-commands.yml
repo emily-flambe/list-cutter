@@ -1,0 +1,36 @@
+# Essential Development Commands
+# Project-specific commands and workflows
+
+PreCommitValidation: &PreCommitValidation
+  directory: "cd cloudflare/workers"
+  commands:
+    essential_build_check: "npm run build"
+    deployment_validation:
+      - "npx wrangler versions upload --dry-run"
+      - "npx wrangler deploy --dry-run"
+    type_checking: "npx tsc --noEmit"
+
+TroubleshootingCommands: &TroubleshootingCommands
+  clean_environment_test:
+    description: "matches CI"
+    commands:
+      - "rm -rf node_modules package-lock.json"
+      - "npm ci"
+  
+  wrangler_configuration_check:
+    - "npx wrangler whoami"
+    - "npx wrangler tail --version"
+    - "npx wrangler d1 list"
+  
+  typescript_configuration_testing:
+    - "npx tsc --showConfig"
+    - "npx tsc --noEmit --incremental false"
+
+BuildSuccessCriteria: &BuildSuccessCriteria
+  requirements:
+    - "npm run build completes successfully"
+    - "npx wrangler versions upload --dry-run passes"
+    - "Bundle size is reasonable (< 200kb typical)"
+    - "No critical runtime errors in essential flows"
+  
+  note: "TypeScript strict checking is secondary to functional builds. Focus on build success and runtime safety over perfect type compliance."

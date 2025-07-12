@@ -1,0 +1,46 @@
+# Project Configuration
+# Project-specific identity and naming conventions
+
+ProjectIdentity: &ProjectIdentity
+  name: "cutty"
+  repository: "list-cutter"
+  description: "Django + React application being migrated to Cloudflare Workers with D1 database and R2 storage"
+  
+  naming_conventions:
+    github_repository: "list-cutter"
+    cloudflare_resources: "cutty-*"
+    domains:
+      - "cutty.emilycogsdill.com"
+      - "list-cutter.emilycogsdill.com"
+    worker_names:
+      - "cutty-api"
+      - "cutty-workers" 
+      - "cutty-frontend"
+    database_names:
+      - "cutty-preview"
+      - "cutty-dev"
+      - "cutty-staging"
+      - "cutty-prod"
+    r2_buckets:
+      - "cutty-files-dev"
+      - "cutty-files-staging"
+      - "cutty-files-prod"
+      - "cutty-files-preview"
+
+WranglerCommands: &WranglerCommands
+  database_operations:
+    - "wrangler d1 create cutty-db"
+    - "wrangler d1 execute cutty-db --file=schema.sql"
+  
+  r2_storage_operations:
+    - "wrangler r2 bucket create cutty-files-dev"
+    - "wrangler r2 bucket cors put cutty-files-dev --file cors.json"
+  
+  pages_deployment:
+    - "wrangler pages deploy dist --project-name cutty-frontend"
+
+ProjectStructure: &ProjectStructure
+  main_application: "Django backend with React frontend"
+  target_deployment: "Cloudflare Workers with D1 + R2"
+  migration_tools: "Comprehensive Python scripts for file migration"
+  identity_preference: "Use 'cutty' for all new Cloudflare resources"

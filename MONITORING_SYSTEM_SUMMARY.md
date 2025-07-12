@@ -170,14 +170,14 @@ Configured for all environments:
 
 2. **Initialize Alert System**
    ```bash
-   curl -X POST https://cutty-api.emilycogsdill.com/api/monitoring/initialize-alerts
+   curl -X POST https://cutty.emilycogsdill.com/api/monitoring/initialize-alerts
    ```
 
 3. **Test Monitoring Endpoints**
    ```bash
-   curl https://cutty-api.emilycogsdill.com/health
-   curl https://cutty-api.emilycogsdill.com/api/monitoring/health
-   curl https://cutty-api.emilycogsdill.com/api/monitoring/status
+   curl https://cutty.emilycogsdill.com/health
+   curl https://cutty.emilycogsdill.com/api/monitoring/health
+   curl https://cutty.emilycogsdill.com/api/monitoring/status
    ```
 
 ### **Production Readiness:**

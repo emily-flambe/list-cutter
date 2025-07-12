@@ -1,4 +1,4 @@
-name = "cutty-api"
+name = "cutty"
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
@@ -25,7 +25,7 @@ API_VERSION = "v1"
 CORS_ORIGIN = "http://localhost:5173"
 MAX_FILE_SIZE = "52428800" # 50MB in bytes
 JWT_ISSUER = "cutty"
-JWT_AUDIENCE = "cutty-api"
+JWT_AUDIENCE = "cutty"
 # Security configuration
 SECURITY_PERFORMANCE_THRESHOLD = "100"
 SECURITY_METRICS_RETENTION_DAYS = "30"
@@ -82,7 +82,7 @@ preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 
 # Staging environment
 [env.staging]
-name = "cutty-api-staging"
+name = "cutty-staging"
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -123,7 +123,7 @@ preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 
 # Production environment
 [env.production]
-name = "cutty-api-production"
+name = "cutty-production"
 
 [env.production.vars]
 ENVIRONMENT = "production"

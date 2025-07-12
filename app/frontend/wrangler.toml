@@ -1,27 +1,26 @@
-name = "cutty-frontend"
+# DEPRECATED: This frontend worker is no longer used
+# All frontend serving is now handled by the unified "cutty" worker
+# This file is kept for reference only
+
+name = "cutty-frontend-deprecated"
 main = "src/worker.js"
 compatibility_date = "2024-12-01"
 
-# Enable Workers logs for debugging and monitoring
-logfmt = "json"
-send_metrics = true
+# DISABLED: This worker should not be deployed
+workers_dev = false
 
-# Enable versioning and gradual deployments
-[version_metadata]
-enable_versions = true
-
-# Asset configuration
+# Asset configuration (kept for reference)
 [assets]
 directory = "dist"
 binding = "ASSETS"
 
-# Environment variables
+# Environment variables (kept for reference)
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "deprecated"
 
-# Production environment - Routes disabled for unified worker migration  
-[env.production]
-vars = { ENVIRONMENT = "production" }
+# All environments disabled - unified worker handles all traffic
+# [env.production]
+# vars = { ENVIRONMENT = "production" }
 # routes = [
 #   { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 # ]

@@ -1,5 +1,5 @@
 # Separate file for cron triggers to avoid deployment parsing issues
-name = "cutty-api"
+name = "cutty"
 
 # Monitoring cron triggers
 [[triggers.crons]]

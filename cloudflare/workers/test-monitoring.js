@@ -3,7 +3,7 @@
  * Issue #65: R2 Storage Monitoring & Alerting
  */
 
-const BASE_URL = 'https://cutty-api.emilycogsdill.com';
+const BASE_URL = 'https://cutty.emilycogsdill.com';
 
 // Test endpoints
 const endpoints = [

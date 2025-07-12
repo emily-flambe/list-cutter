@@ -10,7 +10,7 @@ const auth = new Hono<{ Bindings: Env }>();
 
 // Simplified CORS for same-origin setup (frontend and API on same domain)
 auth.use('*', cors({
-  origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com', 'https://cutty-api.emily-cogsdill.workers.dev'],
+  origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com'],
   allowMethods: ['POST', 'GET', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   credentials: true,

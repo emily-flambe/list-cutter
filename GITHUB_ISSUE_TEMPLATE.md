@@ -69,9 +69,9 @@ wrangler deploy --env development # Should deploy successfully
 ### Health Check Validation
 ```bash
 # Test core endpoints (replace with actual dev URL)
-curl "https://cutty-api-dev.emilycogsdill.com/api/health"
-curl "https://cutty-api-dev.emilycogsdill.com/api/monitoring/health"
-curl "https://cutty-api-dev.emilycogsdill.com/api/security/pipeline/health"
+curl "https://cutty-dev.emilycogsdill.com/api/health"
+curl "https://cutty-dev.emilycogsdill.com/api/monitoring/health"
+curl "https://cutty-dev.emilycogsdill.com/api/security/pipeline/health"
 ```
 
 ## 📊 Expected QC Results
