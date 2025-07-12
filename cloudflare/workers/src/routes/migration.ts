@@ -1,5 +1,9 @@
 import { Hono } from 'hono';
 import { FileMigrationService } from '../services/migration/file-migration.js';
+import { ProductionCutoverOrchestrator, CutoverPhase } from '../services/migration/production-cutover-orchestrator.js';
+import { ProductionMigrationService } from '../services/deployment/production-migration.js';
+import { PythonMigrationIntegration } from '../services/migration/python-integration.js';
+import { RollbackDataSyncService } from '../services/migration/rollback-sync.js';
 import { R2StorageService } from '../services/storage/r2-service.js';
 import type { CloudflareEnv } from '../types/env.js';
 
@@ -308,6 +312,344 @@ migrationRoutes.post('/verify', async (c): Promise<Response> => {
     console.error('Migration verification failed:', error);
     return c.json({
       error: 'Failed to verify migrations',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * POST /api/migration/production/cutover
+ * Execute complete production cutover
+ */
+migrationRoutes.post('/production/cutover', async (c): Promise<Response> => {
+  try {
+    const { config } = await c.req.json();
+    
+    if (!config) {
+      return c.json({ error: 'Cutover configuration is required' }, 400);
+    }
+    
+    // Create cutover orchestrator
+    const orchestrator = new ProductionCutoverOrchestrator(c.env, config);
+    
+    // Execute cutover asynchronously (would typically use Durable Objects or queues)
+    const result = await orchestrator.executeCutover();
+    
+    return c.json({
+      success: result.success,
+      result,
+      message: result.success ? 'Production cutover completed successfully' : 'Production cutover failed'
+    });
+  } catch (error) {
+    console.error('Production cutover failed:', error);
+    return c.json({
+      error: 'Failed to execute production cutover',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * GET /api/migration/production/status
+ * Get production cutover status
+ */
+migrationRoutes.get('/production/status', async (c): Promise<Response> => {
+  try {
+    // This would typically fetch from a persistent store
+    // For now, return a mock status
+    const status = {
+      isActive: false,
+      currentPhase: CutoverPhase.COMPLETED,
+      progress: {
+        phase: CutoverPhase.COMPLETED,
+        step: 'Cutover completed',
+        percentage: 100,
+        startTime: new Date().toISOString(),
+        currentStepStartTime: new Date().toISOString(),
+        errors: [],
+        warnings: []
+      }
+    };
+    
+    return c.json({
+      success: true,
+      status,
+      message: 'Cutover status retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Failed to get cutover status:', error);
+    return c.json({
+      error: 'Failed to retrieve cutover status',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * POST /api/migration/production/full
+ * Execute full production data migration (without cutover)
+ */
+migrationRoutes.post('/production/full', async (c): Promise<Response> => {
+  try {
+    const migrationService = new ProductionMigrationService(c.env);
+    const result = await migrationService.executeFullMigration();
+    
+    return c.json({
+      success: result.success,
+      result,
+      message: result.success ? 'Production migration completed successfully' : 'Production migration failed'
+    });
+  } catch (error) {
+    console.error('Production migration failed:', error);
+    return c.json({
+      error: 'Failed to execute production migration',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * GET /api/migration/production/migration-status
+ * Get production migration status
+ */
+migrationRoutes.get('/production/migration-status', async (c): Promise<Response> => {
+  try {
+    const migrationService = new ProductionMigrationService(c.env);
+    const status = await migrationService.getMigrationStatus();
+    
+    return c.json({
+      success: true,
+      status,
+      message: 'Migration status retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Failed to get migration status:', error);
+    return c.json({
+      error: 'Failed to retrieve migration status',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * POST /api/migration/production/maintenance
+ * Enable/disable maintenance mode
+ */
+migrationRoutes.post('/production/maintenance', async (c): Promise<Response> => {
+  try {
+    const { action, reason } = await c.req.json();
+    
+    if (!action || !['enable', 'disable'].includes(action)) {
+      return c.json({ error: 'Valid action (enable/disable) is required' }, 400);
+    }
+    
+    const migrationService = new ProductionMigrationService(c.env);
+    
+    if (action === 'enable') {
+      await migrationService.enableMaintenanceMode(reason || 'Maintenance in progress');
+    } else {
+      await migrationService.disableMaintenanceMode();
+    }
+    
+    return c.json({
+      success: true,
+      message: `Maintenance mode ${action}d successfully`
+    });
+  } catch (error) {
+    console.error('Maintenance mode operation failed:', error);
+    return c.json({
+      error: 'Failed to update maintenance mode',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * POST /api/migration/production/rollback
+ * Execute production migration rollback
+ */
+migrationRoutes.post('/production/rollback', async (c): Promise<Response> => {
+  try {
+    const migrationService = new ProductionMigrationService(c.env);
+    await migrationService.rollbackMigration();
+    
+    return c.json({
+      success: true,
+      message: 'Production migration rollback completed successfully'
+    });
+  } catch (error) {
+    console.error('Production rollback failed:', error);
+    return c.json({
+      error: 'Failed to execute production rollback',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * GET /api/migration/integration/python-status
+ * Check Python migration orchestrator integration status
+ */
+migrationRoutes.get('/integration/python-status', async (c): Promise<Response> => {
+  try {
+    const pythonIntegration = new PythonMigrationIntegration(c.env);
+    const isAvailable = await pythonIntegration.isAvailable();
+    
+    return c.json({
+      success: true,
+      status: isAvailable ? 'active' : 'unreachable',
+      endpoint: process.env.PYTHON_ORCHESTRATOR_ENDPOINT || 'not configured',
+      message: `Python orchestrator is ${isAvailable ? 'active' : 'unreachable'}`
+    });
+  } catch (error) {
+    console.error('Python integration status check failed:', error);
+    return c.json({
+      error: 'Failed to check Python integration status',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * POST /api/migration/integration/python-start
+ * Start Python migration orchestration
+ */
+migrationRoutes.post('/integration/python-start', async (c): Promise<Response> => {
+  try {
+    const { config } = await c.req.json();
+    
+    if (!config) {
+      return c.json({ error: 'Python migration configuration is required' }, 400);
+    }
+    
+    const pythonIntegration = new PythonMigrationIntegration(c.env);
+    const result = await pythonIntegration.startMigration(config);
+    
+    return c.json({
+      success: result.success,
+      result,
+      message: result.success ? 'Python migration started successfully' : 'Python migration failed to start'
+    });
+  } catch (error) {
+    console.error('Python migration start failed:', error);
+    return c.json({
+      error: 'Failed to start Python migration',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * GET /api/migration/integration/python-status/:migrationId
+ * Get Python migration status
+ */
+migrationRoutes.get('/integration/python-status/:migrationId', async (c): Promise<Response> => {
+  try {
+    const migrationId = c.req.param('migrationId');
+    
+    if (!migrationId) {
+      return c.json({ error: 'Migration ID is required' }, 400);
+    }
+    
+    const pythonIntegration = new PythonMigrationIntegration(c.env);
+    const result = await pythonIntegration.getMigrationStatus(migrationId);
+    
+    return c.json({
+      success: result.success,
+      status: result.status,
+      message: result.success ? 'Python migration status retrieved' : 'Failed to get status'
+    });
+  } catch (error) {
+    console.error('Python migration status check failed:', error);
+    return c.json({
+      error: 'Failed to get Python migration status',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * POST /api/migration/integration/python-rollback
+ * Execute Python migration rollback
+ */
+migrationRoutes.post('/integration/python-rollback', async (c): Promise<Response> => {
+  try {
+    const { migrationId, targetPhase } = await c.req.json();
+    
+    if (!migrationId) {
+      return c.json({ error: 'Migration ID is required' }, 400);
+    }
+    
+    const pythonIntegration = new PythonMigrationIntegration(c.env);
+    const result = await pythonIntegration.rollbackMigration(migrationId, targetPhase);
+    
+    return c.json({
+      success: result.success,
+      result,
+      message: result.success ? 'Python migration rollback completed' : 'Python migration rollback failed'
+    });
+  } catch (error) {
+    console.error('Python migration rollback failed:', error);
+    return c.json({
+      error: 'Failed to execute Python migration rollback',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * POST /api/migration/rollback/sync
+ * Execute rollback data synchronization
+ */
+migrationRoutes.post('/rollback/sync', async (c): Promise<Response> => {
+  try {
+    const { config } = await c.req.json();
+    
+    if (!config) {
+      return c.json({ error: 'Rollback sync configuration is required' }, 400);
+    }
+    
+    const rollbackSync = new RollbackDataSyncService(c.env);
+    const result = await rollbackSync.executeRollbackSync(config);
+    
+    return c.json({
+      success: result.success,
+      result,
+      message: result.success ? 'Rollback data synchronization completed' : 'Rollback data synchronization failed'
+    });
+  } catch (error) {
+    console.error('Rollback data synchronization failed:', error);
+    return c.json({
+      error: 'Failed to execute rollback data synchronization',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+/**
+ * POST /api/migration/integration/coordinate-sync
+ * Coordinate data sync with Python orchestrator
+ */
+migrationRoutes.post('/integration/coordinate-sync', async (c): Promise<Response> => {
+  try {
+    const { syncType } = await c.req.json();
+    
+    if (!syncType || !['users', 'files', 'filters'].includes(syncType)) {
+      return c.json({ error: 'Valid sync type (users, files, filters) is required' }, 400);
+    }
+    
+    const pythonIntegration = new PythonMigrationIntegration(c.env);
+    const result = await pythonIntegration.coordinateDataSync(syncType);
+    
+    return c.json({
+      success: result.success,
+      result,
+      message: result.success ? `${syncType} data sync completed` : `${syncType} data sync failed`
+    });
+  } catch (error) {
+    console.error('Data sync coordination failed:', error);
+    return c.json({
+      error: 'Failed to coordinate data sync',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, 500);
   }

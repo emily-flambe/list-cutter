@@ -311,6 +311,17 @@ export class FileMigrationService {
   }
 
   /**
+   * Process a migration batch (wrapper for compatibility)
+   */
+  async processBatch(batch: MigrationBatch): Promise<MigrationProgress> {
+    // Create migration batch first if it doesn't exist
+    const batchId = await this.createMigrationBatch(batch.files, batch.metadata || {});
+    
+    // Process the batch
+    return await this.processMigrationBatch(batchId);
+  }
+
+  /**
    * Rollback a migration batch
    */
   async rollbackMigrationBatch(batchId: string): Promise<void> {

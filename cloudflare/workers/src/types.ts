@@ -2,6 +2,7 @@
 export * from './types/env';
 export * from './types/permissions';
 export * from './types/errors';
+export * from './types/deployment';
 
 // Core authentication types
 export interface User {
