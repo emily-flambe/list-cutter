@@ -1,11 +1,16 @@
 name = "cutty-api"
 routes = [
-  { pattern = "cutty-api.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+  { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
+
+# Asset configuration for serving frontend
+[assets]
+directory = "dist"
+binding = "ASSETS"
 
 # Enable Workers logs for debugging and monitoring
 send_metrics = true

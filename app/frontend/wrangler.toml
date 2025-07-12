@@ -19,9 +19,9 @@ binding = "ASSETS"
 [vars]
 ENVIRONMENT = "development"
 
-# Production environment
+# Production environment - Routes disabled for unified worker migration  
 [env.production]
 vars = { ENVIRONMENT = "production" }
-routes = [
-  { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
-]
+# routes = [
+#   { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+# ]

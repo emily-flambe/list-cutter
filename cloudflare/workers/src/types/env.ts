@@ -21,6 +21,7 @@ export interface CloudflareEnv {
   // Bindings
   DB: D1Database;
   FILE_STORAGE: R2Bucket;
+  ASSETS: Fetcher; // Static assets for frontend serving
   AUTH_TOKENS?: KVNamespace; // Optional - commented out in wrangler.toml
   ANALYTICS?: AnalyticsEngineDataset; // Optional - commented out in wrangler.toml
   
