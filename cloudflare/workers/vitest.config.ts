@@ -52,7 +52,6 @@ export default defineWorkersConfig({
       all: true,
       clean: true
     },
-    environment: 'miniflare',
     globals: true,
     testTimeout: 30000
   }
