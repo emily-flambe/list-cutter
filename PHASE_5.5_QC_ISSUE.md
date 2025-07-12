@@ -394,7 +394,7 @@ wrangler deploy --env development
 #### 2. Test Core API Endpoints
 ```bash
 # Replace with your actual development URL
-BASE_URL="https://cutty-api-dev.emilycogsdill.com"
+BASE_URL="https://cutty-dev.emilycogsdill.com"
 
 # Test health endpoints
 curl "${BASE_URL}/api/health"
@@ -421,7 +421,7 @@ curl "${BASE_URL}/api/monitoring/status"
 #### 4. Validate Cron Jobs Are Registered
 ```bash
 # Check cron job registration
-wrangler deployments list --name cutty-api
+wrangler deployments list --name cutty
 ```
 
 **Expected Result:** Should show recent deployment with cron triggers
