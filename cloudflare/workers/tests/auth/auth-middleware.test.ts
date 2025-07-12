@@ -6,8 +6,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMockEnv, createMockRequest, createMockContext } from '../utils/test-env';
-import { createTestToken, createExpiredToken, createAuthHeaders, authScenarios } from '../utils/auth-helpers';
-import { setupTokenKVMocks } from '../utils/test-env';
+import { createTestToken, createExpiredToken, createAuthHeaders, authScenarios, setupTokenKVMocks } from '../utils/auth-helpers';
 import { authorizationHeaders } from '../fixtures/tokens';
 
 // Mock the auth middleware - in a real implementation, this would import the actual middleware

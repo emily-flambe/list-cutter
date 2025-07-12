@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createMockEnv, createMockRequest, createMockContext, expectResponse } from '../utils/test-env';
 import { registrationData } from '../fixtures/users';
-import { setupTokenKVMocks } from '../utils/test-env';
+import { setupTokenKVMocks } from '../utils/auth-helpers';
 
 // Mock the registration handler - in a real implementation, this would import the actual handler
 const mockRegisterHandler = vi.fn();

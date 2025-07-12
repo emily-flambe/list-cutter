@@ -20,7 +20,8 @@ import {
   TokenExpiredError,
   EnvironmentError 
 } from '../../src/types/errors';
-import { createMockEnv, createMockUser, setupTokenKVMocks } from '../utils/test-env';
+import { createMockEnv, createMockUser } from '../utils/test-env';
+import { setupTokenKVMocks } from '../utils/auth-helpers';
 import { tokenPayloads, jwtSecrets, malformedTokens } from '../fixtures/tokens';
 
 describe('JWT Token Generation', () => {
