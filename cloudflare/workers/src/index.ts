@@ -38,7 +38,7 @@ import { MetricsService } from './services/monitoring/metrics-service';
 import { verifyJWT } from './services/auth/jwt';
 
 // Import route handlers
-import migrationRoutes from './routes/migration.js';
+// import migrationRoutes from './routes/migration.js'; // Removed - file doesn't exist
 import secureFilesRoutes from './routes/secure-files.js';
 import monitoringRoutes from './routes/monitoring.js';
 import dashboardMonitoringRoutes from './routes/dashboard-monitoring.js';
@@ -337,10 +337,10 @@ app.use('*', async (c, next): Promise<void> => {
 
 app.use('*', prettyJSON());
 
-// CORS configuration
+// CORS configuration - Allow same-origin and development
 app.use('*', async (c, next): Promise<Response> => {
   const corsMiddleware = cors({
-    origin: c.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com', 'https://cutty-api.emily-cogsdill.workers.dev'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     exposeHeaders: ['X-Request-Id', 'X-Response-Time'],
@@ -944,7 +944,7 @@ app.all('/api/dashboard/*', async (c): Promise<Response> => {
 const v1 = app.basePath('/api');
 
 // Mount routes
-v1.route('/migration', migrationRoutes);
+// v1.route('/migration', migrationRoutes); // Removed - migration routes handled by blue-green deployment
 v1.route('/', secureFilesRoutes); // Secure file routes at /api/files/*
 v1.route('/monitoring', monitoringRoutes); // Monitoring routes at /api/monitoring/*
 v1.route('/dashboard', dashboardMonitoringRoutes); // Dashboard monitoring routes at /api/dashboard/*
@@ -956,6 +956,84 @@ v1.route('/auth', authRoutes);
 v1.route('/deployment', blueGreenDeploymentRoutes); // Blue-green deployment routes at /api/deployment/*
 // v1.route('/csv', csvRoutes);
 // v1.route('/users', userRoutes);
+
+// Frontend serving logic for non-API routes
+app.get('*', async (c): Promise<Response> => {
+  // Skip API routes - let them be handled by the API handlers above
+  if (c.req.path.startsWith('/api/') || c.req.path.startsWith('/health') || c.req.path.startsWith('/test-') || c.req.path.startsWith('/admin/') || c.req.path.startsWith('/user/') || c.req.path.startsWith('/metrics/') || c.req.path.startsWith('/dashboard/')) {
+    // Let these continue to the 404 handler
+    return c.next();
+  }
+
+  try {
+    // Try to serve the asset directly from ASSETS binding
+    const asset = await c.env.ASSETS.fetch(c.req.raw);
+    
+    // If asset exists, add appropriate headers and return it
+    if (asset.status !== 404) {
+      const response = new Response(asset.body, asset);
+      
+      // Add security headers
+      response.headers.set('X-Frame-Options', 'DENY');
+      response.headers.set('X-Content-Type-Options', 'nosniff');
+      response.headers.set('X-XSS-Protection', '1; mode=block');
+      response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+      response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+      
+      // Set CSP for same-origin API access
+      response.headers.set('Content-Security-Policy', 
+        `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'`
+      );
+      
+      // Set caching headers based on file type
+      const pathname = c.req.path;
+      if (pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot)$/)) {
+        // Static assets - cache for 1 year
+        response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+      } else if (pathname.match(/\.(html)$/)) {
+        // HTML files - no cache for SPA
+        response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+      }
+      
+      return response;
+    }
+    
+    // If asset not found, serve index.html for SPA routing
+    const indexRequest = new Request(new URL('/index.html', c.req.url));
+    const indexAsset = await c.env.ASSETS.fetch(indexRequest);
+    
+    if (indexAsset.status === 404) {
+      // Continue to API 404 handler
+      return c.next();
+    }
+    
+    // Return index.html with proper headers for SPA routing
+    const indexResponse = new Response(indexAsset.body, {
+      ...indexAsset,
+      headers: {
+        ...indexAsset.headers,
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-Frame-Options': 'DENY',
+        'X-Content-Type-Options': 'nosniff',
+        'X-XSS-Protection': '1; mode=block',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+        'Content-Security-Policy': `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'`
+      }
+    });
+    
+    return indexResponse;
+  } catch (error) {
+    console.error('Error serving frontend asset:', error);
+    // Continue to API 404 handler
+    return c.next();
+  }
+});
 
 // 404 handler
 app.notFound((c): Response => {

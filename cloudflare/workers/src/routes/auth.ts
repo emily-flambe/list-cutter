@@ -8,13 +8,13 @@ import { Env } from '../types/env';
 
 const auth = new Hono<{ Bindings: Env }>();
 
-// Environment-specific CORS configuration
-auth.use('*', cors((c) => ({
-  origin: c.env.CORS_ORIGIN || 'https://cutty.emilycogsdill.com',
-  allowMethods: ['POST', 'OPTIONS'],
+// Simplified CORS for same-origin setup (frontend and API on same domain)
+auth.use('*', cors({
+  origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com', 'https://cutty-api.emily-cogsdill.workers.dev'],
+  allowMethods: ['POST', 'GET', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-})));
+}));
 
 auth.post('/login', async (c) => {
   return handleLogin(c.req.raw, c.env);

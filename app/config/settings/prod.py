@@ -2,7 +2,9 @@ from .base import *
 import os
 from neomodel import config as neomodel_config
 
+# Neo4j configuration for production
 NEO4J_PASSWORD = os.environ.get('NEO4J_PASSWORD', 'default_password')
+NEO4J_HOST = os.environ.get('NEO4J_HOST', 'neo4j.production.host')  # Should be set in production env
 neomodel_config.DATABASE_URL = f'bolt://neo4j:{NEO4J_PASSWORD}@{NEO4J_HOST}:7687'
 
 ENVIRONMENT = "prod"
@@ -22,22 +24,5 @@ DJANGO_VITE = {
     }
 }
 
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": get_env_variable("POSTGRES_DB"),
-        "HOST": get_env_variable("POSTGRES_HOST"),
-        "PORT": get_env_variable("POSTGRES_PORT"),
-        "USER": get_env_variable("POSTGRES_USER"),
-        "PASSWORD": get_env_variable("POSTGRES_PASSWORD"),
-        # "OPTIONS": {
-        #     "sslmode": get_env_variable("POSTGRES_SSLMODE", "verify-ca"),
-        #     "sslrootcert": "/app/config/settings/certs/dev-gcp/server-ca.pem",
-        #     "sslcert": "/app/config/settings/certs/dev-gcp/client-cert.pem",
-        #     "sslkey": "/app/config/settings/certs/dev-gcp/client-key.pem",
-        # },
-    }
-}
+# Database configurations removed - migrated to Cloudflare D1
+# PostgreSQL DATABASES configuration removed in Phase 2B cleanup
