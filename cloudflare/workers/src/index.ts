@@ -340,7 +340,7 @@ app.use('*', prettyJSON());
 // CORS configuration - Allow same-origin and development
 app.use('*', async (c, next): Promise<Response> => {
   const corsMiddleware = cors({
-    origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com', 'https://cutty-api.emily-cogsdill.workers.dev'],
+    origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     exposeHeaders: ['X-Request-Id', 'X-Response-Time'],
