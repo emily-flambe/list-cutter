@@ -39,6 +39,9 @@ export interface CloudflareEnv {
   // Performance Optimization Bindings - Issue #69
   CACHE_KV?: KVNamespace; // Multi-layer caching for performance optimization (optional - not yet created)
   
+  // Deployment Bindings - Phase 8
+  DEPLOYMENT_KV?: KVNamespace; // Blue-green deployment state and configuration (optional - not yet created)
+  
   // Optional bindings
   RATE_LIMITER?: DurableObjectNamespace;
 }

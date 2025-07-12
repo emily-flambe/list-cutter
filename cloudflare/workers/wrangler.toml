@@ -95,6 +95,13 @@ preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 # id = "performance-cache-kv-id-placeholder"
 # preview_id = "performance-cache-kv-id-placeholder"
 
+# Phase 8 Deployment KV Namespace - For blue-green deployment state management
+# TODO: Create actual KV namespace for deployment management
+# [[kv_namespaces]]
+# binding = "DEPLOYMENT_KV"
+# id = "deployment-state-kv-id-placeholder"
+# preview_id = "deployment-state-kv-id-placeholder"
+
 # AUTH_KV namespace for JWT token storage and blacklisting
 [[kv_namespaces]]
 binding = "AUTH_KV"
