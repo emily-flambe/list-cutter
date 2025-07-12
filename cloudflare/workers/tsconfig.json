@@ -43,21 +43,12 @@
     }
   },
   "include": [
-    "src/index.ts",
-    "src/types/*.ts",
-    "src/config/*.ts",
-    "src/middleware/*.ts",
-    "src/routes/*.ts"
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "e2e/**/*.ts"
   ],
   "exclude": [
     "node_modules", 
-    "dist", 
-    "tests", 
-    "**/*.test.ts", 
-    "**/*.spec.ts",
-    "src/services/security/**/*",
-    "src/services/storage/**/*",
-    "src/services/migration/**/*",
-    "src/services/csv/**/*"
+    "dist"
   ]
 }
