@@ -1,0 +1,106 @@
+# Debugging Lessons Learned
+# Project-specific debugging knowledge and patterns
+
+WranglerDeploymentIssues: &WranglerDeploymentIssues
+  issue_number: "#65"
+  problem: "CI deployment failing with 'binding should have a string binding field' error"
+  
+  root_cause:
+    - "Package-lock.json mismatch (v3 lockfile, v4 package.json)"
+    - "Complex commented TOML binding configurations causing parsing errors"
+  
+  key_lessons:
+    root_cause_analysis:
+      - "Multi-layered Problems: Always check for multiple simultaneous issues"
+      - "Environment Parity: CI uses npm ci (strict) vs local npm install (flexible)"
+      - "Version Dependencies: Regenerate lockfiles after major version changes"
+      - "Configuration Comments: Even commented TOML syntax can break parsers"
+    
+    technical_debugging:
+      - "Test Exact CI Commands: Use npm ci and exact wrangler commands locally"
+      - "Transitive Dependencies: Check for conflicting sub-dependencies"
+      - "Error Message Validity: binding field error pointed to config, but root cause was version mismatch"
+      - "Incremental Changes: Simplify configuration → working deployment → add complexity back"
+    
+    process_improvements:
+      - "Local Testing First: Always reproduce CI environment exactly before pushing"
+      - "Systematic Approach: Reproduce → Isolate → Document → Verify → Validate"
+      - "Test Scripts: Create validation scripts for consistent testing"
+      - "Version Specificity: Use exact versions in package.json for critical dependencies"
+    
+    wrangler_specific:
+      - "Version Compatibility: v3 vs v4 have different binding syntax requirements"
+      - "Configuration Validation: Use wrangler deploy --dry-run and wrangler versions upload --dry-run"
+      - "Clean Configuration: Remove complex commented binding examples that cause parsing issues"
+  
+  resolution_commands:
+    - "cd cloudflare/workers"
+    - "rm -rf node_modules package-lock.json"
+    - "npm ci  # This should match CI exactly"
+    - "npx wrangler versions upload --dry-run"
+    - "npx wrangler deploy --dry-run"
+    - "npm run build"
+  
+  next_time: "Always start by reproducing the exact CI failure locally before making any configuration changes"
+
+TypeScriptBuildFailures: &TypeScriptBuildFailures
+  issue_number: "#67"
+  problem: "Cloudflare Worker build failing with TypeScript errors, TOML syntax issues, and D1 database type casting problems"
+  
+  root_cause:
+    - "TOML configuration syntax errors (unterminated arrays)"
+    - "Binding name mismatches between TypeScript interfaces and Wrangler config"
+    - "Unsafe D1 database result type casting without proper validation"
+    - "Overly strict TypeScript configuration causing build failures"
+  
+  key_lessons:
+    progressive_problem_solving:
+      - "Start with Critical Blockers: Fix syntax errors before type issues"
+      - "Layer-by-Layer Resolution: Configuration → Build → Types → Tests"
+      - "Permissive-to-Strict Approach: Get builds working first, then tighten constraints"
+      - "User Requirements Priority: Focus on essential functionality over perfect types"
+    
+    typescript_build_config:
+      - "Graceful Degradation: Make TypeScript permissive when strict checking blocks progress"
+      - "Essential vs Nice-to-Have: Distinguish between critical type safety and perfectionist checking"
+      - "Exclude Problematic Areas: Use TypeScript exclude to temporarily bypass complex modules"
+      - "Build vs Type-Check: Separate concerns - builds can succeed while types are imperfect"
+    
+    d1_database_best_practices:
+      - "Never use unsafe as Type casting on database results"
+      - "Always use Number(), String() conversions instead of direct casting"
+      - "Check for null/undefined before type conversion: Number(result?.field) || 0"
+      - "Use Record<string, unknown> for database row typing, then convert explicitly"
+      - "Validate enum values before casting: ['low','medium','high'].includes(value) ? value : 'default'"
+      - "Handle optional chaining for meta properties: result.meta?.changes"
+    
+    cloudflare_workers_development:
+      - "TOML Syntax Validation: Use proper table format instead of inline objects for complex configs"
+      - "Binding Name Consistency: Ensure TypeScript env interfaces match wrangler.toml exactly"
+      - "Environment Prefixing: Use consistent naming like CUTTY_* for all bindings"
+      - "Version Management: Keep Wrangler versions consistent between package.json and CI"
+    
+    debugging_methodology:
+      - "Research Phase: Use Task tool for comprehensive codebase analysis"
+      - "Systematic Fixes: One category at a time (config → build → types)"
+      - "User Feedback Integration: Adjust strictness based on user priorities"
+      - "Verification Loops: Test builds after each major change"
+  
+  resolution_pattern:
+    - "npm run build  # Should pass after TOML fixes"
+    - "npx wrangler versions upload  # Should succeed"
+    - "npx tsc --noEmit  # Identify remaining issues"
+    - "# Use exclude patterns for problematic service directories"
+  
+  safe_patterns:
+    unsafe_examples:
+      - "const count = result.count as number;"
+      - "severity: event.severity as 'low' | 'medium'"
+      - "const row = result as DatabaseRow;"
+    
+    safe_examples:
+      - "const count = Number(result?.count) || 0;"
+      - "severity: (['low','medium','high'].includes(event.severity) ? event.severity : 'medium') as 'low' | 'medium' | 'high'"
+      - "const row = result as Record<string, unknown>; const safeField = String(row.field_name);"
+  
+  next_time: "Begin with configuration validation, separate build success from type perfection, and prioritize user requirements over theoretical type safety"
