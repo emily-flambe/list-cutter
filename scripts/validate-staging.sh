@@ -4,7 +4,7 @@
 
 set -e
 
-STAGING_URL="https://staging.cutty.com"
+STAGING_URL="https://cutty-api.emily-cogsdill.workers.dev"
 MAX_RETRIES=30
 RETRY_DELAY=10
 

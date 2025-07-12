@@ -18,7 +18,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ROLLBACK_LOG_DIR="$PROJECT_ROOT/logs/rollback"
 ROLLBACK_LOG_FILE="$ROLLBACK_LOG_DIR/rollback_$(date +%Y%m%d_%H%M%S).log"
 PRODUCTION_URL="https://cutty.com"
-DJANGO_API_URL="${DJANGO_API_URL:-https://old-api.list-cutter.com}"
+DJANGO_API_URL="${DJANGO_API_URL:-SKIP}"  # Django system decommissioned
 EMERGENCY_MODE="${1:-normal}"
 
 # Create log directory

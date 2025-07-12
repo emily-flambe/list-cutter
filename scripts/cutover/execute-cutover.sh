@@ -17,9 +17,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CUTOVER_LOG_DIR="$PROJECT_ROOT/logs/cutover"
 CUTOVER_LOG_FILE="$CUTOVER_LOG_DIR/cutover_$(date +%Y%m%d_%H%M%S).log"
-PRODUCTION_URL="https://cutty.com"
-STAGING_URL="https://staging.cutty.com"
-DJANGO_API_URL="${DJANGO_API_URL:-https://old-api.list-cutter.com}"
+PRODUCTION_URL="https://cutty-api.emily-cogsdill.workers.dev"
+STAGING_URL="https://cutty-api.emily-cogsdill.workers.dev"  # Same worker, different env
+DJANGO_API_URL="${DJANGO_API_URL:-SKIP}"  # Django system decommissioned
 CUTOVER_TIMEOUT="${CUTOVER_TIMEOUT:-1800}" # 30 minutes default timeout
 
 # Create log directory
@@ -145,9 +145,14 @@ preflight_checks() {
     
     # Test Django API connectivity
     print_status "Testing Django API connectivity..."
-    if ! curl -f -s "$DJANGO_API_URL/health" > /dev/null; then
-        print_error "Cannot connect to Django API at $DJANGO_API_URL"
-        return 1
+    if [ "$DJANGO_API_URL" = "SKIP" ]; then
+        print_warning "Django API check skipped - system decommissioned"
+    else
+        if ! curl -f -s "$DJANGO_API_URL/health" > /dev/null; then
+            print_error "Cannot connect to Django API at $DJANGO_API_URL"
+            return 1
+        fi
+        print_success "Django API connectivity verified"
     fi
     
     # Check production Worker deployment
@@ -196,6 +201,11 @@ deploy_to_production() {
 # Enable maintenance mode on Django
 enable_maintenance_mode() {
     print_header "Enabling Maintenance Mode"
+    
+    if [ "$DJANGO_API_URL" = "SKIP" ]; then
+        print_warning "Django maintenance mode skipped - system decommissioned"
+        return 0
+    fi
     
     print_status "Enabling maintenance mode on Django system..."
     
