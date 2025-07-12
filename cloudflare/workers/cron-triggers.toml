@@ -1,0 +1,36 @@
+# Separate file for cron triggers to avoid deployment parsing issues
+name = "cutty-api"
+
+# Monitoring cron triggers
+[[triggers.crons]]
+cron = "*/5 * * * *"
+
+[[triggers.crons]]
+cron = "0 */6 * * *"
+
+[[triggers.crons]]
+cron = "0 2 * * *"
+
+[[triggers.crons]]
+cron = "0 4 1 * *"
+
+[[triggers.crons]]
+cron = "*/1 * * * *"
+
+[[triggers.crons]]
+cron = "0 5 * * 0"
+
+[[triggers.crons]]
+cron = "*/15 * * * *"
+
+[[triggers.crons]]
+cron = "0 3 * * *"
+
+[[triggers.crons]]
+cron = "*/10 * * * *"
+
+[[triggers.crons]]
+cron = "0 3 * * 0"
+
+[[triggers.crons]]
+cron = "0 6 * * *"
