@@ -55,7 +55,7 @@ const FileUpload = () => {
         return;
       }
 
-      const response = await api.post(`/api/cutty/upload/`, formData, {
+      const response = await api.post(`/api/v1/files/upload`, formData, {
         headers: {
           "Authorization": `Bearer ${newToken}`, // Use the refreshed token
         },

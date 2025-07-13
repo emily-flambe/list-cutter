@@ -9,7 +9,7 @@ export const getNewToken = async () => {
       { refresh_token: refreshToken },
       { headers: { 'Content-Type': 'application/json' } }
     );
-    const newToken = response.data.access;
+    const newToken = response.data.access_token;
     updateAuthToken(newToken);
     return newToken;
   } catch (error) {
