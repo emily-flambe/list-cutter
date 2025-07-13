@@ -26,14 +26,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: './cloudflare/workers/package-lock.json'
+          # Disable npm cache to avoid version conflicts
+          # cache: 'npm'
+          # cache-dependency-path: './cloudflare/workers/package-lock.json'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Fix Rollup dependencies
+      - name: Clear npm cache and install dependencies
         run: |
+          npm cache clean --force
           rm -rf node_modules package-lock.json
           npm install
 
