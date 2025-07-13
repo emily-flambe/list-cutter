@@ -1,7 +1,12 @@
 import { useState, useRef, useContext } from "react";
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Box, Button, Typography, Alert, TextField } from '@mui/material';
+// Optimized direct imports for better tree-shaking and build performance
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
+import TextField from '@mui/material/TextField';
 import { getNewToken } from '../auth';
 
 const FileUpload = () => {

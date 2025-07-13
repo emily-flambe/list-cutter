@@ -1,6 +1,6 @@
 # Cutty Development Makefile
 
-.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations
+.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build clean test install-deps
 
 dev: setup kill-ports
 	@echo "🚀 Starting both backend and frontend servers..."
@@ -112,9 +112,9 @@ migrations:
 	@cd cloudflare/workers && \
 	MIGRATION_FILES=$$(ls migrations/*.sql | sort); \
 	if [ "$(ENV)" = "local" ]; then \
-		echo "🗄️  Setting up local.sqlite with D1-compatible schema..."; \
+		echo "🗄️  Setting up local.sqlite with initial schema..."; \
 		rm -f local.sqlite; \
-		echo "🏗️  Creating fresh local database with D1-compatible schema..."; \
+		echo "🏗️  Creating fresh local database with initial schema..."; \
 		sqlite3 local.sqlite < migrations/0000_initial_schema.sql || { \
 			echo "❌ ERROR: Failed to create local.sqlite with initial schema"; \
 			exit 1; \
@@ -225,3 +225,49 @@ migrations:
 		echo "Valid values: dev, prod, all, local, clean, clean-dev"; \
 		exit 1; \
 	fi
+
+# ============================================================================
+# OPTIMIZED BUILD SYSTEM - Issue #98 Build Time Reduction
+# ============================================================================
+
+# Optimized build with clean and dependency check
+build: clean install-deps
+	@echo "🏗️ Starting optimized build..."
+	@$(MAKE) -j2 build-workers build-frontend
+	@echo "✅ Build completed!"
+
+# Ensure dependencies are installed
+install-deps:
+	@echo "📦 Checking dependencies..."
+	@if [ ! -d "cloudflare/workers/node_modules" ]; then \
+		echo "Installing workers dependencies..."; \
+		cd cloudflare/workers && npm install; \
+	fi
+	@if [ ! -d "app/frontend/node_modules" ]; then \
+		echo "Installing frontend dependencies..."; \
+		cd app/frontend && npm install; \
+	fi
+	@echo "✅ Dependencies ready"
+
+# Individual build targets
+build-workers:
+	@echo "🔧 Building Cloudflare Workers..."
+	@cd cloudflare/workers && npm run build
+
+build-frontend:
+	@echo "🎨 Building React frontend..."
+	@cd app/frontend && npm run build
+
+# Clean build artifacts for fresh builds
+clean:
+	@echo "🧹 Cleaning build artifacts..."
+	@rm -rf app/frontend/dist app/frontend/.vite app/frontend/node_modules/.vite
+	@rm -rf cloudflare/workers/dist cloudflare/workers/.tsbuildinfo
+	@rm -rf .tsbuildinfo
+	@echo "✅ Clean completed!"
+
+# Testing
+test:
+	@echo "🧪 Running tests..."
+	@cd cloudflare/workers && npm test
+	@echo "✅ Tests completed!"

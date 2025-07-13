@@ -1,4 +1,7 @@
-import { Typography, Box, Link } from '@mui/material';
+// Optimized direct imports for better tree-shaking and build performance
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Link from '@mui/material/Link';
 import importantImage from '../assets/important.jpg';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';

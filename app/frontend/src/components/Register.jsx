@@ -1,13 +1,12 @@
 // frontend/src/pages/Register.jsx
 import React, { useState } from 'react';
 import api from '../api';
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Alert,
-} from '@mui/material';
+// Optimized direct imports for better tree-shaking and build performance
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
 
 const Register = () => {
   const [formData, setFormData] = useState({

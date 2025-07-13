@@ -1,5 +1,26 @@
-import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Collapse, Link as MuiLink } from '@mui/material';
-import { Home, UploadFile, Login, Logout, Help, Folder, ContentCut, List as ListIcon, AccountTree, Person as PersonIcon } from '@mui/icons-material';
+// Optimized direct imports for better tree-shaking and build performance
+import Box from '@mui/material/Box';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Typography from '@mui/material/Typography';
+import Collapse from '@mui/material/Collapse';
+import MuiLink from '@mui/material/Link';
+
+// Optimized direct icon imports for better tree-shaking
+import HomeIcon from '@mui/icons-material/Home';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import LoginIcon from '@mui/icons-material/Login';
+import LogoutIcon from '@mui/icons-material/Logout';
+import HelpIcon from '@mui/icons-material/Help';
+import FolderIcon from '@mui/icons-material/Folder';
+import ContentCutIcon from '@mui/icons-material/ContentCut';
+import ListIcon from '@mui/icons-material/List';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import PersonIcon from '@mui/icons-material/Person';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext, useEffect, useState } from 'react';
@@ -41,14 +62,14 @@ const Layout = ({ children }) => {
   }, [token]); // Fetch user data whenever the token changes
 
   const menuItems = [
-    ...(token ? [{ text: 'Logout', icon: <Logout />, path: '/logout' }] : []),
-    ...(token ? [] : [{ text: 'Login', icon: <Login />, path: '/login' }]),
-    ...(token ? [] : [{ text: 'CSV Cutter', icon: <ContentCut />, path: '/csv_cutter' }]),
-    ...(token ? [{ text: 'CSV Cutter PLUS', icon: <ContentCut />, path: '/csv_cutter_plus' }] : []),
+    ...(token ? [{ text: 'Logout', icon: <LogoutIcon />, path: '/logout' }] : []),
+    ...(token ? [] : [{ text: 'Login', icon: <LoginIcon />, path: '/login' }]),
+    ...(token ? [] : [{ text: 'CSV Cutter', icon: <ContentCutIcon />, path: '/csv_cutter' }]),
+    ...(token ? [{ text: 'CSV Cutter PLUS', icon: <ContentCutIcon />, path: '/csv_cutter_plus' }] : []),
     ...(token ? [{ text: openFiles ? 'Files (-)' : 'Files (+)', icon: <ListIcon />, isGroup: true }] : []),
     ...(token ? [{ text: openPeople ? 'People (-)' : 'People (+)', icon: <ListIcon />, isGroup: true }] : []),
-    ...(token ? [{ text: 'FAQ', icon: <Help />, path: '/faq' }] : []),
-    { text: 'About', icon: <Home />, path: '/' },
+    ...(token ? [{ text: 'FAQ', icon: <HelpIcon />, path: '/faq' }] : []),
+    { text: 'About', icon: <HomeIcon />, path: '/' },
   ];
 
   // Determine the message based on the current path
@@ -162,7 +183,7 @@ const Layout = ({ children }) => {
                               to="/file_upload" 
                               sx={{ paddingLeft: 4 }}
                             >
-                              <ListItemIcon><UploadFile /></ListItemIcon>
+                              <ListItemIcon><UploadFileIcon /></ListItemIcon>
                               <ListItemText primary="Upload" />
                             </ListItemButton>
                           </ListItem>
@@ -172,7 +193,7 @@ const Layout = ({ children }) => {
                               to="/manage_files" 
                               sx={{ paddingLeft: 4 }}
                             >
-                              <ListItemIcon><Folder /></ListItemIcon>
+                              <ListItemIcon><FolderIcon /></ListItemIcon>
                               <ListItemText primary="Manage" />
                             </ListItemButton>
                           </ListItem>
@@ -182,7 +203,7 @@ const Layout = ({ children }) => {
                               to="/file_lineage" 
                               sx={{ paddingLeft: 4 }}
                             >
-                              <ListItemIcon><AccountTree /></ListItemIcon>
+                              <ListItemIcon><AccountTreeIcon /></ListItemIcon>
                               <ListItemText primary="Lineage" />
                             </ListItemButton>
                           </ListItem>

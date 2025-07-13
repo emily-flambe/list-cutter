@@ -1,5 +1,13 @@
 import { useState, useEffect, useContext } from "react";
-import { Box, Button, Checkbox, List, ListItem, Typography, Select, MenuItem } from '@mui/material';
+// Optimized direct imports for better tree-shaking and build performance
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import Typography from '@mui/material/Typography';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
 

@@ -26,7 +26,8 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "build": "esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --platform=node --target=es2022",
+    "build": "esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --platform=node --target=es2022 --minify --tree-shaking=true --keep-names --sourcemap=external --legal-comments=none",
+    "build:dev": "esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --platform=neutral --target=es2022 --sourcemap=inline",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv"
   },
   "devDependencies": {
