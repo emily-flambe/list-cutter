@@ -5,19 +5,15 @@
 -- Run this migration with: make migrations ENV=clean
 -- This will clear all existing data and apply the final schema
 
--- Enable foreign key constraints and other pragmas
+-- Enable foreign key constraints (D1 compatible)
 PRAGMA foreign_keys = ON;
-PRAGMA journal_mode = WAL;
-PRAGMA synchronous = NORMAL;
-PRAGMA temp_store = memory;
-PRAGMA mmap_size = 268435456; -- 256MB
 
 -- =============================================================================
 -- CORE TABLES
 -- =============================================================================
 
 -- Users table (email is OPTIONAL)
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     email TEXT UNIQUE, -- OPTIONAL - removed NOT NULL constraint
     username TEXT UNIQUE NOT NULL,
@@ -32,7 +28,7 @@ CREATE TABLE users (
 );
 
 -- Files table (enhanced with R2 compatibility)
-CREATE TABLE files (
+CREATE TABLE IF NOT EXISTS files (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id TEXT NOT NULL,
     filename TEXT NOT NULL,
@@ -55,7 +51,7 @@ CREATE TABLE files (
 );
 
 -- Saved filters table
-CREATE TABLE saved_filters (
+CREATE TABLE IF NOT EXISTS saved_filters (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id TEXT NOT NULL,
     file_id TEXT NOT NULL,
@@ -75,7 +71,7 @@ CREATE TABLE saved_filters (
 -- =============================================================================
 
 -- API keys table
-CREATE TABLE api_keys (
+CREATE TABLE IF NOT EXISTS api_keys (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     key_id TEXT UNIQUE NOT NULL,
     user_id TEXT NOT NULL,
@@ -92,7 +88,7 @@ CREATE TABLE api_keys (
 );
 
 -- API Key usage tracking
-CREATE TABLE api_key_usage (
+CREATE TABLE IF NOT EXISTS api_key_usage (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key_id TEXT NOT NULL,
     timestamp INTEGER NOT NULL,
@@ -110,7 +106,7 @@ CREATE TABLE api_key_usage (
 -- =============================================================================
 
 -- Audit logs table
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id TEXT,
     action TEXT NOT NULL,
@@ -124,7 +120,7 @@ CREATE TABLE audit_logs (
 );
 
 -- Security events table
-CREATE TABLE security_events (
+CREATE TABLE IF NOT EXISTS security_events (
     id TEXT PRIMARY KEY,
     timestamp INTEGER NOT NULL,
     event_type TEXT NOT NULL,
@@ -141,7 +137,7 @@ CREATE TABLE security_events (
 );
 
 -- Security analytics aggregation table
-CREATE TABLE security_analytics (
+CREATE TABLE IF NOT EXISTS security_analytics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL,
     event_type TEXT NOT NULL,
@@ -160,7 +156,7 @@ CREATE TABLE security_analytics (
 -- =============================================================================
 
 -- Multipart uploads table
-CREATE TABLE multipart_uploads (
+CREATE TABLE IF NOT EXISTS multipart_uploads (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     upload_id TEXT UNIQUE NOT NULL, -- R2 multipart upload ID
     file_id TEXT NOT NULL,
@@ -180,7 +176,7 @@ CREATE TABLE multipart_uploads (
 );
 
 -- File access logs table
-CREATE TABLE file_access_logs (
+CREATE TABLE IF NOT EXISTS file_access_logs (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     file_id TEXT NOT NULL,
     user_id TEXT,
@@ -198,7 +194,7 @@ CREATE TABLE file_access_logs (
 );
 
 -- File processing queue table
-CREATE TABLE file_processing_queue (
+CREATE TABLE IF NOT EXISTS file_processing_queue (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     file_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
@@ -223,7 +219,7 @@ CREATE TABLE file_processing_queue (
 -- =============================================================================
 
 -- Storage metrics table
-CREATE TABLE storage_metrics (
+CREATE TABLE IF NOT EXISTS storage_metrics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id TEXT,
     metric_type TEXT NOT NULL, -- 'storage_used', 'file_count', 'bandwidth_used'
@@ -234,7 +230,7 @@ CREATE TABLE storage_metrics (
 );
 
 -- Alert configurations table
-CREATE TABLE alert_configurations (
+CREATE TABLE IF NOT EXISTS alert_configurations (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     name TEXT NOT NULL,
     description TEXT,
@@ -251,7 +247,7 @@ CREATE TABLE alert_configurations (
 );
 
 -- Alert instances table
-CREATE TABLE alert_instances (
+CREATE TABLE IF NOT EXISTS alert_instances (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     configuration_id TEXT NOT NULL,
     alert_level TEXT NOT NULL CHECK (alert_level IN ('info', 'warning', 'critical')),
@@ -275,7 +271,7 @@ CREATE TABLE alert_instances (
 -- =============================================================================
 
 -- Backup configurations table
-CREATE TABLE backup_configurations (
+CREATE TABLE IF NOT EXISTS backup_configurations (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     name TEXT NOT NULL,
     backup_type TEXT NOT NULL CHECK (backup_type IN ('full', 'incremental', 'differential')),
@@ -290,7 +286,7 @@ CREATE TABLE backup_configurations (
 );
 
 -- Backup instances table
-CREATE TABLE backup_instances (
+CREATE TABLE IF NOT EXISTS backup_instances (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     configuration_id TEXT,
     backup_type TEXT NOT NULL,
@@ -313,7 +309,7 @@ CREATE TABLE backup_instances (
 -- =============================================================================
 
 -- User quotas table
-CREATE TABLE user_quotas (
+CREATE TABLE IF NOT EXISTS user_quotas (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id TEXT NOT NULL,
     quota_type TEXT NOT NULL, -- 'storage', 'bandwidth', 'files', 'api_calls'
@@ -329,7 +325,7 @@ CREATE TABLE user_quotas (
 );
 
 -- File access permissions table
-CREATE TABLE file_access_permissions (
+CREATE TABLE IF NOT EXISTS file_access_permissions (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     file_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
@@ -349,127 +345,133 @@ CREATE TABLE file_access_permissions (
 -- =============================================================================
 
 -- Users indexes
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_is_active ON users(is_active);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 
 -- Files indexes
-CREATE INDEX idx_files_user_id ON files(user_id);
-CREATE INDEX idx_files_r2_key ON files(r2_key);
-CREATE INDEX idx_files_created_at ON files(created_at);
-CREATE INDEX idx_files_status ON files(upload_status);
-CREATE INDEX idx_files_checksum ON files(checksum);
-CREATE INDEX idx_files_storage_class ON files(storage_class);
+CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id);
+CREATE INDEX IF NOT EXISTS idx_files_r2_key ON files(r2_key);
+CREATE INDEX IF NOT EXISTS idx_files_created_at ON files(created_at);
+CREATE INDEX IF NOT EXISTS idx_files_status ON files(upload_status);
+CREATE INDEX IF NOT EXISTS idx_files_checksum ON files(checksum);
+CREATE INDEX IF NOT EXISTS idx_files_storage_class ON files(storage_class);
 
 -- Saved filters indexes
-CREATE INDEX idx_saved_filters_user_id ON saved_filters(user_id);
-CREATE INDEX idx_saved_filters_file_id ON saved_filters(file_id);
+CREATE INDEX IF NOT EXISTS idx_saved_filters_user_id ON saved_filters(user_id);
+CREATE INDEX IF NOT EXISTS idx_saved_filters_file_id ON saved_filters(file_id);
 
 -- API keys indexes
-CREATE INDEX idx_api_keys_user_id ON api_keys(user_id);
-CREATE INDEX idx_api_keys_key_hash ON api_keys(key_hash);
-CREATE INDEX idx_api_keys_key_prefix ON api_keys(key_prefix);
-CREATE INDEX idx_api_keys_active ON api_keys(is_active);
-CREATE INDEX idx_api_keys_expires ON api_keys(expires_at);
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash);
+CREATE INDEX IF NOT EXISTS idx_api_keys_key_prefix ON api_keys(key_prefix);
+CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys(is_active);
+CREATE INDEX IF NOT EXISTS idx_api_keys_expires ON api_keys(expires_at);
 
 -- API key usage indexes
-CREATE INDEX idx_api_key_usage_key_id ON api_key_usage(key_id);
-CREATE INDEX idx_api_key_usage_timestamp ON api_key_usage(timestamp);
-CREATE INDEX idx_api_key_usage_endpoint ON api_key_usage(endpoint);
+CREATE INDEX IF NOT EXISTS idx_api_key_usage_key_id ON api_key_usage(key_id);
+CREATE INDEX IF NOT EXISTS idx_api_key_usage_timestamp ON api_key_usage(timestamp);
+CREATE INDEX IF NOT EXISTS idx_api_key_usage_endpoint ON api_key_usage(endpoint);
 
 -- Security indexes
-CREATE INDEX idx_security_events_timestamp ON security_events(timestamp);
-CREATE INDEX idx_security_events_type ON security_events(event_type);
-CREATE INDEX idx_security_events_user_id ON security_events(user_id);
-CREATE INDEX idx_security_events_ip ON security_events(ip_address);
-CREATE INDEX idx_security_events_success ON security_events(success);
-CREATE INDEX idx_security_analytics_date ON security_analytics(date);
-CREATE INDEX idx_security_analytics_type ON security_analytics(event_type);
+CREATE INDEX IF NOT EXISTS idx_security_events_timestamp ON security_events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_security_events_type ON security_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_security_events_user_id ON security_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_security_events_ip ON security_events(ip_address);
+CREATE INDEX IF NOT EXISTS idx_security_events_success ON security_events(success);
+CREATE INDEX IF NOT EXISTS idx_security_analytics_date ON security_analytics(date);
+CREATE INDEX IF NOT EXISTS idx_security_analytics_type ON security_analytics(event_type);
 
 -- Audit logs indexes
-CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
-CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 
 -- File processing indexes
-CREATE INDEX idx_multipart_uploads_user_id ON multipart_uploads(user_id);
-CREATE INDEX idx_multipart_uploads_upload_id ON multipart_uploads(upload_id);
-CREATE INDEX idx_multipart_uploads_status ON multipart_uploads(status);
-CREATE INDEX idx_multipart_uploads_expires_at ON multipart_uploads(expires_at);
+CREATE INDEX IF NOT EXISTS idx_multipart_uploads_user_id ON multipart_uploads(user_id);
+CREATE INDEX IF NOT EXISTS idx_multipart_uploads_upload_id ON multipart_uploads(upload_id);
+CREATE INDEX IF NOT EXISTS idx_multipart_uploads_status ON multipart_uploads(status);
+CREATE INDEX IF NOT EXISTS idx_multipart_uploads_expires_at ON multipart_uploads(expires_at);
 
-CREATE INDEX idx_file_access_logs_file_id ON file_access_logs(file_id);
-CREATE INDEX idx_file_access_logs_user_id ON file_access_logs(user_id);
-CREATE INDEX idx_file_access_logs_action ON file_access_logs(action);
-CREATE INDEX idx_file_access_logs_created_at ON file_access_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_file_access_logs_file_id ON file_access_logs(file_id);
+CREATE INDEX IF NOT EXISTS idx_file_access_logs_user_id ON file_access_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_file_access_logs_action ON file_access_logs(action);
+CREATE INDEX IF NOT EXISTS idx_file_access_logs_created_at ON file_access_logs(created_at);
 
-CREATE INDEX idx_file_processing_queue_status ON file_processing_queue(status);
-CREATE INDEX idx_file_processing_queue_priority ON file_processing_queue(priority);
-CREATE INDEX idx_file_processing_queue_scheduled_at ON file_processing_queue(scheduled_at);
-CREATE INDEX idx_file_processing_queue_file_id ON file_processing_queue(file_id);
+CREATE INDEX IF NOT EXISTS idx_file_processing_queue_status ON file_processing_queue(status);
+CREATE INDEX IF NOT EXISTS idx_file_processing_queue_priority ON file_processing_queue(priority);
+CREATE INDEX IF NOT EXISTS idx_file_processing_queue_scheduled_at ON file_processing_queue(scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_file_processing_queue_file_id ON file_processing_queue(file_id);
 
 -- Storage metrics indexes
-CREATE INDEX idx_storage_metrics_user_id ON storage_metrics(user_id);
-CREATE INDEX idx_storage_metrics_date ON storage_metrics(measurement_date);
-CREATE INDEX idx_storage_metrics_type ON storage_metrics(metric_type);
+CREATE INDEX IF NOT EXISTS idx_storage_metrics_user_id ON storage_metrics(user_id);
+CREATE INDEX IF NOT EXISTS idx_storage_metrics_date ON storage_metrics(measurement_date);
+CREATE INDEX IF NOT EXISTS idx_storage_metrics_type ON storage_metrics(metric_type);
 
 -- Alert indexes
-CREATE INDEX idx_alert_configurations_enabled ON alert_configurations(is_enabled);
-CREATE INDEX idx_alert_configurations_type ON alert_configurations(alert_type);
-CREATE INDEX idx_alert_instances_config_id ON alert_instances(configuration_id);
-CREATE INDEX idx_alert_instances_status ON alert_instances(status);
-CREATE INDEX idx_alert_instances_triggered_at ON alert_instances(triggered_at);
+CREATE INDEX IF NOT EXISTS idx_alert_configurations_enabled ON alert_configurations(is_enabled);
+CREATE INDEX IF NOT EXISTS idx_alert_configurations_type ON alert_configurations(alert_type);
+CREATE INDEX IF NOT EXISTS idx_alert_instances_config_id ON alert_instances(configuration_id);
+CREATE INDEX IF NOT EXISTS idx_alert_instances_status ON alert_instances(status);
+CREATE INDEX IF NOT EXISTS idx_alert_instances_triggered_at ON alert_instances(triggered_at);
 
 -- Backup indexes
-CREATE INDEX idx_backup_configurations_enabled ON backup_configurations(is_enabled);
-CREATE INDEX idx_backup_instances_config_id ON backup_instances(configuration_id);
-CREATE INDEX idx_backup_instances_status ON backup_instances(status);
-CREATE INDEX idx_backup_instances_created_at ON backup_instances(created_at);
+CREATE INDEX IF NOT EXISTS idx_backup_configurations_enabled ON backup_configurations(is_enabled);
+CREATE INDEX IF NOT EXISTS idx_backup_instances_config_id ON backup_instances(configuration_id);
+CREATE INDEX IF NOT EXISTS idx_backup_instances_status ON backup_instances(status);
+CREATE INDEX IF NOT EXISTS idx_backup_instances_created_at ON backup_instances(created_at);
 
 -- Quota indexes
-CREATE INDEX idx_user_quotas_user_id ON user_quotas(user_id);
-CREATE INDEX idx_user_quotas_type ON user_quotas(quota_type);
-CREATE INDEX idx_user_quotas_enabled ON user_quotas(is_enabled);
+CREATE INDEX IF NOT EXISTS idx_user_quotas_user_id ON user_quotas(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_quotas_type ON user_quotas(quota_type);
+CREATE INDEX IF NOT EXISTS idx_user_quotas_enabled ON user_quotas(is_enabled);
 
 -- Access control indexes
-CREATE INDEX idx_file_access_permissions_file_id ON file_access_permissions(file_id);
-CREATE INDEX idx_file_access_permissions_user_id ON file_access_permissions(user_id);
-CREATE INDEX idx_file_access_permissions_active ON file_access_permissions(is_active);
+CREATE INDEX IF NOT EXISTS idx_file_access_permissions_file_id ON file_access_permissions(file_id);
+CREATE INDEX IF NOT EXISTS idx_file_access_permissions_user_id ON file_access_permissions(user_id);
+CREATE INDEX IF NOT EXISTS idx_file_access_permissions_active ON file_access_permissions(is_active);
 
 -- =============================================================================
 -- TRIGGERS FOR AUTOMATION
 -- =============================================================================
 
 -- Update timestamps triggers
+DROP TRIGGER IF EXISTS update_users_timestamp;
 CREATE TRIGGER update_users_timestamp 
 AFTER UPDATE ON users
 BEGIN
     UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
+DROP TRIGGER IF EXISTS update_files_timestamp;
 CREATE TRIGGER update_files_timestamp 
 AFTER UPDATE ON files
 BEGIN
     UPDATE files SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
+DROP TRIGGER IF EXISTS update_saved_filters_timestamp;
 CREATE TRIGGER update_saved_filters_timestamp 
 AFTER UPDATE ON saved_filters
 BEGIN
     UPDATE saved_filters SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
+DROP TRIGGER IF EXISTS update_alert_configurations_timestamp;
 CREATE TRIGGER update_alert_configurations_timestamp 
 AFTER UPDATE ON alert_configurations
 BEGIN
     UPDATE alert_configurations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
+DROP TRIGGER IF EXISTS update_backup_configurations_timestamp;
 CREATE TRIGGER update_backup_configurations_timestamp 
 AFTER UPDATE ON backup_configurations
 BEGIN
     UPDATE backup_configurations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
+DROP TRIGGER IF EXISTS update_user_quotas_timestamp;
 CREATE TRIGGER update_user_quotas_timestamp 
 AFTER UPDATE ON user_quotas
 BEGIN
@@ -477,6 +479,7 @@ BEGIN
 END;
 
 -- Auto-cleanup trigger for expired multipart uploads
+DROP TRIGGER IF EXISTS cleanup_expired_multipart_uploads;
 CREATE TRIGGER cleanup_expired_multipart_uploads
 AFTER INSERT ON multipart_uploads
 WHEN NEW.expires_at < datetime('now')
@@ -503,13 +506,13 @@ VALUES
 -- =============================================================================
 
 -- Schema version table for migration tracking
-CREATE TABLE schema_version (
+CREATE TABLE IF NOT EXISTS schema_version (
     version TEXT PRIMARY KEY,
     applied_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     description TEXT
 );
 
-INSERT INTO schema_version (version, description) 
+INSERT OR IGNORE INTO schema_version (version, description) 
 VALUES ('0000_initial_schema', 'Initial consolidated schema with all features and email optional');
 
 -- =============================================================================
@@ -517,6 +520,7 @@ VALUES ('0000_initial_schema', 'Initial consolidated schema with all features an
 -- =============================================================================
 
 -- Active files view
+DROP VIEW IF EXISTS active_files;
 CREATE VIEW active_files AS
 SELECT 
     f.*,
@@ -527,6 +531,7 @@ JOIN users u ON f.user_id = u.id
 WHERE f.upload_status = 'completed' AND u.is_active = 1;
 
 -- User storage summary view
+DROP VIEW IF EXISTS user_storage_summary;
 CREATE VIEW user_storage_summary AS
 SELECT 
     u.id as user_id,
@@ -541,6 +546,7 @@ WHERE u.is_active = 1
 GROUP BY u.id, u.username, u.email;
 
 -- Active alerts view
+DROP VIEW IF EXISTS active_alerts;
 CREATE VIEW active_alerts AS
 SELECT 
     ai.*,
@@ -552,6 +558,7 @@ JOIN alert_configurations ac ON ai.configuration_id = ac.id
 WHERE ai.status = 'active' AND ac.is_enabled = 1;
 
 -- File access permissions view
+DROP VIEW IF EXISTS active_file_permissions;
 CREATE VIEW active_file_permissions AS
 SELECT 
     fap.*,

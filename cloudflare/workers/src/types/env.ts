@@ -1,6 +1,6 @@
 export interface CloudflareEnv {
   // Environment variables
-  ENVIRONMENT: 'development' | 'staging' | 'production';
+  ENVIRONMENT: 'development' | 'production';
   API_VERSION: string;
   CORS_ORIGIN: string;
   MAX_FILE_SIZE: string;

@@ -76,8 +76,6 @@ function getApiOrigins(environment) {
   switch (environment) {
     case 'production':
       return 'https://api.emilycogsdill.com';
-    case 'staging':
-      return 'https://cutty-staging.emilycogsdill.com';
     case 'preview':
       return 'https://cutty-preview.emilycogsdill.com';
     default:

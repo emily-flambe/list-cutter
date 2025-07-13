@@ -41,6 +41,14 @@ auth.post('/login', async (c) => {
 });
 
 auth.post('/register', async (c) => {
+  // Add debugging logs for D1 database connection
+  console.log('🔍 Registration request - D1 Database debugging:', {
+    has_db_binding: !!c.env.DB,
+    db_binding_type: typeof c.env.DB,
+    environment: c.env.ENVIRONMENT || 'development',
+    timestamp: new Date().toISOString()
+  });
+  
   return handleRegister(c.req.raw, c.env);
 });
 

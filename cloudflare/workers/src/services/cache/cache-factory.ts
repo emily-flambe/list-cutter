@@ -15,7 +15,7 @@ export interface CacheConfiguration {
   enableEdge?: boolean;
   enableCompression?: boolean;
   compressionThreshold?: number;
-  environment?: 'development' | 'staging' | 'production';
+  environment?: 'development' | 'production';
 }
 
 export interface CacheServiceOptions {
@@ -67,7 +67,7 @@ export class CacheFactory {
   }
 
   static createForEnvironment(
-    environment: 'development' | 'staging' | 'production',
+    environment: 'development' | 'production',
     options: CacheServiceOptions = {}
   ): CacheService {
     const configs = {
@@ -77,13 +77,6 @@ export class CacheFactory {
         defaultTTL: 60, // Shorter TTL for development
         enableKV: false,
         enableEdge: false
-      },
-      staging: {
-        type: 'multilayer' as const,
-        maxMemoryEntries: 1000,
-        defaultTTL: 300,
-        enableKV: true,
-        enableEdge: true
       },
       production: {
         type: 'hybrid' as const,
