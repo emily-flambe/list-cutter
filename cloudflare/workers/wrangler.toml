@@ -12,7 +12,7 @@ workers_dev = true
 directory = "dist"
 binding = "ASSETS"
 
-# Enable Workers logs for debugging and monitoring
+# Enable Workers logs for debugging and monitoring  
 send_metrics = true
 
 # Enable versioning and gradual deployments

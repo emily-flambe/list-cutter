@@ -965,7 +965,7 @@ app.get('*', async (c, next): Promise<Response> => {
   // Skip API routes - let them be handled by the API handlers above
   if (c.req.path.startsWith('/api/') || c.req.path.startsWith('/health') || c.req.path.startsWith('/test-') || c.req.path.startsWith('/admin/') || c.req.path.startsWith('/user/') || c.req.path.startsWith('/metrics/') || c.req.path.startsWith('/dashboard/')) {
     // Let these continue to the 404 handler
-    return c.next();
+    return next();
   }
 
   try {
@@ -1009,7 +1009,7 @@ app.get('*', async (c, next): Promise<Response> => {
     
     if (indexAsset.status === 404) {
       // Continue to API 404 handler
-      return c.next();
+      return next();
     }
     
     // Return index.html with proper headers for SPA routing
@@ -1034,7 +1034,7 @@ app.get('*', async (c, next): Promise<Response> => {
   } catch (error) {
     console.error('Error serving frontend asset:', error);
     // Continue to API 404 handler
-    return c.next();
+    return next();
   }
 });
 
