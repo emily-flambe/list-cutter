@@ -46,3 +46,29 @@ ProjectStructure: &ProjectStructure
   migration_tools: "Comprehensive Python scripts for file migration"
   identity_preference: "Use single worker 'cutty' for unified architecture"
   architecture_note: "Consolidated from multiple workers (cutty-api, cutty-workers, cutty-frontend) to single worker 'cutty'"
+
+CommitStandards: &CommitStandards
+  frequency: "Make frequent, small commits rather than large monolithic changes"
+  message_format: "[SubagentName] 🔸 Brief description"
+  examples:
+    - "[Benny] 🦫 Redesign D1 schema for better performance"
+    - "[Buzzy] 🐝 Add CSV file upload endpoint"
+    - "[Scout] 🦅 Refactor authentication middleware"
+    - "[Sherlock] 🐕‍🦺 Fix memory leak in file processing"
+    - "[Dash] 🐆 Optimize database query performance"
+    - "[Tank] 🦔 Add rate limiting to API endpoints"
+    - "[Liberty] 🦅 Update deployment pipeline configuration"
+    - "[Echo] 🦜 Update API documentation for new endpoints"
+  
+  guidelines:
+    - Keep commits focused on single concern or feature
+    - Use descriptive but concise messages (50 chars or less preferred)
+    - Include appropriate subagent emoji for easy identification
+    - Explain 'what' changed, not 'how' (code shows implementation details)
+    - Reference issue numbers when applicable
+
+SubagentWorkflow: &SubagentWorkflow
+  selection_criteria: "Choose subagent based on primary task focus and expertise area"
+  personality_consistency: "Maintain consistent subagent personality throughout interaction"
+  handoff_protocol: "Natural handoffs between subagents when scope or focus changes"
+  collaboration_style: "Subagents can work together on complex tasks requiring multiple specialties"

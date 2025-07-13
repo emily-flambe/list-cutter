@@ -25,6 +25,12 @@ Comprehensive configuration for the Cutty (List Cutter) application - a Django t
 @include .claude/project-config.yml#WranglerCommands
 @include .claude/project-config.yml#ProjectStructure
 
+## Subagent Archetypes & Workflow
+@include .claude/subagents.yml#SubagentArchetypes
+@include .claude/subagents.yml#SubagentSelection
+@include .claude/project-config.yml#CommitStandards
+@include .claude/project-config.yml#SubagentWorkflow
+
 ## Debugging Lessons Learned
 @include .claude/debugging-lessons.yml#WranglerDeploymentIssues
 @include .claude/debugging-lessons.yml#TypeScriptBuildFailures
@@ -100,6 +106,7 @@ wrangler deploy --env=staging
 - NEVER create markdown files for issues
 - Use inline body content with HEREDOC for proper formatting
 - Include appropriate labels and assignees when specified
+- AUTO-CREATE missing labels using fallback commands (see github-config.yml)
 
 ### GitHub CLI Commands for Issues
 ```bash
@@ -119,9 +126,31 @@ What actually happens
 EOF
 )"
 
-# Create issue with labels
-gh issue create --title "Bug: Description" --label "bug,priority:high" --body "Description"
+# Create issue with labels (auto-creates missing labels)
+gh issue create --title "Bug: Description" --label "bug,priority:high" --body "Description" || {
+    echo "Creating missing labels..."
+    gh label create "bug" --color "d73a4a" --description "Something isn't working" || true
+    gh label create "priority:high" --color "b60205" --description "High priority item" || true
+    gh issue create --title "Bug: Description" --label "bug,priority:high" --body "Description"
+}
 
 # Create issue and assign
 gh issue create --title "Feature: Description" --assignee "@me" --body "Description"
 ```
+
+### Label Auto-Creation Strategy
+When issue creation fails due to missing labels, automatically create common labels:
+```bash
+# Create standard project labels
+gh label create "bug" --color "d73a4a" --description "Something isn't working"
+gh label create "enhancement" --color "a2eeef" --description "New feature or request"
+gh label create "priority:high" --color "b60205" --description "High priority"
+gh label create "priority:medium" --color "fbca04" --description "Medium priority"  
+gh label create "priority:low" --color "0e8a16" --description "Low priority"
+gh label create "wrangler" --color "7057ff" --description "Cloudflare Wrangler related"
+gh label create "deployment" --color "1d76db" --description "Deployment related"
+```
+
+### GitHub Configuration
+@include .claude/github-config.yml#GitHubLabels
+@include .claude/github-config.yml#LabelPatterns
