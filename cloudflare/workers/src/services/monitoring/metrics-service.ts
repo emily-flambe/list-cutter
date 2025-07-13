@@ -13,14 +13,14 @@ import {
  * Integrates with Cloudflare Analytics Engine for real-time metrics
  */
 export class MetricsService {
-  private analytics: AnalyticsEngineDataset;
+  private analytics?: AnalyticsEngineDataset;
   private db: D1Database;
   private config: MetricsConfiguration;
   private metricsQueue: StorageMetrics[] = [];
   private flushTimer: number | null = null;
 
   constructor(
-    analytics: AnalyticsEngineDataset,
+    analytics: AnalyticsEngineDataset | undefined,
     db: D1Database,
     config: Partial<MetricsConfiguration> = {}
   ) {
@@ -136,7 +136,8 @@ export class MetricsService {
     // Multipart metric would be created here if needed
 
     // Send to Analytics Engine
-    await this.analytics.writeDataPoint({
+    if (this.analytics) {
+      await this.analytics.writeDataPoint({
       blobs: [
         'multipart_upload',
         uploadId,
@@ -232,6 +233,7 @@ export class MetricsService {
       // User metrics would be created here if needed
 
       // Send to Analytics Engine
+      if (this.analytics) {
       await this.analytics.writeDataPoint({
         blobs: [
           'user_storage',
@@ -429,6 +431,7 @@ export class MetricsService {
    */
   private async sendMetric(metric: StorageMetrics): Promise<void> {
     try {
+      if (this.analytics) {
       await this.analytics.writeDataPoint({
         blobs: [
           'storage_operation',
