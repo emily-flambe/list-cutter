@@ -157,7 +157,7 @@ CREATE TABLE IF NOT EXISTS security_analytics (
 -- =============================================================================
 
 -- Multipart uploads table
-CREATE TABLE multipart_uploads (
+CREATE TABLE IF NOT EXISTS multipart_uploads (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     upload_id TEXT UNIQUE NOT NULL, -- R2 multipart upload ID
     file_id TEXT NOT NULL,
@@ -177,7 +177,7 @@ CREATE TABLE multipart_uploads (
 );
 
 -- File access logs table
-CREATE TABLE file_access_logs (
+CREATE TABLE IF NOT EXISTS file_access_logs (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     file_id TEXT NOT NULL,
     user_id TEXT,
@@ -195,7 +195,7 @@ CREATE TABLE file_access_logs (
 );
 
 -- File processing queue table
-CREATE TABLE file_processing_queue (
+CREATE TABLE IF NOT EXISTS file_processing_queue (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     file_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
@@ -220,7 +220,7 @@ CREATE TABLE file_processing_queue (
 -- =============================================================================
 
 -- Storage metrics table
-CREATE TABLE storage_metrics (
+CREATE TABLE IF NOT EXISTS storage_metrics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id TEXT,
     metric_type TEXT NOT NULL, -- 'storage_used', 'file_count', 'bandwidth_used'
@@ -231,7 +231,7 @@ CREATE TABLE storage_metrics (
 );
 
 -- Alert configurations table
-CREATE TABLE alert_configurations (
+CREATE TABLE IF NOT EXISTS alert_configurations (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     name TEXT NOT NULL,
     description TEXT,
@@ -248,7 +248,7 @@ CREATE TABLE alert_configurations (
 );
 
 -- Alert instances table
-CREATE TABLE alert_instances (
+CREATE TABLE IF NOT EXISTS alert_instances (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     configuration_id TEXT NOT NULL,
     alert_level TEXT NOT NULL CHECK (alert_level IN ('info', 'warning', 'critical')),
@@ -272,7 +272,7 @@ CREATE TABLE alert_instances (
 -- =============================================================================
 
 -- Backup configurations table
-CREATE TABLE backup_configurations (
+CREATE TABLE IF NOT EXISTS backup_configurations (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     name TEXT NOT NULL,
     backup_type TEXT NOT NULL CHECK (backup_type IN ('full', 'incremental', 'differential')),
@@ -287,7 +287,7 @@ CREATE TABLE backup_configurations (
 );
 
 -- Backup instances table
-CREATE TABLE backup_instances (
+CREATE TABLE IF NOT EXISTS backup_instances (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     configuration_id TEXT,
     backup_type TEXT NOT NULL,
@@ -310,7 +310,7 @@ CREATE TABLE backup_instances (
 -- =============================================================================
 
 -- User quotas table
-CREATE TABLE user_quotas (
+CREATE TABLE IF NOT EXISTS user_quotas (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     user_id TEXT NOT NULL,
     quota_type TEXT NOT NULL, -- 'storage', 'bandwidth', 'files', 'api_calls'
@@ -326,7 +326,7 @@ CREATE TABLE user_quotas (
 );
 
 -- File access permissions table
-CREATE TABLE file_access_permissions (
+CREATE TABLE IF NOT EXISTS file_access_permissions (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     file_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
@@ -437,44 +437,44 @@ CREATE INDEX IF NOT EXISTS idx_file_access_permissions_active ON file_access_per
 -- =============================================================================
 
 -- Update timestamps triggers
-CREATE TRIGGER update_users_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_users_timestamp 
 AFTER UPDATE ON users
 BEGIN
     UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_files_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_files_timestamp 
 AFTER UPDATE ON files
 BEGIN
     UPDATE files SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_saved_filters_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_saved_filters_timestamp 
 AFTER UPDATE ON saved_filters
 BEGIN
     UPDATE saved_filters SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_alert_configurations_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_alert_configurations_timestamp 
 AFTER UPDATE ON alert_configurations
 BEGIN
     UPDATE alert_configurations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_backup_configurations_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_backup_configurations_timestamp 
 AFTER UPDATE ON backup_configurations
 BEGIN
     UPDATE backup_configurations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
-CREATE TRIGGER update_user_quotas_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_user_quotas_timestamp 
 AFTER UPDATE ON user_quotas
 BEGIN
     UPDATE user_quotas SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
 -- Auto-cleanup trigger for expired multipart uploads
-CREATE TRIGGER cleanup_expired_multipart_uploads
+CREATE TRIGGER IF NOT EXISTS cleanup_expired_multipart_uploads
 AFTER INSERT ON multipart_uploads
 WHEN NEW.expires_at < datetime('now')
 BEGIN
@@ -496,7 +496,7 @@ VALUES
 -- =============================================================================
 
 -- Schema version table for migration tracking
-CREATE TABLE schema_version (
+CREATE TABLE IF NOT EXISTS schema_version (
     version TEXT PRIMARY KEY,
     applied_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     description TEXT
@@ -510,7 +510,7 @@ VALUES ('0008_d1_compatible_clean', 'D1-compatible consolidated schema with all 
 -- =============================================================================
 
 -- Active files view
-CREATE VIEW active_files AS
+CREATE VIEW IF NOT EXISTS active_files AS
 SELECT 
     f.*,
     u.username,
@@ -520,7 +520,7 @@ JOIN users u ON f.user_id = u.id
 WHERE f.upload_status = 'completed' AND u.is_active = 1;
 
 -- User storage summary view
-CREATE VIEW user_storage_summary AS
+CREATE VIEW IF NOT EXISTS user_storage_summary AS
 SELECT 
     u.id as user_id,
     u.username,
@@ -534,7 +534,7 @@ WHERE u.is_active = 1
 GROUP BY u.id, u.username, u.email;
 
 -- Active alerts view
-CREATE VIEW active_alerts AS
+CREATE VIEW IF NOT EXISTS active_alerts AS
 SELECT 
     ai.*,
     ac.name as configuration_name,
@@ -545,7 +545,7 @@ JOIN alert_configurations ac ON ai.configuration_id = ac.id
 WHERE ai.status = 'active' AND ac.is_enabled = 1;
 
 -- File access permissions view
-CREATE VIEW active_file_permissions AS
+CREATE VIEW IF NOT EXISTS active_file_permissions AS
 SELECT 
     fap.*,
     f.filename,

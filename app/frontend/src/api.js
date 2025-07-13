@@ -3,7 +3,33 @@ import axios from 'axios';
 import { getNewToken } from './auth';
 
 const getApiBaseUrl = () => {
-  return import.meta.env.VITE_API_BASE_URL || '';
+  // If VITE_API_BASE_URL is explicitly set, use it
+  if (import.meta.env.VITE_API_BASE_URL !== undefined) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // Auto-detect based on hostname
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // Development
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://127.0.0.1:8788';
+    }
+    
+    // Production
+    if (hostname === 'cutty.emilycogsdill.com') {
+      return 'https://api.listcutter.com';
+    }
+    
+    // Preview deployments (*.workers.dev) - use same origin
+    if (hostname.includes('workers.dev') || hostname.includes('emily-cogsdill.workers.dev')) {
+      return '';
+    }
+  }
+  
+  // Fallback to same origin
+  return '';
 };
 
 const api = axios.create({

@@ -189,3 +189,79 @@ ProjectNamingConsistency: &ProjectNamingConsistency
     - "Clear documentation of testing exclusions and rationale"
   
   next_time: "When making architectural naming changes, systematically update all configuration files including package.json, documentation, and Claude configs to maintain consistency."
+
+JWTTestTypeConsistency: &JWTTestTypeConsistency
+  issue_date: "2025-07-13"
+  problem: "JWT authentication tests failing with type mismatches - User.id number vs string, payload verification errors, and duplicate JWT claims"
+  github_action_run: "https://github.com/emily-flambe/list-cutter/actions/runs/16251406149/job/45881577112?pr=96"
+  
+  root_cause:
+    - "Test mock used User.id = 1 (number) but UserJWTPayload.user_id expects string type"
+    - "verifyJWT function assumed jose library returns typed payloads but it returns mixed types requiring conversion"
+    - "generateJWT function was setting JWT claims twice (in payload object and via method calls)"
+    - "No proper type conversion between jose library JWTPayload and application UserJWTPayload interface"
+  
+  key_lessons:
+    jwt_testing_best_practices:
+      - "Mock Data Type Consistency: Always ensure test mocks match actual TypeScript interfaces exactly"
+      - "Library Payload Handling: External JWT libraries often return generic types requiring explicit conversion"
+      - "Type Guards vs Casting: Use explicit type conversion (String(), Number()) instead of type assertions"
+      - "Test-First Interface Design: Write tests that match your interface contracts, not library implementations"
+    
+    jose_library_specific:
+      - "JWTPayload Type Reality: jose.jwtVerify() returns JWTPayload with mixed/unknown field types"
+      - "Required Field Validation: Always check payload field existence before type conversion"
+      - "Claim Setting Duplicates: Don't set claims both in payload object AND via SignJWT methods"
+      - "Type Conversion Pattern: Convert all payload fields to expected types explicitly"
+    
+    typescript_jwt_patterns:
+      - "Safe Payload Conversion: Create typed payload objects rather than casting unknown types"
+      - "Null Safety: Use optional chaining and nullish coalescing for payload fields"
+      - "Type Interface Alignment: Ensure mock data types match production interface types exactly"
+      - "Library Bridge Pattern: Create conversion functions between library types and application types"
+    
+    test_failure_debugging:
+      - "GitHub Actions Analysis: Review exact error messages and line numbers from CI logs"
+      - "Type Mismatch Patterns: number vs string, undefined vs expected values are common JWT issues"
+      - "Sequential Fixing: Fix type consistency in tests first, then payload verification logic"
+      - "End-to-End Verification: Test entire JWT generation → verification → extraction flow"
+  
+  resolution_pattern:
+    test_fixes:
+      - "Update test mocks to use correct types: id: '1' not id: 1"
+      - "Add explicit type conversion in verification functions"
+      - "Remove duplicate JWT claim setting in generation"
+      - "Create typed payload conversion utilities"
+    
+    safe_jwt_verification:
+      - "const typedPayload: UserJWTPayload = { user_id: String(payload.user_id), username: String(payload.username), ... }"
+      - "Validate existence before conversion: if (!payload.user_id || !payload.username) throw error"
+      - "Handle optional fields: email: payload.email ? String(payload.email) : undefined"
+      - "Convert numbers safely: exp: Number(payload.exp), iat: Number(payload.iat)"
+  
+  prevention_checklist:
+    before_jwt_implementation:
+      - "[ ] Define TypeScript interfaces for all JWT payload types"
+      - "[ ] Create type conversion utilities between library and application types"
+      - "[ ] Write tests with correctly typed mock data"
+      - "[ ] Validate payload fields exist before type conversion"
+    
+    during_testing:
+      - "[ ] Ensure all mock User objects use string IDs to match database schema"
+      - "[ ] Test JWT generation and verification as integrated flow"
+      - "[ ] Verify error handling for malformed payloads"
+      - "[ ] Check type conversion handles undefined/null gracefully"
+    
+    deployment_verification:
+      - "[ ] Run npm test to verify all JWT tests pass"
+      - "[ ] Test actual token generation/verification in development environment"
+      - "[ ] Verify frontend can consume JWT payloads correctly"
+      - "[ ] Check production token compatibility after changes"
+  
+  error_patterns_to_watch:
+    - "TypeError: actual value must be number or bigint, received 'undefined'"
+    - "AssertionError: expected undefined not to be undefined"
+    - "AssertionError: expected true to be false (token verification failures)"
+    - "Type mismatch errors in test expectations vs actual payload values"
+  
+  next_time: "Always ensure JWT test mocks use correct TypeScript interface types, implement proper type conversion between library payloads and application interfaces, and avoid duplicate claim setting in JWT generation."
