@@ -47,6 +47,7 @@ import disasterRecoveryRoutes from './routes/disaster-recovery-routes.js';
 import dataExportRoutes from './routes/data-export-routes.js';
 import performanceOptimizationRoutes from './routes/performance-optimization.js';
 import authRoutes from './routes/auth.js';
+import accountsRoutes from './routes/accounts.js';
 import blueGreenDeploymentRoutes from './routes/deployment/blue-green.js';
 // import csvRoutes from '@routes/csv';
 // import userRoutes from '@routes/users';
@@ -969,6 +970,7 @@ v1.route('/recovery', disasterRecoveryRoutes); // Disaster recovery routes at /a
 v1.route('/export', dataExportRoutes); // Data export routes at /api/v1/export/*
 v1.route('/performance', performanceOptimizationRoutes); // Performance optimization routes at /api/v1/performance/*
 v1.route('/auth', authRoutes); // Authentication routes at /api/v1/auth/*
+v1.route('/accounts', accountsRoutes); // Account management routes at /api/v1/accounts/*
 v1.route('/deployment', blueGreenDeploymentRoutes); // Blue-green deployment routes at /api/v1/deployment/*
 
 // Backward compatibility routes (redirect old /api/ to /api/v1/)
