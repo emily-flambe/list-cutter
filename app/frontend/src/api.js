@@ -19,7 +19,7 @@ const getApiBaseUrl = () => {
     
     // Production
     if (hostname === 'cutty.emilycogsdill.com') {
-      return 'https://api.listcutter.com';
+      return '';
     }
     
     // Preview deployments (*.workers.dev) - use same origin
