@@ -22,6 +22,11 @@ const getApiBaseUrl = () => {
       return '';
     }
     
+    // Development
+    if (hostname === 'cutty-dev.emilycogsdill.com') {
+      return '';
+    }
+    
     // Preview deployments (*.workers.dev) - use same origin
     if (hostname.includes('workers.dev') || hostname.includes('emily-cogsdill.workers.dev')) {
       return '';

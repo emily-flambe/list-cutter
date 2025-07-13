@@ -22,7 +22,7 @@ const StorageMonitoringDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/user/storage/usage?timeRange=${timeRange}`, {
+      const response = await fetch(`/api/v1/monitoring/usage?timeRange=${timeRange}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
