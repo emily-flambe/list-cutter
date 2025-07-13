@@ -22,15 +22,8 @@ export default defineConfig(({ command, mode }) => {
       rollupOptions: {
         cache: true,
         output: {
-          // Optimized chunking strategy to prevent rebuild cascades
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-mui-core': ['@mui/material/styles', '@mui/material/Button', '@mui/material/TextField'],
-            'vendor-mui-icons': ['@mui/icons-material'],
-            'vendor-emotion': ['@emotion/react', '@emotion/styled'],
-            'vendor-router': ['react-router-dom'],
-            'vendor-http': ['axios']
-          },
+          // Disable manual chunks to let Vite handle optimization
+          manualChunks: undefined,
           entryFileNames: isProd ? '[name].[hash].js' : '[name].js',
           chunkFileNames: isProd ? '[name].[hash].js' : '[name].js',
           assetFileNames: isProd ? '[name].[hash].[ext]' : '[name].[ext]'

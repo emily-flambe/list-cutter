@@ -986,8 +986,13 @@ app.get('*', async (c, next): Promise<Response> => {
   }
 
   try {
+    // Debug logging
+    console.log('Asset request:', c.req.path, 'Method:', c.req.method);
+    console.log('ASSETS binding available:', !!c.env.ASSETS);
+    
     // Try to serve the asset directly from ASSETS binding
     const asset = await c.env.ASSETS.fetch(c.req.raw);
+    console.log('Asset fetch result:', c.req.path, 'Status:', asset.status);
     
     // If asset exists, add appropriate headers and return it
     if (asset.status !== 404) {

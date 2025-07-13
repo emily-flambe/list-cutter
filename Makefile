@@ -1,6 +1,6 @@
 # Cutty Development Makefile
 
-.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build clean test install-deps
+.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build clean test install-deps branch-cleanup
 
 dev: setup kill-ports
 	@echo "🚀 Starting both backend and frontend servers..."
@@ -12,8 +12,8 @@ dev: setup kill-ports
 setup:
 	@echo "🔧 Setting up development environment..."
 	@# Check required directories exist
-	@if [ ! -d "../../app/frontend" ]; then \
-		echo "❌ ERROR: Frontend directory not found at ../../app/frontend"; exit 1; \
+	@if [ ! -d "app/frontend" ]; then \
+		echo "❌ ERROR: Frontend directory not found at app/frontend"; exit 1; \
 	fi
 	@if [ ! -d "cloudflare/workers" ]; then \
 		echo "❌ ERROR: Workers directory not found at cloudflare/workers"; exit 1; \
@@ -28,14 +28,14 @@ setup:
 		cd cloudflare/workers && npm install || exit 1; \
 	fi
 	@# Install frontend deps if needed
-	@if [ ! -d "../../app/frontend/node_modules" ]; then \
+	@if [ ! -d "app/frontend/node_modules" ]; then \
 		echo "📦 Installing frontend dependencies..."; \
-		cd ../../app/frontend && npm install || exit 1; \
+		cd app/frontend && npm install || exit 1; \
 	fi
 	@# Build frontend for assets serving
-	@if [ ! -f "../../app/frontend/dist/index.html" ]; then \
+	@if [ ! -f "app/frontend/dist/index.html" ]; then \
 		echo "🔨 Building frontend for assets..."; \
-		cd ../../app/frontend && npm run build || exit 1; \
+		cd app/frontend && npm run build || exit 1; \
 	fi
 	@# Run database migrations if needed
 	@echo "🗄️  Setting up database..."
@@ -66,7 +66,7 @@ backend: kill-backend-port
 
 frontend: kill-frontend-port
 	@echo "⚛️  Starting React frontend on http://localhost:5173..."
-	@cd ../../app/frontend && npm run dev
+	@cd app/frontend && npm run dev
 
 superuser:
 	@if [ -z "$(USERNAME)" ]; then \
@@ -271,3 +271,44 @@ test:
 	@echo "🧪 Running tests..."
 	@cd cloudflare/workers && npm test
 	@echo "✅ Tests completed!"
+
+# Branch and worktree cleanup
+branch-cleanup:
+	@echo "🌿 Cleaning up branches, worktrees, and remotes without open pull requests..."
+	@echo "⚠️  This will delete local branches, remote branches, and worktrees that don't have open PRs!"
+	@echo -n "Type 'CLEANUP' to confirm: " && read confirm && [ "$$confirm" = "CLEANUP" ] || (echo "❌ Cancelled" && exit 1)
+	@echo "Fetching latest changes..."
+	@git fetch --all --prune
+	@echo "Getting list of branches with open PRs..."
+	@BRANCHES_WITH_PRS=$$(gh pr list --state open --json headRefName --jq '.[].headRefName' 2>/dev/null | sort | uniq); \
+	ALL_LOCAL_BRANCHES=$$(git for-each-ref --format='%(refname:short)' refs/heads/ | grep -v '^main$$' | grep -v '^master$$'); \
+	ALL_REMOTE_BRANCHES=$$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's|^origin/||' | grep -v '^main$$' | grep -v '^master$$' | grep -v '^HEAD$$'); \
+	ALL_WORKTREES=$$(git worktree list --porcelain | grep '^worktree ' | sed 's/^worktree //' | grep 'worktrees/' | xargs -I {} basename {}); \
+	echo "🔍 Checking worktrees..."; \
+	for worktree in $$ALL_WORKTREES; do \
+		if ! echo "$$BRANCHES_WITH_PRS" | grep -q "^$$worktree$$"; then \
+			echo "  🗑️  Removing worktree: $$worktree"; \
+			git worktree remove "worktrees/$$worktree" --force 2>/dev/null || true; \
+		else \
+			echo "  ✅ Keeping worktree: $$worktree (has open PR)"; \
+		fi; \
+	done; \
+	echo "🔍 Checking local branches..."; \
+	for branch in $$ALL_LOCAL_BRANCHES; do \
+		if ! echo "$$BRANCHES_WITH_PRS" | grep -q "^$$branch$$"; then \
+			echo "  🗑️  Deleting local branch: $$branch"; \
+			git branch -D "$$branch" 2>/dev/null || true; \
+		else \
+			echo "  ✅ Keeping local branch: $$branch (has open PR)"; \
+		fi; \
+	done; \
+	echo "🔍 Checking remote branches..."; \
+	for branch in $$ALL_REMOTE_BRANCHES; do \
+		if ! echo "$$BRANCHES_WITH_PRS" | grep -q "^$$branch$$"; then \
+			echo "  🗑️  Deleting remote branch: $$branch"; \
+			git push origin --delete "$$branch" 2>/dev/null || true; \
+		else \
+			echo "  ✅ Keeping remote branch: $$branch (has open PR)"; \
+		fi; \
+	done; \
+	echo "✅ Branch and worktree cleanup completed!"
