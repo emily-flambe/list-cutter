@@ -15,6 +15,10 @@ binding = "ASSETS"
 # Enable Workers logs for debugging and monitoring  
 send_metrics = true
 
+# Enable Wrangler logs (v3.88.0+)
+[observability.logs]
+enabled = true
+
 # Enable versioning and gradual deployments
 # [version_metadata]
 # enable_versions = true
@@ -165,7 +169,7 @@ routes = [
 
 [[env.production.d1_databases]]
 binding = "DB"
-database_name = "cutty-production"
+database_name = "cutty-prod"
 database_id = "0a6c6836-02e8-4f91-a37a-7eb82aa58e0f"
 
 [[env.production.r2_buckets]]
@@ -175,7 +179,7 @@ preview_bucket_name = "cutty-files-dev"
 
 [[env.production.analytics_engine_datasets]]
 binding = "ANALYTICS"
-dataset = "cutty-metrics-production"
+dataset = "cutty-metrics-prod"
 
 # KV configuration for production will be added when needed
 

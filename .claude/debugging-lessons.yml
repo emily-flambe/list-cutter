@@ -104,3 +104,88 @@ TypeScriptBuildFailures: &TypeScriptBuildFailures
       - "const row = result as Record<string, unknown>; const safeField = String(row.field_name);"
   
   next_time: "Begin with configuration validation, separate build success from type perfection, and prioritize user requirements over theoretical type safety"
+
+CloudflarePagesVsWorkersDeployment: &CloudflarePagesVsWorkersDeployment
+  issue_date: "2025-07-13"
+  problem: "Production deployment failing with 'Internal error' after successful PR builds - Cloudflare Pages build command used instead of Workers deployment"
+  
+  root_cause:
+    - "Cloudflare dashboard incorrectly configured for Pages deployment instead of Workers"
+    - "Build command in dashboard: 'cd ../../app/frontend && npm ci && npm run build && mkdir -p ../../cloudflare/workers/dist && cp -r dist/* ../../cloudflare/workers/dist/ && cd ../../cloudflare/workers && npm ci && npm run build'"
+    - "wrangler.toml assets directory pointing to wrong path (local 'dist' instead of '../../app/frontend/dist')"
+    - "Confusion between Pages (static sites) vs Workers (serverless functions) deployment methods"
+
+  key_lessons:
+    deployment_architecture_clarity:
+      - "Workers vs Pages Distinction: Workers = serverless functions with assets, Pages = static sites with functions"
+      - "Build Strategy: Workers should use 'wrangler deploy' with assets binding, not complex multi-step builds"
+      - "Dashboard Configuration: Always verify deployment type matches architecture (Workers project = Workers deployment)"
+      - "Asset Path Consistency: wrangler.toml assets directory must match actual build output location"
+    
+    debugging_methodology:
+      - "Success vs Failure Context: PR builds succeeded because they used GitHub Actions (Workers CI), production used Pages build"
+      - "Error Message Analysis: 'Internal error' in Cloudflare often indicates configuration mismatch, not code issues"
+      - "Configuration Audit: When builds work in CI but fail in production, check deployment configuration differences"
+      - "Platform-Specific Debugging: Different Cloudflare services have different error patterns and solutions"
+    
+    cloudflare_deployment_best_practices:
+      - "Workers Deployment: Use 'wrangler deploy' with proper wrangler.toml configuration"
+      - "Assets Binding: Configure [assets] directory to point to frontend build output location"
+      - "Build Command Simplicity: 'cd ../../app/frontend && npm ci && npm run build && cd ../../cloudflare/workers && npm ci && npm run build && wrangler deploy'"
+      - "Dashboard Verification: Always verify deployment type and build commands match intended architecture"
+    
+    prevention_strategies:
+      - "Documentation: Clearly document whether project uses Workers or Pages deployment"
+      - "Configuration Management: Keep wrangler.toml and dashboard settings in sync"
+      - "Testing Parity: Ensure local development, CI, and production use same deployment method"
+      - "Deployment Validation: Test exact production build command locally before configuring in dashboard"
+
+  resolution_steps:
+    - "Identified build command was Pages-style instead of Workers deployment"
+    - "Updated wrangler.toml: directory = '../../app/frontend/dist' (not 'dist')"
+    - "Set correct Workers build command: 'cd ../../app/frontend && npm ci && npm run build && cd ../../cloudflare/workers && npm ci && npm run build && wrangler deploy'"
+    - "Verified GitHub Actions CI continues to work with Workers-only builds"
+
+  warning_signs:
+    - "Build commands copying files between directories unnecessarily"
+    - "Complex multi-step builds when simple 'wrangler deploy' should suffice" 
+    - "Success in CI but failure in production with 'Internal error'"
+    - "Deployment type mismatch between dashboard configuration and actual architecture"
+
+  next_time: "Always verify Cloudflare deployment type matches architecture (Workers vs Pages) and ensure build commands are appropriate for the chosen platform. Document deployment strategy clearly to avoid confusion."
+
+ProjectNamingConsistency: &ProjectNamingConsistency
+  issue_date: "2025-07-13" 
+  problem: "Package name inconsistency between 'cutty-workers' and unified 'cutty' architecture"
+  
+  root_cause:
+    - "Package.json still had old name 'cutty-workers' from previous multi-worker architecture"
+    - "Recent commit 317c8c7 renamed worker to 'cutty' for unified architecture but package.json wasn't updated"
+    - "Inconsistency between documented naming conventions and actual package configuration"
+  
+  key_lessons:
+    naming_consistency:
+      - "Package names must match worker names and unified architecture decisions"
+      - "When renaming projects for architectural changes, update all configuration files"
+      - "Document naming conventions clearly and enforce across all config files"
+      - "Use consistent naming between package.json, wrangler.toml, and documentation"
+    
+    configuration_audit:
+      - "Regular audits prevent configuration drift between actual and documented state"
+      - "Version updates should be synchronized across documentation and package files"
+      - "Test configuration exclusions should match documented testing philosophy"
+      - "Claude configuration should reflect current project state, not planned state"
+  
+  resolution_steps:
+    - "Updated package.json name from 'cutty-workers' to 'cutty'"
+    - "Added analytics-engine exclusion to vitest.config.ts per testing philosophy"
+    - "Synchronized documented versions with actual package.json versions"
+    - "Verified wrangler.toml naming matches unified architecture"
+  
+  prevention_strategies:
+    - "Include configuration files in architectural change checklists"
+    - "Regular .claude configuration audits as part of development workflow"
+    - "Version synchronization between documentation and actual dependencies"
+    - "Clear documentation of testing exclusions and rationale"
+  
+  next_time: "When making architectural naming changes, systematically update all configuration files including package.json, documentation, and Claude configs to maintain consistency."

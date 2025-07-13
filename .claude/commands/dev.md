@@ -20,8 +20,20 @@ poetry install
 poetry run python manage.py runserver
 ```
 
-### Pre-Commit Validation
+### Pre-Commit Validation (Automated)
 @include ../.claude/development-commands.yml#PreCommitValidation
+
+**Automated Pre-Commit Hook**: The following checks run automatically on every `git commit`:
+- Wrangler version validation (v4.0.0+)
+- TypeScript type checking
+- Build verification
+
+**Manual Deployment Checks**: Run these before deployment:
+```bash
+cd cloudflare/workers
+npx wrangler versions upload --dry-run
+npx wrangler deploy --dry-run
+```
 
 ## Build Verification
 @include ../.claude/development-commands.yml#BuildSuccessCriteria

@@ -45,21 +45,22 @@
 ## Technology Stack
 
 ### Frontend
-- **Framework**: React 18.3+
-- **Build Tool**: Vite 6.0+
-- **UI Library**: Material-UI 6.4+
-- **Routing**: React Router 6.28+
-- **HTTP Client**: Axios 1.7+
+- **Framework**: React 18.3.1
+- **Build Tool**: Vite 6.0.5
+- **UI Library**: Material-UI 6.4.2
+- **Routing**: React Router 6.28.2
+- **HTTP Client**: Axios 1.7.9
 - **Deployment**: Cloudflare Pages
 
 ### Backend (Current - Cloudflare Workers)
 - **Runtime**: Cloudflare Workers (V8)
-- **Framework**: Hono.js 4.6+
-- **Language**: TypeScript 5.7+
+- **Framework**: Hono.js 4.6.16
+- **Language**: TypeScript 5.7.3
 - **Database**: Cloudflare D1 (SQLite)
 - **Storage**: Cloudflare R2 (S3-compatible)
 - **Authentication**: JWT + API Keys
-- **Testing**: Vitest + Playwright
+- **Testing**: Vitest 2.0.5 + Playwright 1.48.2
+- **Deployment**: Wrangler 4.24.3+ (v4+ required)
 
 ### Backend (Legacy - Django)
 - **Framework**: Django + DRF

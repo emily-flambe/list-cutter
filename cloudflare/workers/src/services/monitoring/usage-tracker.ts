@@ -61,7 +61,8 @@ export class UsageTracker {
           currentUsage?.quotaUsagePercentage || 0
         ],
         indexes: [userId, fileId]
-      });
+        });
+      }
 
       // Update database analytics
       await this.updateDatabaseUsage(userId, 'upload', fileSize);
@@ -116,7 +117,8 @@ export class UsageTracker {
           currentUsage?.dailyDownloads || 0
         ],
         indexes: [userId, fileId]
-      });
+        });
+      }
 
       // Update database analytics
       await this.updateDatabaseUsage(userId, 'download', fileSize);
@@ -170,7 +172,8 @@ export class UsageTracker {
           currentUsage?.quotaUsagePercentage || 0
         ],
         indexes: [userId, fileId]
-      });
+        });
+      }
 
       // Update database analytics
       await this.updateDatabaseUsage(userId, 'delete', fileSize);
@@ -536,7 +539,8 @@ export class UsageTracker {
           threshold
         ],
         indexes: [userId]
-      });
+        });
+      }
 
     } catch (error) {
       console.error('Failed to send quota warning:', error);

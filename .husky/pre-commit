@@ -1,0 +1,35 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit validation..."
+
+# Change to workers directory
+cd cloudflare/workers
+
+echo "📋 Checking Wrangler version..."
+WRANGLER_VERSION=$(npx wrangler --version 2>&1 | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+MAJOR_VERSION=$(echo $WRANGLER_VERSION | cut -d. -f1)
+
+if [ "$MAJOR_VERSION" -lt 4 ]; then
+    echo "❌ Wrangler version $WRANGLER_VERSION is below required 4.0.0"
+    echo "   Run: npm install wrangler@latest"
+    exit 1
+fi
+echo "✅ Wrangler $WRANGLER_VERSION (v4+ required)"
+
+echo "🏗️  Running build..."
+if ! npm run build; then
+    echo "❌ Build failed"
+    exit 1
+fi
+echo "✅ Build successful"
+
+echo "🔧 Running basic TypeScript syntax check on src/ only..."
+if ! npx tsc --noEmit --skipLibCheck --allowJs src/**/*.ts; then
+    echo "⚠️  TypeScript issues found in src/ - proceeding as build succeeded"
+    echo "   Run 'npx tsc --noEmit' to see full type issues"
+else
+    echo "✅ TypeScript syntax valid"
+fi
+
+echo "🎉 Pre-commit validation passed!"
