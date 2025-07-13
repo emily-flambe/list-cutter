@@ -20,7 +20,7 @@ const Layout = ({ children }) => {
     const fetchUserData = async () => {
       if (token) {
         try {
-          const response = await api.get(`/api/accounts/user/`, {
+          const response = await api.get(`/api/v1/auth/user`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },

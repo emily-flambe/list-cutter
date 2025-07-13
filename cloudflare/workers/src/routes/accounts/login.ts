@@ -1,7 +1,7 @@
 import type { Env } from '../../types';
 import { authenticateUser } from '../../services/storage/d1';
 import { generateTokenPair } from '../../services/auth/jwt';
-import { ApiError } from '../../middleware/error';
+import { ApiError } from '../../types/errors';
 import { SecurityLogger } from '../../services/security/logger';
 import { MetricsCollector } from '../../services/security/metrics';
 
@@ -19,7 +19,7 @@ export async function handleLogin(
   const metrics = new MetricsCollector(env);
   
   let username: string | undefined;
-  let userId: number | undefined;
+  let userId: string | undefined;
   
   try {
     const body = await request.json() as LoginRequest;

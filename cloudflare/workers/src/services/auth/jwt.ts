@@ -120,9 +120,6 @@ export async function generateJWT(
     iat: now
   })
     .setProtectedHeader({ alg: JWT_ALGORITHM })
-    .setIssuedAt()
-    .setExpirationTime(exp)
-    .setJti(jti)
     .sign(secretKey);
   
   return jwt;
@@ -186,12 +183,23 @@ export async function verifyJWT(token: string, secret: string): Promise<UserJWTP
       algorithms: [JWT_ALGORITHM]
     });
     
-    // Validate required fields exist
-    if (typeof payload.user_id !== 'number' || typeof payload.username !== 'string') {
-      throw new Error('Invalid token payload');
+    // Validate required fields exist and convert types as needed
+    if (!payload.user_id || !payload.username) {
+      throw new Error('Invalid token payload - missing required fields');
     }
     
-    return payload as unknown as UserJWTPayload;
+    // Convert payload to proper types
+    const typedPayload: UserJWTPayload = {
+      user_id: String(payload.user_id),
+      username: String(payload.username),
+      email: payload.email ? String(payload.email) : undefined,
+      token_type: payload.token_type as 'access' | 'refresh',
+      exp: Number(payload.exp),
+      iat: Number(payload.iat),
+      jti: String(payload.jti)
+    };
+    
+    return typedPayload;
   } catch (error) {
     console.error('JWT verification failed:', error);
     return null;
@@ -236,17 +244,28 @@ export async function verifyJWTWithErrors(token: string, secret: string): Promis
     });
     
     // Validate required fields exist
-    if (typeof payload.user_id !== 'number' || typeof payload.username !== 'string') {
+    if (!payload.user_id || !payload.username) {
       throw new TokenValidationError('Token payload missing required fields (user_id, username)');
     }
     
     // Check if token is expired
     const now = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < now) {
+    if (payload.exp && Number(payload.exp) < now) {
       throw new TokenExpiredError('Token has expired');
     }
     
-    return payload as unknown as UserJWTPayload;
+    // Convert payload to proper types
+    const typedPayload: UserJWTPayload = {
+      user_id: String(payload.user_id),
+      username: String(payload.username),
+      email: payload.email ? String(payload.email) : undefined,
+      token_type: payload.token_type as 'access' | 'refresh',
+      exp: Number(payload.exp),
+      iat: Number(payload.iat),
+      jti: String(payload.jti)
+    };
+    
+    return typedPayload;
   } catch (error) {
     if (error instanceof TokenValidationError || 
         error instanceof TokenExpiredError || 

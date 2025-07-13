@@ -27,7 +27,7 @@ const mockEnv: Env = {
 
 // Mock user for testing
 const mockUser: User = {
-  id: 1,
+  id: '1',
   username: 'testuser',
   email: 'test@example.com',
   created_at: '2024-01-01T00:00:00Z'

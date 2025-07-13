@@ -17,7 +17,7 @@ export async function createTestToken(
   env: Env = createMockEnv()
 ): Promise<string> {
   const defaultPayload = {
-    user_id: 1,
+    user_id: 'test-user-id',
     username: 'testuser',
     email: 'test@example.com',
     token_type: 'access' as const,
@@ -38,7 +38,7 @@ export async function createExpiredToken(
   env: Env = createMockEnv()
 ): Promise<string> {
   const defaultPayload = {
-    user_id: 1,
+    user_id: 'test-user-id',
     username: 'testuser',
     email: 'test@example.com',
     token_type: 'access' as const,

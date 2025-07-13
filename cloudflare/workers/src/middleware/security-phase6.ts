@@ -1,11 +1,11 @@
 import type { Env } from '../types';
 import { verifyJWT, isTokenBlacklisted } from '../services/auth/jwt';
 import { SecurityLogger } from '../services/security/logger';
-import { ThreatDetector } from '../services/security/threats';
+import { ThreatDetector } from '../services/security/threat-detector';
 import { MetricsCollector, RequestTimer } from '../services/security/metrics';
 
 export interface SecurityContext {
-  user_id?: number;
+  user_id?: string;
   username?: string;
   email?: string;
 }

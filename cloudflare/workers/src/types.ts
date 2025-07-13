@@ -6,7 +6,7 @@ export * from './types/deployment';
 
 // Core authentication types
 export interface User {
-  id: number;
+  id: string;
   username: string;
   email?: string;
   created_at: string;
@@ -16,7 +16,7 @@ export interface User {
 }
 
 export interface UserJWTPayload {
-  user_id: number;
+  user_id: string;
   username: string;
   email?: string;
   token_type: 'access' | 'refresh';
@@ -31,7 +31,7 @@ export interface TokenPair {
 }
 
 export interface RefreshTokenData {
-  user_id: number;
+  user_id: string;
   username: string;
   expires_at: number;
 }
@@ -44,7 +44,7 @@ export interface BlacklistedToken {
 // API Key types
 export interface APIKey {
   key_id: string;
-  user_id: number;
+  user_id: string;
   name: string;
   key_hash: string;
   key_prefix: string;
@@ -66,7 +66,7 @@ export interface APIKeyCreateRequest {
 // Environment types with all required bindings
 export interface Env {
   // Environment variables
-  ENVIRONMENT: 'development' | 'staging' | 'production' | 'test';
+  ENVIRONMENT: 'development' | 'production' | 'test';
   API_VERSION: string;
   CORS_ORIGIN?: string;
   MAX_FILE_SIZE?: string;

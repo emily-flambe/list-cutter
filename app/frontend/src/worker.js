@@ -76,11 +76,9 @@ function getApiOrigins(environment) {
   switch (environment) {
     case 'production':
       return 'https://api.emilycogsdill.com';
-    case 'staging':
-      return 'https://cutty-staging.emilycogsdill.com';
     case 'preview':
       return 'https://cutty-preview.emilycogsdill.com';
     default:
-      return 'http://localhost:8787 https://cutty.emilycogsdill.com';
+      return 'http://localhost:8788 https://cutty.emilycogsdill.com';
   }
 }

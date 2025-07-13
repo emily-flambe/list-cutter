@@ -120,7 +120,7 @@ export async function expectResponse(
  */
 export function createMockUser(overrides: any = {}) {
   return {
-    id: 1,
+    id: 'test-user-id',
     username: 'testuser',
     email: 'test@example.com',
     created_at: new Date().toISOString(),
@@ -134,7 +134,7 @@ export function createMockUser(overrides: any = {}) {
 export function createMockJWTPayload(overrides: any = {}) {
   const now = Math.floor(Date.now() / 1000);
   return {
-    user_id: 1,
+    user_id: 'test-user-id',
     username: 'testuser',
     email: 'test@example.com',
     token_type: 'access',

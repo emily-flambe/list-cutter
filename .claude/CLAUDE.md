@@ -35,6 +35,7 @@ Comprehensive configuration for the Cutty (List Cutter) application - a Django t
 @include .claude/debugging-lessons.yml#WranglerDeploymentIssues
 @include .claude/debugging-lessons.yml#TypeScriptBuildFailures
 @include .claude/debugging-lessons.yml#CloudflarePagesVsWorkersDeployment
+@include .claude/debugging-lessons.yml#JWTTestTypeConsistency
 
 ## Essential Development Commands
 @include .claude/development-commands.yml#PreCommitValidation

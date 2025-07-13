@@ -10,17 +10,45 @@ const auth = new Hono<{ Bindings: Env }>();
 
 // Simplified CORS for same-origin setup (frontend and API on same domain)
 auth.use('*', cors({
-  origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com'],
+  origin: (origin, c) => {
+    // In development, allow all origins
+    const environment = c?.env?.ENVIRONMENT || 'development';
+    if (environment === 'development') {
+      return origin || '*';
+    }
+    
+    // In production, only allow specific origins
+    const allowedOrigins = ['https://cutty.emilycogsdill.com'];
+    return allowedOrigins.includes(origin || '') ? origin : false;
+  },
   allowMethods: ['POST', 'GET', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
+
+// Simple test endpoint for connectivity verification
+auth.get('/test', async (c) => {
+  return c.json({
+    status: 'success',
+    message: 'Auth API is working',
+    timestamp: new Date().toISOString(),
+    environment: c.env.ENVIRONMENT || 'development'
+  });
+});
 
 auth.post('/login', async (c) => {
   return handleLogin(c.req.raw, c.env);
 });
 
 auth.post('/register', async (c) => {
+  // Add debugging logs for D1 database connection
+  console.log('🔍 Registration request - D1 Database debugging:', {
+    has_db_binding: !!c.env.DB,
+    db_binding_type: typeof c.env.DB,
+    environment: c.env.ENVIRONMENT || 'development',
+    timestamp: new Date().toISOString()
+  });
+  
   return handleRegister(c.req.raw, c.env);
 });
 

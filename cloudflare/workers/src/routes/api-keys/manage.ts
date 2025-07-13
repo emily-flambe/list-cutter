@@ -3,7 +3,7 @@ import { APIKeyService } from '../../services/auth/apiKeys';
 import { APIKeyUsageTracker } from '../../services/auth/apiKeyUsage';
 import { APIPermission, PERMISSION_DESCRIPTIONS, PERMISSION_PRESETS } from '../../types/permissions';
 import { requireAuth } from '../../middleware/auth';
-import { ApiError } from '../../middleware/error';
+import { ApiError } from '../../types/errors';
 
 /**
  * Create a new API key
