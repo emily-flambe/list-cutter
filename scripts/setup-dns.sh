@@ -113,9 +113,6 @@ create_or_update_dns_record "CNAME" "cutty" "cutty.workers.dev" true 1
 # List-cutter subdomain (list-cutter.emilycogsdill.com) - redirect to main
 create_or_update_dns_record "CNAME" "list-cutter" "cutty.workers.dev" true 1
 
-# 2. Staging environment (for testing)
-print_status "🧪 Configuring staging subdomain..."
-create_or_update_dns_record "CNAME" "cutty-staging" "cutty.workers.dev" true 300
 
 # 4. TXT records for verification and security
 print_status "🔒 Configuring security and verification records..."
@@ -153,15 +150,6 @@ if [ -n "$WWW_IP" ]; then
     print_success "✅ WWW subdomain resolves to: $WWW_IP"
 else
     print_warning "⚠️ WWW subdomain resolution pending"
-fi
-
-# Check staging subdomain
-print_status "Testing DNS resolution for staging subdomain..."
-STAGING_IP=$(dig +short staging.$DOMAIN | head -1)
-if [ -n "$STAGING_IP" ]; then
-    print_success "✅ Staging subdomain resolves to: $STAGING_IP"
-else
-    print_warning "⚠️ Staging subdomain resolution pending"
 fi
 
 # 7. SSL Certificate verification
@@ -214,7 +202,6 @@ echo "DNS Configuration Summary:"
 echo "========================="
 echo "✅ Main domain: cutty.$DOMAIN → Unified Worker"
 echo "✅ List-cutter domain: list-cutter.$DOMAIN → Unified Worker"
-echo "✅ Staging subdomain: cutty-staging.$DOMAIN → Unified Worker (staging env)"
 echo "✅ Security records: SPF, DMARC configured"
 echo "✅ SSL configuration: Full (strict) mode"
 echo "✅ Performance optimization: Enabled"

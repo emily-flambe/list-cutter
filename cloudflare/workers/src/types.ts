@@ -66,7 +66,7 @@ export interface APIKeyCreateRequest {
 // Environment types with all required bindings
 export interface Env {
   // Environment variables
-  ENVIRONMENT: 'development' | 'staging' | 'production' | 'test';
+  ENVIRONMENT: 'development' | 'production' | 'test';
   API_VERSION: string;
   CORS_ORIGIN?: string;
   MAX_FILE_SIZE?: string;

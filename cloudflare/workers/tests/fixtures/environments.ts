@@ -29,17 +29,6 @@ export const environmentConfigs: Record<string, Partial<Env>> = {
     SECURITY_ENABLE_REAL_TIME_MONITORING: 'true',
   },
   
-  staging: {
-    ENVIRONMENT: 'staging',
-    API_VERSION: 'v1',
-    JWT_SECRET: 'staging-secret-at-least-32-characters-long-for-security',
-    JWT_REFRESH_SECRET: 'staging-refresh-secret-at-least-32-characters-long',
-    API_KEY_SALT: 'staging-api-key-salt-at-least-32-characters-long',
-    SECURITY_PERFORMANCE_THRESHOLD: '50',
-    SECURITY_METRICS_RETENTION_DAYS: '30',
-    SECURITY_ENABLE_REAL_TIME_MONITORING: 'true',
-  },
-  
   production: {
     ENVIRONMENT: 'production',
     API_VERSION: 'v1',

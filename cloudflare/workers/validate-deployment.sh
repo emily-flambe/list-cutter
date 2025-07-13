@@ -176,7 +176,6 @@ main() {
     
     # Test environments
     ENVIRONMENTS=("development:cutty:cutty-dev" 
-                  "staging:cutty:cutty-staging" 
                   "production:cutty:cutty-production")
     
     for env_config in "${ENVIRONMENTS[@]}"; do

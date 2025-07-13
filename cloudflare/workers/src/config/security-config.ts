@@ -87,12 +87,12 @@ export interface SecurityPolicy {
   // Version and metadata
   version: string;
   lastUpdated: string;
-  environment: 'development' | 'staging' | 'production';
+  environment: 'development' | 'production';
 }
 
 export interface SecurityConfigOptions {
   kvNamespace: KVNamespace;
-  environment: 'development' | 'staging' | 'production';
+  environment: 'development' | 'production';
   enableDynamicUpdates: boolean;
   cacheExpirationMinutes: number;
   fallbackToDefaults: boolean;
