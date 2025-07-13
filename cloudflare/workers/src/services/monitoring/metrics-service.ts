@@ -156,6 +156,7 @@ export class MetricsService {
       ],
       indexes: [userId, fileId, uploadId]
     });
+    }
   }
 
   /**
@@ -251,6 +252,7 @@ export class MetricsService {
         ],
         indexes: [userId]
       });
+      }
 
       // Update storage analytics table
       await this.updateDailyStorageAnalytics(userId, {
@@ -399,7 +401,9 @@ export class MetricsService {
       }));
 
       // Analytics Engine supports batch writes
-      await Promise.all(dataPoints.map(dp => this.analytics.writeDataPoint(dp)));
+      if (this.analytics) {
+        await Promise.all(dataPoints.map(dp => this.analytics!.writeDataPoint(dp)));
+      }
     } catch (error) {
       console.error('Failed to flush metrics to Analytics Engine:', error);
       // Re-queue failed metrics (with limit to prevent memory issues)
@@ -451,6 +455,7 @@ export class MetricsService {
         ],
         indexes: [metric.userId, metric.fileId, metric.operation]
       });
+      }
     } catch (error) {
       console.error('Failed to send metric to Analytics Engine:', error);
     }
