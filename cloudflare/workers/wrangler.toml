@@ -26,7 +26,15 @@ port = 8788
 local_protocol = "http"
 ip = "127.0.0.1"
 
-# Build configuration - using wrangler's built-in TypeScript compilation
+# Build configuration - optimized for faster deployment
+[build]
+command = "npm run build"
+cwd = "."
+watch_dir = "src"
+
+# Upload optimization
+upload_source_maps = false
+minify = true
 
 # Environment variables (non-sensitive)
 [vars]

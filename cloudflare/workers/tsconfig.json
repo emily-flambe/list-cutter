@@ -13,7 +13,14 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
     "newLine": "lf",
+    
+    // Build performance optimizations
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
     
     // Very permissive - only syntax errors and critical issues
     "noImplicitAny": false,
