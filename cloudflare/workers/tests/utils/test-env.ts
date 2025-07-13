@@ -41,9 +41,9 @@ export function createMockEnv(overrides: Partial<Env> = {}): Env {
     resumeMultipartUpload: vi.fn(),
   };
 
-  const mockAnalytics = {
-    writeDataPoint: vi.fn().mockResolvedValue(undefined),
-  };
+  // const mockAnalytics = {
+  //   writeDataPoint: vi.fn().mockResolvedValue(undefined),
+  // };
 
   return {
     ENVIRONMENT: 'test',
@@ -60,7 +60,7 @@ export function createMockEnv(overrides: Partial<Env> = {}): Env {
     SECURITY_METRICS: mockKV as any,
     DB: mockDB as any,
     FILE_STORAGE: mockR2 as any,
-    ANALYTICS: mockAnalytics as any,
+    // ANALYTICS: mockAnalytics as any,
     ...overrides,
   };
 }
