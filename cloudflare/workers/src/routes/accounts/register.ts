@@ -62,6 +62,19 @@ export async function handleRegister(
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
+    // Enhanced error logging for debugging
+    console.error('Detailed registration error:', {
+      error: error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      attempted_username: username,
+      env_check: {
+        has_db: !!env.DB,
+        has_jwt_secret: !!env.JWT_SECRET,
+        environment: env.ENVIRONMENT
+      }
+    });
+    
     // Log registration failure
     if (error instanceof ApiError) {
       let errorCode = 'REGISTRATION_FAILED';
@@ -88,6 +101,9 @@ export async function handleRegister(
       throw error;
     }
     console.error('Registration error:', error);
-    throw new ApiError(400, 'Registration failed');
+    
+    // Return more specific error message for debugging
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new ApiError(400, `Registration failed: ${errorMessage}`);
   }
 }

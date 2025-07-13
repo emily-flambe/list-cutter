@@ -15,8 +15,9 @@ export interface CloudflareEnv {
   
   // Secrets (from .dev.vars or Wrangler secrets)
   JWT_SECRET: string;
-  JWT_REFRESH_SECRET: string;
-  DB_ENCRYPTION_KEY: string;
+  JWT_REFRESH_SECRET?: string;
+  DB_ENCRYPTION_KEY?: string;
+  API_KEY_SALT?: string;
   
   // Bindings
   DB: D1Database;
