@@ -11,12 +11,9 @@ export default defineWorkersConfig({
           kvNamespaces: ['AUTH_KV', 'SECURITY_CONFIG', 'SECURITY_EVENTS', 'SECURITY_METRICS'],
           d1Databases: ['DB'],
           r2Buckets: ['FILE_STORAGE'],
-          analyticsEngineDatasets: [
-            {
-              binding: "ANALYTICS",
-              dataset: "cutty-metrics"
-            }
-          ],
+          analyticsEngineDatasets: {
+            ANALYTICS: "cutty-metrics"
+          },
           bindings: {
             ENVIRONMENT: 'test',
             API_VERSION: 'v1',
