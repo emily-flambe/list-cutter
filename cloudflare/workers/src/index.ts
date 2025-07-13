@@ -343,7 +343,7 @@ app.use('*', async (c, next): Promise<void> => {
 
 // CORS configuration - Allow same-origin and development (moved before prettyJSON)
 app.use('*', cors({
-  origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com'],
+  origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com', 'https://835ef64d-cutty.emily-cogsdill.workers.dev', 'https://cutty.emily-cogsdill.workers.dev'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   exposeHeaders: ['X-Request-Id', 'X-Response-Time'],

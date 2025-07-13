@@ -12,10 +12,7 @@ ProjectIdentity: &ProjectIdentity
     domains:
       - "cutty.emilycogsdill.com"
       - "list-cutter.emilycogsdill.com"
-    worker_names:
-      - "cutty-api"
-      - "cutty-workers" 
-      - "cutty-frontend"
+    worker_name: "cutty"
     database_names:
       - "cutty-preview"
       - "cutty-dev"
@@ -41,6 +38,7 @@ WranglerCommands: &WranglerCommands
 
 ProjectStructure: &ProjectStructure
   main_application: "Django backend with React frontend"
-  target_deployment: "Cloudflare Workers with D1 + R2"
+  target_deployment: "Single Cloudflare Worker 'cutty' with D1 + R2"
   migration_tools: "Comprehensive Python scripts for file migration"
-  identity_preference: "Use 'cutty' for all new Cloudflare resources"
+  identity_preference: "Use single worker 'cutty' for unified architecture"
+  architecture_note: "Consolidated from multiple workers (cutty-api, cutty-workers, cutty-frontend) to single worker 'cutty'"
