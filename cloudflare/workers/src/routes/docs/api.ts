@@ -1,6 +1,4 @@
 import type { Env } from '../../types';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
 /**
  * Serve interactive API documentation using Swagger UI
@@ -253,7 +251,7 @@ export async function serveAPIDocs(request: Request, env: Env): Promise<Response
                 const now = new Date();
                 
                 if (expiry > now) {
-                  status.textContent = \`JWT: \${payload.username} (expires \${expiry.toLocaleTimeString()})\`;
+                  status.textContent = 'JWT: ' + payload.username + ' (expires ' + expiry.toLocaleTimeString() + ')';
                   status.className = 'auth-status authenticated';
                 } else {
                   status.textContent = 'JWT token expired';
@@ -266,7 +264,7 @@ export async function serveAPIDocs(request: Request, env: Env): Promise<Response
                 localStorage.removeItem('cutty_access_token');
               }
             } else if (apiKey) {
-              status.textContent = \`API Key: \${apiKey.substring(0, 15)}...\`;
+              status.textContent = 'API Key: ' + apiKey.substring(0, 15) + '...';
               status.className = 'auth-status authenticated';
             } else {
               status.textContent = 'Not authenticated';
@@ -354,7 +352,7 @@ async function getOpenAPISpecContent(): Promise<string> {
   
   // For now, return a reference to fetch from the docs endpoint
   // In production, you'd embed the full OpenAPI spec here
-  return \`# This would contain the full OpenAPI spec
+  return `# This would contain the full OpenAPI spec
 # In production, embed the openapi.yaml content here or fetch from R2
 openapi: 3.0.3
 info:
@@ -370,7 +368,7 @@ paths:
       responses:
         '200':
           description: Interactive API documentation
-\`;
+`;
 }
 
 /**
