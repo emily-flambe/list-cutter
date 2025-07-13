@@ -1,7 +1,10 @@
 // frontend/src/pages/LogoutConfirmation.jsx
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, Button } from '@mui/material';
+// Optimized direct imports for better tree-shaking and build performance
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 import { AuthContext } from '../context/AuthContext';
 
 const LogoutConfirmation = () => {

@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useContext, useMemo } from 'react';
-import { Box, Typography, MenuItem, Select, Button, CircularProgress } from '@mui/material';
+// Optimized direct imports for better tree-shaking and build performance
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
 // import CytoscapeComponent from 'react-cytoscapejs';
