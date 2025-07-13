@@ -1,6 +1,6 @@
 # Cutty Development Makefile
 
-.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build build-fast build-parallel clean test
+.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build build-parallel clean test
 
 dev: setup kill-ports
 	@echo "🚀 Starting both backend and frontend servers..."
@@ -270,19 +270,11 @@ migrations:
 # OPTIMIZED BUILD SYSTEM - Issue #98 Build Time Reduction
 # ============================================================================
 
-# Fast parallel build for development
-build-fast:
-	@echo "🚀 Starting optimized parallel build..."
-	@echo "⚡ Frontend (Vite) + Workers (esbuild) building simultaneously..."
-	@$(MAKE) -j2 build-workers build-frontend
-	@echo "✅ Fast build completed\!"
-
-# Production optimized build (sequential for reliability)
+# Optimized parallel build
 build:
-	@echo "🏗️ Starting production build..."
-	@$(MAKE) build-workers
-	@$(MAKE) build-frontend
-	@echo "✅ Production build completed\!"
+	@echo "🏗️ Starting optimized build..."
+	@$(MAKE) -j2 build-workers build-frontend
+	@echo "✅ Build completed\!"
 
 # Parallel build (experimental - use for maximum speed)
 build-parallel:
@@ -324,7 +316,7 @@ tsc-clean:
 dev-fast: setup kill-ports clean
 	@echo "🚀 Starting optimized development servers..."
 	@echo "Building projects first for faster startup..."
-	@$(MAKE) build-fast
+	@$(MAKE) build
 	@echo "Starting servers..."
 	@$(MAKE) -j2 backend frontend
 
@@ -341,10 +333,4 @@ validate-build: build
 	@ls -la app/frontend/dist/ 2>/dev/null || echo "❌ Frontend build missing"
 	@ls -la cloudflare/workers/dist/ 2>/dev/null || echo "❌ Workers build missing"
 
-# Performance measurement (basic)
-measure-build:
-	@echo "⏱️ Measuring build performance..."
-	@time $(MAKE) clean
-	@time $(MAKE) build-fast
-	@echo "📊 Build measurement completed\!"
 EOF < /dev/null

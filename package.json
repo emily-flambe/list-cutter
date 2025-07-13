@@ -9,10 +9,9 @@
     "prepare": "husky",
     
     // Build orchestration for faster monorepo builds
-    "build": "npm run build:workers && npm run build:frontend",
+    "build": "npm run build:workers & npm run build:frontend & wait",
     "build:workers": "cd cloudflare/workers && npm run build",
     "build:frontend": "cd app/frontend && npm run build",
-    "build:parallel": "npm run build:workers & npm run build:frontend & wait",
     
     // TypeScript project reference builds
     "tsc:build": "tsc --build",

@@ -88,7 +88,7 @@ else
     echo "  ❌ Workers TypeScript project references missing"
 fi
 
-if grep -q "build-fast:" Makefile; then
+if grep -q "build-parallel:" Makefile; then
     echo "  ✅ Optimized build targets added to Makefile"
 else
     echo "  ❌ Optimized build targets missing from Makefile"
@@ -138,11 +138,10 @@ echo "==============================="
 echo ""
 echo "To test the optimizations:"
 echo "1. Run: make clean"
-echo "2. Run: make build-fast"
+echo "2. Run: make build"
 echo "3. Compare with previous build times"
 echo ""
 echo "For comprehensive testing:"
-echo "• make measure-build    # Automated performance measurement"
 echo "• make build-parallel   # Maximum speed experimental build"
 echo "• make tsc-build       # TypeScript project reference build"
 echo ""
