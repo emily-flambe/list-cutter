@@ -9,7 +9,7 @@ workers_dev = true
 
 # Asset configuration for serving frontend
 [assets]
-directory = "../../../../app/frontend/dist"
+directory = "../../app/frontend/dist"
 binding = "ASSETS"
 
 # Enable Wrangler logs (v3.88.0+)
