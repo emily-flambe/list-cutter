@@ -190,12 +190,18 @@ app.use('*', logger());
 
 // Security headers middleware (replaces basic secureHeaders)
 app.use('*', async (c, next): Promise<void> => {
-  if (securityHeadersMiddleware) {
-    await securityHeadersMiddleware.middleware(c, next);
-  } else {
-    // Fallback to basic secure headers if security middleware not available
-    const { secureHeaders } = await import('hono/secure-headers');
-    await secureHeaders()(c, next);
+  try {
+    if (securityHeadersMiddleware) {
+      await securityHeadersMiddleware.middleware(c, next);
+    } else {
+      // Fallback to basic secure headers if security middleware not available
+      const { secureHeaders } = await import('hono/secure-headers');
+      await secureHeaders()(c, next);
+    }
+  } catch (error) {
+    console.error('Security headers middleware failed:', error);
+    // Continue without security headers rather than breaking the entire chain
+    await next();
   }
 });
 
@@ -335,20 +341,17 @@ app.use('*', async (c, next): Promise<void> => {
   }
 });
 
-app.use('*', prettyJSON());
+// CORS configuration - Allow same-origin and development (moved before prettyJSON)
+app.use('*', cors({
+  origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  exposeHeaders: ['X-Request-Id', 'X-Response-Time'],
+  credentials: true,
+  maxAge: 86400,
+}));
 
-// CORS configuration - Allow same-origin and development
-app.use('*', async (c, next): Promise<Response> => {
-  const corsMiddleware = cors({
-    origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com'],
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
-    exposeHeaders: ['X-Request-Id', 'X-Response-Time'],
-    credentials: true,
-    maxAge: 86400,
-  });
-  return corsMiddleware(c, next);
-});
+app.use('*', prettyJSON());
 
 // Health check endpoint
 app.get('/health', async (c): Promise<Response> => {
