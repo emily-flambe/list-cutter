@@ -45,3 +45,55 @@ BuildSuccessCriteria: &BuildSuccessCriteria
     - "No critical runtime errors in essential flows"
   
   note: "TypeScript strict checking is secondary to functional builds. Focus on build success and runtime safety over perfect type compliance."
+
+CronTriggerDeployment: &CronTriggerDeployment
+  priority_triggers:
+    metrics_collection:
+      schedule: "*/5 * * * *"
+      purpose: "Metrics collection, alert evaluation, auto-recovery checks"
+      endpoints:
+        - "/api/monitoring/collect-metrics"
+        - "/api/alerts/jobs/evaluate" 
+        - "/api/disaster-recovery/auto-recovery-check"
+      command: 'wrangler triggers deploy --cron "*/5 * * * *"'
+    
+    security_monitoring:
+      schedule: "*/1 * * * *"
+      purpose: "Security event monitoring and system health checks"
+      endpoints:
+        - "/api/monitoring/check-alerts"
+      command: 'wrangler triggers deploy --cron "*/1 * * * *"'
+    
+    daily_backup:
+      schedule: "0 2 * * *"
+      purpose: "Daily backup, reports, and alert cleanup"
+      endpoints:
+        - "/api/backup/daily"
+        - "/api/monitoring/generate-daily-report"
+        - "/api/alerts/jobs/cleanup"
+      command: 'wrangler triggers deploy --cron "0 2 * * *"'
+    
+    storage_cleanup:
+      schedule: "0 6 * * *"
+      purpose: "R2 storage cleanup and data export management"
+      endpoints:
+        - "/api/data-export/scheduled-cleanup"
+      command: 'wrangler triggers deploy --cron "0 6 * * *"'
+    
+    cost_calculation:
+      schedule: "0 */6 * * *"
+      purpose: "Cost calculation and billing metrics updates"
+      endpoints:
+        - "/api/monitoring/calculate-costs"
+      command: 'wrangler triggers deploy --cron "0 */6 * * *"'
+  
+  deployment_sequence:
+    - 'cd cloudflare/workers'
+    - 'wrangler triggers deploy --cron "*/5 * * * *"'
+    - 'wrangler triggers deploy --cron "*/1 * * * *"'
+    - 'wrangler triggers deploy --cron "0 2 * * *"'
+    - 'wrangler triggers deploy --cron "0 6 * * *"'
+    - 'wrangler triggers deploy --cron "0 */6 * * *"'
+    - 'wrangler triggers list'
+  
+  verification_command: "wrangler triggers list"

@@ -27,7 +27,7 @@ const Login = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.post(`/api/accounts/login/`, credentials);
+      const response = await api.post(`/api/v1/auth/login`, credentials);
       login(response.data.access, credentials.username, response.data.refresh);
       navigate('/');
     } catch (err) {

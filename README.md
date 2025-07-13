@@ -158,6 +158,54 @@ npm run test:e2e:ui
 - **Vitest**: Fast unit testing
 - **Playwright**: E2E testing framework
 
+## ⏰ Scheduled Tasks & Cron Triggers
+
+The application uses Cloudflare Workers cron triggers for automated maintenance and monitoring:
+
+### Priority Cron Triggers (Top 5)
+
+| Schedule | Purpose | Endpoint |
+|----------|---------|----------|
+| `*/5 * * * *` | **Metrics & Alerts** | `/api/monitoring/collect-metrics`<br/>`/api/alerts/jobs/evaluate`<br/>`/api/disaster-recovery/auto-recovery-check` |
+| `*/1 * * * *` | **Security Monitoring** | `/api/monitoring/check-alerts` |
+| `0 2 * * *` | **Daily Backup & Maintenance** | `/api/backup/daily`<br/>`/api/monitoring/generate-daily-report`<br/>`/api/alerts/jobs/cleanup` |
+| `0 6 * * *` | **Storage & Data Cleanup** | `/api/data-export/scheduled-cleanup` |
+| `0 */6 * * *` | **Cost Calculation** | `/api/monitoring/calculate-costs` |
+
+### Deploy Cron Triggers
+
+```bash
+cd cloudflare/workers
+
+# Deploy all priority cron triggers
+wrangler triggers deploy --cron "*/5 * * * *"  # Metrics & alerts every 5 min
+wrangler triggers deploy --cron "*/1 * * * *"  # Security monitoring every minute  
+wrangler triggers deploy --cron "0 2 * * *"    # Daily backup at 2 AM
+wrangler triggers deploy --cron "0 6 * * *"    # Storage cleanup at 6 AM
+wrangler triggers deploy --cron "0 */6 * * *"  # Cost calculation every 6 hours
+
+# Verify deployment
+wrangler triggers list
+```
+
+### What Each Trigger Does
+
+- **Every 5 minutes**: Rotates between metrics collection, alert evaluation, and auto-recovery checks for system health
+- **Every minute**: Monitors security events, system thresholds, and triggers immediate response actions
+- **Daily 2 AM**: Creates comprehensive backups, generates operational reports, cleans up old alert data
+- **Daily 6 AM**: Removes expired exports from R2 storage, manages quotas, cleans temporary files
+- **Every 6 hours**: Calculates R2 storage costs, updates billing metrics, tracks usage trends
+
+### Additional Cron Triggers
+
+| Schedule | Purpose | Description |
+|----------|---------|-------------|
+| `*/15 * * * *` | Notification Retry | Retries failed alert notifications |
+| `*/10 * * * *` | Alert Health Check | Monitors alerting system health |
+| `0 3 * * 0` | Weekly Backup | Comprehensive weekly backups |
+| `0 4 1 * *` | Monthly Backup | Long-term archive backups |
+| `0 5 * * 0` | Metrics Cleanup | Removes old metrics data |
+
 ## 📚 Documentation
 
 - [Quick Start Guide](cloudflare/workers/QUICK-START.md)

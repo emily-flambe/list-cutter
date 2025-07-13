@@ -41,6 +41,7 @@ Comprehensive configuration for the Cutty (List Cutter) application - a Django t
 @include .claude/development-commands.yml#PreCommitValidation
 @include .claude/development-commands.yml#TroubleshootingCommands
 @include .claude/development-commands.yml#BuildSuccessCriteria
+@include .claude/development-commands.yml#CronTriggerDeployment
 
 ## Git Worktree Management
 - All debugging and feature worktrees should be created in `worktrees/` directory within this project
@@ -92,6 +93,16 @@ npm run build && npx wrangler versions upload --dry-run
 
 # Deploy to staging
 wrangler deploy --env=staging
+
+# Deploy cron triggers (priority triggers)
+wrangler triggers deploy --cron "*/5 * * * *"  # Metrics & alerts every 5 min
+wrangler triggers deploy --cron "*/1 * * * *"  # Security monitoring every minute  
+wrangler triggers deploy --cron "0 2 * * *"    # Daily backup at 2 AM
+wrangler triggers deploy --cron "0 6 * * *"    # Storage cleanup at 6 AM
+wrangler triggers deploy --cron "0 */6 * * *"  # Cost calculation every 6 hours
+
+# Verify cron triggers
+wrangler triggers list
 ```
 
 ## Automated Pre-Commit Validation
