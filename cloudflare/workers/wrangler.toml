@@ -9,7 +9,7 @@ workers_dev = true
 
 # Asset configuration for serving frontend
 [assets]
-directory = "dist"
+directory = "../../app/frontend/dist"
 binding = "ASSETS"
 
 # Enable Workers logs for debugging and monitoring  
