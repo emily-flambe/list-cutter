@@ -44,10 +44,13 @@ Comprehensive configuration for the Cutty (List Cutter) application - a Django t
 @include .claude/development-commands.yml#CronTriggerDeployment
 
 ## Git Worktree Management
+**CRITICAL: ALL worktrees MUST be created in `worktrees/` directory**
 - All debugging and feature worktrees should be created in `worktrees/` directory within this project
 - Use naming convention: `worktrees/[purpose]`
 - Example: `git worktree add worktrees/debug`
+- Example: `git worktree add worktrees/google-oauth-signin`
 - This keeps worktrees organized within the project structure
+- **NEVER create worktrees outside the worktrees/ folder**
 
 ## Testing Philosophy
 **CRITICAL: NEVER overengineer tests**
@@ -93,6 +96,9 @@ npm run build && npx wrangler versions upload --dry-run
 
 # Deploy to staging
 wrangler deploy --env=staging
+
+# Deploy to production (using separate config)
+wrangler deploy --config wrangler.prod.toml
 
 # Deploy cron triggers (priority triggers)
 wrangler triggers deploy --cron "*/5 * * * *"  # Metrics & alerts every 5 min
