@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { handleRegister } from '../../../src/routes/accounts/register';
 import type { Env, User } from '../../../src/types';
-import { ApiError } from '../../../src/middleware/error';
+import { ApiError } from '../../../src/types/errors';
 
 // Define UserRegistration interface for tests (inferred from register handler usage)
 interface UserRegistration {
@@ -52,7 +52,7 @@ const mockEnv: Env = {
 } as Env;
 
 const mockUser: User = {
-  id: 1,
+  id: '1',
   username: 'newuser',
   email: 'newuser@example.com',
   created_at: '2024-01-01T00:00:00Z'

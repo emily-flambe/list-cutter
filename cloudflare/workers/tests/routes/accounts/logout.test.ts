@@ -48,7 +48,7 @@ describe('Logout Handler', () => {
 
   it('should logout successfully with access token in header', async () => {
     // Setup mocks
-    vi.mocked(verifyJWT).mockResolvedValue({ user_id: 1, exp: Date.now() / 1000 + 3600 });
+    vi.mocked(verifyJWT).mockResolvedValue({ user_id: '1', exp: Date.now() / 1000 + 3600 });
     vi.mocked(blacklistToken).mockResolvedValue(undefined);
 
     const request = new Request('http://localhost/logout', {
@@ -97,7 +97,7 @@ describe('Logout Handler', () => {
 
   it('should logout successfully with both tokens', async () => {
     // Setup mocks
-    vi.mocked(verifyJWT).mockResolvedValue({ user_id: 1, exp: Date.now() / 1000 + 3600 });
+    vi.mocked(verifyJWT).mockResolvedValue({ user_id: '1', exp: Date.now() / 1000 + 3600 });
     vi.mocked(blacklistToken).mockResolvedValue(undefined);
 
     const request = new Request('http://localhost/logout', {
@@ -211,7 +211,7 @@ describe('Logout Handler', () => {
 
   it('should handle invalid JSON in request body gracefully', async () => {
     // Setup mocks
-    vi.mocked(verifyJWT).mockResolvedValue({ user_id: 1, exp: Date.now() / 1000 + 3600 });
+    vi.mocked(verifyJWT).mockResolvedValue({ user_id: '1', exp: Date.now() / 1000 + 3600 });
     vi.mocked(blacklistToken).mockResolvedValue(undefined);
 
     const request = new Request('http://localhost/logout', {
@@ -237,7 +237,7 @@ describe('Logout Handler', () => {
 
   it('should handle blacklistToken failure by throwing error', async () => {
     // Setup mocks - blacklistToken fails
-    vi.mocked(verifyJWT).mockResolvedValue({ user_id: 1, exp: Date.now() / 1000 + 3600 });
+    vi.mocked(verifyJWT).mockResolvedValue({ user_id: '1', exp: Date.now() / 1000 + 3600 });
     vi.mocked(blacklistToken).mockRejectedValue(new Error('Blacklist service unavailable'));
 
     const request = new Request('http://localhost/logout', {
@@ -257,7 +257,7 @@ describe('Logout Handler', () => {
 
   it('should handle empty request body gracefully', async () => {
     // Setup mocks
-    vi.mocked(verifyJWT).mockResolvedValue({ user_id: 1, exp: Date.now() / 1000 + 3600 });
+    vi.mocked(verifyJWT).mockResolvedValue({ user_id: '1', exp: Date.now() / 1000 + 3600 });
     vi.mocked(blacklistToken).mockResolvedValue(undefined);
 
     const request = new Request('http://localhost/logout', {

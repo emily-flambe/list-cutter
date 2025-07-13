@@ -32,7 +32,7 @@ const Register = () => {
       console.log('API Base URL:', api.defaults.baseURL);
       
       // Test the auth/test endpoint
-      const response = await api.get('/api/auth/test');
+      const response = await api.get('/api/v1/auth/test');
       console.log('Connectivity test response:', response.data);
       
       setConnectivityTest({
@@ -68,7 +68,7 @@ const Register = () => {
       
       // Fixed: Using correct endpoint path for registration
       const response = await api.post(
-        `/api/auth/register`,
+        `/api/v1/auth/register`,
         formData
       );
       console.log('✅ Registration successful:', response.data);

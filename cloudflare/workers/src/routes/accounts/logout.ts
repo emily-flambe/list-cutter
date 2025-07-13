@@ -1,6 +1,6 @@
 import type { Env } from '../../types';
 import { blacklistToken, verifyJWT } from '../../services/auth/jwt';
-import { ApiError } from '../../middleware/error';
+import { ApiError } from '../../types/errors';
 import { SecurityLogger } from '../../services/security/logger';
 import { MetricsCollector } from '../../services/security/metrics';
 

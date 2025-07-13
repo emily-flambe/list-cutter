@@ -22,7 +22,7 @@ const ManageFiles = () => {
   useEffect(() => {
     const fetchSavedFiles = async () => {
       try {
-        const response = await api.get('/api/cutty/list_saved_files/', {
+        const response = await api.get('/api/v1/files/list', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFiles(response.data.files);
@@ -70,7 +70,7 @@ const ManageFiles = () => {
 
   const downloadFile = async (fileName) => {
     try {
-      const response = await api.get(`/api/cutty/download/${fileName}/`, {
+      const response = await api.get(`/api/v1/files/download/${fileName}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob', // Important for handling binary data
       });
@@ -93,11 +93,11 @@ const ManageFiles = () => {
     console.log("Deleting file:", fileId);
     if (window.confirm("Are you sure you want to delete this file?")) {
       try {
-        await api.delete(`/api/cutty/delete/${fileId}/`, {
+        await api.delete(`/api/v1/files/delete/${fileId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         // Re-fetch the list of files after deletion
-        const response = await api.get('/api/cutty/list_saved_files/', {
+        const response = await api.get('/api/v1/files/list', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setFiles(response.data.files);
@@ -123,7 +123,7 @@ const ManageFiles = () => {
     if (!newTag) return;
 
     try {
-      await api.patch(`/api/cutty/update_tags/${selectedFileId}/`, {
+      await api.patch(`/api/v1/files/update_tags/${selectedFileId}`, {
         user_tags: [newTag]
       }, {
         headers: { Authorization: `Bearer ${token}` },

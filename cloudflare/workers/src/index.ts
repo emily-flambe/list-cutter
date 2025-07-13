@@ -343,7 +343,21 @@ app.use('*', async (c, next): Promise<void> => {
 
 // CORS configuration - Allow same-origin and development (moved before prettyJSON)
 app.use('*', cors({
-  origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com', 'https://835ef64d-cutty.emily-cogsdill.workers.dev', 'https://cutty.emily-cogsdill.workers.dev'],
+  origin: (origin, c) => {
+    // In development, allow all origins (including localhost on any port and any local IP)
+    const environment = c?.env?.ENVIRONMENT || 'development';
+    if (environment === 'development') {
+      return origin || '*';
+    }
+    
+    // In production, only allow specific origins
+    const allowedOrigins = [
+      'https://cutty.emilycogsdill.com', 
+      'https://835ef64d-cutty.emily-cogsdill.workers.dev', 
+      'https://cutty.emily-cogsdill.workers.dev'
+    ];
+    return allowedOrigins.includes(origin || '') ? origin : false;
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   exposeHeaders: ['X-Request-Id', 'X-Response-Time'],
@@ -383,7 +397,7 @@ app.get('/health', async (c): Promise<Response> => {
 });
 
 // Security management endpoints
-app.get('/api/security/config', async (c): Promise<Response> => {
+app.get('/api/v1/security/config', async (c): Promise<Response> => {
   const securityConfig = c.get('securityConfig') as SecurityConfigManager;
   
   if (!securityConfig) {
@@ -401,7 +415,7 @@ app.get('/api/security/config', async (c): Promise<Response> => {
   }
 });
 
-app.get('/api/security/dashboard', async (c): Promise<Response> => {
+app.get('/api/v1/security/dashboard', async (c): Promise<Response> => {
   const securityMonitor = c.get('securityMonitor') as SecurityMonitorService;
   
   if (!securityMonitor) {
@@ -419,7 +433,7 @@ app.get('/api/security/dashboard', async (c): Promise<Response> => {
   }
 });
 
-app.get('/api/security/metrics', async (c): Promise<Response> => {
+app.get('/api/v1/security/metrics', async (c): Promise<Response> => {
   const securityMetrics = c.get('securityMetrics') as SecurityMetricsCollector;
   
   if (!securityMetrics) {
@@ -465,7 +479,7 @@ app.get('/api/security/metrics', async (c): Promise<Response> => {
   }
 });
 
-app.post('/api/security/alerts/:alertId/resolve', async (c): Promise<Response> => {
+app.post('/api/v1/security/alerts/:alertId/resolve', async (c): Promise<Response> => {
   const securityMonitor = c.get('securityMonitor') as SecurityMonitorService;
   
   if (!securityMonitor) {
@@ -487,7 +501,7 @@ app.post('/api/security/alerts/:alertId/resolve', async (c): Promise<Response> =
   }
 });
 
-app.post('/api/security/config/update', async (c): Promise<Response> => {
+app.post('/api/v1/security/config/update', async (c): Promise<Response> => {
   const securityConfig = c.get('securityConfig') as SecurityConfigManager;
   
   if (!securityConfig) {
@@ -506,7 +520,7 @@ app.post('/api/security/config/update', async (c): Promise<Response> => {
   }
 });
 
-app.post('/api/security/csp-report', async (c): Promise<Response> => {
+app.post('/api/v1/security/csp-report', async (c): Promise<Response> => {
   const securityMonitor = c.get('securityMonitor') as SecurityMonitorService;
   
   try {
@@ -546,7 +560,7 @@ app.post('/api/security/csp-report', async (c): Promise<Response> => {
 });
 
 // Security pipeline health check
-app.get('/api/security/pipeline/health', async (c): Promise<Response> => {
+app.get('/api/v1/security/pipeline/health', async (c): Promise<Response> => {
   try {
     const securityHealth = {
       status: 'healthy',
@@ -576,7 +590,7 @@ app.get('/api/security/pipeline/health', async (c): Promise<Response> => {
 });
 
 // Security pipeline integration test
-app.post('/api/security/pipeline/test', async (c): Promise<Response> => {
+app.post('/api/v1/security/pipeline/test', async (c): Promise<Response> => {
   try {
     const middleware = c.get('securityMiddleware') as ProductionSecurityMiddleware;
     const eventLogger = c.get('securityEventLogger') as SecurityEventLogger;
@@ -756,7 +770,7 @@ app.use('*', async (c, next): Promise<void> => {
 });
 
 // Dashboard API routes
-app.all('/admin/metrics/*', async (c): Promise<Response> => {
+app.all('/api/v1/admin/metrics/*', async (c): Promise<Response> => {
   if (!dashboardAPI) {
     return c.json({ error: 'Dashboard API not initialized' }, 500);
   }
@@ -774,7 +788,7 @@ app.all('/admin/metrics/*', async (c): Promise<Response> => {
   });
 });
 
-app.all('/user/storage/*', async (c): Promise<Response> => {
+app.all('/api/v1/user/storage/*', async (c): Promise<Response> => {
   if (!dashboardAPI) {
     return c.json({ error: 'Dashboard API not initialized' }, 500);
   }
@@ -792,7 +806,7 @@ app.all('/user/storage/*', async (c): Promise<Response> => {
   });
 });
 
-app.all('/metrics/realtime/*', async (c): Promise<Response> => {
+app.all('/api/v1/metrics/realtime/*', async (c): Promise<Response> => {
   if (!dashboardAPI) {
     return c.json({ error: 'Dashboard API not initialized' }, 500);
   }
@@ -810,7 +824,7 @@ app.all('/metrics/realtime/*', async (c): Promise<Response> => {
   });
 });
 
-app.all('/metrics/historical/*', async (c): Promise<Response> => {
+app.all('/api/v1/metrics/historical/*', async (c): Promise<Response> => {
   if (!dashboardAPI) {
     return c.json({ error: 'Dashboard API not initialized' }, 500);
   }
@@ -828,7 +842,7 @@ app.all('/metrics/historical/*', async (c): Promise<Response> => {
   });
 });
 
-app.all('/api/metrics/*', async (c): Promise<Response> => {
+app.all('/api/v1/metrics/*', async (c): Promise<Response> => {
   if (!dashboardAPI) {
     return c.json({ error: 'Dashboard API not initialized' }, 500);
   }
@@ -914,7 +928,7 @@ app.get('/dashboard/stats', async (c): Promise<Response> => {
 });
 
 // Alert API routes
-app.all('/api/alerts/*', async (c): Promise<Response> => {
+app.all('/api/v1/alerts/*', async (c): Promise<Response> => {
   if (!alertRoutes) {
     return c.json({ error: 'Alert system not initialized' }, 500);
   }
@@ -929,7 +943,7 @@ app.all('/api/alerts/*', async (c): Promise<Response> => {
 });
 
 // Alert dashboard routes
-app.all('/api/dashboard/*', async (c): Promise<Response> => {
+app.all('/api/v1/dashboard/*', async (c): Promise<Response> => {
   if (!alertDashboardRoutes) {
     return c.json({ error: 'Alert dashboard not initialized' }, 500);
   }
@@ -944,26 +958,29 @@ app.all('/api/dashboard/*', async (c): Promise<Response> => {
 });
 
 // API version prefix
-const v1 = app.basePath('/api');
+const v1 = app.basePath('/api/v1');
 
-// Mount routes
-// v1.route('/migration', migrationRoutes); // Removed - migration routes handled by blue-green deployment
-v1.route('/', secureFilesRoutes); // Secure file routes at /api/files/*
-v1.route('/monitoring', monitoringRoutes); // Monitoring routes at /api/monitoring/*
-v1.route('/dashboard', dashboardMonitoringRoutes); // Dashboard monitoring routes at /api/dashboard/*
-v1.route('/backup', backupRoutes); // Backup routes at /api/backup/*
-v1.route('/disaster-recovery', disasterRecoveryRoutes); // Disaster recovery routes at /api/disaster-recovery/*
-v1.route('/data-export', dataExportRoutes); // Data export routes at /api/data-export/*
-v1.route('/performance', performanceOptimizationRoutes); // Performance optimization routes at /api/performance/*
-v1.route('/auth', authRoutes);
-v1.route('/deployment', blueGreenDeploymentRoutes); // Blue-green deployment routes at /api/deployment/*
+// Mount routes under /api/v1
+v1.route('/files', secureFilesRoutes); // File operations at /api/v1/files/*
+v1.route('/monitoring', monitoringRoutes); // Monitoring routes at /api/v1/monitoring/*
+v1.route('/dashboard', dashboardMonitoringRoutes); // Dashboard monitoring routes at /api/v1/dashboard/*
+v1.route('/backup', backupRoutes); // Backup routes at /api/v1/backup/*
+v1.route('/recovery', disasterRecoveryRoutes); // Disaster recovery routes at /api/v1/recovery/*
+v1.route('/export', dataExportRoutes); // Data export routes at /api/v1/export/*
+v1.route('/performance', performanceOptimizationRoutes); // Performance optimization routes at /api/v1/performance/*
+v1.route('/auth', authRoutes); // Authentication routes at /api/v1/auth/*
+v1.route('/deployment', blueGreenDeploymentRoutes); // Blue-green deployment routes at /api/v1/deployment/*
+
+// Backward compatibility routes (redirect old /api/ to /api/v1/)
+const legacyApi = app.basePath('/api');
+legacyApi.route('/auth', authRoutes); // Backward compatibility for /api/auth/*
 // v1.route('/csv', csvRoutes);
 // v1.route('/users', userRoutes);
 
 // Frontend serving logic for non-API routes
 app.get('*', async (c, next): Promise<Response> => {
   // Skip API routes - let them be handled by the API handlers above
-  if (c.req.path.startsWith('/api/') || c.req.path.startsWith('/health') || c.req.path.startsWith('/test-') || c.req.path.startsWith('/admin/') || c.req.path.startsWith('/user/') || c.req.path.startsWith('/metrics/') || c.req.path.startsWith('/dashboard/')) {
+  if (c.req.path.startsWith('/api/') || c.req.path.startsWith('/health') || c.req.path.startsWith('/test-') || c.req.path.startsWith('/dashboard/')) {
     // Let these continue to the 404 handler
     return next();
   }

@@ -81,6 +81,6 @@ function getApiOrigins(environment) {
     case 'preview':
       return 'https://cutty-preview.emilycogsdill.com';
     default:
-      return 'http://localhost:8787 https://cutty.emilycogsdill.com';
+      return 'http://localhost:8788 https://cutty.emilycogsdill.com';
   }
 }
