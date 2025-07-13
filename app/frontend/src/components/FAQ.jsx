@@ -1,4 +1,6 @@
-import { Typography, Box } from '@mui/material';
+// Optimized direct imports for better tree-shaking and build performance
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 import isThisACRM from '../assets/isthisacrm.jpg';
 
 

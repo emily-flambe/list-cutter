@@ -8,7 +8,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import Collapse from '@mui/material/Collapse';
-import { Link as MuiLink } from '@mui/material';
+import { Link as MuiLink } from '@mui/material/Link';
 
 // Optimized direct icon imports for better tree-shaking
 import HomeIcon from '@mui/icons-material/Home';
