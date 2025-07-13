@@ -50,6 +50,14 @@ Comprehensive configuration for the Cutty (List Cutter) application - a Django t
 - Focus on core functionality verification rather than comprehensive edge cases
 - **Test philosophy: Simple, practical, maintainable**
 
+### Analytics Engine Testing Rule
+**⚠️ CRITICAL: ALWAYS SKIP ANALYTICS ENGINE IN TESTS ⚠️**
+- AnalyticsEngine datasets MUST ALWAYS be commented out in vitest.config.ts
+- NEVER attempt to configure or enable analyticsEngineDatasets in test configuration
+- Analytics functionality should be skipped/mocked in all test environments
+- This is a strict requirement that cannot be overridden under any circumstances
+- Any attempt to include AnalyticsEngine in tests will cause configuration errors and test failures
+
 ## Project Architecture
 
 ### Technology Stack
