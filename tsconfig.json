@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext", 
+    "moduleResolution": "bundler",
+    "strict": false,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    
+    // Build performance optimizations for monorepo
+    "incremental": true,
+    "composite": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "declaration": false,
+    "declarationMap": false
+  },
+  "references": [
+    { "path": "./cloudflare/workers" }
+  ],
+  "files": [],
+  "include": []
+}

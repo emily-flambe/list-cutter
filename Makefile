@@ -1,6 +1,6 @@
 # Cutty Development Makefile
 
-.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations
+.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build build-fast build-parallel clean test
 
 dev: setup kill-ports
 	@echo "🚀 Starting both backend and frontend servers..."
@@ -265,3 +265,86 @@ migrations:
 		echo "Valid values: dev, staging, prod, all, local, clean, clean-dev"; \
 		exit 1; \
 	fi
+
+# ============================================================================
+# OPTIMIZED BUILD SYSTEM - Issue #98 Build Time Reduction
+# ============================================================================
+
+# Fast parallel build for development
+build-fast:
+	@echo "🚀 Starting optimized parallel build..."
+	@echo "⚡ Frontend (Vite) + Workers (esbuild) building simultaneously..."
+	@$(MAKE) -j2 build-workers build-frontend
+	@echo "✅ Fast build completed\!"
+
+# Production optimized build (sequential for reliability)
+build:
+	@echo "🏗️ Starting production build..."
+	@$(MAKE) build-workers
+	@$(MAKE) build-frontend
+	@echo "✅ Production build completed\!"
+
+# Parallel build (experimental - use for maximum speed)
+build-parallel:
+	@echo "⚡ Starting maximum speed parallel build..."
+	@(cd cloudflare/workers && npm run build) & \
+	 (cd app/frontend && npm run build) & \
+	 wait
+	@echo "🚀 Parallel build completed\!"
+
+# Individual build targets
+build-workers:
+	@echo "🔧 Building Cloudflare Workers..."
+	@cd cloudflare/workers && npm run build
+
+build-frontend:
+	@echo "🎨 Building React frontend..."
+	@cd app/frontend && npm run build
+
+# Clean build artifacts for fresh builds
+clean:
+	@echo "🧹 Cleaning build artifacts..."
+	@rm -rf app/frontend/dist app/frontend/.vite app/frontend/node_modules/.vite
+	@rm -rf cloudflare/workers/dist cloudflare/workers/.tsbuildinfo
+	@rm -rf .tsbuildinfo
+	@echo "✅ Clean completed\!"
+
+# TypeScript project reference builds
+tsc-build:
+	@echo "📋 Building TypeScript projects with references..."
+	@npx tsc --build
+	@echo "✅ TypeScript build completed\!"
+
+tsc-clean:
+	@echo "🧹 Cleaning TypeScript build artifacts..."
+	@npx tsc --build --clean
+	@echo "✅ TypeScript clean completed\!"
+
+# Development with optimized builds
+dev-fast: setup kill-ports clean
+	@echo "🚀 Starting optimized development servers..."
+	@echo "Building projects first for faster startup..."
+	@$(MAKE) build-fast
+	@echo "Starting servers..."
+	@$(MAKE) -j2 backend frontend
+
+# Testing
+test:
+	@echo "🧪 Running tests..."
+	@cd cloudflare/workers && npm test
+	@echo "✅ Tests completed\!"
+
+# Build validation
+validate-build: build
+	@echo "✅ Build validation passed\!"
+	@echo "📊 Build artifacts:"
+	@ls -la app/frontend/dist/ 2>/dev/null || echo "❌ Frontend build missing"
+	@ls -la cloudflare/workers/dist/ 2>/dev/null || echo "❌ Workers build missing"
+
+# Performance measurement (basic)
+measure-build:
+	@echo "⏱️ Measuring build performance..."
+	@time $(MAKE) clean
+	@time $(MAKE) build-fast
+	@echo "📊 Build measurement completed\!"
+EOF < /dev/null
