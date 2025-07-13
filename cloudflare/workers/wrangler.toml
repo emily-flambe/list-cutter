@@ -9,11 +9,8 @@ workers_dev = true
 
 # Asset configuration for serving frontend
 [assets]
-directory = "../../app/frontend/dist"
+directory = "../../../../app/frontend/dist"
 binding = "ASSETS"
-
-# Enable Workers logs for debugging and monitoring  
-send_metrics = true
 
 # Enable Wrangler logs (v3.88.0+)
 [observability.logs]
@@ -42,7 +39,10 @@ JWT_AUDIENCE = "cutty"
 SECURITY_PERFORMANCE_THRESHOLD = "100"
 SECURITY_METRICS_RETENTION_DAYS = "30"
 SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
-# Note: JWT_SECRET and API_KEY_SALT should be set via wrangler secret for security
+# Development-only secrets (use wrangler secret for production)
+JWT_SECRET = "dev-jwt-secret-key-for-local-testing-only"
+API_KEY_SALT = "dev-api-key-salt-for-local-testing-only"
+# Note: JWT_SECRET and API_KEY_SALT should be set via wrangler secret for production
 # Run: wrangler secret put JWT_SECRET
 # Run: wrangler secret put API_KEY_SALT
 

@@ -225,7 +225,7 @@ app.use('*', async (c, next): Promise<void> => {
           try {
             const token = authHeader.substring(7);
             const payload = await verifyJWT(token, c.env.JWT_SECRET, c.env);
-            userId = payload.user_id.toString();
+            userId = payload.user_id;
           } catch (error) {
             // Log failed auth attempts for security monitoring
             const eventLogger = c.get('securityEventLogger') as SecurityEventLogger;

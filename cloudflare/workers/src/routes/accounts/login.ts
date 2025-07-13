@@ -19,7 +19,7 @@ export async function handleLogin(
   const metrics = new MetricsCollector(env);
   
   let username: string | undefined;
-  let userId: number | undefined;
+  let userId: string | undefined;
   
   try {
     const body = await request.json() as LoginRequest;

@@ -8,28 +8,28 @@ import type { UserJWTPayload, TokenPair, RefreshTokenData, BlacklistedToken } fr
 
 export const tokenPayloads: Record<string, Partial<UserJWTPayload>> = {
   validAccess: {
-    user_id: 1,
+    user_id: 'test-user-1',
     username: 'testuser',
     email: 'test@example.com',
     token_type: 'access',
   },
   
   validRefresh: {
-    user_id: 1,
+    user_id: 'test-user-1',
     username: 'testuser',
     email: 'test@example.com',
     token_type: 'refresh',
   },
   
   adminAccess: {
-    user_id: 2,
+    user_id: 'test-user-2',
     username: 'admin',
     email: 'admin@example.com',
     token_type: 'access',
   },
   
   expiredAccess: {
-    user_id: 1,
+    user_id: 'test-user-1',
     username: 'testuser',
     email: 'test@example.com',
     token_type: 'access',
@@ -37,7 +37,7 @@ export const tokenPayloads: Record<string, Partial<UserJWTPayload>> = {
   },
   
   futureAccess: {
-    user_id: 1,
+    user_id: 'test-user-1',
     username: 'testuser',
     email: 'test@example.com',
     token_type: 'access',
@@ -45,7 +45,7 @@ export const tokenPayloads: Record<string, Partial<UserJWTPayload>> = {
   },
   
   invalidType: {
-    user_id: 1,
+    user_id: 'test-user-1',
     username: 'testuser',
     email: 'test@example.com',
     token_type: 'invalid' as any,
@@ -58,7 +58,7 @@ export const tokenPayloads: Record<string, Partial<UserJWTPayload>> = {
   } as any,
   
   missingUsername: {
-    user_id: 1,
+    user_id: 'test-user-1',
     email: 'test@example.com',
     token_type: 'access',
   } as any,
@@ -94,19 +94,19 @@ export const tokenPairs: Record<string, TokenPair> = {
 
 export const refreshTokenData: Record<string, RefreshTokenData> = {
   valid: {
-    user_id: 1,
+    user_id: 'test-user-1',
     username: 'testuser',
     expires_at: Date.now() + 86400000, // 24 hours from now
   },
   
   expired: {
-    user_id: 1,
+    user_id: 'test-user-1',
     username: 'testuser',
     expires_at: Date.now() - 3600000, // 1 hour ago
   },
   
   differentUser: {
-    user_id: 999,
+    user_id: 'test-user-999',
     username: 'otheruser',
     expires_at: Date.now() + 86400000,
   },

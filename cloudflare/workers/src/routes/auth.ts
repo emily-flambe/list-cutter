@@ -16,6 +16,16 @@ auth.use('*', cors({
   credentials: true,
 }));
 
+// Simple test endpoint for connectivity verification
+auth.get('/test', async (c) => {
+  return c.json({
+    status: 'success',
+    message: 'Auth API is working',
+    timestamp: new Date().toISOString(),
+    environment: c.env.ENVIRONMENT || 'development'
+  });
+});
+
 auth.post('/login', async (c) => {
   return handleLogin(c.req.raw, c.env);
 });

@@ -24,7 +24,7 @@ export class SecurityLogger {
     eventType: string,
     request: Request,
     success: boolean,
-    userId?: number,
+    userId?: string,
     errorCode?: string,
     errorMessage?: string,
     metadata?: Record<string, any>

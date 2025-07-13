@@ -16,7 +16,7 @@ export async function handleLogout(
   const logger = new SecurityLogger(env);
   const metrics = new MetricsCollector(env);
   
-  let userId: number | undefined;
+  let userId: string | undefined;
   
   try {
     // Get access token from Authorization header

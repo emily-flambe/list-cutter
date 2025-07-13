@@ -187,7 +187,7 @@ export async function verifyJWT(token: string, secret: string): Promise<UserJWTP
     });
     
     // Validate required fields exist
-    if (typeof payload.user_id !== 'number' || typeof payload.username !== 'string') {
+    if (typeof payload.user_id !== 'string' || typeof payload.username !== 'string') {
       throw new Error('Invalid token payload');
     }
     
@@ -236,7 +236,7 @@ export async function verifyJWTWithErrors(token: string, secret: string): Promis
     });
     
     // Validate required fields exist
-    if (typeof payload.user_id !== 'number' || typeof payload.username !== 'string') {
+    if (typeof payload.user_id !== 'string' || typeof payload.username !== 'string') {
       throw new TokenValidationError('Token payload missing required fields (user_id, username)');
     }
     

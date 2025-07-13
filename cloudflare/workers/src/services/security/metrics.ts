@@ -21,7 +21,7 @@ export class MetricsCollector {
     operation: string,
     duration: number,
     success: boolean,
-    userId?: number
+    userId?: string
   ): Promise<void> {
     try {
       const metric = {

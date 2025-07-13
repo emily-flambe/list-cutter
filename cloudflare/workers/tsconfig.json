@@ -29,7 +29,6 @@
     "noFallthroughCasesInSwitch": false,
     
     "types": [
-      "@cloudflare/workers-types",
       "node"
     ],
     "paths": {
@@ -44,8 +43,9 @@
   },
   "include": [
     "src/**/*.ts",
-    "tests/**/*.ts",
-    "e2e/**/*.ts"
+    "tests/**/*.ts", 
+    "e2e/**/*.ts",
+    "worker-configuration.d.ts"
   ],
   "exclude": [
     "node_modules", 

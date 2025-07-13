@@ -16,7 +16,7 @@ export async function handleRefresh(
   const logger = new SecurityLogger(env);
   const metrics = new MetricsCollector(env);
   
-  let userId: number | undefined;
+  let userId: string | undefined;
   
   try {
     const { refresh_token } = await request.json() as RefreshRequest;

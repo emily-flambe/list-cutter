@@ -36,7 +36,7 @@ export async function authenticateUser(env: Env, username: string, password: str
     `).bind(new Date().toISOString(), result.id).run();
 
     return {
-      id: result.id as number,
+      id: result.id as string,
       username: result.username as string,
       email: result.email as string,
       created_at: result.created_at as string,
@@ -109,7 +109,7 @@ export async function createUser(env: Env, userData: UserRegistration): Promise<
     }
 
     return {
-      id: result.id as number,
+      id: result.id as string,
       username: result.username as string,
       email: result.email as string,
       created_at: result.created_at as string,

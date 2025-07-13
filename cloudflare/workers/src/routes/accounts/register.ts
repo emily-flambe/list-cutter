@@ -14,7 +14,7 @@ export async function handleRegister(
   const metrics = new MetricsCollector(env);
   
   let username: string | undefined;
-  let userId: number | undefined;
+  let userId: string | undefined;
   
   try {
     const userData = await request.json() as UserRegistration;

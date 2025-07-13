@@ -37,9 +37,14 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://cutty.emilycogsdill.com',
+        target: 'http://localhost:8787',
         changeOrigin: true,
-        secure: true,
+        secure: false,
+      },
+      '/auth': {
+        target: 'http://localhost:8787/api',
+        changeOrigin: true,
+        secure: false,
       }
     }
   }
