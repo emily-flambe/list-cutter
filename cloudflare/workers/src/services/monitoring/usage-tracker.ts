@@ -7,11 +7,11 @@ import { UserStorageMetrics } from '../../types/metrics.js';
 export class UsageTracker {
   private db: D1Database;
   private metricsService: MetricsService;
-  private analytics: AnalyticsEngineDataset;
+  private analytics?: AnalyticsEngineDataset;
   private usageCache: Map<string, UserStorageMetrics> = new Map();
   private cacheExpirationTime = 5 * 60 * 1000; // 5 minutes
 
-  constructor(db: D1Database, metricsService: MetricsService, analytics: AnalyticsEngineDataset) {
+  constructor(db: D1Database, metricsService: MetricsService, analytics: AnalyticsEngineDataset | undefined) {
     this.db = db;
     this.metricsService = metricsService;
     this.analytics = analytics;
@@ -45,7 +45,8 @@ export class UsageTracker {
       }
 
       // Send usage metric to Analytics Engine
-      await this.analytics.writeDataPoint({
+      if (this.analytics) {
+        await this.analytics.writeDataPoint({
         blobs: [
           'storage_usage',
           userId,
@@ -99,7 +100,8 @@ export class UsageTracker {
       }
 
       // Send usage metric to Analytics Engine
-      await this.analytics.writeDataPoint({
+      if (this.analytics) {
+        await this.analytics.writeDataPoint({
         blobs: [
           'storage_usage',
           userId,
@@ -152,7 +154,8 @@ export class UsageTracker {
       }
 
       // Send usage metric to Analytics Engine
-      await this.analytics.writeDataPoint({
+      if (this.analytics) {
+        await this.analytics.writeDataPoint({
         blobs: [
           'storage_usage',
           userId,
@@ -520,7 +523,8 @@ export class UsageTracker {
         .run();
 
       // Send metric to Analytics Engine
-      await this.analytics.writeDataPoint({
+      if (this.analytics) {
+        await this.analytics.writeDataPoint({
         blobs: [
           'quota_warning',
           userId,

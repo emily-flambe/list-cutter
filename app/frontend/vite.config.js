@@ -37,7 +37,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://cutty-api.emily-cogsdill.workers.dev',
+        target: 'https://cutty.emilycogsdill.com',
         changeOrigin: true,
         secure: true,
       }

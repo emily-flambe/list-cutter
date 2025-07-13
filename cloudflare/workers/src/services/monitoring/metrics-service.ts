@@ -13,14 +13,14 @@ import {
  * Integrates with Cloudflare Analytics Engine for real-time metrics
  */
 export class MetricsService {
-  private analytics: AnalyticsEngineDataset;
+  private analytics?: AnalyticsEngineDataset;
   private db: D1Database;
   private config: MetricsConfiguration;
   private metricsQueue: StorageMetrics[] = [];
   private flushTimer: number | null = null;
 
   constructor(
-    analytics: AnalyticsEngineDataset,
+    analytics: AnalyticsEngineDataset | undefined,
     db: D1Database,
     config: Partial<MetricsConfiguration> = {}
   ) {
@@ -136,7 +136,8 @@ export class MetricsService {
     // Multipart metric would be created here if needed
 
     // Send to Analytics Engine
-    await this.analytics.writeDataPoint({
+    if (this.analytics) {
+      await this.analytics.writeDataPoint({
       blobs: [
         'multipart_upload',
         uploadId,
@@ -155,6 +156,7 @@ export class MetricsService {
       ],
       indexes: [userId, fileId, uploadId]
     });
+    }
   }
 
   /**
@@ -232,6 +234,7 @@ export class MetricsService {
       // User metrics would be created here if needed
 
       // Send to Analytics Engine
+      if (this.analytics) {
       await this.analytics.writeDataPoint({
         blobs: [
           'user_storage',
@@ -249,6 +252,7 @@ export class MetricsService {
         ],
         indexes: [userId]
       });
+      }
 
       // Update storage analytics table
       await this.updateDailyStorageAnalytics(userId, {
@@ -397,7 +401,9 @@ export class MetricsService {
       }));
 
       // Analytics Engine supports batch writes
-      await Promise.all(dataPoints.map(dp => this.analytics.writeDataPoint(dp)));
+      if (this.analytics) {
+        await Promise.all(dataPoints.map(dp => this.analytics!.writeDataPoint(dp)));
+      }
     } catch (error) {
       console.error('Failed to flush metrics to Analytics Engine:', error);
       // Re-queue failed metrics (with limit to prevent memory issues)
@@ -429,6 +435,7 @@ export class MetricsService {
    */
   private async sendMetric(metric: StorageMetrics): Promise<void> {
     try {
+      if (this.analytics) {
       await this.analytics.writeDataPoint({
         blobs: [
           'storage_operation',
@@ -448,6 +455,7 @@ export class MetricsService {
         ],
         indexes: [metric.userId, metric.fileId, metric.operation]
       });
+      }
     } catch (error) {
       console.error('Failed to send metric to Analytics Engine:', error);
     }

@@ -190,12 +190,18 @@ app.use('*', logger());
 
 // Security headers middleware (replaces basic secureHeaders)
 app.use('*', async (c, next): Promise<void> => {
-  if (securityHeadersMiddleware) {
-    await securityHeadersMiddleware.middleware(c, next);
-  } else {
-    // Fallback to basic secure headers if security middleware not available
-    const { secureHeaders } = await import('hono/secure-headers');
-    await secureHeaders()(c, next);
+  try {
+    if (securityHeadersMiddleware) {
+      await securityHeadersMiddleware.middleware(c, next);
+    } else {
+      // Fallback to basic secure headers if security middleware not available
+      const { secureHeaders } = await import('hono/secure-headers');
+      await secureHeaders()(c, next);
+    }
+  } catch (error) {
+    console.error('Security headers middleware failed:', error);
+    // Continue without security headers rather than breaking the entire chain
+    await next();
   }
 });
 
@@ -335,20 +341,17 @@ app.use('*', async (c, next): Promise<void> => {
   }
 });
 
-app.use('*', prettyJSON());
+// CORS configuration - Allow same-origin and development (moved before prettyJSON)
+app.use('*', cors({
+  origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com', 'https://835ef64d-cutty.emily-cogsdill.workers.dev', 'https://cutty.emily-cogsdill.workers.dev'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  exposeHeaders: ['X-Request-Id', 'X-Response-Time'],
+  credentials: true,
+  maxAge: 86400,
+}));
 
-// CORS configuration - Allow same-origin and development
-app.use('*', async (c, next): Promise<Response> => {
-  const corsMiddleware = cors({
-    origin: ['http://localhost:5173', 'https://cutty.emilycogsdill.com', 'https://cutty-api.emily-cogsdill.workers.dev'],
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
-    exposeHeaders: ['X-Request-Id', 'X-Response-Time'],
-    credentials: true,
-    maxAge: 86400,
-  });
-  return corsMiddleware(c, next);
-});
+app.use('*', prettyJSON());
 
 // Health check endpoint
 app.get('/health', async (c): Promise<Response> => {
@@ -958,11 +961,11 @@ v1.route('/deployment', blueGreenDeploymentRoutes); // Blue-green deployment rou
 // v1.route('/users', userRoutes);
 
 // Frontend serving logic for non-API routes
-app.get('*', async (c): Promise<Response> => {
+app.get('*', async (c, next): Promise<Response> => {
   // Skip API routes - let them be handled by the API handlers above
   if (c.req.path.startsWith('/api/') || c.req.path.startsWith('/health') || c.req.path.startsWith('/test-') || c.req.path.startsWith('/admin/') || c.req.path.startsWith('/user/') || c.req.path.startsWith('/metrics/') || c.req.path.startsWith('/dashboard/')) {
     // Let these continue to the 404 handler
-    return c.next();
+    return next();
   }
 
   try {
@@ -1006,7 +1009,7 @@ app.get('*', async (c): Promise<Response> => {
     
     if (indexAsset.status === 404) {
       // Continue to API 404 handler
-      return c.next();
+      return next();
     }
     
     // Return index.html with proper headers for SPA routing
@@ -1031,7 +1034,7 @@ app.get('*', async (c): Promise<Response> => {
   } catch (error) {
     console.error('Error serving frontend asset:', error);
     // Continue to API 404 handler
-    return c.next();
+    return next();
   }
 });
 

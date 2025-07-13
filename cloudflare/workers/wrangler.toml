@@ -1,4 +1,4 @@
-name = "cutty-api"
+name = "cutty"
 routes = [
   { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
@@ -12,7 +12,7 @@ workers_dev = true
 directory = "dist"
 binding = "ASSETS"
 
-# Enable Workers logs for debugging and monitoring
+# Enable Workers logs for debugging and monitoring  
 send_metrics = true
 
 # Enable versioning and gradual deployments
@@ -34,7 +34,7 @@ API_VERSION = "v1"
 CORS_ORIGIN = "https://cutty.emilycogsdill.com"
 MAX_FILE_SIZE = "52428800" # 50MB in bytes
 JWT_ISSUER = "cutty"
-JWT_AUDIENCE = "cutty-api"
+JWT_AUDIENCE = "cutty"
 SECURITY_PERFORMANCE_THRESHOLD = "100"
 SECURITY_METRICS_RETENTION_DAYS = "30"
 SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
@@ -122,12 +122,11 @@ dataset = "cutty-metrics"
 # Due to API parsing issues with complex cron configs in wrangler.toml,
 # these will be set up separately using: wrangler triggers deploy
 
-# Staging environment
+# Staging environment - same worker, different routes and vars
 [env.staging]
-name = "cutty-api-staging"
-vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://staging.cutty.emilycogsdill.com" }
+vars = { ENVIRONMENT = "staging", CORS_ORIGIN = "https://cutty-staging.emilycogsdill.com" }
 routes = [
-  { pattern = "cutty-api-staging.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+  { pattern = "cutty-staging.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
 
 # Queue bindings for CSV processing (commented out - create queue first)
@@ -157,12 +156,11 @@ dataset = "cutty-metrics-staging"
 
 # KV configuration for staging will be added when needed
 
-# Production environment
+# Production environment - same worker, different routes and vars
 [env.production]
-name = "cutty-api-production"
 vars = { ENVIRONMENT = "production", CORS_ORIGIN = "https://cutty.emilycogsdill.com" }
 routes = [
-  { pattern = "cutty-api.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+  { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
 
 [[env.production.d1_databases]]
