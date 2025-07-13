@@ -11,6 +11,7 @@ export default defineWorkersConfig({
           kvNamespaces: ['AUTH_KV', 'SECURITY_CONFIG', 'SECURITY_EVENTS', 'SECURITY_METRICS'],
           d1Databases: ['DB'],
           r2Buckets: ['FILE_STORAGE'],
+          analyticsEngineDatasets: ['ANALYTICS'],
           bindings: {
             ENVIRONMENT: 'test',
             API_VERSION: 'v1',
@@ -19,8 +20,7 @@ export default defineWorkersConfig({
             API_KEY_SALT: 'test-api-key-salt-at-least-32-characters-long-for-security',
             SECURITY_PERFORMANCE_THRESHOLD: '100',
             SECURITY_METRICS_RETENTION_DAYS: '30',
-            SECURITY_ENABLE_REAL_TIME_MONITORING: 'true',
-            ANALYTICS: {} // Mock analytics engine for tests
+            SECURITY_ENABLE_REAL_TIME_MONITORING: 'true'
           },
           modules: true
         }
