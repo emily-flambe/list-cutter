@@ -12,7 +12,7 @@ export default defineWorkersConfig({
           d1Databases: ['DB'],
           r2Buckets: ['FILE_STORAGE'],
           analyticsEngineDatasets: {
-            ANALYTICS: "cutty-metrics"
+            ANALYTICS: { dataset: "cutty-metrics" }
           },
           bindings: {
             ENVIRONMENT: 'test',
