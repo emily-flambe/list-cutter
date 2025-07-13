@@ -2,7 +2,29 @@
 import React, { useEffect, useState, useContext } from 'react';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Typography, Box, List, ListItem, ListItemText, CircularProgress, Table, TableBody, TableCell, TableRow, Button, TableHead, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, Chip, InputLabel, FormControl } from '@mui/material';
+// Optimized direct imports for better tree-shaking and build performance
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import CircularProgress from '@mui/material/CircularProgress';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableRow from '@mui/material/TableRow';
+import Button from '@mui/material/Button';
+import TableHead from '@mui/material/TableHead';
+import TextField from '@mui/material/TextField';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Chip from '@mui/material/Chip';
+import InputLabel from '@mui/material/InputLabel';
+import FormControl from '@mui/material/FormControl';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 
