@@ -961,7 +961,7 @@ v1.route('/deployment', blueGreenDeploymentRoutes); // Blue-green deployment rou
 // v1.route('/users', userRoutes);
 
 // Frontend serving logic for non-API routes
-app.get('*', async (c): Promise<Response> => {
+app.get('*', async (c, next): Promise<Response> => {
   // Skip API routes - let them be handled by the API handlers above
   if (c.req.path.startsWith('/api/') || c.req.path.startsWith('/health') || c.req.path.startsWith('/test-') || c.req.path.startsWith('/admin/') || c.req.path.startsWith('/user/') || c.req.path.startsWith('/metrics/') || c.req.path.startsWith('/dashboard/')) {
     // Let these continue to the 404 handler
