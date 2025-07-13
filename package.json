@@ -2,11 +2,9 @@
   "name": "list-cutter-monorepo",
   "private": true,
   "devDependencies": {
-    "husky": "^9.1.7",
     "typescript": "^5.7.3"
   },
   "scripts": {
-    "prepare": "husky",
     "build": "npm run build:workers & npm run build:frontend & wait",
     "build:workers": "cd cloudflare/workers && npm run build",
     "build:frontend": "cd app/frontend && npm run build",
