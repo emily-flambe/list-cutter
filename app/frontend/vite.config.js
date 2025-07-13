@@ -39,14 +39,7 @@ export default defineConfig(({ command, mode }) => {
     },
     publicDir: "public",
     plugins: [
-      react({
-        babel: {
-          plugins: isProd ? [
-            ['@babel/plugin-transform-react-inline-elements'],
-            ['@babel/plugin-transform-react-constant-elements']
-          ] : []
-        }
-      })
+      react()
     ],
     // Enhanced dependency optimization for faster builds
     optimizeDeps: {

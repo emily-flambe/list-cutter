@@ -7,31 +7,19 @@
   },
   "scripts": {
     "prepare": "husky",
-    
-    // Build orchestration for faster monorepo builds
     "build": "npm run build:workers & npm run build:frontend & wait",
     "build:workers": "cd cloudflare/workers && npm run build",
     "build:frontend": "cd app/frontend && npm run build",
-    
-    // TypeScript project reference builds
     "tsc:build": "tsc --build",
     "tsc:clean": "tsc --build --clean",
     "tsc:watch": "tsc --build --watch",
-    
-    // Development commands
     "dev": "npm run dev:workers & npm run dev:frontend",
     "dev:workers": "cd cloudflare/workers && npm run dev",
     "dev:frontend": "cd app/frontend && npm run dev",
-    
-    // Testing orchestration
     "test": "npm run test:workers",
     "test:workers": "cd cloudflare/workers && npm test",
-    
-    // Linting across projects
     "lint": "npm run lint:workers",
     "lint:workers": "cd cloudflare/workers && npm run lint",
-    
-    // Clean builds
     "clean": "npm run clean:workers && npm run clean:frontend",
     "clean:workers": "cd cloudflare/workers && rm -rf dist .tsbuildinfo node_modules/.vite",
     "clean:frontend": "cd app/frontend && rm -rf dist .vite node_modules/.vite"

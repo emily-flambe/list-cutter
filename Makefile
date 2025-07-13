@@ -1,6 +1,6 @@
 # Cutty Development Makefile
 
-.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build clean test
+.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build clean test install-deps
 
 dev: setup kill-ports
 	@echo "🚀 Starting both backend and frontend servers..."
@@ -270,11 +270,24 @@ migrations:
 # OPTIMIZED BUILD SYSTEM - Issue #98 Build Time Reduction
 # ============================================================================
 
-# Optimized build with clean
-build: clean
+# Optimized build with clean and dependency check
+build: clean install-deps
 	@echo "🏗️ Starting optimized build..."
 	@$(MAKE) -j2 build-workers build-frontend
-	@echo "✅ Build completed\!"
+	@echo "✅ Build completed!"
+
+# Ensure dependencies are installed
+install-deps:
+	@echo "📦 Checking dependencies..."
+	@if [ ! -d "cloudflare/workers/node_modules" ]; then \
+		echo "Installing workers dependencies..."; \
+		cd cloudflare/workers && npm install; \
+	fi
+	@if [ ! -d "app/frontend/node_modules" ]; then \
+		echo "Installing frontend dependencies..."; \
+		cd app/frontend && npm install; \
+	fi
+	@echo "✅ Dependencies ready"
 
 # Individual build targets
 build-workers:
