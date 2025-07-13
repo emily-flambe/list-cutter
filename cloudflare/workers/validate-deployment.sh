@@ -175,9 +175,9 @@ main() {
     echo ""
     
     # Test environments
-    ENVIRONMENTS=("development:list-cutter-workers-dev:list-cutter-db-dev" 
-                  "staging:list-cutter-workers-staging:list-cutter-db-staging" 
-                  "production:list-cutter-workers-prod:list-cutter-db-prod")
+    ENVIRONMENTS=("development:cutty:cutty-dev" 
+                  "staging:cutty:cutty-staging" 
+                  "production:cutty:cutty-production")
     
     for env_config in "${ENVIRONMENTS[@]}"; do
         IFS=':' read -r env_name worker_name db_name <<< "$env_config"
