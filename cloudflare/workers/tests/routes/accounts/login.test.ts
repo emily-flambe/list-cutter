@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { handleLogin } from '../../../src/routes/accounts/login';
-import type { Env, User } from '../../../src/types';
+import type { User } from '../../../src/types';
+import { createMockEnv } from '../../fixtures/env';
 
 // Mock dependencies
 vi.mock('../../../src/services/storage/d1', () => ({
@@ -27,20 +28,7 @@ import { authenticateUser } from '../../../src/services/storage/d1';
 import { generateTokenPair } from '../../../src/services/auth/jwt';
 
 // Mock environment
-const mockEnv: Env = {
-  JWT_SECRET: 'test-secret-at-least-32-characters-long-for-security',
-  API_KEY_SALT: 'test-api-key-salt-at-least-32-characters-long-for-security',
-  AUTH_KV: {
-    get: vi.fn().mockResolvedValue(null),
-    put: vi.fn().mockResolvedValue(undefined),
-    delete: vi.fn().mockResolvedValue(undefined),
-    list: vi.fn().mockResolvedValue({ keys: [], list_complete: true }),
-  },
-  DB: {} as any,
-  FILE_STORAGE: {} as any,
-  ANALYTICS: {} as any,
-  ENVIRONMENT: 'test'
-} as Env;
+const mockEnv = createMockEnv();
 
 const mockUser: User = {
   id: '1',
