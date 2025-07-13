@@ -1,5 +1,21 @@
 # Troubleshooting Guide
 
+## Prerequisites Check
+
+### Wrangler Version Validation
+```bash
+# Check Wrangler version (must be 4.0.0 or higher)
+npx wrangler --version
+
+# If below v4, update to latest
+npm install wrangler@latest
+
+# Verify installation
+npx wrangler --version
+```
+
+**Critical**: Wrangler v4+ is required for proper binding syntax and deployment features. Versions below 4.0.0 will cause deployment failures.
+
 ## Common Issues & Solutions
 
 ### Wrangler Deployment Issues
@@ -17,7 +33,7 @@ cd cloudflare/workers
 # Check versions
 node --version
 npm --version
-wrangler --version
+wrangler --version  # Must be 4.0.0+
 
 # Check authentication
 wrangler whoami

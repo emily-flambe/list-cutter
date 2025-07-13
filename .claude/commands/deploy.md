@@ -39,6 +39,9 @@ npm run test:benchmark
 
 ### Configuration Validation
 ```bash
+# Wrangler version check (must be 4.0.0+)
+npx wrangler --version
+
 # Wrangler configuration check
 npx wrangler versions upload --dry-run
 

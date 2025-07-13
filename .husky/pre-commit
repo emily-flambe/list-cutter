@@ -1,0 +1,34 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit validation..."
+
+# Change to workers directory
+cd cloudflare/workers
+
+echo "📋 Checking Wrangler version..."
+WRANGLER_VERSION=$(npx wrangler --version 2>&1 | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+MAJOR_VERSION=$(echo $WRANGLER_VERSION | cut -d. -f1)
+
+if [ "$MAJOR_VERSION" -lt 4 ]; then
+    echo "❌ Wrangler version $WRANGLER_VERSION is below required 4.0.0"
+    echo "   Run: npm install wrangler@latest"
+    exit 1
+fi
+echo "✅ Wrangler $WRANGLER_VERSION (v4+ required)"
+
+echo "🔧 Running TypeScript type check..."
+if ! npx tsc --noEmit; then
+    echo "❌ TypeScript compilation failed"
+    exit 1
+fi
+echo "✅ TypeScript types valid"
+
+echo "🏗️  Running build..."
+if ! npm run build; then
+    echo "❌ Build failed"
+    exit 1
+fi
+echo "✅ Build successful"
+
+echo "🎉 Pre-commit validation passed!"

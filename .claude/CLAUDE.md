@@ -28,6 +28,7 @@ Comprehensive configuration for the Cutty (List Cutter) application - a Django t
 ## Debugging Lessons Learned
 @include .claude/debugging-lessons.yml#WranglerDeploymentIssues
 @include .claude/debugging-lessons.yml#TypeScriptBuildFailures
+@include .claude/debugging-lessons.yml#CloudflarePagesVsWorkersDeployment
 
 ## Essential Development Commands
 @include .claude/development-commands.yml#PreCommitValidation
@@ -79,9 +80,48 @@ cd app/frontend && npm run dev
 # Run comprehensive tests
 cd cloudflare/workers && npm test
 
-# Build and validate
+# Build and validate (automated pre-commit, manual for deployment)
 npm run build && npx wrangler versions upload --dry-run
 
 # Deploy to staging
 wrangler deploy --env=staging
+```
+
+## Automated Pre-Commit Validation
+- **Husky Integration**: Pre-commit hook automatically runs on `git commit`
+- **Validation Steps**: Wrangler v4+ check, TypeScript types, build verification
+- **Purpose**: Prevents common issues that cause test failures and deployment problems
+
+## GitHub Issue Management
+
+### Issue Creation Policy
+**CRITICAL RULE: When user requests GitHub issue creation:**
+- ALWAYS use `gh issue create` command via Bash tool
+- NEVER create markdown files for issues
+- Use inline body content with HEREDOC for proper formatting
+- Include appropriate labels and assignees when specified
+
+### GitHub CLI Commands for Issues
+```bash
+# Create issue with title and body
+gh issue create --title "Issue Title" --body "$(cat <<'EOF'
+Issue description here...
+
+## Steps to Reproduce
+1. Step one
+2. Step two
+
+## Expected Behavior
+What should happen
+
+## Actual Behavior  
+What actually happens
+EOF
+)"
+
+# Create issue with labels
+gh issue create --title "Bug: Description" --label "bug,priority:high" --body "Description"
+
+# Create issue and assign
+gh issue create --title "Feature: Description" --assignee "@me" --body "Description"
 ```

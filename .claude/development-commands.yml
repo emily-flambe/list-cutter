@@ -2,13 +2,17 @@
 # Project-specific commands and workflows
 
 PreCommitValidation: &PreCommitValidation
-  directory: "cd cloudflare/workers"
-  commands:
+  automation: "Automated via husky pre-commit hook (.husky/pre-commit)"
+  automated_checks:
+    wrangler_version_check: "npx wrangler --version # Must be 4.0.0+"
+    type_checking: "npx tsc --noEmit"
     essential_build_check: "npm run build"
-    deployment_validation:
+  
+  manual_deployment_checks:
+    directory: "cd cloudflare/workers"
+    commands:
       - "npx wrangler versions upload --dry-run"
       - "npx wrangler deploy --dry-run"
-    type_checking: "npx tsc --noEmit"
 
 TroubleshootingCommands: &TroubleshootingCommands
   clean_environment_test:
@@ -17,9 +21,16 @@ TroubleshootingCommands: &TroubleshootingCommands
       - "rm -rf node_modules package-lock.json"
       - "npm ci"
   
+  wrangler_version_validation:
+    description: "Ensure Wrangler v4+ is installed"
+    commands:
+      - "npx wrangler --version"
+      - "# Should show version 4.0.0 or higher"
+      - "# If version is below 4.0.0, run: npm install wrangler@latest"
+  
   wrangler_configuration_check:
     - "npx wrangler whoami"
-    - "npx wrangler tail --version"
+    - "npx wrangler --version"
     - "npx wrangler d1 list"
   
   typescript_configuration_testing:

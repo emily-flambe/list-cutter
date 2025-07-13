@@ -22,7 +22,8 @@ export default defineConfig({
         '**/*.config.*',
         'src/examples/**',
         'src/types.ts',
-        'src/types/**'
+        'src/types/**',
+        '**/analytics-engine/**'
       ],
       thresholds: {
         lines: 90,

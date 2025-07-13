@@ -14,7 +14,6 @@ ProjectIdentity: &ProjectIdentity
       - "list-cutter.emilycogsdill.com"
     worker_name: "cutty"
     database_names:
-      - "cutty-preview"
       - "cutty-dev"
       - "cutty-staging"
       - "cutty-prod"
@@ -22,9 +21,14 @@ ProjectIdentity: &ProjectIdentity
       - "cutty-files-dev"
       - "cutty-files-staging"
       - "cutty-files-prod"
-      - "cutty-files-preview"
 
 WranglerCommands: &WranglerCommands
+  version_requirements:
+    minimum_version: "4.0.0"
+    current_version: "4.24.3"
+    validation_command: "npx wrangler --version"
+    compatibility_note: "Wrangler v4+ required for proper binding syntax and deployment features"
+  
   database_operations:
     - "wrangler d1 create cutty-db"
     - "wrangler d1 execute cutty-db --file=schema.sql"
