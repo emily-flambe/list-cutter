@@ -88,10 +88,10 @@ else
     echo "  ❌ Workers TypeScript project references missing"
 fi
 
-if grep -q "build-parallel:" Makefile; then
-    echo "  ✅ Optimized build targets added to Makefile"
+if grep -q "build: clean" Makefile; then
+    echo "  ✅ Optimized build target with auto-clean added to Makefile"
 else
-    echo "  ❌ Optimized build targets missing from Makefile"
+    echo "  ❌ Optimized build target missing from Makefile"
 fi
 
 if grep -q "workspaces" package.json; then
@@ -137,13 +137,9 @@ echo "🧪 Quick Build Validation Test:"
 echo "==============================="
 echo ""
 echo "To test the optimizations:"
-echo "1. Run: make clean"
-echo "2. Run: make build"
-echo "3. Compare with previous build times"
-echo ""
-echo "For comprehensive testing:"
-echo "• make build-parallel   # Maximum speed experimental build"
-echo "• make tsc-build       # TypeScript project reference build"
+echo "1. Run: make build"
+echo "   (automatically cleans and builds with parallel execution)"
+echo "2. Compare with previous build times"
 echo ""
 
 echo "✅ Validation completed! All optimizations appear to be properly configured."

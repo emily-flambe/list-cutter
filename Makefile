@@ -1,6 +1,6 @@
 # Cutty Development Makefile
 
-.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build build-parallel clean test
+.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build clean test
 
 dev: setup kill-ports
 	@echo "🚀 Starting both backend and frontend servers..."
@@ -270,19 +270,11 @@ migrations:
 # OPTIMIZED BUILD SYSTEM - Issue #98 Build Time Reduction
 # ============================================================================
 
-# Optimized parallel build
-build:
+# Optimized build with clean
+build: clean
 	@echo "🏗️ Starting optimized build..."
 	@$(MAKE) -j2 build-workers build-frontend
 	@echo "✅ Build completed\!"
-
-# Parallel build (experimental - use for maximum speed)
-build-parallel:
-	@echo "⚡ Starting maximum speed parallel build..."
-	@(cd cloudflare/workers && npm run build) & \
-	 (cd app/frontend && npm run build) & \
-	 wait
-	@echo "🚀 Parallel build completed\!"
 
 # Individual build targets
 build-workers:
@@ -299,38 +291,10 @@ clean:
 	@rm -rf app/frontend/dist app/frontend/.vite app/frontend/node_modules/.vite
 	@rm -rf cloudflare/workers/dist cloudflare/workers/.tsbuildinfo
 	@rm -rf .tsbuildinfo
-	@echo "✅ Clean completed\!"
-
-# TypeScript project reference builds
-tsc-build:
-	@echo "📋 Building TypeScript projects with references..."
-	@npx tsc --build
-	@echo "✅ TypeScript build completed\!"
-
-tsc-clean:
-	@echo "🧹 Cleaning TypeScript build artifacts..."
-	@npx tsc --build --clean
-	@echo "✅ TypeScript clean completed\!"
-
-# Development with optimized builds
-dev-fast: setup kill-ports clean
-	@echo "🚀 Starting optimized development servers..."
-	@echo "Building projects first for faster startup..."
-	@$(MAKE) build
-	@echo "Starting servers..."
-	@$(MAKE) -j2 backend frontend
+	@echo "✅ Clean completed!"
 
 # Testing
 test:
 	@echo "🧪 Running tests..."
 	@cd cloudflare/workers && npm test
-	@echo "✅ Tests completed\!"
-
-# Build validation
-validate-build: build
-	@echo "✅ Build validation passed\!"
-	@echo "📊 Build artifacts:"
-	@ls -la app/frontend/dist/ 2>/dev/null || echo "❌ Frontend build missing"
-	@ls -la cloudflare/workers/dist/ 2>/dev/null || echo "❌ Workers build missing"
-
-EOF < /dev/null
+	@echo "✅ Tests completed!"
