@@ -1,4 +1,4 @@
-name = "cutty"
+name = "cutty-dev"
 routes = [
   { pattern = "cutty-dev.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
@@ -201,64 +201,9 @@ binding = "AUTH_KV"
 id = "c490355daf9b4b84b484303d08c42eb2"
 preview_id = "c490355daf9b4b84b484303d08c42eb2"
 
-# Production environment - same worker, different routes and vars
-[env.production]
-[env.production.vars]
-ENVIRONMENT = "production"
-API_VERSION = "v1"
-CORS_ORIGIN = "https://cutty.emilycogsdill.com"
-MAX_FILE_SIZE = "52428800"
-JWT_ISSUER = "cutty"
-JWT_AUDIENCE = "cutty"
-SECURITY_PERFORMANCE_THRESHOLD = "100"
-SECURITY_METRICS_RETENTION_DAYS = "30"
-SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
-# Production secrets should be set via wrangler secret put JWT_SECRET
-# Production secrets should be set via wrangler secret put API_KEY_SALT
-
-[[env.production.routes]]
-pattern = "cutty.emilycogsdill.com/*"
-zone_name = "emilycogsdill.com"
-
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "cutty-prod"
-database_id = "a26d5109-83c1-48d4-a814-6bd72bb35e51"
-
-[[env.production.r2_buckets]]
-binding = "FILE_STORAGE"
-bucket_name = "cutty-files-prod"
-preview_bucket_name = "cutty-files-dev"
-
-[[env.production.analytics_engine_datasets]]
-binding = "ANALYTICS"
-dataset = "cutty-metrics-prod"
-
-# Copy KV namespaces for production  
-[[env.production.kv_namespaces]]
-binding = "CUTTY_SECURITY_CONFIG"
-id = "a6973edd26304221934017997dbd147e"
-preview_id = "a6973edd26304221934017997dbd147e"
-
-[[env.production.kv_namespaces]]
-binding = "CUTTY_SECURITY_EVENTS"
-id = "e696502dea8942a8acb47e2ac474e248"
-preview_id = "e696502dea8942a8acb47e2ac474e248"
-
-[[env.production.kv_namespaces]]
-binding = "CUTTY_SECURITY_METRICS"
-id = "805adc47af9c4e8aa7ddf5b412ea3083"
-preview_id = "805adc47af9c4e8aa7ddf5b412ea3083"
-
-[[env.production.kv_namespaces]]
-binding = "CUTTY_QUOTA_TRACKING"
-id = "4c1a53aaab2846a3b11ee39416e6b1dd"
-preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
-
-[[env.production.kv_namespaces]]
-binding = "AUTH_KV"
-id = "c490355daf9b4b84b484303d08c42eb2"
-preview_id = "c490355daf9b4b84b484303d08c42eb2"
+# Production environment - separate worker configuration
+# Production uses wrangler.prod.toml with worker name "cutty"
+# Deploy production with: wrangler deploy --config wrangler.prod.toml
 
 # Service bindings will be configured when needed
 # Future service configuration will go here

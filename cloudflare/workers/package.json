@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "deploy:dev": "wrangler deploy",
     "deploy:staging": "wrangler deploy --env staging",
-    "deploy:production": "wrangler deploy --env production",
+    "deploy:production": "wrangler deploy --config wrangler.prod.toml",
     "preview:upload": "wrangler versions upload",
     "preview:list": "wrangler versions list",
     "types": "wrangler types",

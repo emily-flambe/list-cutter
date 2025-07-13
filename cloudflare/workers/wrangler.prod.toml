@@ -1,0 +1,93 @@
+name = "cutty"
+routes = [
+  { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+]
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# Asset configuration for serving frontend
+[assets]
+directory = "../../app/frontend/dist"
+binding = "ASSETS"
+
+# Enable Wrangler logs (v3.88.0+)
+[observability.logs]
+enabled = true
+
+# Development configuration
+[dev]
+port = 8789
+local_protocol = "http"
+ip = "127.0.0.1"
+
+# Build configuration - optimized for faster deployment
+[build]
+command = "npm run build"
+cwd = "."
+watch_dir = "src"
+
+# Upload optimization
+upload_source_maps = false
+minify = true
+
+# Environment variables (non-sensitive) - PRODUCTION VALUES
+[vars]
+ENVIRONMENT = "production"
+API_VERSION = "v1"
+CORS_ORIGIN = "https://cutty.emilycogsdill.com"
+MAX_FILE_SIZE = "52428800" # 50MB in bytes
+JWT_ISSUER = "cutty"
+JWT_AUDIENCE = "cutty"
+SECURITY_PERFORMANCE_THRESHOLD = "100"
+SECURITY_METRICS_RETENTION_DAYS = "30"
+SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
+# Secrets are now managed via Cloudflare Workers secrets
+# JWT_SECRET and API_KEY_SALT are set via: wrangler secret put [SECRET_NAME]
+# These secrets are automatically available to the worker at runtime
+
+# D1 Database bindings - PRODUCTION
+[[d1_databases]]
+binding = "DB"
+database_name = "cutty-prod"
+database_id = "a26d5109-83c1-48d4-a814-6bd72bb35e51"
+migrations_dir = "./migrations"
+migrations_table = "d1_migrations"
+
+# R2 Storage bindings - PRODUCTION
+[[r2_buckets]]
+binding = "FILE_STORAGE"
+bucket_name = "cutty-files-prod"
+preview_bucket_name = "cutty-files-dev"
+
+# Security KV Namespaces (Production)
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_CONFIG"
+id = "a6973edd26304221934017997dbd147e"
+preview_id = "a6973edd26304221934017997dbd147e"
+
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_EVENTS"
+id = "e696502dea8942a8acb47e2ac474e248"
+preview_id = "e696502dea8942a8acb47e2ac474e248"
+
+[[kv_namespaces]]
+binding = "CUTTY_SECURITY_METRICS"
+id = "805adc47af9c4e8aa7ddf5b412ea3083"
+preview_id = "805adc47af9c4e8aa7ddf5b412ea3083"
+
+[[kv_namespaces]]
+binding = "CUTTY_QUOTA_TRACKING"
+id = "4c1a53aaab2846a3b11ee39416e6b1dd"
+preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
+
+[[kv_namespaces]]
+binding = "AUTH_KV"
+id = "c490355daf9b4b84b484303d08c42eb2"
+preview_id = "c490355daf9b4b84b484303d08c42eb2"
+
+# Analytics Engine binding - Required for monitoring
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "cutty-metrics-prod"
