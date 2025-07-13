@@ -1,6 +1,6 @@
 name = "cutty"
 routes = [
-  { pattern = "cutty.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
+  { pattern = "cutty-dev.emilycogsdill.com/*", zone_name = "emilycogsdill.com" }
 ]
 main = "src/index.ts"
 compatibility_date = "2024-12-30"
@@ -40,7 +40,7 @@ minify = true
 [vars]
 ENVIRONMENT = "development"
 API_VERSION = "v1"
-CORS_ORIGIN = "https://cutty.emilycogsdill.com"
+CORS_ORIGIN = "https://cutty-dev.emilycogsdill.com"
 MAX_FILE_SIZE = "52428800" # 50MB in bytes
 JWT_ISSUER = "cutty"
 JWT_AUDIENCE = "cutty"
