@@ -13,7 +13,7 @@ const PerformanceMetrics = ({ userId, timeRange = '7days' }) => {
   const fetchPerformanceData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/user/storage/performance?timeRange=${timeRange}`, {
+      const response = await fetch(`/api/v1/monitoring/performance?timeRange=${timeRange}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

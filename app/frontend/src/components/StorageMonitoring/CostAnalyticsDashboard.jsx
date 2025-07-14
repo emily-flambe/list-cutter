@@ -14,7 +14,7 @@ const CostAnalyticsDashboard = ({ userId, timeRange = '30days' }) => {
   const fetchCostData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/user/storage/costs?timeRange=${timeRange}`, {
+      const response = await fetch(`/api/v1/monitoring/costs?timeRange=${timeRange}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

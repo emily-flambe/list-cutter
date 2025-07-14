@@ -5,11 +5,11 @@ export const getNewToken = async () => {
   try {
     const refreshToken = localStorage.getItem('refreshToken');
     const response = await axios.post(
-      `/api/accounts/token/refresh/`,
-      { refresh: refreshToken },
+      `/api/v1/auth/refresh`,
+      { refresh_token: refreshToken },
       { headers: { 'Content-Type': 'application/json' } }
     );
-    const newToken = response.data.access;
+    const newToken = response.data.access_token;
     updateAuthToken(newToken);
     return newToken;
   } catch (error) {
