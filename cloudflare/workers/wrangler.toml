@@ -56,6 +56,7 @@ SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
 binding = "DB"
 database_name = "cutty-dev"
 database_id = "624214be-77a6-4501-b4c7-69b394084081"
+preview_database_id = "local"
 migrations_dir = "./migrations"
 migrations_table = "d1_migrations"
 

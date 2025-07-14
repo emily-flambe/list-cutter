@@ -16,69 +16,101 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
+    clearAllTokens();
     setToken(null);
     setUser(null);
   };
 
   const fetchUserData = async (token) => {
     try {
-      // JWT token contains user data, so we'll decode it instead of making API call
-      // For now, skip fetching user data separately
-      const response = { data: { id: 'temp', username: 'temp', email: 'temp' } };
-      setUser(response.data); // Set user data
+      const response = await api.get('/api/v1/accounts/user');
+      setUser(response.data);
     } catch (error) {
       if (error.response && error.response.status === 401) {
         console.error('Failed to fetch user data:', error);
-        console.log('Attempting to refresh token...'); // Log refresh attempt
-        await refreshToken(); // Attempt to refresh the token
+        console.log('Attempting to refresh token...');
+        await refreshToken();
         try {
-          // Retry fetching user data with the new token
-          const newToken = localStorage.getItem('authToken');
-          // JWT token contains user data, no need for separate API call
-          const response = { data: { id: 'temp', username: 'temp', email: 'temp' } };
-          setUser(response.data); // Set user data
+          const response = await api.get('/api/v1/accounts/user');
+          setUser(response.data);
         } catch (retryError) {
           console.error('Failed to fetch user data after refreshing token:', retryError);
-          console.error('Request payload:', { token }); // Log the request payload
-          setUser(null); // Reset user if fetching fails
+          setUser(null);
         }
-        return; // Stop further execution
+        return;
       }
       console.error('Failed to fetch user data:', error);
-      setUser(null); // Reset user if fetching fails
+      setUser(null);
     }
   };
 
   const refreshToken = async () => {
-    console.log('Attempting to refresh token...'); // Log when the refresh attempt starts
+    console.log('Attempting to refresh token...');
     try {
-      const refreshTokenValue = localStorage.getItem('refreshToken'); // Retrieve refresh token
-      console.log('Using refresh token:', refreshTokenValue); // Log the refresh token being used
+      const refreshTokenValue = localStorage.getItem('refreshToken');
+      
+      if (!refreshTokenValue) {
+        console.log('No refresh token found, logging out');
+        logout();
+        return;
+      }
 
-      // Log the request details
       console.log('Sending request to refresh token at:', `/api/v1/auth/refresh`);
       
-      // Form the request
       const response = await api.post(
         `/api/v1/auth/refresh`,
-        { refresh_token: refreshTokenValue }, // Data to send
-        { headers: { 'Content-Type': 'application/json' } } // Headers
+        { refresh_token: refreshTokenValue },
+        { headers: { 'Content-Type': 'application/json' } }
       );
 
-      console.log('Token refresh response:', response.data); // Log the response from the server
+      console.log('Token refresh successful');
 
       const newAccessToken = response.data.access_token;
+      const newRefreshToken = response.data.refresh_token;
+      
       localStorage.setItem('authToken', newAccessToken);
-      setToken(newAccessToken);
-      fetchUserData(newAccessToken); // Fetch user data with the new token
-    } catch (error) {
-      console.error('Failed to refresh token:', error); // Log the error
-      if (error.response) {
-        console.error('Response data:', error.response.data); // Log response data if available
-        console.error('Response status:', error.response.status); // Log response status
+      if (newRefreshToken) {
+        localStorage.setItem('refreshToken', newRefreshToken);
       }
-      logout(); // Log out if refresh fails
+      
+      setToken(newAccessToken);
+      fetchUserData(newAccessToken);
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      
+      // If token refresh fails, clear all tokens and log out
+      if (error.response && (error.response.status === 401 || error.response.status === 400)) {
+        console.log('Invalid refresh token, clearing all tokens and logging out');
+        clearAllTokens();
+      }
+      
+      logout();
+    }
+  };
+
+  const clearAllTokens = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('token'); // Legacy token key
+    console.log('All authentication tokens cleared');
+  };
+
+  // Validate token on app initialization
+  const validateToken = async () => {
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
+      try {
+        // Try to fetch user data to validate token
+        const response = await api.get('/api/v1/accounts/user');
+        setUser(response.data);
+      } catch (error) {
+        if (error.response && (error.response.status === 401 || error.response.status === 400)) {
+          console.log('Stored token is invalid, clearing tokens');
+          clearAllTokens();
+          setToken(null);
+          setUser(null);
+        }
+      }
     }
   };
 
@@ -89,6 +121,11 @@ export const AuthProvider = ({ children }) => {
       setUser(null); // Reset user if no token
     }
   }, [token]);
+
+  // Validate token on app startup
+  useEffect(() => {
+    validateToken();
+  }, []);
 
   return (
     <AuthContext.Provider value={{ token, user, login, logout, setUser }}>

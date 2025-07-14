@@ -28,7 +28,7 @@ const Login = () => {
     setError(null);
     try {
       const response = await api.post(`/api/v1/auth/login`, credentials);
-      login(response.data.access, credentials.username, response.data.refresh);
+      login(response.data.access_token, credentials.username, response.data.refresh_token);
       navigate('/');
     } catch (err) {
       setError('Invalid credentials');
