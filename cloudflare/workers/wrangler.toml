@@ -14,6 +14,10 @@ compatibility_date = "2024-12-30"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
+# Upload optimization
+upload_source_maps = false
+minify = true
+
 # Asset configuration for serving frontend
 [assets]
 directory = "../../app/frontend/dist"
@@ -38,10 +42,6 @@ ip = "127.0.0.1"
 command = "npm run build"
 cwd = "."
 watch_dir = "src"
-
-# Upload optimization
-upload_source_maps = false
-minify = true
 
 # Environment variables (non-sensitive)
 [vars]
