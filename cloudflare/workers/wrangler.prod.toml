@@ -43,9 +43,12 @@ JWT_AUDIENCE = "cutty"
 SECURITY_PERFORMANCE_THRESHOLD = "100"
 SECURITY_METRICS_RETENTION_DAYS = "30"
 SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
-# Production secrets are managed via Cloudflare Workers secrets:
-# JWT_SECRET - Set via: wrangler secret put JWT_SECRET --config wrangler.prod.toml
-# API_KEY_SALT - Set via: wrangler secret put API_KEY_SALT --config wrangler.prod.toml
+# ✅ PRODUCTION SECRETS: OAuth secrets configured via Cloudflare Dashboard
+# ✅ JWT_SECRET - Authentication tokens (CONFIGURED)
+# ✅ API_KEY_SALT - API key generation (CONFIGURED)  
+# ✅ GOOGLE_CLIENT_ID - OAuth client ID (CONFIGURED)
+# ✅ GOOGLE_CLIENT_SECRET - OAuth client secret (CONFIGURED)
+# ✅ GOOGLE_REDIRECT_URI - OAuth callback URL (CONFIGURED)
 # These secrets are automatically available to the worker at runtime
 
 # D1 Database bindings - PRODUCTION

@@ -15,11 +15,9 @@ ProjectIdentity: &ProjectIdentity
     worker_name: "cutty"
     database_names:
       - "cutty-dev"
-      - "cutty-staging"
       - "cutty-prod"
     r2_buckets:
       - "cutty-files-dev"
-      - "cutty-files-staging"
       - "cutty-files-prod"
 
 WranglerCommands: &WranglerCommands

@@ -110,23 +110,25 @@ migrations:
 		exit 1; \
 	fi
 	@cd cloudflare/workers && \
-	MIGRATION_FILES=$$(ls migrations/*.sql | sort); \
 	if [ "$(ENV)" = "local" ]; then \
-		echo "🗄️  Setting up local.sqlite with initial schema..."; \
-		rm -f local.sqlite; \
-		echo "🏗️  Creating fresh local database with initial schema..."; \
-		sqlite3 local.sqlite < migrations/0000_initial_schema.sql || { \
-			echo "❌ ERROR: Failed to create local.sqlite with initial schema"; \
+		echo "🗄️  Running migrations on local database..."; \
+		echo "📋 Using D1's built-in migration tracking system..."; \
+		wrangler d1 migrations apply cutty-dev --local || { \
+			echo "❌ Migration failed"; \
+			echo "💡 Tip: Check which migrations have been applied with:"; \
+			echo "   wrangler d1 migrations list cutty-dev --local"; \
 			exit 1; \
 		}; \
-		echo "✅ Local database created with initial schema"; \
+		echo "✅ Local migrations completed"; \
 	elif [ "$(ENV)" = "dev" ]; then \
 		echo "🗄️  Running migrations on cutty-dev..."; \
-		echo "🏗️  Running all migrations on fresh database..."; \
-		for file in $$MIGRATION_FILES; do \
-			echo "📋 Running $$(basename $$file)..."; \
-			wrangler d1 execute cutty-dev --remote --file=$$file || { echo "❌ Migration $$(basename $$file) failed"; exit 1; }; \
-		done; \
+		echo "📋 Using D1's built-in migration tracking system..."; \
+		wrangler d1 migrations apply cutty-dev --remote || { \
+			echo "❌ Migration failed"; \
+			echo "💡 Tip: Check which migrations have been applied with:"; \
+			echo "   wrangler d1 migrations list cutty-dev --remote"; \
+			exit 1; \
+		}; \
 		echo "✅ Development migrations completed"; \
 	elif [ "$(ENV)" = "prod" ]; then \
 		echo "⚠️  PRODUCTION MIGRATION WARNING ⚠️"; \
@@ -138,25 +140,22 @@ migrations:
 			exit 1; \
 		fi; \
 		echo "🗄️  Running migrations on production database..."; \
-		echo "🔍 Checking if database is initialized..."; \
-		if ! wrangler d1 execute DB --env production --remote --command "SELECT name FROM sqlite_master WHERE type='table' AND name='users' LIMIT 1;" >/dev/null 2>&1; then \
-			echo "🏗️  Database not initialized, running all migrations..."; \
-		else \
-			echo "📊 Database initialized, running new migrations..."; \
-		fi; \
-		for file in $$MIGRATION_FILES; do \
-			echo "📋 Running $$(basename $$file)..."; \
-			wrangler d1 execute DB --env production --remote --file=$$file || { echo "❌ Migration $$(basename $$file) failed"; exit 1; }; \
-		done; \
+		echo "📋 Using D1's built-in migration tracking system..."; \
+		wrangler d1 migrations apply DB --env production --remote || { \
+			echo "❌ Migration failed"; \
+			echo "💡 Tip: Check which migrations have been applied with:"; \
+			echo "   wrangler d1 migrations list DB --env production --remote"; \
+			exit 1; \
+		}; \
 		echo "✅ Production migrations completed"; \
 	elif [ "$(ENV)" = "all" ]; then \
 		echo "🗄️  Running migrations on ALL databases..."; \
 		echo ""; \
 		echo "📊 Development Database:"; \
-		for file in $$MIGRATION_FILES; do \
-			echo "📋 Running $$(basename $$file) on cutty-dev..."; \
-			wrangler d1 execute cutty-dev --remote --file=$$file || { echo "❌ Migration $$(basename $$file) failed on cutty-dev"; exit 1; }; \
-		done; \
+		wrangler d1 migrations apply cutty-dev --remote || { \
+			echo "❌ Development migration failed"; \
+			exit 1; \
+		}; \
 		echo "✅ Development migrations completed"; \
 		echo ""; \
 		echo "⚠️  PRODUCTION MIGRATION WARNING ⚠️"; \
@@ -167,10 +166,10 @@ migrations:
 			exit 0; \
 		fi; \
 		echo "🚀 Production Database:"; \
-		for file in $$MIGRATION_FILES; do \
-			echo "📋 Running $$(basename $$file) on production..."; \
-			wrangler d1 execute DB --env production --remote --file=$$file || { echo "❌ Migration $$(basename $$file) failed on production"; exit 1; }; \
-		done; \
+		wrangler d1 migrations apply DB --env production --remote || { \
+			echo "❌ Production migration failed"; \
+			exit 1; \
+		}; \
 		echo "✅ Production migrations completed"; \
 		echo "🎉 ALL database migrations completed successfully!"; \
 	elif [ "$(ENV)" = "clean" ]; then \

@@ -7,8 +7,13 @@ import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
+import Divider from '@mui/material/Divider';
+import Link from '@mui/material/Link';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import GoogleSignInButton, { GoogleOAuthCallback } from './GoogleSignInButton';
 
 const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -19,6 +24,10 @@ const Register = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [connectivityTest, setConnectivityTest] = useState(null);
+  
+  // Check if this is an OAuth callback
+  const urlParams = new URLSearchParams(window.location.search);
+  const isOAuthCallback = urlParams.get('oauth_success') === 'true';
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -185,11 +194,60 @@ const Register = () => {
     }
   };
 
+  const handleOAuthSuccess = (data) => {
+    // OAuth callback will handle token storage and redirect
+    navigate('/dashboard');
+  };
+
+  const handleOAuthError = (error) => {
+    setErrors({ non_field_errors: error.message || 'Google sign-up failed. Please try again.' });
+  };
+
+  // Handle OAuth callback
+  if (isOAuthCallback) {
+    return (
+      <Box sx={{ p: 2, maxWidth: 400, mx: 'auto' }}>
+        <GoogleOAuthCallback 
+          onSuccess={handleOAuthSuccess}
+          onError={handleOAuthError}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 2, maxWidth: 400, mx: 'auto' }}>
       <Typography variant="h4" gutterBottom>
         Register
       </Typography>
+
+      {/* Error Messages */}
+      {successMessage && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {successMessage}
+        </Alert>
+      )}
+      {errors.non_field_errors && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {errors.non_field_errors}
+        </Alert>
+      )}
+
+      {/* Google Sign-In Section */}
+      <Box sx={{ mb: 3 }}>
+        <GoogleSignInButton 
+          mode="signup"
+          onError={handleOAuthError}
+          disabled={loading}
+        />
+      </Box>
+
+      {/* Divider */}
+      <Divider sx={{ my: 2 }}>
+        <Typography variant="body2" color="textSecondary">
+          or continue with email
+        </Typography>
+      </Divider>
 
       {/* API Connectivity Test Section */}
       <Box sx={{ mb: 3, p: 2, border: '1px solid #ddd', borderRadius: 1, backgroundColor: '#f9f9f9' }}>
@@ -226,17 +284,6 @@ const Register = () => {
           </Alert>
         )}
       </Box>
-
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {successMessage}
-        </Alert>
-      )}
-      {errors.non_field_errors && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {errors.non_field_errors}
-        </Alert>
-      )}
 
       <Box
         component="form"
@@ -302,10 +349,17 @@ const Register = () => {
           </Alert>
         )}
 
-        <Button variant="contained" type="submit" disabled={loading}>
-          {loading ? 'Registering...' : 'Register'}
+        <Button variant="contained" type="submit" disabled={loading} sx={{ mt: 1 }}>
+          {loading ? 'Creating Account...' : 'Create Account with Email'}
         </Button>
       </Box>
+      
+      <Typography variant="body2" sx={{ mt: 3, textAlign: 'center' }}>
+        Already have an account?{' '}
+        <Link component={RouterLink} to="/login">
+          Sign in here
+        </Link>
+      </Typography>
     </Box>
   );
 };

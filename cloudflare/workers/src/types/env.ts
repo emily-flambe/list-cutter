@@ -19,6 +19,11 @@ export interface CloudflareEnv {
   DB_ENCRYPTION_KEY?: string;
   API_KEY_SALT?: string;
   
+  // Google OAuth secrets
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  GOOGLE_REDIRECT_URI: string;
+  
   // Bindings
   DB: D1Database;
   FILE_STORAGE: R2Bucket;
@@ -47,3 +52,6 @@ export interface CloudflareEnv {
   // Optional bindings
   RATE_LIMITER?: DurableObjectNamespace;
 }
+
+// Alias for backwards compatibility and cleaner imports
+export type Env = CloudflareEnv;

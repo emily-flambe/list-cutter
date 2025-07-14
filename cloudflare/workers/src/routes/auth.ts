@@ -5,23 +5,28 @@ import { handleRegister } from './accounts/register';
 import { handleRefresh } from './accounts/refresh';
 import { handleLogout } from './accounts/logout';
 import { Env } from '../types/env';
+import googleOAuth from './auth/google-oauth';
 
 const auth = new Hono<{ Bindings: Env }>();
 
 // Simplified CORS for same-origin setup (frontend and API on same domain)
 auth.use('*', cors({
   origin: (origin, c) => {
-    // In development, allow all origins
+    // In development, allow all origins for OAuth testing
     const environment = c?.env?.ENVIRONMENT || 'development';
     if (environment === 'development') {
       return origin || '*';
     }
     
-    // In production, only allow specific origins
-    const allowedOrigins = ['https://cutty.emilycogsdill.com'];
+    // In production, allow specific origins including OAuth redirect domains
+    const allowedOrigins = [
+      'https://cutty.emilycogsdill.com',
+      'https://list-cutter.emilycogsdill.com',
+      'https://accounts.google.com', // For OAuth redirects
+    ];
     return allowedOrigins.includes(origin || '') ? origin : false;
   },
-  allowMethods: ['POST', 'GET', 'OPTIONS'],
+  allowMethods: ['POST', 'GET', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
@@ -59,5 +64,8 @@ auth.post('/refresh', async (c) => {
 auth.post('/logout', async (c) => {
   return handleLogout(c.req.raw, c.env);
 });
+
+// Google OAuth routes
+auth.route('/google', googleOAuth);
 
 export default auth;
