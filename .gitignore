@@ -187,5 +187,13 @@ node_modules/
 # Wrangler local development files
 .wrangler/
 
+# Cloudflare Workers local development files
+cloudflare/workers/.dev.vars
+
+# Cloudflare Workers local SQLite databases
+cloudflare/workers/local.sqlite
+cloudflare/workers/local.sqlite-shm
+cloudflare/workers/local.sqlite-wal
+
 # Claude Code project-specific configuration
 # .claude/
