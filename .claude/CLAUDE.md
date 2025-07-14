@@ -1,5 +1,11 @@
 # Claude Code Project Configuration
 
+# 🚨🚨🚨 CRITICAL ENVIRONMENT CONFIGURATION 🚨🚨🚨
+# ⚠️  DEVELOPMENT: worker cutty-dev → database cutty-dev → route cutty-dev.emilycogsdill.com
+# ⚠️  PRODUCTION: worker cutty → database cutty-prod → route cutty.emilycogsdill.com
+# ⚠️  NO STAGING ENVIRONMENT EXISTS
+# 🚨🚨🚨 NEVER FORGET THIS CONFIGURATION 🚨🚨🚨
+
 Comprehensive configuration for the Cutty (List Cutter) application - a Django to Cloudflare Workers migration project.
 
 ## Quick Navigation
