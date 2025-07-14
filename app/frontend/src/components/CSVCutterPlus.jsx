@@ -33,14 +33,12 @@ const CSVCutterPlus = () => {
   const [selectedSavedFile, setSelectedSavedFile] = useState("");
   const [sourceFileName, setSourceFileName] = useState("");
   const [originalFileId, setOriginalFileId] = useState("");
-  const token = useContext(AuthContext);
+  const { token } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const fetchSavedFiles = async () => {
     try {
-      const response = await api.get('/api/v1/files/list', {
-        headers: { Authorization: `Bearer ${token.token}` }
-      });
+      const response = await api.get('/api/v1/files/list');
       setSavedFiles(response.data.files);
     } catch (error) {
       console.error("Error fetching saved files:", error);
@@ -62,8 +60,7 @@ const CSVCutterPlus = () => {
       try {
         console.log("Selected file ID:", selectedFileID);
         const response = await api.get(
-          `/api/v1/files/download/${encodeURIComponent(selectedFileID)}`,
-          { headers: { Authorization: `Bearer ${token.token}` } }
+          `/api/v1/files/download/${encodeURIComponent(selectedFileID)}`
         );
         const fileData = response.data;
         console.log(fileData);

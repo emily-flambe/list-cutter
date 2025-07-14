@@ -45,6 +45,20 @@ const api = axios.create({
   },
 });
 
+// Request interceptor to automatically add Authorization header
+api.interceptors.request.use(
+  config => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  error => {
+    return Promise.reject(error);
+  }
+);
+
 api.interceptors.response.use(
   response => response,
   async error => {
@@ -67,13 +81,36 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       console.log('Interceptor triggered for 401 error');
       originalRequest._retry = true;
-      const newToken = await getNewToken();
-      if (newToken) {
-        console.log('Token refresh successful, retrying request');
-        originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-        return api(originalRequest);
-      } else {
-        console.log('Token refresh failed');
+      
+      try {
+        const newToken = await getNewToken();
+        if (newToken) {
+          console.log('Token refresh successful, retrying request');
+          originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+          return api(originalRequest);
+        } else {
+          console.log('Token refresh failed, clearing tokens and redirecting to login');
+          // Clear all tokens if refresh fails
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('token');
+          
+          // Redirect to login page if not already there
+          if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+            window.location.href = '/login';
+          }
+        }
+      } catch (refreshError) {
+        console.error('Token refresh error:', refreshError);
+        // Clear tokens on refresh error
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('token');
+        
+        // Redirect to login page
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          window.location.href = '/login';
+        }
       }
     }
     
