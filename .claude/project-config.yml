@@ -72,10 +72,12 @@ WranglerCommands: &WranglerCommands
 
 ProjectStructure: &ProjectStructure
   main_application: "Django backend with React frontend"
-  target_deployment: "Single Cloudflare Worker 'cutty' with D1 + R2"
+  target_deployment: "Separate Cloudflare Workers for dev/prod with D1 + R2"
   migration_tools: "Comprehensive Python scripts for file migration"
-  identity_preference: "Use single worker 'cutty' for unified architecture"
-  architecture_note: "Consolidated from multiple workers (cutty-api, cutty-workers, cutty-frontend) to single worker 'cutty'"
+  deployment_configs:
+    development: "wrangler.toml - cutty-dev worker"
+    production: "wrangler.prod.toml - cutty worker"
+  architecture_note: "Clean separation: dev worker 'cutty-dev' and production worker 'cutty' with separate configurations"
 
 CommitStandards: &CommitStandards
   frequency: "Make frequent, small commits rather than large monolithic changes"

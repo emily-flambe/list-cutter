@@ -43,8 +43,9 @@ JWT_AUDIENCE = "cutty"
 SECURITY_PERFORMANCE_THRESHOLD = "100"
 SECURITY_METRICS_RETENTION_DAYS = "30"
 SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
-# Secrets are now managed via Cloudflare Workers secrets
-# JWT_SECRET and API_KEY_SALT are set via: wrangler secret put [SECRET_NAME]
+# Production secrets are managed via Cloudflare Workers secrets:
+# JWT_SECRET - Set via: wrangler secret put JWT_SECRET --config wrangler.prod.toml
+# API_KEY_SALT - Set via: wrangler secret put API_KEY_SALT --config wrangler.prod.toml
 # These secrets are automatically available to the worker at runtime
 
 # D1 Database bindings - PRODUCTION
