@@ -97,3 +97,130 @@ CronTriggerDeployment: &CronTriggerDeployment
     - 'wrangler triggers list'
   
   verification_command: "wrangler triggers list"
+
+OAuthDevelopmentCommands: &OAuthDevelopmentCommands
+  setup_commands:
+    google_cloud_console:
+      - "Create OAuth 2.0 Client ID in Google Cloud Console"
+      - "Configure authorized redirect URIs"
+      - "Download client credentials"
+    
+    wrangler_secrets:
+      - "wrangler secret put GOOGLE_CLIENT_ID"
+      - "wrangler secret put GOOGLE_CLIENT_SECRET"
+      - "wrangler secret put GOOGLE_REDIRECT_URI"
+    
+    database_migration:
+      - "cd cloudflare/workers"
+      - "wrangler d1 execute CUTTY_DB --file=migrations/0009_google_oauth_support.sql"
+    
+    dev_vars_setup:
+      - "echo 'GOOGLE_CLIENT_ID=your_dev_client_id' >> .dev.vars"
+      - "echo 'GOOGLE_CLIENT_SECRET=your_dev_client_secret' >> .dev.vars"
+      - "echo 'GOOGLE_REDIRECT_URI=http://localhost:8787/api/v1/auth/google/callback' >> .dev.vars"
+
+  testing_commands:
+    oauth_flow_test:
+      - "curl 'http://localhost:8787/api/v1/auth/google'"
+      - "# Should return authorization_url and state"
+    
+    oauth_callback_test:
+      - "curl 'http://localhost:8787/api/v1/auth/google/callback?code=test&state=invalid'"
+      - "# Should return invalid state error"
+    
+    oauth_status_test:
+      - "curl -H 'Authorization: Bearer <token>' 'http://localhost:8787/api/v1/auth/google/status'"
+      - "# Should return OAuth connection status"
+
+  security_validation:
+    rate_limiting_test:
+      - "# Test general rate limit (30 requests in 15 minutes)"
+      - "for i in {1..35}; do curl 'http://localhost:8787/api/v1/auth/google'; done"
+      - "# Should get 429 rate limit error after 30 requests"
+    
+    input_validation_test:
+      - "curl 'http://localhost:8787/api/v1/auth/google?return_url=javascript:alert(1)'"
+      - "# Should return validation error"
+    
+    state_token_validation:
+      - "curl 'http://localhost:8787/api/v1/auth/google/callback?code=test&state=invalid-token'"
+      - "# Should return invalid state parameter error"
+
+  monitoring_commands:
+    oauth_analytics:
+      - "curl -H 'Authorization: Bearer <admin_token>' 'http://localhost:8787/api/v1/auth/google/analytics'"
+      - "# Returns OAuth usage analytics and rate limiting stats"
+    
+    security_events:
+      - "# Check oauth_security_events table for logged events"
+      - "wrangler d1 execute CUTTY_DB --command 'SELECT * FROM oauth_security_events ORDER BY created_at DESC LIMIT 10'"
+    
+    rate_limit_status:
+      - "# Check oauth_rate_limits table for current limits"
+      - "wrangler d1 execute CUTTY_DB --command 'SELECT ip_address, COUNT(*) as count FROM oauth_rate_limits WHERE created_at > datetime(\"now\", \"-15 minutes\") GROUP BY ip_address'"
+
+OAuthProductionCommands: &OAuthProductionCommands
+  deployment_preparation:
+    - "# Verify all OAuth secrets are configured"
+    - "wrangler secret list | grep GOOGLE"
+    - "# Should show GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI"
+  
+  database_migration_production:
+    - "# Apply OAuth migration to production database"
+    - "wrangler d1 execute CUTTY_DB --env production --file=migrations/0009_google_oauth_support.sql"
+  
+  oauth_endpoint_validation:
+    - "# Test OAuth initiation in production"
+    - "curl 'https://cutty.emilycogsdill.com/api/v1/auth/google'"
+    - "# Verify redirect URL points to Google OAuth"
+  
+  security_monitoring_setup:
+    - "# Monitor OAuth security events in production"
+    - "# Set up alerts for high failure rates or suspicious activity"
+    - "# Configure dashboard for OAuth analytics endpoint"
+
+OAuthTroubleshooting: &OAuthTroubleshooting
+  common_issues:
+    invalid_redirect_uri:
+      problem: "OAuth returns 'Invalid redirect_uri' error"
+      solution:
+        - "Verify GOOGLE_REDIRECT_URI matches Google Cloud Console configuration"
+        - "Check authorized redirect URIs in Google Cloud Console"
+        - "Ensure URL scheme (http/https) matches exactly"
+    
+    invalid_client_id:
+      problem: "OAuth returns 'Invalid client_id' error"
+      solution:
+        - "Verify GOOGLE_CLIENT_ID secret is correctly set"
+        - "Check Google Cloud Console for correct client ID"
+        - "Ensure OAuth app is enabled in Google Cloud Console"
+    
+    state_parameter_mismatch:
+      problem: "OAuth callback fails with state parameter error"
+      solution:
+        - "Verify JWT_SECRET is correctly configured"
+        - "Check system time synchronization"
+        - "Ensure state tokens aren't expired (10 minute limit)"
+    
+    rate_limiting_issues:
+      problem: "Users getting rate limited unexpectedly"
+      solution:
+        - "Check rate limiting analytics endpoint"
+        - "Review oauth_rate_limits table for patterns"
+        - "Consider adjusting rate limits for production traffic"
+        - "Investigate potential automated attacks"
+
+  debug_commands:
+    oauth_state_inspection:
+      - "# Decode OAuth state token (development only)"
+      - "node -e 'console.log(JSON.parse(Buffer.from(\"TOKEN_PAYLOAD_PART\", \"base64\").toString()))'"
+    
+    database_oauth_data:
+      - "# Check OAuth users"
+      - "wrangler d1 execute CUTTY_DB --command 'SELECT id, username, google_id, provider FROM users WHERE google_id IS NOT NULL'"
+      - "# Check recent OAuth events"
+      - "wrangler d1 execute CUTTY_DB --command 'SELECT * FROM oauth_security_events WHERE created_at > datetime(\"now\", \"-1 hour\") ORDER BY created_at DESC'"
+    
+    rate_limit_analysis:
+      - "# Analyze rate limiting patterns"
+      - "wrangler d1 execute CUTTY_DB --command 'SELECT ip_address, event_type, COUNT(*) as count FROM oauth_rate_limits WHERE created_at > datetime(\"now\", \"-1 hour\") GROUP BY ip_address, event_type ORDER BY count DESC'"

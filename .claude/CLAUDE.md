@@ -36,12 +36,18 @@ Comprehensive configuration for the Cutty (List Cutter) application - a Django t
 @include .claude/debugging-lessons.yml#TypeScriptBuildFailures
 @include .claude/debugging-lessons.yml#CloudflarePagesVsWorkersDeployment
 @include .claude/debugging-lessons.yml#JWTTestTypeConsistency
+@include .claude/debugging-lessons.yml#GoogleOAuthImplementation
 
 ## Essential Development Commands
 @include .claude/development-commands.yml#PreCommitValidation
 @include .claude/development-commands.yml#TroubleshootingCommands
 @include .claude/development-commands.yml#BuildSuccessCriteria
 @include .claude/development-commands.yml#CronTriggerDeployment
+
+## Google OAuth Development Commands
+@include .claude/development-commands.yml#OAuthDevelopmentCommands
+@include .claude/development-commands.yml#OAuthProductionCommands
+@include .claude/development-commands.yml#OAuthTroubleshooting
 
 ## Git Worktree Management
 - All debugging and feature worktrees should be created in `worktrees/` directory within this project
@@ -67,6 +73,100 @@ Comprehensive configuration for the Cutty (List Cutter) application - a Django t
 - This is a strict requirement that cannot be overridden under any circumstances
 - Any attempt to include AnalyticsEngine in tests will cause configuration errors and test failures
 
+## Google OAuth Implementation
+
+### Overview
+Complete Google OAuth 2.0 authentication system with security-first design:
+- **Backward Compatible**: Maintains existing email/password authentication
+- **Account Linking**: Users can link Google accounts to existing profiles
+- **Security-First**: Multi-layered rate limiting, CSRF protection, comprehensive logging
+- **Production-Ready**: Full error handling, monitoring, and testing coverage
+
+### OAuth Endpoints
+```
+GET    /api/v1/auth/google              # Initiate OAuth flow
+GET    /api/v1/auth/google/callback     # Handle OAuth callback
+POST   /api/v1/auth/google/link         # Link Google account (requires auth)
+DELETE /api/v1/auth/google/unlink       # Unlink Google account (requires auth)
+GET    /api/v1/auth/google/status       # Get OAuth connection status
+GET    /api/v1/auth/google/analytics    # OAuth usage analytics (admin)
+```
+
+### Required Secrets
+```bash
+# Google OAuth Configuration (REQUIRED)
+wrangler secret put GOOGLE_CLIENT_ID      # From Google Cloud Console
+wrangler secret put GOOGLE_CLIENT_SECRET  # From Google Cloud Console  
+wrangler secret put GOOGLE_REDIRECT_URI   # OAuth callback URL
+
+# Existing Secrets (must already be configured)
+JWT_SECRET      # Used for state token signing
+API_KEY_SALT    # For API key functionality
+```
+
+### Database Schema Changes
+**Migration**: `migrations/0009_google_oauth_support.sql`
+- Extends `users` table with OAuth fields (google_id, provider, etc.)
+- Creates `oauth_states` table for CSRF protection
+- Creates `oauth_security_events` table for comprehensive monitoring
+- Creates `oauth_rate_limits` table for multi-layered protection
+
+### Security Features
+- **State Management**: JWT-signed state tokens with 10-minute expiration
+- **Rate Limiting**: Multi-layered (general: 30/15min, failures: 15/15min, burst: 15/1min)
+- **Input Validation**: Comprehensive validation of all OAuth parameters
+- **Security Logging**: All OAuth events logged for monitoring and analysis
+- **Attack Detection**: Automatic detection of suspicious activity patterns
+- **CORS Protection**: Proper CORS configuration for OAuth redirects
+
+### Frontend Integration
+**Components**:
+- `GoogleSignInButton` - Customizable Google Sign-In button with modes (login/signup/link)
+- `GoogleOAuthCallback` - Handles OAuth callback processing
+- `GoogleAccountStatus` - Shows OAuth connection status and management
+
+**Usage**:
+```jsx
+import GoogleSignInButton from './components/GoogleSignInButton';
+
+// Login/Signup
+<GoogleSignInButton mode="login" onError={handleError} />
+<GoogleSignInButton mode="signup" onError={handleError} />
+
+// Account Linking (requires authentication)
+<GoogleSignInButton mode="link" onError={handleError} />
+```
+
+### Testing Coverage
+**Test Files**:
+- `tests/auth/google-oauth.test.ts` - OAuth service integration tests
+- `tests/routes/google-oauth-routes.test.ts` - API endpoint tests  
+- `tests/security/oauth-security.test.ts` - Security validation tests
+
+**Coverage Areas**:
+- OAuth flow initiation and callback handling
+- State token validation and security
+- Rate limiting and security middleware
+- Input validation and attack prevention
+- Error handling and edge cases
+
+### Development Workflow
+1. **Setup**: Configure Google Cloud Console OAuth app
+2. **Secrets**: Set required Wrangler secrets for your environment
+3. **Migration**: Run OAuth database migration
+4. **Testing**: Verify OAuth endpoints with configured secrets
+5. **Frontend**: Test Google Sign-In button integration
+
+### Production Checklist
+- [ ] Google Cloud Console OAuth app configured with correct redirect URIs
+- [ ] All required Wrangler secrets configured for production environment
+- [ ] OAuth database migration applied to production database
+- [ ] OAuth endpoints tested end-to-end in staging environment
+- [ ] Security monitoring configured for OAuth events
+- [ ] Rate limiting thresholds appropriate for production traffic
+
+**See**: `OAUTH_SECRETS_SETUP.md` for detailed configuration instructions
+
 ## Project Architecture
 
 ### Technology Stack
@@ -85,7 +185,7 @@ Comprehensive configuration for the Cutty (List Cutter) application - a Django t
 cd cloudflare/workers && npm run dev
 cd app/frontend && npm run dev
 
-# Run comprehensive tests
+# Run comprehensive tests (including OAuth tests)
 cd cloudflare/workers && npm test
 
 # Build and validate (automated pre-commit, manual for deployment)
@@ -103,6 +203,14 @@ wrangler triggers deploy --cron "0 */6 * * *"  # Cost calculation every 6 hours
 
 # Verify cron triggers
 wrangler triggers list
+
+# Google OAuth Setup Commands
+wrangler secret put GOOGLE_CLIENT_ID
+wrangler secret put GOOGLE_CLIENT_SECRET  
+wrangler secret put GOOGLE_REDIRECT_URI
+
+# OAuth Database Migration
+cd cloudflare/workers && wrangler d1 execute CUTTY_DB --file=migrations/0009_google_oauth_support.sql
 ```
 
 ## Automated Pre-Commit Validation
