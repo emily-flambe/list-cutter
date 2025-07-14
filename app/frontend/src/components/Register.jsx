@@ -340,10 +340,6 @@ const Register = () => {
           helperText={errors.password2}
         />
 
-<<<<<<< HEAD
-        <Button variant="contained" type="submit" disabled={loading} sx={{ mt: 1 }}>
-          {loading ? 'Creating Account...' : 'Create Account with Email'}
-=======
         {errors.non_field_errors && (
           <Alert severity="error" sx={{ mt: 2 }}>
             <strong>Registration Failed:</strong><br />
@@ -353,9 +349,8 @@ const Register = () => {
           </Alert>
         )}
 
-        <Button variant="contained" type="submit" disabled={loading}>
-          {loading ? 'Registering...' : 'Register'}
->>>>>>> origin/main
+        <Button variant="contained" type="submit" disabled={loading} sx={{ mt: 1 }}>
+          {loading ? 'Creating Account...' : 'Create Account with Email'}
         </Button>
       </Box>
       
