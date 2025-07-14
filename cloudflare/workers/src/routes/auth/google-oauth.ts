@@ -19,7 +19,7 @@ import { GoogleOAuthService } from '../../services/auth/google-oauth-service';
 import { OAuthRateLimiter } from '../../services/auth/oauth-rate-limiter';
 import { OAuthSecurityMiddleware } from '../../middleware/oauth-security';
 import { generateJWT } from '../../services/auth/jwt';
-import { authMiddleware } from '../../middleware/auth';
+import { requireAuth } from '../../middleware/auth';
 
 // Environment interface
 interface Env {
@@ -246,7 +246,7 @@ googleOAuth.get('/callback', async (c) => {
  * Links Google account to existing authenticated user
  * Requires existing authentication
  */
-googleOAuth.post('/link', authMiddleware, async (c) => {
+googleOAuth.post('/link', requireAuth(), async (c) => {
   try {
     // Get authenticated user from middleware
     const user = c.get('user');
@@ -327,7 +327,7 @@ googleOAuth.post('/link', authMiddleware, async (c) => {
  * Unlinks Google account from authenticated user
  * Requires existing authentication
  */
-googleOAuth.delete('/unlink', authMiddleware, async (c) => {
+googleOAuth.delete('/unlink', requireAuth(), async (c) => {
   try {
     // Get authenticated user from middleware
     const user = c.get('user');
@@ -402,7 +402,7 @@ googleOAuth.delete('/unlink', authMiddleware, async (c) => {
  * GET /api/v1/auth/google/status
  * Returns OAuth connection status for authenticated user
  */
-googleOAuth.get('/status', authMiddleware, async (c) => {
+googleOAuth.get('/status', requireAuth(), async (c) => {
   try {
     // Get authenticated user from middleware
     const user = c.get('user');
@@ -451,7 +451,7 @@ googleOAuth.get('/status', authMiddleware, async (c) => {
  * GET /api/v1/auth/google/analytics
  * Returns OAuth usage analytics (admin only)
  */
-googleOAuth.get('/analytics', authMiddleware, async (c) => {
+googleOAuth.get('/analytics', requireAuth(), async (c) => {
   try {
     // Basic authentication check (extend with admin role check if needed)
     const user = c.get('user');

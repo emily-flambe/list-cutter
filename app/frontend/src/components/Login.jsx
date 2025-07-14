@@ -84,7 +84,7 @@ const Login = () => {
       {/* Divider */}
       <Divider sx={{ my: 2 }}>
         <Typography variant="body2" color="textSecondary">
-          or continue with email
+          or continue with username/password
         </Typography>
       </Divider>
 
