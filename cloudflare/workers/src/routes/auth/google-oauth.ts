@@ -23,7 +23,7 @@ import { authMiddleware } from '../../middleware/auth';
 
 // Environment interface
 interface Env {
-  CUTTY_DB: D1Database;
+  DB: D1Database;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_REDIRECT_URI: string;
@@ -39,7 +39,7 @@ const googleOAuth = new Hono<{ Bindings: Env }>();
 googleOAuth.get('/', async (c) => {
   try {
     // Initialize services
-    const rateLimiter = new OAuthRateLimiter(c.env.CUTTY_DB);
+    const rateLimiter = new OAuthRateLimiter(c.env.DB);
     const securityMiddleware = new OAuthSecurityMiddleware(rateLimiter);
     
     // Apply security checks
@@ -56,7 +56,7 @@ googleOAuth.get('/', async (c) => {
         redirectUri: c.env.GOOGLE_REDIRECT_URI,
       },
       c.env.JWT_SECRET,
-      c.env.CUTTY_DB
+      c.env.DB
     );
 
     // Extract parameters
@@ -84,7 +84,7 @@ googleOAuth.get('/', async (c) => {
     // Log error and return generic message
     console.error('OAuth initiation failed:', error);
     
-    const rateLimiter = new OAuthRateLimiter(c.env.CUTTY_DB);
+    const rateLimiter = new OAuthRateLimiter(c.env.DB);
     const securityMiddleware = new OAuthSecurityMiddleware(rateLimiter);
     await securityMiddleware.recordOAuthEvent(c, 'failure', {
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -105,7 +105,7 @@ googleOAuth.get('/', async (c) => {
 googleOAuth.get('/callback', async (c) => {
   try {
     // Initialize services
-    const rateLimiter = new OAuthRateLimiter(c.env.CUTTY_DB);
+    const rateLimiter = new OAuthRateLimiter(c.env.DB);
     const securityMiddleware = new OAuthSecurityMiddleware(rateLimiter);
     
     // Apply security checks
@@ -154,7 +154,7 @@ googleOAuth.get('/callback', async (c) => {
         redirectUri: c.env.GOOGLE_REDIRECT_URI,
       },
       c.env.JWT_SECRET,
-      c.env.CUTTY_DB
+      c.env.DB
     );
 
     // Get request context for logging
@@ -227,7 +227,7 @@ googleOAuth.get('/callback', async (c) => {
   } catch (error) {
     console.error('OAuth callback failed:', error);
     
-    const rateLimiter = new OAuthRateLimiter(c.env.CUTTY_DB);
+    const rateLimiter = new OAuthRateLimiter(c.env.DB);
     const securityMiddleware = new OAuthSecurityMiddleware(rateLimiter);
     await securityMiddleware.recordOAuthEvent(c, 'failure', {
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -259,7 +259,7 @@ googleOAuth.post('/link', authMiddleware, async (c) => {
     }
 
     // Initialize services
-    const rateLimiter = new OAuthRateLimiter(c.env.CUTTY_DB);
+    const rateLimiter = new OAuthRateLimiter(c.env.DB);
     const securityMiddleware = new OAuthSecurityMiddleware(rateLimiter);
     
     // Apply security checks
@@ -276,11 +276,11 @@ googleOAuth.post('/link', authMiddleware, async (c) => {
         redirectUri: c.env.GOOGLE_REDIRECT_URI,
       },
       c.env.JWT_SECRET,
-      c.env.CUTTY_DB
+      c.env.DB
     );
 
     // Check if user already has Google account linked
-    const existingUser = await c.env.CUTTY_DB
+    const existingUser = await c.env.DB
       .prepare('SELECT google_id FROM users WHERE id = ?')
       .bind(user.id)
       .first();
@@ -340,7 +340,7 @@ googleOAuth.delete('/unlink', authMiddleware, async (c) => {
     }
 
     // Check if user has Google account linked
-    const currentUser = await c.env.CUTTY_DB
+    const currentUser = await c.env.DB
       .prepare('SELECT google_id, provider, password_hash FROM users WHERE id = ?')
       .bind(user.id)
       .first();
@@ -363,7 +363,7 @@ googleOAuth.delete('/unlink', authMiddleware, async (c) => {
     }
 
     // Unlink Google account
-    await c.env.CUTTY_DB
+    await c.env.DB
       .prepare(`
         UPDATE users 
         SET google_id = NULL, provider = 'email', provider_email = NULL,
@@ -374,7 +374,7 @@ googleOAuth.delete('/unlink', authMiddleware, async (c) => {
       .run();
 
     // Log security event
-    await c.env.CUTTY_DB
+    await c.env.DB
       .prepare(`
         INSERT INTO oauth_security_events (event_type, severity, user_id, details, created_at)
         VALUES ('google_account_unlinked', 'info', ?, ?, CURRENT_TIMESTAMP)
@@ -414,7 +414,7 @@ googleOAuth.get('/status', authMiddleware, async (c) => {
     }
 
     // Get user's OAuth status
-    const userData = await c.env.CUTTY_DB
+    const userData = await c.env.DB
       .prepare(`
         SELECT google_id, provider, provider_email, display_name, 
                profile_picture_url, last_google_sync
@@ -460,14 +460,14 @@ googleOAuth.get('/analytics', authMiddleware, async (c) => {
     }
 
     // Initialize rate limiter for analytics
-    const rateLimiter = new OAuthRateLimiter(c.env.CUTTY_DB);
+    const rateLimiter = new OAuthRateLimiter(c.env.DB);
     const analytics = await rateLimiter.getRateLimitAnalytics(24); // Last 24 hours
 
     // Get OAuth user statistics
     const [googleUsers, totalUsers, recentSignups] = await Promise.all([
-      c.env.CUTTY_DB.prepare('SELECT COUNT(*) as count FROM users WHERE google_id IS NOT NULL').first(),
-      c.env.CUTTY_DB.prepare('SELECT COUNT(*) as count FROM users').first(),
-      c.env.CUTTY_DB.prepare(`
+      c.env.DB.prepare('SELECT COUNT(*) as count FROM users WHERE google_id IS NOT NULL').first(),
+      c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first(),
+      c.env.DB.prepare(`
         SELECT COUNT(*) as count FROM users 
         WHERE google_id IS NOT NULL AND created_at > datetime('now', '-24 hours')
       `).first(),

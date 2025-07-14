@@ -59,9 +59,8 @@ http://localhost:3000  (for development)
 
 **Authorized Redirect URIs**:
 ```
-https://cutty.emilycogsdill.com/api/v1/auth/google/callback
-https://list-cutter.emilycogsdill.com/api/v1/auth/google/callback
-http://localhost:8787/api/v1/auth/google/callback  (for development)
+https://cutty.emilycogsdill.com/api/v1/auth/google/callback          (production)
+http://localhost:8787/api/v1/auth/google/callback                   (development)
 ```
 
 ### Step 3: Download Credentials
@@ -95,12 +94,6 @@ wrangler secret put GOOGLE_CLIENT_ID --env production
 wrangler secret put GOOGLE_CLIENT_SECRET --env production
 wrangler secret put GOOGLE_REDIRECT_URI --env production
 # Example: https://cutty.emilycogsdill.com/api/v1/auth/google/callback
-
-# Staging secrets  
-wrangler secret put GOOGLE_CLIENT_ID --env staging
-wrangler secret put GOOGLE_CLIENT_SECRET --env staging
-wrangler secret put GOOGLE_REDIRECT_URI --env staging
-# Example: https://staging-cutty.emilycogsdill.com/api/v1/auth/google/callback
 ```
 
 ## Security Configuration Requirements

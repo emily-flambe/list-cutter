@@ -13,7 +13,7 @@ Comprehensive configuration for the Cutty (List Cutter) application - a Django t
 ### 🏗️ Architecture Documentation
 - [System Overview](.claude/architecture/overview.md) - High-level architecture and tech stack
 - [Migration Strategy](.claude/architecture/migration.md) - Django to Workers migration plan
-- [Environment Configuration](.claude/architecture/environments.md) - Dev/staging/prod setup
+- [Environment Configuration](.claude/architecture/environments.md) - Development/production setup
 
 ### 🔧 Specialized Workflows
 - [Security Procedures](.claude/workflows/security.md) - Authentication, authorization, threat detection
@@ -161,7 +161,7 @@ import GoogleSignInButton from './components/GoogleSignInButton';
 - [ ] Google Cloud Console OAuth app configured with correct redirect URIs
 - [ ] All required Wrangler secrets configured for production environment
 - [ ] OAuth database migration applied to production database
-- [ ] OAuth endpoints tested end-to-end in staging environment
+- [ ] OAuth endpoints tested end-to-end in production environment
 - [ ] Security monitoring configured for OAuth events
 - [ ] Rate limiting thresholds appropriate for production traffic
 
@@ -191,8 +191,8 @@ cd cloudflare/workers && npm test
 # Build and validate (automated pre-commit, manual for deployment)
 npm run build && npx wrangler versions upload --dry-run
 
-# Deploy to staging
-wrangler deploy --env=staging
+# Deploy to production
+wrangler deploy --env=production
 
 # Deploy cron triggers (priority triggers)
 wrangler triggers deploy --cron "*/5 * * * *"  # Metrics & alerts every 5 min
@@ -209,8 +209,11 @@ wrangler secret put GOOGLE_CLIENT_ID
 wrangler secret put GOOGLE_CLIENT_SECRET  
 wrangler secret put GOOGLE_REDIRECT_URI
 
-# OAuth Database Migration
-cd cloudflare/workers && wrangler d1 execute CUTTY_DB --file=migrations/0009_google_oauth_support.sql
+# OAuth Database Migration (Development)
+cd cloudflare/workers && wrangler d1 execute cutty-dev --file=migrations/0009_google_oauth_support.sql
+
+# OAuth Database Migration (Production)  
+cd cloudflare/workers && wrangler d1 execute cutty-prod --file=migrations/0009_google_oauth_support.sql
 ```
 
 ## Automated Pre-Commit Validation

@@ -112,7 +112,7 @@ OAuthDevelopmentCommands: &OAuthDevelopmentCommands
     
     database_migration:
       - "cd cloudflare/workers"
-      - "wrangler d1 execute CUTTY_DB --file=migrations/0009_google_oauth_support.sql"
+      - "wrangler d1 execute cutty-dev --file=migrations/0009_google_oauth_support.sql"
     
     dev_vars_setup:
       - "echo 'GOOGLE_CLIENT_ID=your_dev_client_id' >> .dev.vars"
@@ -153,11 +153,11 @@ OAuthDevelopmentCommands: &OAuthDevelopmentCommands
     
     security_events:
       - "# Check oauth_security_events table for logged events"
-      - "wrangler d1 execute CUTTY_DB --command 'SELECT * FROM oauth_security_events ORDER BY created_at DESC LIMIT 10'"
+      - "wrangler d1 execute cutty-dev --command 'SELECT * FROM oauth_security_events ORDER BY created_at DESC LIMIT 10'"
     
     rate_limit_status:
       - "# Check oauth_rate_limits table for current limits"
-      - "wrangler d1 execute CUTTY_DB --command 'SELECT ip_address, COUNT(*) as count FROM oauth_rate_limits WHERE created_at > datetime(\"now\", \"-15 minutes\") GROUP BY ip_address'"
+      - "wrangler d1 execute cutty-dev --command 'SELECT ip_address, COUNT(*) as count FROM oauth_rate_limits WHERE created_at > datetime(\"now\", \"-15 minutes\") GROUP BY ip_address'"
 
 OAuthProductionCommands: &OAuthProductionCommands
   deployment_preparation:
@@ -167,7 +167,7 @@ OAuthProductionCommands: &OAuthProductionCommands
   
   database_migration_production:
     - "# Apply OAuth migration to production database"
-    - "wrangler d1 execute CUTTY_DB --env production --file=migrations/0009_google_oauth_support.sql"
+    - "wrangler d1 execute cutty-prod --file=migrations/0009_google_oauth_support.sql"
   
   oauth_endpoint_validation:
     - "# Test OAuth initiation in production"
@@ -217,10 +217,10 @@ OAuthTroubleshooting: &OAuthTroubleshooting
     
     database_oauth_data:
       - "# Check OAuth users"
-      - "wrangler d1 execute CUTTY_DB --command 'SELECT id, username, google_id, provider FROM users WHERE google_id IS NOT NULL'"
-      - "# Check recent OAuth events"
-      - "wrangler d1 execute CUTTY_DB --command 'SELECT * FROM oauth_security_events WHERE created_at > datetime(\"now\", \"-1 hour\") ORDER BY created_at DESC'"
+      - "wrangler d1 execute cutty-dev --command 'SELECT id, username, google_id, provider FROM users WHERE google_id IS NOT NULL'"
+      - "# Check recent OAuth events"  
+      - "wrangler d1 execute cutty-dev --command 'SELECT * FROM oauth_security_events WHERE created_at > datetime(\"now\", \"-1 hour\") ORDER BY created_at DESC'"
     
     rate_limit_analysis:
       - "# Analyze rate limiting patterns"
-      - "wrangler d1 execute CUTTY_DB --command 'SELECT ip_address, event_type, COUNT(*) as count FROM oauth_rate_limits WHERE created_at > datetime(\"now\", \"-1 hour\") GROUP BY ip_address, event_type ORDER BY count DESC'"
+      - "wrangler d1 execute cutty-dev --command 'SELECT ip_address, event_type, COUNT(*) as count FROM oauth_rate_limits WHERE created_at > datetime(\"now\", \"-1 hour\") GROUP BY ip_address, event_type ORDER BY count DESC'"

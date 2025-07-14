@@ -252,7 +252,7 @@ GoogleOAuthImplementation: &GoogleOAuthImplementation
       - "Configure production OAuth secrets via wrangler secret commands"
       - "Update Google Cloud Console with production redirect URIs"
       - "Apply OAuth database migration to production database"
-      - "Verify OAuth endpoints work end-to-end in staging environment"
+      - "Verify OAuth endpoints work end-to-end in production environment"
       - "Monitor OAuth security events and rate limiting analytics"
   
   lessons_learned:
