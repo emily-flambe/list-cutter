@@ -17,14 +17,12 @@ const LoadPersonRecords = () => {
   const [columns, setColumns] = useState([]);
   const [selectedColumns, setSelectedColumns] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
-  const token = useContext(AuthContext);
+  const { token } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchSavedFiles = async () => {
       try {
-        const response = await api.get('/api/cutty/list_saved_files/', {
-          headers: { Authorization: `Bearer ${token.token}` }
-        });
+        const response = await api.get('/api/v1/files/list');
         setSavedFiles(response.data.files);
       } catch (error) {
         console.error("Error fetching saved files:", error);
@@ -42,8 +40,7 @@ const LoadPersonRecords = () => {
     if (selectedFileID) {
       try {
         const response = await api.get(
-          `/api/cutty/fetch_saved_file/${encodeURIComponent(selectedFileID)}`,
-          { headers: { Authorization: `Bearer ${token.token}` } }
+          `/api/v1/files/download/${encodeURIComponent(selectedFileID)}`
         );
         setColumns(response.data.columns);
         setErrorMessage("");

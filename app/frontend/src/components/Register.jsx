@@ -63,11 +63,41 @@ const Register = () => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.username || formData.username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters long';
+    }
+    
+    if (!formData.password || formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters long';
+    }
+    
+    if (formData.password !== formData.password2) {
+      newErrors.password2 = 'Passwords do not match';
+    }
+    
+    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email format is invalid';
+    }
+    
+    return newErrors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     setSuccessMessage('');
     setLoading(true);
+
+    // Validate form before sending to API
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setLoading(false);
+      return;
+    }
 
     try {
       console.log('🚀 Attempting registration...');
@@ -82,23 +112,83 @@ const Register = () => {
       console.log('✅ Registration successful:', response.data);
       setSuccessMessage(response.data.detail || response.data.message);
     } catch (error) {
-      console.error("❌ Registration error details:", {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        config: {
-          url: error.config?.url,
-          method: error.config?.method,
-          baseURL: error.config?.baseURL
-        }
-      });
+      console.error("❌ REGISTRATION FAILED - DETAILED ERROR ANALYSIS:");
+      console.error("=".repeat(60));
       
-      if (error.response && error.response.data) {
-        setErrors(error.response.data);
+      // Log error object structure
+      console.error("Error object:", error);
+      console.error("Error message:", error.message);
+      console.error("Error name:", error.name);
+      console.error("Error stack:", error.stack);
+      
+      // Log response details if available
+      if (error.response) {
+        console.error("HTTP Response received:");
+        console.error("- Status:", error.response.status);
+        console.error("- Status Text:", error.response.statusText);
+        console.error("- Headers:", error.response.headers);
+        console.error("- Response Data:", error.response.data);
+        
+        // Try to extract the actual error message
+        const errorData = error.response.data;
+        let actualErrorMessage = "Unknown server error";
+        
+        if (typeof errorData === 'string') {
+          actualErrorMessage = errorData;
+          console.error("- Error type: Plain text response");
+        } else if (errorData && typeof errorData === 'object') {
+          console.error("- Error type: JSON object response");
+          if (errorData.error) {
+            actualErrorMessage = errorData.error;
+            console.error("- Extracted error:", errorData.error);
+          } else if (errorData.message) {
+            actualErrorMessage = errorData.message;
+            console.error("- Extracted message:", errorData.message);
+          } else if (errorData.detail) {
+            actualErrorMessage = errorData.detail;
+            console.error("- Extracted detail:", errorData.detail);
+          } else {
+            console.error("- Error object structure:", Object.keys(errorData));
+          }
+        }
+        
+        console.error("- FINAL ERROR MESSAGE TO SHOW USER:", actualErrorMessage);
+        
+        // Set user-friendly errors based on the actual error message
+        if (actualErrorMessage.toLowerCase().includes('password must be')) {
+          setErrors({ password: actualErrorMessage });
+        } else if (actualErrorMessage.toLowerCase().includes('username')) {
+          setErrors({ username: actualErrorMessage });
+        } else if (actualErrorMessage.toLowerCase().includes('email')) {
+          setErrors({ email: actualErrorMessage });
+        } else {
+          setErrors({ non_field_errors: actualErrorMessage });
+        }
+        
+      } else if (error.request) {
+        console.error("Network request made but no response received:");
+        console.error("- Request:", error.request);
+        console.error("- Possible causes: Network timeout, CORS, server down");
+        setErrors({ non_field_errors: "Network error: No response from server. Check your connection and try again." });
+        
       } else {
-        setErrors({ non_field_errors: `An error occurred: ${error.message}` });
+        console.error("Error in setting up the request:");
+        console.error("- Error message:", error.message);
+        setErrors({ non_field_errors: `Request setup error: ${error.message}` });
       }
+      
+      // Log the final URL that was called
+      if (error.config) {
+        console.error("Request configuration:");
+        console.error("- Method:", error.config.method?.toUpperCase());
+        console.error("- Base URL:", error.config.baseURL);
+        console.error("- URL path:", error.config.url);
+        console.error("- Full URL:", (error.config.baseURL || '') + (error.config.url || ''));
+        console.error("- Headers:", error.config.headers);
+        console.error("- Data sent:", error.config.data);
+      }
+      
+      console.error("=".repeat(60));
     } finally {
       setLoading(false);
     }
@@ -250,8 +340,22 @@ const Register = () => {
           helperText={errors.password2}
         />
 
+<<<<<<< HEAD
         <Button variant="contained" type="submit" disabled={loading} sx={{ mt: 1 }}>
           {loading ? 'Creating Account...' : 'Create Account with Email'}
+=======
+        {errors.non_field_errors && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            <strong>Registration Failed:</strong><br />
+            {errors.non_field_errors}
+            <br /><br />
+            <small>Check the browser console for detailed technical information.</small>
+          </Alert>
+        )}
+
+        <Button variant="contained" type="submit" disabled={loading}>
+          {loading ? 'Registering...' : 'Register'}
+>>>>>>> origin/main
         </Button>
       </Box>
       

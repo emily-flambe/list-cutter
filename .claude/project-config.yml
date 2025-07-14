@@ -35,15 +35,47 @@ WranglerCommands: &WranglerCommands
     - "wrangler r2 bucket create cutty-files-dev"
     - "wrangler r2 bucket cors put cutty-files-dev --file cors.json"
   
-  pages_deployment:
-    - "wrangler pages deploy dist --project-name cutty-frontend"
+  deployment_configuration:
+    workers:
+      development:
+        name: "cutty-dev"
+        domain: "cutty-dev.emilycogsdill.com"
+        config_file: "wrangler.toml"
+        environment: "development"
+        deploy_command: "npm run deploy:dev"
+        deploy_command_alt: "wrangler deploy"
+      
+      production:
+        name: "cutty"
+        domain: "cutty.emilycogsdill.com"
+        config_file: "wrangler.prod.toml"
+        environment: "production"
+        deploy_command: "npm run deploy:production"
+        deploy_command_alt: "wrangler deploy --config wrangler.prod.toml"
+    
+    build_sequence:
+      full_build_from_workers_dir: |
+        # Build frontend assets first (required for worker static serving)
+        cd ../../app/frontend && npm run build && cd ../../cloudflare/workers
+        # Build and deploy worker
+        npm run build && npm run deploy:production
+      
+      development_only: "npm run deploy:dev"
+      production_only: "npm run deploy:production"
+    
+    setup_requirements:
+      - "Rename workers in Cloudflare dashboard: 'cutty' → 'cutty-dev', 'cutty-production' → 'cutty'"
+      - "Set secrets for both workers: JWT_SECRET, API_KEY_SALT"
+      - "Frontend must be built before worker deployment (creates required dist/ assets)"
 
 ProjectStructure: &ProjectStructure
   main_application: "Django backend with React frontend"
-  target_deployment: "Single Cloudflare Worker 'cutty' with D1 + R2"
+  target_deployment: "Separate Cloudflare Workers for dev/prod with D1 + R2"
   migration_tools: "Comprehensive Python scripts for file migration"
-  identity_preference: "Use single worker 'cutty' for unified architecture"
-  architecture_note: "Consolidated from multiple workers (cutty-api, cutty-workers, cutty-frontend) to single worker 'cutty'"
+  deployment_configs:
+    development: "wrangler.toml - cutty-dev worker"
+    production: "wrangler.prod.toml - cutty worker"
+  architecture_note: "Clean separation: dev worker 'cutty-dev' and production worker 'cutty' with separate configurations"
 
 CommitStandards: &CommitStandards
   frequency: "Make frequent, small commits rather than large monolithic changes"
