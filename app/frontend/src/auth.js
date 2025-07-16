@@ -19,6 +19,9 @@ export const getNewToken = async () => {
 };
 
 export const updateAuthToken = (newToken) => {
-  localStorage.setItem('authToken', newToken);
+  // Use consistent 'token' key for OAuth compatibility
+  localStorage.setItem('token', newToken);
+  // Also remove legacy authToken to prevent conflicts
+  localStorage.removeItem('authToken');
   // If you need to update your React context, consider adding a callback or using an event system.
 };

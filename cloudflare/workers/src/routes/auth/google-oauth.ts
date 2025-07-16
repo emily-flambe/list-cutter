@@ -18,7 +18,7 @@ import { Hono } from 'hono';
 import { GoogleOAuthService } from '../../services/auth/google-oauth-service';
 import { OAuthRateLimiter } from '../../services/auth/oauth-rate-limiter';
 import { OAuthSecurityMiddleware } from '../../middleware/oauth-security';
-import { generateJWT } from '../../services/auth/jwt';
+import { generateJWT, generateTokenPair } from '../../services/auth/jwt';
 import { requireAuth } from '../../middleware/auth';
 
 // Environment interface
@@ -166,6 +166,9 @@ googleOAuth.get('/callback', async (c) => {
     const result = await oauthService.handleCallback(code, state, ip_address, user_agent);
 
     if (!result.success) {
+      // Log the specific error for debugging
+      console.error('OAuth callback failed:', result.error);
+      
       await securityMiddleware.recordOAuthEvent(c, 'failure', {
         error: result.error,
       });
@@ -177,15 +180,9 @@ googleOAuth.get('/callback', async (c) => {
       }, 400);
     }
 
-    // Generate JWT token for authenticated user
-    const jwtToken = await generateJWT(
-      {
-        user_id: result.user!.id.toString(),
-        username: result.user!.username,
-        email: result.user!.email,
-      },
-      c.env.JWT_SECRET
-    );
+    // Generate JWT tokens (both access and refresh) for authenticated user
+    const tokenPair = await generateTokenPair(result.user!, c.env);
+    const jwtToken = tokenPair.access_token;
 
     // Record successful OAuth
     await securityMiddleware.recordOAuthEvent(c, 'success', {
@@ -206,6 +203,7 @@ googleOAuth.get('/callback', async (c) => {
         provider: 'google',
       },
       token: jwtToken,
+      refresh_token: tokenPair.refresh_token,
       redirect_url: result.redirect || '/dashboard',
       message: 'Google OAuth authentication successful',
     };
@@ -216,6 +214,7 @@ googleOAuth.get('/callback', async (c) => {
       const redirectUrl = new URL(result.redirect || '/dashboard', c.req.url);
       redirectUrl.searchParams.set('oauth_success', 'true');
       redirectUrl.searchParams.set('token', jwtToken);
+      redirectUrl.searchParams.set('refresh_token', tokenPair.refresh_token);
       redirectUrl.searchParams.set('user_id', result.user!.id.toString());
       
       return c.redirect(redirectUrl.toString());
