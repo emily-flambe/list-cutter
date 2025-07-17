@@ -73,8 +73,8 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: cloudflare/workers
-          command: deploy --env dev
-          wranglerVersion: '3.57.1'
+          command: deploy
+          wranglerVersion: '4.24.3'
       
       - name: Update deployment status - Success
         if: success()

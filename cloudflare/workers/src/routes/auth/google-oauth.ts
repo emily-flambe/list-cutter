@@ -28,6 +28,7 @@ interface Env {
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_REDIRECT_URI: string;
   JWT_SECRET: string;
+  FRONTEND_URL?: string;
 }
 
 const googleOAuth = new Hono<{ Bindings: Env }>();
@@ -211,7 +212,9 @@ googleOAuth.get('/callback', async (c) => {
     // For browser requests, redirect with token in URL params (will be handled by frontend)
     const acceptHeader = c.req.header('Accept') || '';
     if (acceptHeader.includes('text/html')) {
-      const redirectUrl = new URL(result.redirect || '/dashboard', c.req.url);
+      // Use FRONTEND_URL for development, fallback to request URL for production
+      const baseUrl = c.env.FRONTEND_URL || c.req.url;
+      const redirectUrl = new URL(result.redirect || '/dashboard', baseUrl);
       redirectUrl.searchParams.set('oauth_success', 'true');
       redirectUrl.searchParams.set('token', jwtToken);
       redirectUrl.searchParams.set('refresh_token', tokenPair.refresh_token);

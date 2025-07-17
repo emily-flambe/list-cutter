@@ -1,6 +1,6 @@
 # Cutty Development Makefile
 
-.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build clean test install-deps branch-cleanup
+.PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build clean test install-deps branch-cleanup deploy-dev
 
 dev: setup kill-ports
 	@echo "🚀 Starting both backend and frontend servers..."
@@ -311,3 +311,10 @@ branch-cleanup:
 		fi; \
 	done; \
 	echo "✅ Branch and worktree cleanup completed!"
+
+# Deploy to development environment
+deploy-dev:
+	@echo "🚀 Deploying to cutty-dev worker..."
+	@cd cloudflare/workers && npm run deploy
+	@echo "✅ Deployment to cutty-dev completed!"
+	@echo "🌐 Access at: https://cutty-dev.emilycogsdill.com"

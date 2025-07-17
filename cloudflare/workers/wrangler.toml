@@ -22,6 +22,7 @@ minify = true
 [assets]
 directory = "../../app/frontend/dist"
 binding = "ASSETS"
+bucket = "./assets"
 
 # Enable Wrangler logs (v3.88.0+)
 [observability.logs]
@@ -48,6 +49,7 @@ watch_dir = "src"
 ENVIRONMENT = "development"
 API_VERSION = "v1"
 CORS_ORIGIN = "https://cutty-dev.emilycogsdill.com"
+FRONTEND_URL = "http://localhost:5173"
 MAX_FILE_SIZE = "52428800" # 50MB in bytes
 JWT_ISSUER = "cutty"
 JWT_AUDIENCE = "cutty"
