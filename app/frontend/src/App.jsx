@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 import Layout from './components/Layout';
 import Home from './components/Home';
-import Dashboard from './components/Dashboard';
 import CSVCutter from './components/CSVCutter';
 import CSVCutterPlus from './components/CSVCutterPlus';
 import FileLineage from './components/FileLineage';
@@ -47,7 +46,6 @@ function App() {
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/csv_cutter" element={<CSVCutter />} />
             <Route path="/csv_cutter_plus" element={<CSVCutterPlus />} />
             <Route path="/faq" element={<FAQ />} />

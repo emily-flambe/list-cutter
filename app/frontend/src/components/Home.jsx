@@ -2,12 +2,35 @@
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
+import Container from '@mui/material/Container';
 import importantImage from '../assets/important.jpg';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
+import { GoogleOAuthCallback } from './GoogleSignInButton';
 
 const Home = () => {
   const { token, user, setUser } = useContext(AuthContext);
+  const urlParams = new URLSearchParams(window.location.search);
+  const isOAuthCallback = urlParams.has('oauth_success') || urlParams.has('token');
+
+  // Handle OAuth callback if parameters are present
+  if (isOAuthCallback) {
+    return (
+      <Container maxWidth="sm" sx={{ mt: 8 }}>
+        <GoogleOAuthCallback 
+          onSuccess={() => {
+            // Clear URL parameters and stay on home page
+            window.history.replaceState({}, document.title, '/');
+          }}
+          onError={(error) => {
+            console.error('OAuth error:', error);
+            alert(`Sign-in failed: ${error.message}`);
+            window.location.href = '/login';
+          }}
+        />
+      </Container>
+    );
+  }
 
   return (
     <Box sx={{ 

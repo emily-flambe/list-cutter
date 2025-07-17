@@ -61,7 +61,7 @@ googleOAuth.get('/', async (c) => {
     );
 
     // Extract parameters
-    const returnUrl = c.req.query('return_url') || '/dashboard';
+    const returnUrl = c.req.query('return_url') || '/';
     const userId = c.req.query('user_id') ? Number(c.req.query('user_id')) : undefined;
 
     // Initiate OAuth flow
@@ -205,7 +205,7 @@ googleOAuth.get('/callback', async (c) => {
       },
       token: jwtToken,
       refresh_token: tokenPair.refresh_token,
-      redirect_url: result.redirect || '/dashboard',
+      redirect_url: result.redirect || '/',
       message: 'Google OAuth authentication successful',
     };
 
@@ -214,7 +214,7 @@ googleOAuth.get('/callback', async (c) => {
     if (acceptHeader.includes('text/html')) {
       // Use FRONTEND_URL for development, fallback to request URL for production
       const baseUrl = c.env.FRONTEND_URL || c.req.url;
-      const redirectUrl = new URL(result.redirect || '/dashboard', baseUrl);
+      const redirectUrl = new URL(result.redirect || '/', baseUrl);
       redirectUrl.searchParams.set('oauth_success', 'true');
       redirectUrl.searchParams.set('token', jwtToken);
       redirectUrl.searchParams.set('refresh_token', tokenPair.refresh_token);
@@ -296,7 +296,7 @@ googleOAuth.post('/link', requireAuth(), async (c) => {
     }
 
     // Initiate OAuth flow with user ID for linking
-    const returnUrl = '/dashboard?linked=true';
+    const returnUrl = '/?linked=true';
     const { authUrl, state } = await oauthService.initiateOAuth(returnUrl, user.id);
 
     // Record linking attempt

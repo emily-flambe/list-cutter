@@ -19,7 +19,7 @@ import { useAuth } from '../context/AuthContext';
 
 const GoogleSignInButton = ({ 
   mode = 'login', // 'login', 'signup', 'link'
-  returnUrl = '/dashboard',
+  returnUrl = '/',
   onSuccess,
   onError,
   disabled = false,

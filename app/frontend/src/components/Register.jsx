@@ -196,7 +196,7 @@ const Register = () => {
 
   const handleOAuthSuccess = (data) => {
     // OAuth callback will handle token storage and redirect
-    navigate('/dashboard');
+    navigate('/');
   };
 
   const handleOAuthError = (error) => {

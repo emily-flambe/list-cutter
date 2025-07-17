@@ -75,7 +75,7 @@ export class GoogleOAuthService {
   }> {
     // Create secure state token
     const state = await this.stateManager.createState({
-      returnUrl: returnUrl || '/dashboard',
+      returnUrl: returnUrl || '/',
       userId,
       provider: 'google',
     });
