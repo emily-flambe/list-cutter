@@ -1,9 +1,8 @@
-name: Cloudflare Workers CI
+name: Cloudflare Workers CI & Dev Deploy
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
+    types: [opened, synchronize, reopened]
     branches: [ main ]
     paths:
       - 'cloudflare/workers/**'
@@ -41,3 +40,95 @@ jobs:
 
       - name: Run basic tests
         run: npm test
+
+  deploy-dev:
+    name: Deploy to cutty-dev
+    needs: test
+    runs-on: ubuntu-latest
+    if: |
+      success() && 
+      github.event_name == 'pull_request' && 
+      contains(github.event.pull_request.labels.*.name, 'deploy-dev')
+    
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies - Frontend
+        working-directory: app/frontend
+        run: npm ci
+      
+      - name: Build Frontend
+        working-directory: app/frontend
+        run: npm run build
+        env:
+          CI: true
+          NODE_ENV: production
+      
+      - name: Install dependencies - Cloudflare Worker
+        working-directory: cloudflare/workers
+        run: npm ci
+      
+      - name: Create GitHub deployment
+        id: deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.payload.pull_request.head.sha,
+              environment: 'cutty-dev',
+              description: `Deploy PR #${context.payload.pull_request.number} to cutty-dev`,
+              auto_merge: false,
+              required_contexts: []
+            });
+            return deployment.data.id;
+          result-encoding: string
+      
+      - name: Deploy to Cloudflare Workers (cutty-dev)
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare/workers
+          command: deploy
+          wranglerVersion: '4.24.3'
+      
+      - name: Update deployment status - Success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: 'success',
+              environment_url: 'https://cutty-dev.emilycogsdill.com',
+              description: 'Deployment to cutty-dev succeeded'
+            });
+      
+      - name: Update deployment status - Failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: 'failure',
+              description: 'Deployment to cutty-dev failed'
+            });

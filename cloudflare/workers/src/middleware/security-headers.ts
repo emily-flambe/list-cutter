@@ -167,12 +167,13 @@ export class SecurityHeadersMiddleware {
     // Content Security Policy
     let csp = config.contentSecurityPolicy;
     if (securityContext.nonce) {
-      csp = csp.replace(/'unsafe-inline'/g, `'nonce-${securityContext.nonce}'`);
+      // Only replace 'unsafe-inline' for scripts, keep it for styles (React needs it)
+      csp = csp.replace(/script-src ([^;]*)'unsafe-inline'/, `script-src $1'nonce-${securityContext.nonce}'`);
     }
     
     // Add reporting endpoint if enabled
     if (this.enableReporting) {
-      csp += `; report-uri /api/security/csp-report`;
+      csp += `; report-uri /api/v1/security/csp-report`;
     }
     
     headers.set('Content-Security-Policy', csp);

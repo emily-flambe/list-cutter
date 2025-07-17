@@ -19,7 +19,7 @@ import { useAuth } from '../context/AuthContext';
 
 const GoogleSignInButton = ({ 
   mode = 'login', // 'login', 'signup', 'link'
-  returnUrl = '/dashboard',
+  returnUrl = '/',
   onSuccess,
   onError,
   disabled = false,
@@ -204,20 +204,53 @@ export const GoogleOAuthCallback = ({ onSuccess, onError }) => {
 
   React.useEffect(() => {
     const handleOAuthCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      // Only process if we have OAuth parameters
+      if (!urlParams.has('oauth_success') && !urlParams.has('error')) {
+        setProcessing(false); // Not an OAuth callback
+        return; // No OAuth parameters, nothing to process
+      }
+      
       try {
-        const urlParams = new URLSearchParams(window.location.search);
         const isSuccess = urlParams.get('oauth_success') === 'true';
         const token = urlParams.get('token');
+        const refreshToken = urlParams.get('refresh_token');
         const userId = urlParams.get('user_id');
         const error = urlParams.get('error');
+        
+        // Debug logging
+        console.log('[OAuth Debug] URL:', window.location.href);
+        console.log('[OAuth Debug] Params:', {
+          isSuccess,
+          hasToken: !!token,
+          hasUserId: !!userId,
+          hasRefreshToken: !!refreshToken,
+          error
+        });
 
         if (error) {
           throw new Error(decodeURIComponent(error));
         }
 
         if (isSuccess && token && userId) {
-          // Store the token and update auth context
+          // IMPORTANT: Clear all old tokens before setting new OAuth token
+          // This prevents conflicts with old JWT formats
+          const authKeys = ['token', 'refreshToken', 'refresh_token', 'access_token', 'user'];
+          authKeys.forEach(key => {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+          });
+          console.log('[OAuth] Cleared old authentication tokens');
+          
+          // Store the new OAuth tokens
           localStorage.setItem('token', token);
+          if (refreshToken) {
+            localStorage.setItem('refreshToken', refreshToken);
+            console.log('[OAuth] Set new authentication and refresh tokens');
+          } else {
+            console.log('[OAuth] Set new authentication token (no refresh token received)');
+          }
           
           // Fetch user details and update auth context
           await login(token);

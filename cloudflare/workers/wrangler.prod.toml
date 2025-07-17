@@ -11,6 +11,7 @@ workers_dev = true
 [assets]
 directory = "../../app/frontend/dist"
 binding = "ASSETS"
+bucket = "./assets"
 
 # Enable Wrangler logs (v3.88.0+)
 [observability.logs]

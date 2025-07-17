@@ -75,7 +75,7 @@ export class GoogleOAuthService {
   }> {
     // Create secure state token
     const state = await this.stateManager.createState({
-      returnUrl: returnUrl || '/dashboard',
+      returnUrl: returnUrl || '/',
       userId,
       provider: 'google',
     });
@@ -105,6 +105,13 @@ export class GoogleOAuthService {
     user_agent?: string
   ): Promise<OAuthResult> {
     try {
+      console.log('[OAuth Debug] Starting callback processing', {
+        codeLength: code?.length,
+        stateLength: state?.length,
+        ip_address,
+        user_agent
+      });
+
       // Log callback attempt
       await this.logSecurityEvent('oauth_callback', 'info', {
         ip_address,
@@ -112,8 +119,10 @@ export class GoogleOAuthService {
       });
 
       // Validate authorization code format
+      console.log('[OAuth Debug] Validating authorization code');
       const codeValidation = this.validateAuthorizationCode(code);
       if (!codeValidation.valid) {
+        console.error('[OAuth Debug] Code validation failed:', codeValidation.error);
         await this.logSecurityEvent('oauth_invalid_code', 'warning', {
           ip_address,
           user_agent,
@@ -123,8 +132,10 @@ export class GoogleOAuthService {
       }
 
       // Validate and decode state token
+      console.log('[OAuth Debug] Validating state token');
       const stateValidation = await this.stateManager.validateState(state);
       if (!stateValidation.valid || !stateValidation.state) {
+        console.error('[OAuth Debug] State validation failed:', stateValidation.error);
         await this.logSecurityEvent('oauth_invalid_state', 'warning', {
           ip_address,
           user_agent,
@@ -132,10 +143,13 @@ export class GoogleOAuthService {
         });
         return { success: false, error: 'Invalid state parameter' };
       }
+      console.log('[OAuth Debug] State validated:', { userId: stateValidation.state.userId, returnUrl: stateValidation.state.returnUrl });
 
       // Verify state token was issued by us (database check)
+      console.log('[OAuth Debug] Verifying state in database');
       const stateExists = await this.verifyOAuthState(state);
       if (!stateExists) {
+        console.error('[OAuth Debug] State not found in database');
         await this.logSecurityEvent('oauth_state_not_found', 'warning', {
           ip_address,
           user_agent,
@@ -144,8 +158,10 @@ export class GoogleOAuthService {
       }
 
       // Exchange authorization code for tokens
+      console.log('[OAuth Debug] Exchanging code for tokens');
       const tokenResponse = await this.exchangeCodeForTokens(code);
       if (!tokenResponse.success || !tokenResponse.tokens) {
+        console.error('[OAuth Debug] Token exchange failed:', tokenResponse.error);
         await this.logSecurityEvent('oauth_token_exchange_failed', 'error', {
           ip_address,
           user_agent,
@@ -153,19 +169,25 @@ export class GoogleOAuthService {
         });
         return { success: false, error: 'Failed to exchange code for tokens' };
       }
+      console.log('[OAuth Debug] Token exchange successful');
 
       // Verify and decode ID token
+      console.log('[OAuth Debug] Verifying ID token');
       const userInfo = await this.verifyIdToken(tokenResponse.tokens.id_token);
       if (!userInfo) {
+        console.error('[OAuth Debug] ID token verification failed');
         await this.logSecurityEvent('oauth_id_token_invalid', 'error', {
           ip_address,
           user_agent,
         });
         return { success: false, error: 'Invalid ID token' };
       }
+      console.log('[OAuth Debug] ID token verified:', { email: userInfo.email, sub: userInfo.sub });
 
       // Find or create user account
+      console.log('[OAuth Debug] Finding or creating user');
       const user = await this.findOrCreateUser(userInfo, stateValidation.state.userId);
+      console.log('[OAuth Debug] User processed:', { id: user.id, username: user.username });
 
       // Mark state as used
       await this.markOAuthStateUsed(state);
@@ -184,6 +206,9 @@ export class GoogleOAuthService {
       };
 
     } catch (error) {
+      console.error('[OAuth Debug] Callback error:', error);
+      console.error('[OAuth Debug] Error stack:', error instanceof Error ? error.stack : 'No stack');
+      
       await this.logSecurityEvent('oauth_callback_error', 'error', {
         ip_address,
         user_agent,
@@ -226,7 +251,7 @@ export class GoogleOAuthService {
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
       response_type: 'code',
-      scope: 'openid email profile',
+      scope: 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
       state,
       access_type: 'offline',
       prompt: 'consent',
@@ -244,33 +269,77 @@ export class GoogleOAuthService {
     error?: string;
   }> {
     try {
+      const params = {
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: this.config.redirectUri,
+      };
+      
+      console.log('[OAuth Debug] Token exchange params:', {
+        client_id: params.client_id,
+        redirect_uri: params.redirect_uri,
+        code_length: code.length,
+        code_prefix: code.substring(0, 10) + '...',
+      });
+
       const response = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-          client_id: this.config.clientId,
-          client_secret: this.config.clientSecret,
-          code,
-          grant_type: 'authorization_code',
-          redirect_uri: this.config.redirectUri,
-        }),
+        body: new URLSearchParams(params),
       });
+
+      console.log('[OAuth Debug] Token exchange response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        return { success: false, error: `Token exchange failed: ${response.status}` };
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        
+        console.error('[OAuth Debug] Google token exchange failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+          clientId: this.config.clientId,
+          redirectUri: this.config.redirectUri,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+        
+        return { 
+          success: false, 
+          error: `Token exchange failed: ${response.status} - ${errorData.error || errorText} ${errorData.error_description || ''}` 
+        };
       }
 
       const tokens = await response.json();
+      console.log('[OAuth Debug] Token response received:', {
+        has_access_token: !!tokens.access_token,
+        has_id_token: !!tokens.id_token,
+        has_refresh_token: !!tokens.refresh_token,
+        token_type: tokens.token_type,
+        expires_in: tokens.expires_in
+      });
       
       if (!tokens.access_token || !tokens.id_token) {
+        console.error('[OAuth Debug] Missing required tokens:', tokens);
         return { success: false, error: 'Missing required tokens in response' };
       }
 
       return { success: true, tokens };
     } catch (error) {
+      console.error('[OAuth Debug] Token exchange exception:', error);
+      console.error('[OAuth Debug] Exception details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack',
+        name: error instanceof Error ? error.name : 'Unknown'
+      });
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Token exchange error' 
@@ -283,44 +352,35 @@ export class GoogleOAuthService {
    */
   private async verifyIdToken(idToken: string): Promise<GoogleUserInfo | null> {
     try {
-      // Fetch Google's public keys for verification
-      const keysResponse = await fetch('https://www.googleapis.com/oauth2/v3/certs');
-      const keys = await keysResponse.json();
+      // Use Google's tokeninfo endpoint to verify the ID token
+      const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+      
+      if (!response.ok) {
+        console.error('ID token verification failed:', response.status);
+        return null;
+      }
 
-      // Decode and verify the ID token
-      // Note: In production, you'd want more robust key handling
-      // For now, we'll decode without verification as a starting point
-      const [, payload] = idToken.split('.');
-      const decodedPayload = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+      const tokenInfo = await response.json();
+
+      // Verify the token is for our app
+      if (tokenInfo.aud !== this.config.clientId) {
+        console.error('Token audience mismatch');
+        return null;
+      }
 
       // Verify required fields
-      if (!decodedPayload.sub || !decodedPayload.email) {
-        return null;
-      }
-
-      // Verify audience (client ID)
-      if (decodedPayload.aud !== this.config.clientId) {
-        return null;
-      }
-
-      // Verify issuer
-      if (decodedPayload.iss !== 'https://accounts.google.com') {
-        return null;
-      }
-
-      // Verify expiration
-      if (decodedPayload.exp * 1000 < Date.now()) {
+      if (!tokenInfo.sub || !tokenInfo.email) {
         return null;
       }
 
       return {
-        sub: decodedPayload.sub,
-        email: decodedPayload.email,
-        email_verified: decodedPayload.email_verified || false,
-        name: decodedPayload.name || '',
-        picture: decodedPayload.picture,
-        given_name: decodedPayload.given_name,
-        family_name: decodedPayload.family_name,
+        sub: tokenInfo.sub,
+        email: tokenInfo.email,
+        email_verified: tokenInfo.email_verified === 'true',
+        name: tokenInfo.name || '',
+        picture: tokenInfo.picture,
+        given_name: tokenInfo.given_name,
+        family_name: tokenInfo.family_name,
       };
     } catch (error) {
       console.error('ID token verification failed:', error);
