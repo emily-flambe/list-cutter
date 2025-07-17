@@ -204,13 +204,30 @@ export const GoogleOAuthCallback = ({ onSuccess, onError }) => {
 
   React.useEffect(() => {
     const handleOAuthCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      // Only process if we have OAuth parameters
+      if (!urlParams.has('oauth_success') && !urlParams.has('error')) {
+        setProcessing(false); // Not an OAuth callback
+        return; // No OAuth parameters, nothing to process
+      }
+      
       try {
-        const urlParams = new URLSearchParams(window.location.search);
         const isSuccess = urlParams.get('oauth_success') === 'true';
         const token = urlParams.get('token');
         const refreshToken = urlParams.get('refresh_token');
         const userId = urlParams.get('user_id');
         const error = urlParams.get('error');
+        
+        // Debug logging
+        console.log('[OAuth Debug] URL:', window.location.href);
+        console.log('[OAuth Debug] Params:', {
+          isSuccess,
+          hasToken: !!token,
+          hasUserId: !!userId,
+          hasRefreshToken: !!refreshToken,
+          error
+        });
 
         if (error) {
           throw new Error(decodeURIComponent(error));
