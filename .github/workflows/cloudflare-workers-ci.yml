@@ -135,23 +135,3 @@ jobs:
               state: 'failure',
               description: 'Deployment to cutty-dev failed'
             });
-      
-      - name: Comment on PR
-        if: success()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const comment = `✅ **Deployment to cutty-dev successful!**
-            
-            🌐 **Environment URL**: https://cutty-dev.emilycogsdill.com
-            📝 **Commit**: \`${context.payload.pull_request.head.sha.substring(0, 7)}\`
-            🏷️ **Triggered by**: \`deploy-dev\` label
-            
-            The changes in this PR are now live on the development environment.`;
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: comment
-            });
