@@ -1,0 +1,39 @@
+## Quick CSP Fix for Material-UI
+
+The CSP errors are happening because the security middleware is generating a nonce and replacing 'unsafe-inline' in the style-src directive. Material-UI requires 'unsafe-inline' for its CSS-in-JS to work.
+
+### Temporary Solutions:
+
+1. **Quick Fix - Disable nonce generation for now:**
+   Edit your app initialization to disable nonce generation:
+   ```typescript
+   // In your security headers middleware initialization
+   enableNonceGeneration: false
+   ```
+
+2. **Better Fix - Allow both nonce and unsafe-inline for styles:**
+   Modify the CSP to include both:
+   ```
+   style-src 'self' 'unsafe-inline' 'nonce-{nonce}' https://fonts.googleapis.com
+   ```
+
+3. **Production Fix - Use Material-UI's CSP configuration:**
+   Material-UI can be configured to work with CSP nonces, but it requires additional setup.
+
+### For now, focus on OAuth debugging
+
+The CSP errors won't prevent OAuth from working. They're just visual styling issues. 
+
+To see the OAuth debug logs:
+1. Open browser Developer Tools
+2. Go to Console tab
+3. Try the OAuth flow
+4. Look for messages starting with `[OAuth Debug]`
+
+The debug logs will show:
+- State validation results
+- Token exchange parameters
+- Exact error from Google
+- User creation process
+
+Share those logs to identify the OAuth issue!
