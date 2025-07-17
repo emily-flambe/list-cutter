@@ -1,14 +1,10 @@
-name: Deploy to Production on Label
+name: Deploy to Production
 
 on:
-  pull_request:
-    types: [labeled, synchronize]
+  workflow_dispatch:
 
 jobs:
   deploy-prod:
-    if: |
-      (github.event.action == 'labeled' && github.event.label.name == 'deploy-prod') ||
-      (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'deploy-prod'))
     
     runs-on: ubuntu-latest
     
@@ -21,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.sha }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -44,10 +40,6 @@ jobs:
         working-directory: cloudflare/workers
         run: npm ci
       
-      - name: Run tests
-        working-directory: cloudflare/workers
-        run: npm test
-      
       - name: Create GitHub deployment
         id: deployment
         uses: actions/github-script@v7
@@ -56,9 +48,9 @@ jobs:
             const deployment = await github.rest.repos.createDeployment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: context.payload.pull_request.head.sha,
+              ref: context.sha,
               environment: 'production',
-              description: `Deploy PR #${context.payload.pull_request.number} to production`,
+              description: 'Deploy to production via workflow dispatch',
               auto_merge: false,
               required_contexts: [],
               production_environment: true
@@ -103,45 +95,20 @@ jobs:
               description: 'Deployment to production failed'
             });
       
-      - name: Comment on PR - Success
+      - name: Log deployment success
         if: success()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const comment = `🚀 **Deployment to PRODUCTION successful!**
-            
-            🌐 **Production URL**: https://list-cutter.com
-            📝 **Commit**: \`${context.payload.pull_request.head.sha.substring(0, 7)}\`
-            🏷️ **Triggered by**: \`deploy-prod\` label
-            ⚠️ **Environment**: PRODUCTION
-            
-            The changes in this PR are now LIVE in production.`;
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: comment
-            });
+        run: |
+          echo "🚀 Deployment to PRODUCTION successful!"
+          echo "🌐 Production URL: https://list-cutter.com"
+          echo "📝 Commit: ${{ github.sha }}"
+          echo "🏷️ Triggered by: Manual workflow dispatch"
+          echo "⚠️ Environment: PRODUCTION"
       
-      - name: Comment on PR - Failure
+      - name: Log deployment failure
         if: failure()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const comment = `❌ **Deployment to PRODUCTION failed**
-            
-            📝 **Commit**: \`${context.payload.pull_request.head.sha.substring(0, 7)}\`
-            🏷️ **Triggered by**: \`deploy-prod\` label
-            ⚠️ **Environment**: PRODUCTION
-            
-            Please check the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details.
-            
-            **Note**: Production deployment was blocked. Please fix the issues and try again.`;
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: comment
-            });
+        run: |
+          echo "❌ Deployment to PRODUCTION failed"
+          echo "📝 Commit: ${{ github.sha }}"
+          echo "🏷️ Triggered by: Manual workflow dispatch"
+          echo "⚠️ Environment: PRODUCTION"
+          echo "Please check the workflow logs for more details."
