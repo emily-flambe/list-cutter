@@ -1,11 +1,8 @@
 name: Cloudflare Workers CI & Dev Deploy
 
 on:
-  push:
-    paths:
-      - 'cloudflare/workers/**'
-      - '.github/workflows/cloudflare-workers-ci.yml'
   pull_request:
+    types: [opened, synchronize, reopened]
     branches: [ main ]
     paths:
       - 'cloudflare/workers/**'
