@@ -1,61 +1,13 @@
-name: Deploy to cutty-dev on Label
+name: Deploy to cutty-dev after CI
 
 on:
-  pull_request:
-    types: [labeled, synchronize]
   workflow_run:
     workflows: ["Cloudflare Workers CI"]
     types: [completed]
 
 jobs:
-  check-label:
-    runs-on: ubuntu-latest
-    outputs:
-      should-deploy: ${{ steps.check.outputs.should-deploy }}
-    steps:
-      - name: Check deployment conditions
-        id: check
-        uses: actions/github-script@v7
-        with:
-          script: |
-            // For workflow_run events, check if CI passed and PR has deploy-dev label
-            if (context.eventName === 'workflow_run') {
-              if (context.payload.workflow_run.conclusion !== 'success') {
-                console.log('CI workflow did not succeed');
-                return { 'should-deploy': 'false' };
-              }
-              
-              // Get the PR associated with this workflow run
-              const pr = context.payload.workflow_run.pull_requests[0];
-              if (!pr) {
-                console.log('No PR associated with workflow run');
-                return { 'should-deploy': 'false' };
-              }
-              
-              // Check if PR has deploy-dev label
-              const { data: pullRequest } = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: pr.number
-              });
-              
-              const hasLabel = pullRequest.labels.some(label => label.name === 'deploy-dev');
-              return { 'should-deploy': hasLabel ? 'true' : 'false' };
-            }
-            
-            // For pull_request events, check if label was added or if PR has label
-            if (context.eventName === 'pull_request') {
-              const hasLabel = context.payload.action === 'labeled' && context.payload.label.name === 'deploy-dev' ||
-                               context.payload.action === 'synchronize' && context.payload.pull_request.labels.some(l => l.name === 'deploy-dev');
-              return { 'should-deploy': hasLabel ? 'true' : 'false' };
-            }
-            
-            return { 'should-deploy': 'false' };
-          result-encoding: json
-
   deploy-dev:
-    needs: check-label
-    if: needs.check-label.outputs.should-deploy == 'true'
+    if: github.event.workflow_run.conclusion == 'success'
     
     runs-on: ubuntu-latest
     
@@ -65,22 +17,57 @@ jobs:
       pull-requests: write
     
     steps:
+      - name: Check for deploy-dev label
+        id: check-label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get the PR associated with this workflow run
+            const pr = context.payload.workflow_run.pull_requests[0];
+            if (!pr) {
+              console.log('No PR associated with workflow run');
+              return false;
+            }
+            
+            // Check if PR has deploy-dev label
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            
+            const hasLabel = pullRequest.labels.some(label => label.name === 'deploy-dev');
+            if (!hasLabel) {
+              console.log('PR does not have deploy-dev label, skipping deployment');
+              return false;
+            }
+            
+            // Store PR info for later steps
+            core.setOutput('pr_number', pr.number);
+            core.setOutput('pr_sha', context.payload.workflow_run.head_sha);
+            return true;
+          result-encoding: json
+      
       - name: Checkout code
+        if: steps.check-label.outputs.result == 'true'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ steps.check-label.outputs.pr_sha }}
       
       - name: Setup Node.js
+        if: steps.check-label.outputs.result == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
       
       - name: Install dependencies - Frontend
+        if: steps.check-label.outputs.result == 'true'
         working-directory: app/frontend
         run: npm ci
       
       - name: Build Frontend
+        if: steps.check-label.outputs.result == 'true'
         working-directory: app/frontend
         run: npm run build
         env:
@@ -88,10 +75,12 @@ jobs:
           NODE_ENV: production
       
       - name: Install dependencies - Cloudflare Worker
+        if: steps.check-label.outputs.result == 'true'
         working-directory: cloudflare/workers
         run: npm ci
       
       - name: Create GitHub deployment
+        if: steps.check-label.outputs.result == 'true'
         id: deployment
         uses: actions/github-script@v7
         with:
@@ -99,9 +88,9 @@ jobs:
             const deployment = await github.rest.repos.createDeployment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: context.payload.pull_request.head.sha,
+              ref: '${{ steps.check-label.outputs.pr_sha }}',
               environment: 'cutty-dev',
-              description: `Deploy PR #${context.payload.pull_request.number} to cutty-dev`,
+              description: `Deploy PR #${{ steps.check-label.outputs.pr_number }} to cutty-dev`,
               auto_merge: false,
               required_contexts: []
             });
@@ -109,6 +98,7 @@ jobs:
           result-encoding: string
       
       - name: Deploy to Cloudflare Workers (cutty-dev)
+        if: steps.check-label.outputs.result == 'true'
         id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
@@ -119,7 +109,7 @@ jobs:
           wranglerVersion: '4.24.3'
       
       - name: Update deployment status - Success
-        if: success()
+        if: steps.check-label.outputs.result == 'true' && success()
         uses: actions/github-script@v7
         with:
           script: |
@@ -133,7 +123,7 @@ jobs:
             });
       
       - name: Update deployment status - Failure
-        if: failure()
+        if: steps.check-label.outputs.result == 'true' && failure()
         uses: actions/github-script@v7
         with:
           script: |
@@ -146,14 +136,14 @@ jobs:
             });
       
       - name: Comment on PR - Success
-        if: success()
+        if: steps.check-label.outputs.result == 'true' && success()
         uses: actions/github-script@v7
         with:
           script: |
             const comment = `✅ **Deployment to cutty-dev successful!**
             
             🌐 **Environment URL**: https://cutty-dev.emilycogsdill.com
-            📝 **Commit**: \`${context.payload.pull_request.head.sha.substring(0, 7)}\`
+            📝 **Commit**: \`${{ steps.check-label.outputs.pr_sha }}\`
             🏷️ **Triggered by**: \`deploy-dev\` label
             
             The changes in this PR are now live on the development environment.`;
@@ -161,18 +151,18 @@ jobs:
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
+              issue_number: ${{ steps.check-label.outputs.pr_number }},
               body: comment
             });
       
       - name: Comment on PR - Failure
-        if: failure()
+        if: steps.check-label.outputs.result == 'true' && failure()
         uses: actions/github-script@v7
         with:
           script: |
             const comment = `❌ **Deployment to cutty-dev failed**
             
-            📝 **Commit**: \`${context.payload.pull_request.head.sha.substring(0, 7)}\`
+            📝 **Commit**: \`${{ steps.check-label.outputs.pr_sha }}\`
             🏷️ **Triggered by**: \`deploy-dev\` label
             
             Please check the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details.`;
@@ -180,39 +170,7 @@ jobs:
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
+              issue_number: ${{ steps.check-label.outputs.pr_number }},
               body: comment
             });
 
-  notify-ci-failure:
-    runs-on: ubuntu-latest
-    needs: check-label
-    if: |
-      github.event_name == "workflow_run" && 
-      github.event.workflow_run.conclusion != 'success' &&
-      needs.check-label.outputs.should-deploy == "false"
-    
-    steps:
-      - name: Comment on PR about CI failure
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const pr = context.payload.workflow_run.pull_requests[0];
-            if (!pr) return;
-            
-            const comment = `⚠️ **Deployment to cutty-dev blocked**
-            
-            The deployment was not triggered because the CI workflow failed.
-            
-            📝 **Commit**: \`${context.payload.workflow_run.head_sha.substring(0, 7)}\`
-            🏷️ **Label**: \`deploy-dev\` is present
-            ❌ **CI Status**: Failed
-            
-            Please fix the CI issues before deployment can proceed. Check the [CI workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}) for details.`;
-            
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr.number,
-              body: comment
-            });
