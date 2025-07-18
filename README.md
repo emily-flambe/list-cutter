@@ -37,16 +37,24 @@ A web application for processing and managing CSV files.
    # API_KEY_SALT=dev-salt-for-api-keys-local-testing-only
    ```
 
-3. **Start development servers**
+3. **Start development servers** (requires TWO terminals)
+   
+   **Terminal 1 - Backend:**
    ```bash
-   # Terminal 1: Backend (port 8788)
-   cd cloudflare/workers
-   npm run dev
-
-   # Terminal 2: Frontend (port 5173)
-   cd app/frontend
-   npm run dev
+   make backend
+   # Or manually: cd cloudflare/workers && npm run dev
    ```
+   
+   **Terminal 2 - Frontend:**
+   ```bash
+   make frontend
+   # Or manually: cd app/frontend && npm run dev
+   ```
+
+   **Note**: 
+   - The backend automatically connects to the remote Cloudflare D1 database (`cutty-dev`)
+   - No local database setup required
+   - Both servers must be running for the app to work properly
 
 4. **Access the application**
    - Frontend: http://localhost:5173
@@ -73,12 +81,18 @@ npm run deploy:production
 
 ### Database Migrations
 
-```bash
-# Development
-wrangler d1 execute cutty-dev --file=migrations/[migration-file].sql
+All databases are remote Cloudflare D1 databases. The development setup uses `cutty-dev` and production uses `cutty-prod`.
 
-# Production
-wrangler d1 execute cutty-prod --file=migrations/[migration-file].sql
+```bash
+# Development (remote database)
+wrangler d1 execute cutty-dev --remote --file=migrations/[migration-file].sql
+
+# Production (remote database)
+wrangler d1 execute cutty-prod --remote --file=migrations/[migration-file].sql
+
+# Or use the Makefile
+make migrations ENV=dev   # Run migrations on development database
+make migrations ENV=prod  # Run migrations on production database
 ```
 
 ## Key Commands
