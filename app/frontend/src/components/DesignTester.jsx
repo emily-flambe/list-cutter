@@ -31,6 +31,48 @@ import { fontVariants } from '../themes/fontVariants';
 
 const DesignTester = () => {
   const [showCuttyPersonality, setShowCuttyPersonality] = useState(true);
+  const [apiTestResult, setApiTestResult] = useState(null);
+  const [dbTestResult, setDbTestResult] = useState(null);
+
+  const testApiConnection = async () => {
+    try {
+      setApiTestResult({ loading: true });
+      const response = await fetch('/api/v1/auth/health');
+      const data = await response.json();
+      setApiTestResult({
+        success: response.ok,
+        status: response.status,
+        message: response.ok ? 'API connection successful!' : 'API connection failed',
+        data: data
+      });
+    } catch (error) {
+      setApiTestResult({
+        success: false,
+        message: 'Failed to connect to API',
+        error: error.message
+      });
+    }
+  };
+
+  const testDbConnection = async () => {
+    try {
+      setDbTestResult({ loading: true });
+      const response = await fetch('/api/v1/auth/db-test');
+      const data = await response.json();
+      setDbTestResult({
+        success: response.ok,
+        status: response.status,
+        message: response.ok ? 'Database connection successful!' : 'Database connection failed',
+        data: data
+      });
+    } catch (error) {
+      setDbTestResult({
+        success: false,
+        message: 'Failed to test database connection',
+        error: error.message
+      });
+    }
+  };
 
   const designFeatures = [
     {
@@ -91,7 +133,77 @@ const DesignTester = () => {
                 <FontSwitcher />
               </Box>
 
+              <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.1)' }} />
 
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>Connection Tests</Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
+                  <Button
+                    variant="contained"
+                    onClick={testApiConnection}
+                    disabled={apiTestResult?.loading}
+                    sx={{
+                      bgcolor: 'var(--accent)',
+                      '&:hover': { bgcolor: 'var(--dark-accent)' },
+                    }}
+                  >
+                    {apiTestResult?.loading ? 'Testing...' : 'TEST API CONNECTION'}
+                  </Button>
+                  {apiTestResult && !apiTestResult.loading && (
+                    <Alert severity={apiTestResult.success ? 'success' : 'error'} sx={{ mt: 1 }}>
+                      {apiTestResult.message}
+                      {apiTestResult.error && <Typography variant="caption" display="block">{apiTestResult.error}</Typography>}
+                    </Alert>
+                  )}
+                  
+                  <Button
+                    variant="contained"
+                    onClick={testDbConnection}
+                    disabled={dbTestResult?.loading}
+                    sx={{
+                      bgcolor: 'var(--secondary)',
+                      '&:hover': { bgcolor: 'var(--dark-accent)' },
+                    }}
+                  >
+                    {dbTestResult?.loading ? 'Testing...' : 'TEST DB CONNECTION'}
+                  </Button>
+                  {dbTestResult && !dbTestResult.loading && (
+                    <Alert severity={dbTestResult.success ? 'success' : 'error'} sx={{ mt: 1 }}>
+                      {dbTestResult.message}
+                      {dbTestResult.error && <Typography variant="caption" display="block">{dbTestResult.error}</Typography>}
+                      {dbTestResult.success && dbTestResult.data?.details && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="caption" display="block">
+                            Environment: {dbTestResult.data.details.environment}
+                          </Typography>
+                          <Typography variant="caption" display="block">
+                            Tables found: {dbTestResult.data.details.table_count}
+                          </Typography>
+                          {dbTestResult.data.details.tables && dbTestResult.data.details.tables.length > 0 && (
+                            <Box sx={{ mt: 1 }}>
+                              <Typography variant="caption" display="block" sx={{ fontWeight: 'bold' }}>
+                                Database Tables:
+                              </Typography>
+                              <Box sx={{ pl: 2 }}>
+                                {dbTestResult.data.details.tables.map((table, index) => (
+                                  <Typography key={index} variant="caption" display="block" sx={{ fontFamily: 'monospace' }}>
+                                    • {table}
+                                  </Typography>
+                                ))}
+                              </Box>
+                            </Box>
+                          )}
+                          {dbTestResult.data.details.users_count !== undefined && (
+                            <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                              Users in database: {dbTestResult.data.details.users_count}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    </Alert>
+                  )}
+                </Box>
+              </Box>
 
               <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.1)' }} />
 

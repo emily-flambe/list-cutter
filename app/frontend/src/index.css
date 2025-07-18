@@ -18,8 +18,9 @@
   --font-scale: 1;
   
   font-family: var(--main-font-family);
-  line-height: 1.5;
+  line-height: 1.6;
   font-weight: 400;
+  font-size: 18px;
 
   color: var(--primary-text);
   background-color: var(--primary-bg);
@@ -68,7 +69,7 @@ button {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
-  font-size: 1em;
+  font-size: 1.125rem;
   font-weight: 500;
   font-family: inherit;
   background-color: #1a1a1a;

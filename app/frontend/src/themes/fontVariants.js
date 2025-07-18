@@ -72,28 +72,28 @@ export const applyFont = (fontName) => {
   
   // Apply font-specific size adjustments
   if (fontName === 'pressStart') {
-    // Press Start is a pixel font, needs slight adjustment
-    root.style.setProperty('--font-scale', '0.85');
-    root.style.fontSize = '15px';
-    root.style.lineHeight = '1.8';
+    // Press Start is a pixel font, needs adjustment for readability
+    root.style.setProperty('--font-scale', '0.75');
+    root.style.fontSize = '14px';
+    root.style.lineHeight = '2';
     // Adjust specific elements
     document.querySelectorAll('button, .MuiButton-root').forEach(el => {
-      el.style.fontSize = '0.85rem';
+      el.style.fontSize = '0.75rem';
     });
     document.querySelectorAll('.MuiTypography-body1').forEach(el => {
-      el.style.fontSize = '0.9rem';
-    });
-    document.querySelectorAll('.MuiTypography-body2').forEach(el => {
       el.style.fontSize = '0.8rem';
     });
+    document.querySelectorAll('.MuiTypography-body2').forEach(el => {
+      el.style.fontSize = '0.7rem';
+    });
     document.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(el => {
-      el.style.fontSize = '1.1rem';
+      el.style.fontSize = '1rem';
     });
   } else {
     // Reset to default sizes
     root.style.setProperty('--font-scale', '1');
-    root.style.fontSize = '16px';
-    root.style.lineHeight = '1.5';
+    root.style.fontSize = '18px';
+    root.style.lineHeight = '1.6';
     // Reset specific elements
     document.querySelectorAll('button, .MuiButton-root').forEach(el => {
       el.style.fontSize = '';

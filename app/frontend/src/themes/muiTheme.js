@@ -26,6 +26,7 @@ export const createDynamicTheme = () => {
     },
     typography: {
       fontFamily: getCssVariable('--main-font-family') || 'Inter, system-ui, sans-serif',
+      fontSize: 16,
       // Apply the font family to all typography variants
       h1: { fontFamily: 'inherit' },
       h2: { fontFamily: 'inherit' },
@@ -33,13 +34,13 @@ export const createDynamicTheme = () => {
       h4: { fontFamily: 'inherit' },
       h5: { fontFamily: 'inherit' },
       h6: { fontFamily: 'inherit' },
-      subtitle1: { fontFamily: 'inherit' },
-      subtitle2: { fontFamily: 'inherit' },
-      body1: { fontFamily: 'inherit' },
-      body2: { fontFamily: 'inherit' },
-      button: { fontFamily: 'inherit' },
-      caption: { fontFamily: 'inherit' },
-      overline: { fontFamily: 'inherit' },
+      subtitle1: { fontFamily: 'inherit', fontSize: '1.125rem' },
+      subtitle2: { fontFamily: 'inherit', fontSize: '1rem' },
+      body1: { fontFamily: 'inherit', fontSize: '1.125rem' },
+      body2: { fontFamily: 'inherit', fontSize: '1rem' },
+      button: { fontFamily: 'inherit', fontSize: '1rem' },
+      caption: { fontFamily: 'inherit', fontSize: '0.875rem' },
+      overline: { fontFamily: 'inherit', fontSize: '0.875rem' },
     },
     components: {
       // Override MUI components to ensure they use the CSS variable

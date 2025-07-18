@@ -41,6 +41,77 @@ auth.get('/test', async (c) => {
   });
 });
 
+// Health check endpoint for API connection test
+auth.get('/health', async (c) => {
+  return c.json({
+    status: 'healthy',
+    message: 'API connection successful',
+    timestamp: new Date().toISOString(),
+    environment: c.env.ENVIRONMENT || 'development',
+    version: c.env.API_VERSION || 'v1'
+  });
+});
+
+// Database connection test endpoint
+auth.get('/db-test', async (c) => {
+  try {
+    // Check if DB binding exists
+    if (!c.env.DB) {
+      return c.json({
+        status: 'error',
+        message: 'Database binding not found',
+        details: {
+          has_db_binding: false,
+          environment: c.env.ENVIRONMENT || 'development'
+        }
+      }, 500);
+    }
+
+    // Get all tables in the database
+    const tablesResult = await c.env.DB.prepare(`
+      SELECT name FROM sqlite_master 
+      WHERE type='table' 
+      AND name NOT LIKE 'sqlite_%' 
+      AND name NOT LIKE 'd1_%'
+      ORDER BY name
+    `).all();
+    
+    // Get count from users table if it exists
+    let usersCount = 0;
+    try {
+      const result = await c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first();
+      usersCount = result?.count || 0;
+    } catch (e) {
+      // Users table might not exist
+      console.log('Could not count users:', e);
+    }
+    
+    return c.json({
+      status: 'success',
+      message: 'Database connection successful',
+      details: {
+        has_db_binding: true,
+        environment: c.env.ENVIRONMENT || 'development',
+        timestamp: new Date().toISOString(),
+        tables: tablesResult.results.map(row => row.name),
+        table_count: tablesResult.results.length,
+        users_count: usersCount
+      }
+    });
+  } catch (error) {
+    console.error('Database test error:', error);
+    return c.json({
+      status: 'error',
+      message: 'Database query failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      details: {
+        has_db_binding: !!c.env.DB,
+        environment: c.env.ENVIRONMENT || 'development'
+      }
+    }, 500);
+  }
+});
+
 auth.post('/login', async (c) => {
   return handleLogin(c.req.raw, c.env);
 });

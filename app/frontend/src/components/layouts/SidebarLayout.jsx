@@ -145,10 +145,33 @@ const SidebarLayout = ({ children }) => {
         {/* Cutty's Dialogue in Sidebar */}
         {getCuttlefishMessage().text && (
           <Box sx={{ 
+            position: 'relative',
             bgcolor: 'var(--secondary-bg)', 
             p: 1.5, 
-            borderRadius: 1,
-            border: '1px solid rgba(255,255,255,0.1)'
+            borderRadius: 2,
+            border: '1px solid rgba(255,255,255,0.1)',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: '-12px',
+              left: '20px',
+              width: 0,
+              height: 0,
+              borderStyle: 'solid',
+              borderWidth: '0 12px 12px 12px',
+              borderColor: 'transparent transparent rgba(255,255,255,0.1) transparent',
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: '-11px',
+              left: '20px',
+              width: 0,
+              height: 0,
+              borderStyle: 'solid',
+              borderWidth: '0 12px 12px 12px',
+              borderColor: 'transparent transparent var(--secondary-bg) transparent',
+            }
           }}>
             <Typography
               variant="body2"
@@ -184,7 +207,20 @@ const SidebarLayout = ({ children }) => {
             </Box>
           </Box>
         ) : (
-          <Chip label="Not logged in" size="small" color="warning" />
+          <Chip 
+            label="Not logged in :(" 
+            size="small" 
+            color="warning"
+            component={Link}
+            to="/login"
+            clickable
+            sx={{
+              textDecoration: 'none',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 152, 0, 0.2)',
+              }
+            }}
+          />
         )}
       </Box>
 
