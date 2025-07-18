@@ -252,7 +252,7 @@ const CSVCutter = () => {
         <Typography variant="body2" sx={{ color: 'var(--primary-text)', mb: 2 }}>
           Upload a CSV and apply filters to generate the file you <span style={{ fontStyle: 'italic' }}>know</span> it can be - if only someone would <span style={{ fontStyle: 'italic' }}>cut it</span>.
           <br /> 
-          <br />You can do a lot more if you create an account and log in! Seriously!
+          <br />You can do a lot more if you create an account and log in!
         </Typography>
         <Typography variant="caption" sx={{ color: 'var(--primary-text)' }}>
           Max file size: {MAX_FILE_SIZE_MB}MB

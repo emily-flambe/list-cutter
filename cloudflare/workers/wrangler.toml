@@ -49,7 +49,7 @@ watch_dir = "src"
 ENVIRONMENT = "development"
 API_VERSION = "v1"
 CORS_ORIGIN = "https://cutty-dev.emilycogsdill.com"
-FRONTEND_URL = "http://localhost:5173"
+FRONTEND_URL = "https://cutty-dev.emilycogsdill.com"
 MAX_FILE_SIZE = "52428800" # 50MB in bytes
 JWT_ISSUER = "cutty"
 JWT_AUDIENCE = "cutty"
@@ -69,7 +69,7 @@ SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
 binding = "DB"
 database_name = "cutty-dev"
 database_id = "624214be-77a6-4501-b4c7-69b394084081"
-preview_database_id = "local"
+preview_database_id = "624214be-77a6-4501-b4c7-69b394084081"  # Same as database_id for remote development
 migrations_dir = "./migrations"
 migrations_table = "d1_migrations"
 

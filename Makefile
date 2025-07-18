@@ -2,12 +2,19 @@
 
 .PHONY: dev setup backend frontend superuser kill-ports kill-backend-port kill-frontend-port migrations build clean test install-deps branch-cleanup deploy-dev
 
-dev: setup kill-ports
-	@echo "🚀 Starting both backend and frontend servers..."
-	@echo "Backend: http://127.0.0.1:8788"
-	@echo "Frontend: http://localhost:5173"
-	@echo "Press Ctrl+C to stop both servers"
-	@$(MAKE) -j2 backend frontend
+dev: setup
+	@echo "⚠️  To run the development environment, you need TWO separate terminals:"
+	@echo ""
+	@echo "Terminal 1:"
+	@echo "  make backend"
+	@echo ""
+	@echo "Terminal 2:"
+	@echo "  make frontend"
+	@echo ""
+	@echo "Backend will run at: http://127.0.0.1:8788 (API only)"
+	@echo "Frontend will run at: http://localhost:5173 (full app)"
+	@echo ""
+	@echo "💡 TIP: The backend connects to remote cutty-dev database automatically"
 
 setup:
 	@echo "🔧 Setting up development environment..."
@@ -62,6 +69,7 @@ kill-ports: kill-backend-port kill-frontend-port
 
 backend: kill-backend-port
 	@echo "🔧 Starting Cloudflare Workers backend on http://127.0.0.1:8788..."
+	@echo "📡 Connecting to remote D1 database: cutty-dev"
 	@cd cloudflare/workers && npm run dev
 
 frontend: kill-frontend-port
@@ -87,40 +95,30 @@ superuser:
 	@echo "✅ User '$(USERNAME)' is now a superuser!"
 
 # Database migrations command
-# Usage: make migrations ENV=dev|prod|all|local|clean|clean-dev
+# Usage: make migrations ENV=dev|prod|all|clean|clean-dev
 # Examples:
-#   make migrations ENV=dev        # Run on cutty-dev database
-#   make migrations ENV=prod       # Run on cutty-prod database
+#   make migrations ENV=dev        # Run on cutty-dev database (remote)
+#   make migrations ENV=prod       # Run on cutty-prod database (remote)
 #   make migrations ENV=all        # Run on all databases
-#   make migrations ENV=local      # Run on local .sqlite file (if exists)
 #   make migrations ENV=clean      # DESTRUCTIVE: Clear all DBs and apply final schema
 #   make migrations ENV=clean-dev  # DESTRUCTIVE: Clear only dev DB and apply final schema
 migrations:
 	@if [ -z "$(ENV)" ]; then \
 		echo "❌ ERROR: ENV is required"; \
-		echo "Usage: make migrations ENV=dev|prod|all|local|clean|clean-dev"; \
+		echo "Usage: make migrations ENV=dev|prod|all|clean|clean-dev"; \
 		echo ""; \
 		echo "Examples:"; \
-		echo "  make migrations ENV=dev      # Run on cutty-dev database"; \
-		echo "  make migrations ENV=prod     # Run on cutty-prod database"; \
+		echo "  make migrations ENV=dev      # Run on cutty-dev database (remote)"; \
+		echo "  make migrations ENV=prod     # Run on cutty-prod database (remote)"; \
 		echo "  make migrations ENV=all      # Run on all databases"; \
-		echo "  make migrations ENV=local    # Run on local .sqlite file"; \
 		echo "  make migrations ENV=clean      # DESTRUCTIVE: Clear all and apply final schema"; \
 		echo "  make migrations ENV=clean-dev  # DESTRUCTIVE: Clear only dev and apply final schema"; \
+		echo ""; \
+		echo "💡 Note: All databases are remote Cloudflare D1 databases"; \
 		exit 1; \
 	fi
 	@cd cloudflare/workers && \
-	if [ "$(ENV)" = "local" ]; then \
-		echo "🗄️  Running migrations on local database..."; \
-		echo "📋 Using D1's built-in migration tracking system..."; \
-		wrangler d1 migrations apply cutty-dev --local || { \
-			echo "❌ Migration failed"; \
-			echo "💡 Tip: Check which migrations have been applied with:"; \
-			echo "   wrangler d1 migrations list cutty-dev --local"; \
-			exit 1; \
-		}; \
-		echo "✅ Local migrations completed"; \
-	elif [ "$(ENV)" = "dev" ]; then \
+	if [ "$(ENV)" = "dev" ]; then \
 		echo "🗄️  Running migrations on cutty-dev..."; \
 		echo "📋 Using D1's built-in migration tracking system..."; \
 		wrangler d1 migrations apply cutty-dev --remote || { \
@@ -221,7 +219,7 @@ migrations:
 		echo "🎉 DEV CLEAN MIGRATION COMPLETED!"; \
 	else \
 		echo "❌ ERROR: Invalid ENV value '$(ENV)'"; \
-		echo "Valid values: dev, prod, all, local, clean, clean-dev"; \
+		echo "Valid values: dev, prod, all, clean, clean-dev"; \
 		exit 1; \
 	fi
 

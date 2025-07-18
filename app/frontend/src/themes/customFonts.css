@@ -1,0 +1,17 @@
+/* Custom Font Faces */
+
+@font-face {
+  font-family: 'Earthmomma';
+  src: url('/fonts/EarthMommaRegular-ZGrK.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SenorSaturno';
+  src: url('/fonts/SenorSaturno-Aw9g.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}

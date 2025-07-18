@@ -12,6 +12,7 @@ import Login from './components/Login';
 import Logout from './components/LogoutConfirmation';
 import ManageFiles from './components/ManageFiles';
 import FAQ from './components/FAQ';
+import DesignTester from './components/DesignTester';
 import './index.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
@@ -56,6 +57,7 @@ function App() {
             <Route path="/logout" element={<Logout />} />
             <Route path="/manage_files" element={<ManageFiles />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/design-tester" element={<DesignTester />} />
           </Routes>
         </Layout>
       </BrowserRouter>
