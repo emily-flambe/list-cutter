@@ -2,7 +2,7 @@
 export const themeVariants = {
   // Dark mode - inspired by Cutty's deep ocean colors
   dark: {
-    name: 'Dark Mode',
+    name: 'Dark',
     colors: {
       '--primary-bg': '#1a2332',        // Deep ocean blue
       '--navbar-bg': '#0f1419',        // Darker blue-black
@@ -18,7 +18,7 @@ export const themeVariants = {
 
   // Light mode - comfortable and easy on the eyes
   light: {
-    name: 'Day Mode',
+    name: 'Light',
     colors: {
       '--primary-bg': '#d6dce4',       // Muted gray-blue background (much less bright)
       '--navbar-bg': '#c4cdd9',        // Darker gray-blue sidebar
@@ -34,7 +34,7 @@ export const themeVariants = {
 
   // Pink mode - vibrant and fun
   pink: {
-    name: 'Pink Mode',
+    name: 'Pink',
     colors: {
       '--primary-bg': '#fce4ec',       // Soft pink background
       '--navbar-bg': '#f8bbd0',        // Light pink sidebar
@@ -54,9 +54,20 @@ export const applyTheme = (themeName) => {
   if (!theme) return;
 
   const root = document.documentElement;
+  
+  // Remove any existing theme classes
+  Object.keys(themeVariants).forEach(key => {
+    root.classList.remove(`${key}-mode`);
+  });
+  
+  // Add the new theme class
+  root.classList.add(`${themeName}-mode`);
+  
+  // Apply CSS variables
   Object.entries(theme.colors).forEach(([property, value]) => {
     root.style.setProperty(property, value);
   });
+  
   
   // Store the current theme in localStorage
   localStorage.setItem('cutty-theme', themeName);

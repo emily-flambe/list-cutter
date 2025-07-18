@@ -108,7 +108,13 @@ const SidebarLayout = ({ children }) => {
         case '/faq':
           return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.15rem' } };
         case '/logout':
-          return { text: "THIS GOD WON'T FORGIVE YOU.", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.75rem' } };
+          return { 
+            text: "THIS GOD WON'T FORGIVE YOU.", 
+            style: { 
+              fontSize: '1.75rem',
+              className: 'terrifying-message'
+            } 
+          };
         default:
           return "";
       }
@@ -135,9 +141,20 @@ const SidebarLayout = ({ children }) => {
           <img 
             src={cuttlefishLogo} 
             alt="Cutty Logo" 
-            style={{ height: '56px', marginRight: '12px' }} 
+            className={location.pathname === '/logout' ? "cutty-logo cutty-angry" : "cutty-logo"}
+            style={{ height: '80px', marginRight: '12px' }} 
           />
-          <Typography variant="h6" sx={{ color: 'var(--primary-text)' }}>
+          <Typography 
+            variant="h4" 
+            className={location.pathname === '/logout' ? "cutty-text cutty-text-angry" : "cutty-text"}
+            sx={{ 
+              color: 'var(--primary-text)',
+              fontFamily: '"SenorSaturno", monospace',
+              fontSize: '42px',
+              letterSpacing: '1px',
+              fontWeight: 'bold'
+            }}
+          >
             Cutty
           </Typography>
         </Box>
@@ -175,11 +192,12 @@ const SidebarLayout = ({ children }) => {
           }}>
             <Typography
               variant="body2"
+              className={location.pathname === '/logout' ? 'terrifying-message' : ''}
               sx={{
                 color: 'var(--primary-text)',
                 fontSize: '0.8rem',
                 lineHeight: 1.3,
-                ...getCuttlefishMessage().style,
+                ...(getCuttlefishMessage().style || {}),
               }}
             >
               {getCuttlefishMessage().text}

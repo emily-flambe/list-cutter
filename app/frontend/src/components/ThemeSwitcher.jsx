@@ -72,7 +72,25 @@ const ThemeSwitcher = ({ compact = false }) => {
                 },
               }}
             >
-              {theme.name}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                  sx={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    background: key === 'pride' 
+                      ? 'linear-gradient(135deg, #ff0000, #ff8c00, #ffff00, #00ff00, #0080ff, #8b00ff)'
+                      : key === 'dark'
+                      ? '#1a2332'  // Dark theme's primary bg
+                      : key === 'light'
+                      ? '#d6dce4'  // Light theme's primary bg
+                      : theme.colors['--accent'],
+                    border: '1px solid',
+                    borderColor: theme.colors['--primary-text'],
+                  }}
+                />
+                {theme.name}
+              </Box>
             </MenuItem>
           ))}
         </Menu>
@@ -100,8 +118,29 @@ const ThemeSwitcher = ({ compact = false }) => {
           },
         }}
       >
-        {themeVariants[currentTheme]?.name || 'Unknown'}
-        <PaletteIcon fontSize="small" sx={{ ml: 1, opacity: 0.7 }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+          <Box
+            sx={{
+              width: 16,
+              height: 16,
+              borderRadius: '50%',
+              background: currentTheme === 'pride' 
+                ? 'linear-gradient(135deg, #ff0000, #ff8c00, #ffff00, #00ff00, #0080ff, #8b00ff)'
+                : currentTheme === 'dark'
+                ? '#1a2332'  // Dark theme's primary bg
+                : currentTheme === 'light'
+                ? '#d6dce4'  // Light theme's primary bg
+                : themeVariants[currentTheme]?.colors['--accent'],
+              border: '1px solid',
+              borderColor: 'var(--primary-text)',
+              flexShrink: 0,
+            }}
+          />
+          <span style={{ flexGrow: 1, textAlign: 'left' }}>
+            {themeVariants[currentTheme]?.name || 'Unknown'}
+          </span>
+          <PaletteIcon fontSize="small" sx={{ opacity: 0.7 }} />
+        </Box>
       </Button>
       <Menu
         anchorEl={anchorEl}
@@ -128,11 +167,25 @@ const ThemeSwitcher = ({ compact = false }) => {
               },
             }}
           >
-            <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: '50%',
+                  background: key === 'pride' 
+                    ? 'linear-gradient(135deg, #ff0000, #ff8c00, #ffff00, #00ff00, #0080ff, #8b00ff)'
+                    : key === 'dark'
+                    ? '#1a2332'  // Dark theme's primary bg
+                    : key === 'light'
+                    ? '#d6dce4'  // Light theme's primary bg
+                    : theme.colors['--accent'],
+                  border: '2px solid',
+                  borderColor: theme.colors['--primary-text'],
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                }}
+              />
               <Typography variant="body1">{theme.name}</Typography>
-              <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                {key}
-              </Typography>
             </Box>
           </MenuItem>
         ))}

@@ -1,6 +1,8 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './themes/customFonts.css'
+import './themes/cuttyAnimations.css'
 import AppWithLayouts from './AppWithLayouts.jsx'
 import { applyTheme, getCurrentTheme } from './themes/themeVariants';
 import { initializeFonts } from './themes/fontVariants';
