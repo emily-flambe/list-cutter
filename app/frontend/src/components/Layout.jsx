@@ -27,6 +27,8 @@ import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api';
 import React from 'react';
+import ThemeSwitcher from './ThemeSwitcher';
+import { applyTheme, getCurrentTheme } from '../themes/themeVariants';
 
 const DRAWER_WIDTH = 240;
 
@@ -38,6 +40,10 @@ const Layout = ({ children }) => {
   const [openPeople, setOpenPeople] = useState(false); // Add state for toggling People group
 
   useEffect(() => {
+    // Initialize theme on app startup
+    const currentTheme = getCurrentTheme();
+    applyTheme(currentTheme);
+    
     const fetchUserData = async () => {
       if (token) {
         try {
@@ -252,9 +258,34 @@ const Layout = ({ children }) => {
           </List>
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 'auto', mb: 3 }}>
+          {/* Design Controls */}
+          <Box sx={{ width: '100%', px: 2, mb: 3 }}>
+            <Typography variant="overline" sx={{ color: 'var(--primary-text)', opacity: 0.7, fontSize: '0.7rem' }}>
+              Design Controls
+            </Typography>
+            <Box sx={{ mt: 1, mb: 2 }}>
+              <ThemeSwitcher compact />
+            </Box>
+          </Box>
+          
           <img src={cuttlefishLogo} alt="Cuttlefish Logo" style={{ maxWidth: '200px' }} />
           <Typography variant="caption" sx={{ textAlign: 'center', mt: -1, ...getCuttlefishMessage().style }}>
             {getCuttlefishMessage().text}
+            {location.pathname === '/' && (
+              <Box
+                component="span"
+                sx={{
+                  '@keyframes blink': {
+                    '0%, 49%': { opacity: 1 },
+                    '50%, 100%': { opacity: 0 }
+                  },
+                  animation: 'blink 1s infinite',
+                  ml: 0.5
+                }}
+              >
+                ▌
+              </Box>
+            )}
           </Typography>
         </Box>
       </Drawer>

@@ -9,11 +9,18 @@
   --dark-accent: #1058a4;
   --secondary-text: #333333;
   
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Font variables */
+  --main-font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --cutty-threatening-font: 'Creepster', cursive;
+  --cutty-welcome-font: inherit; /* Uses main font for welcome messages */
+  
+  /* Font size adjustments for pixel fonts */
+  --font-scale: 1;
+  
+  font-family: var(--main-font-family);
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: dark;
   color: var(--primary-text);
   background-color: var(--primary-bg);
 
@@ -39,12 +46,22 @@ body {
   place-items: center;
   min-width: 0;
   min-height: 100vh;
-  background-color: #1c2031;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
 }
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+  color: var(--primary-text);
+}
+
+h2, h3, h4, h5, h6 {
+  color: var(--primary-text);
+}
+
+p {
+  color: var(--primary-text);
 }
 
 button {
@@ -66,18 +83,6 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
 
 .nav-selected {
   background-color: var(--accent);
