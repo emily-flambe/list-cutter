@@ -133,14 +133,7 @@ const FontSwitcher = ({ compact = false }) => {
               },
             }}
           >
-            <Box>
-              <Typography variant="body1" sx={{ fontFamily: font.fontFamily }}>
-                {font.name}
-              </Typography>
-              <Typography variant="caption" sx={{ opacity: 0.7, fontFamily: 'Inter, sans-serif' }}>
-                {key === 'wingdings' ? 'Sample: ✈ ☎ ♠ ♥' : 'Sample: The quick brown fox'}
-              </Typography>
-            </Box>
+            {font.name}
           </MenuItem>
         ))}
       </Menu>

@@ -135,7 +135,7 @@ const SidebarLayout = ({ children }) => {
           <img 
             src={cuttlefishLogo} 
             alt="Cutty Logo" 
-            style={{ height: '40px', marginRight: '12px' }} 
+            style={{ height: '56px', marginRight: '12px' }} 
           />
           <Typography variant="h6" sx={{ color: 'var(--primary-text)' }}>
             Cutty

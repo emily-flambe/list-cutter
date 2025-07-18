@@ -133,7 +133,7 @@ const CompactLayout = ({ children }) => {
             <img 
               src={cuttlefishLogo} 
               alt="Cutty Logo" 
-              style={{ height: '32px', marginRight: '8px' }} 
+              style={{ height: '40px', marginRight: '8px' }} 
             />
             <Typography variant="h6" component="div" sx={{ color: 'var(--primary-text)', fontSize: '1.1rem' }}>
               Cutty

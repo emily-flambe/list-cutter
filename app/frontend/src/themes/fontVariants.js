@@ -1,19 +1,5 @@
 // Font variants for testing different typography while preserving Cutty's special fonts
 export const fontVariants = {
-  // OPTIMAL WEB APP FONTS
-  inter: {
-    name: 'Inter (Optimal)',
-    fontFamily: 'Inter, system-ui, Avenir, Helvetica, Arial, sans-serif',
-    webFont: null, // Already loaded
-  },
-  
-  sfPro: {
-    name: 'SF Pro (Apple)',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif',
-    webFont: null, // System font on Apple devices
-  },
-  
-  // KEEP THESE SPECIAL ONES
   comicSans: {
     name: 'Comic Sans MS',
     fontFamily: '"Comic Sans MS", "Comic Sans", cursive, sans-serif',
@@ -32,41 +18,28 @@ export const fontVariants = {
     webFont: null, // System monospace
   },
   
-  wingdings: {
-    name: 'Wingdings (⚡🎯✈️)',
-    fontFamily: 'Wingdings, "Zapf Dingbats", fantasy',
-    webFont: null, // System font
-  },
-  
   papyrus: {
     name: 'Papyrus',
     fontFamily: 'Papyrus, "Bradley Hand", fantasy',
     webFont: null, // System font
   },
   
-  // SILLY ADDITIONS
-  impact: {
-    name: 'Impact (MEMES)',
-    fontFamily: 'Impact, "Arial Black", sans-serif',
-    webFont: null, // System font
-  },
-  
-  chiller: {
-    name: 'Chiller (Spooky)',
-    fontFamily: 'Chiller, "Creepster", cursive',
-    webFont: null, // System font, fallback to Creepster
-  },
-  
-  lobster: {
-    name: 'Lobster (Fancy)',
-    fontFamily: 'Lobster, cursive',
-    webFont: 'https://fonts.googleapis.com/css2?family=Lobster&display=swap',
-  },
-  
   pressStart: {
     name: 'Press Start (Retro)',
     fontFamily: '"Press Start 2P", monospace',
     webFont: 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap',
+  },
+  
+  sfPro: {
+    name: 'SF Pro (Apple)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif',
+    webFont: null, // System font on Apple devices
+  },
+  
+  wingdings: {
+    name: 'Wingdings (⚡🎯✈️)',
+    fontFamily: 'Wingdings, "Zapf Dingbats", fantasy',
+    webFont: null, // System font
   },
 };
 
@@ -99,19 +72,22 @@ export const applyFont = (fontName) => {
   
   // Apply font-specific size adjustments
   if (fontName === 'pressStart') {
-    // Press Start is a pixel font, needs to be smaller
-    root.style.setProperty('--font-scale', '0.7');
-    root.style.fontSize = '14px';
+    // Press Start is a pixel font, needs slight adjustment
+    root.style.setProperty('--font-scale', '0.85');
+    root.style.fontSize = '15px';
     root.style.lineHeight = '1.8';
     // Adjust specific elements
     document.querySelectorAll('button, .MuiButton-root').forEach(el => {
-      el.style.fontSize = '0.7rem';
+      el.style.fontSize = '0.85rem';
     });
     document.querySelectorAll('.MuiTypography-body1').forEach(el => {
-      el.style.fontSize = '0.75rem';
+      el.style.fontSize = '0.9rem';
     });
     document.querySelectorAll('.MuiTypography-body2').forEach(el => {
-      el.style.fontSize = '0.65rem';
+      el.style.fontSize = '0.8rem';
+    });
+    document.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(el => {
+      el.style.fontSize = '1.1rem';
     });
   } else {
     // Reset to default sizes
@@ -128,6 +104,9 @@ export const applyFont = (fontName) => {
     document.querySelectorAll('.MuiTypography-body2').forEach(el => {
       el.style.fontSize = '';
     });
+    document.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(el => {
+      el.style.fontSize = '';
+    });
   }
   
   // Store the current font in localStorage
@@ -135,7 +114,7 @@ export const applyFont = (fontName) => {
 };
 
 export const getCurrentFont = () => {
-  return localStorage.getItem('cutty-font') || 'pressStart';
+  return localStorage.getItem('cutty-font') || 'sfPro';
 };
 
 // Initialize font system
