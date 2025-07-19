@@ -193,6 +193,7 @@ export async function verifyJWT(token: string, secret: string): Promise<UserJWTP
       user_id: String(payload.user_id),
       username: String(payload.username),
       email: payload.email ? String(payload.email) : undefined,
+      role: payload.role ? (payload.role as 'admin' | 'user') : undefined,
       token_type: payload.token_type as 'access' | 'refresh',
       exp: Number(payload.exp),
       iat: Number(payload.iat),
@@ -259,6 +260,7 @@ export async function verifyJWTWithErrors(token: string, secret: string): Promis
       user_id: String(payload.user_id),
       username: String(payload.username),
       email: payload.email ? String(payload.email) : undefined,
+      role: payload.role ? (payload.role as 'admin' | 'user') : undefined,
       token_type: payload.token_type as 'access' | 'refresh',
       exp: Number(payload.exp),
       iat: Number(payload.iat),
@@ -354,6 +356,7 @@ export async function generateTokenPair(
       user_id: user.id,
       username: user.username,
       ...(user.email ? { email: user.email } : {}),
+      ...(user.role ? { role: user.role } : {}),
       token_type: 'access'
     },
     env.JWT_SECRET,
@@ -365,6 +368,7 @@ export async function generateTokenPair(
       user_id: user.id,
       username: user.username,
       ...(user.email ? { email: user.email } : {}),
+      ...(user.role ? { role: user.role } : {}),
       token_type: 'refresh'
     },
     env.JWT_SECRET,
@@ -479,6 +483,7 @@ export async function refreshAccessToken(
     id: tokenData.user_id,
     username: tokenData.username,
     ...(payload.email ? { email: payload.email } : {}),
+    ...(payload.role ? { role: payload.role } : {}),
     created_at: new Date().toISOString()
   };
   
@@ -619,6 +624,7 @@ export async function signJWT(user: User, secret: string): Promise<string> {
       user_id: user.id,
       username: user.username,
       ...(user.email ? { email: user.email } : {}),
+      ...(user.role ? { role: user.role } : {}),
       token_type: 'access'
     },
     secret,
@@ -638,6 +644,7 @@ export async function refreshJWT(token: string, secret: string): Promise<string 
     id: payload.user_id,
     username: payload.username,
     ...(payload.email ? { email: payload.email } : {}),
+    ...(payload.role ? { role: payload.role } : {}),
     created_at: new Date().toISOString()
   };
 

@@ -40,9 +40,13 @@ auth.post('/login', async (c) => {
       return c.json({ error: 'Invalid credentials' }, 401);
     }
 
-    // Generate tokens
+    // Generate tokens with role
     const tokens = await generateToken(
-      { user_id: user.id, email: user.email },
+      { 
+        user_id: user.id, 
+        email: user.email,
+        role: user.role || 'user' // Include role in token
+      },
       c.env.JWT_SECRET,
       c.env.AUTH_KV
     );
@@ -52,7 +56,8 @@ auth.post('/login', async (c) => {
       user: {
         id: user.id,
         email: user.email,
-        username: user.username
+        username: user.username,
+        role: user.role || 'user' // Include role in response
       },
       tokens
     });
@@ -80,19 +85,27 @@ auth.post('/register', async (c) => {
       return c.json({ error: 'User already exists' }, 409);
     }
 
+    // Check if this is the first user
+    const userCount = await c.env.DB.prepare(
+      'SELECT COUNT(*) as count FROM users'
+    ).first();
+    
+    const isFirstUser = userCount?.count === 0;
+    const role = isFirstUser ? 'admin' : 'user';
+
     // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Create user
+    // Create user with role
     const result = await c.env.DB.prepare(
-      'INSERT INTO users (email, password_hash, username) VALUES (?, ?, ?)'
-    ).bind(email, passwordHash, username || email.split('@')[0]).run();
+      'INSERT INTO users (email, password_hash, username, role) VALUES (?, ?, ?, ?)'
+    ).bind(email, passwordHash, username || email.split('@')[0], role).run();
 
     const userId = result.meta.last_row_id;
 
-    // Generate tokens
+    // Generate tokens with role
     const tokens = await generateToken(
-      { user_id: userId, email },
+      { user_id: userId, email, role },
       c.env.JWT_SECRET,
       c.env.AUTH_KV
     );
@@ -102,7 +115,8 @@ auth.post('/register', async (c) => {
       user: {
         id: userId,
         email,
-        username: username || email.split('@')[0]
+        username: username || email.split('@')[0],
+        role // Include role in response
       },
       tokens
     });
@@ -163,9 +177,9 @@ auth.get('/user', async (c) => {
     const token = authHeader.substring(7);
     const payload = await validateToken(token, c.env.JWT_SECRET, c.env.AUTH_KV);
 
-    // Get user from database
+    // Get user from database including role
     const user = await c.env.DB.prepare(
-      'SELECT id, email, username, created_at FROM users WHERE id = ?'
+      'SELECT id, email, username, role, created_at FROM users WHERE id = ?'
     ).bind(payload.user_id).first();
 
     if (!user) {
@@ -229,17 +243,30 @@ auth.get('/google/callback', async (c) => {
     // Decode and verify ID token (simplified - in production, verify signature)
     const payload = JSON.parse(atob(id_token.split('.')[1]));
     
-    // Create or update user
+    // Check if this would be the first user
     const email = payload.email;
-    const user = await c.env.DB.prepare(
-      'INSERT INTO users (email, username, google_id) VALUES (?, ?, ?) ' +
-      'ON CONFLICT(email) DO UPDATE SET google_id = ?, updated_at = CURRENT_TIMESTAMP ' +
-      'RETURNING id, email, username'
-    ).bind(email, payload.name || email.split('@')[0], payload.sub, payload.sub).first();
+    const existingUser = await c.env.DB.prepare(
+      'SELECT id, role FROM users WHERE email = ?'
+    ).bind(email).first();
+    
+    let role = 'user';
+    if (!existingUser) {
+      const userCount = await c.env.DB.prepare(
+        'SELECT COUNT(*) as count FROM users'
+      ).first();
+      role = userCount?.count === 0 ? 'admin' : 'user';
+    }
 
-    // Generate our own tokens
+    // Create or update user with role
+    const user = await c.env.DB.prepare(
+      'INSERT INTO users (email, username, google_id, role) VALUES (?, ?, ?, ?) ' +
+      'ON CONFLICT(email) DO UPDATE SET google_id = ?, updated_at = CURRENT_TIMESTAMP ' +
+      'RETURNING id, email, username, role'
+    ).bind(email, payload.name || email.split('@')[0], payload.sub, role, payload.sub).first();
+
+    // Generate our own tokens with role
     const tokens = await generateToken(
-      { user_id: user.id, email: user.email },
+      { user_id: user.id, email: user.email, role: user.role || 'user' },
       c.env.JWT_SECRET,
       c.env.AUTH_KV
     );

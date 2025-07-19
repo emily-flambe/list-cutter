@@ -6,6 +6,7 @@ export interface CloudflareEnv {
   MAX_FILE_SIZE: string;
   JWT_ISSUER: string;
   JWT_AUDIENCE: string;
+  FRONTEND_URL?: string;
   
   // Security environment variables
   SECURITY_PERFORMANCE_THRESHOLD?: string;
@@ -28,6 +29,7 @@ export interface CloudflareEnv {
   DB: D1Database;
   FILE_STORAGE: R2Bucket;
   ASSETS: Fetcher; // Static assets for frontend serving
+  AUTH_KV?: KVNamespace; // Optional KV for auth tokens
   AUTH_TOKENS?: KVNamespace; // Optional - commented out in wrangler.toml
   ANALYTICS?: AnalyticsEngineDataset; // Optional - commented out in wrangler.toml
   

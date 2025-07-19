@@ -14,6 +14,9 @@ import filesRoutes from './routes/files';
 import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin';
 
+// Import security middleware
+import { rateLimitMiddleware } from './services/security';
+
 type HonoVariables = {
   userId?: string;
 };
@@ -137,6 +140,18 @@ app.get('/test-phase5', async (c): Promise<Response> => {
     }, 500);
   }
 });
+
+// Apply rate limiting to API routes
+app.use('/api/*', rateLimitMiddleware({ 
+  windowMs: 60000, // 1 minute
+  maxRequests: 60  // 60 requests per minute
+}));
+
+// More restrictive rate limiting for auth endpoints
+app.use('/api/*/auth/*', rateLimitMiddleware({ 
+  windowMs: 300000, // 5 minutes
+  maxRequests: 10   // 10 auth requests per 5 minutes
+}));
 
 // API version prefix
 const v1 = app.basePath('/api/v1');

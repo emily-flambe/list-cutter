@@ -24,13 +24,13 @@ admin.use('*', async (c, next) => {
     const token = authHeader.substring(7);
     const payload = await validateToken(token, c.env.JWT_SECRET, c.env.AUTH_KV);
     
-    // Simple admin check - in production, check user role
+    // Check user role from database
     const user = await c.env.DB.prepare(
-      'SELECT email FROM users WHERE id = ?'
+      'SELECT role FROM users WHERE id = ?'
     ).bind(payload.user_id).first();
     
-    // For now, just check if email contains 'admin' or is specific email
-    if (!user?.email?.includes('admin') && user?.email !== 'emily@example.com') {
+    // Verify admin role
+    if (user?.role !== 'admin') {
       return c.json({ error: 'Admin access required' }, 403);
     }
     

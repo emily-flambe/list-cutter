@@ -13,7 +13,6 @@ import { Hono } from 'hono';
 import type { Env } from '../types';
 import { validateFile } from '../services/security/file-validator';
 import { validateToken } from '../services/auth/jwt';
-import { v4 as uuidv4 } from 'uuid';
 
 const files = new Hono<{ Bindings: Env }>();
 
@@ -60,7 +59,7 @@ files.post('/upload', async (c) => {
     }
 
     // Generate file ID and key
-    const fileId = uuidv4();
+    const fileId = crypto.randomUUID();
     const fileKey = `files/${userId}/${fileId}/${file.name}`;
 
     // Upload to R2
