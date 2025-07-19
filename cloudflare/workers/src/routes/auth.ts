@@ -308,9 +308,33 @@ auth.get('/google/callback', async (c) => {
       c.env
     );
 
-    // Redirect to frontend with tokens
-    const frontendUrl = c.env.FRONTEND_URL || 'http://localhost:5173';
-    return c.redirect(`${frontendUrl}/auth/callback?token=${tokens.access_token}`);
+    // Smart redirect like main branch - check Accept header and use proper base URL  
+    const acceptHeader = c.req.header('Accept') || '';
+    if (acceptHeader.includes('text/html')) {
+      // Use FRONTEND_URL for development, fallback to request URL for production
+      const baseUrl = c.env.FRONTEND_URL || new URL('/', c.req.url).origin;
+      const redirectUrl = new URL('/auth/callback', baseUrl);
+      redirectUrl.searchParams.set('oauth_success', 'true');
+      redirectUrl.searchParams.set('token', tokens.access_token);
+      redirectUrl.searchParams.set('refresh_token', tokens.refresh_token);
+      redirectUrl.searchParams.set('user_id', user.id.toString());
+      
+      return c.redirect(redirectUrl.toString());
+    }
+
+    // For API requests, return JSON
+    return c.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role || 'user'
+      },
+      token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      message: 'Google OAuth authentication successful'
+    });
   } catch (error) {
     console.error('OAuth callback error:', error);
     console.error('Error stack:', error.stack);
