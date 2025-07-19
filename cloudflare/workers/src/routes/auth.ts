@@ -11,7 +11,7 @@
 
 import { Hono } from 'hono';
 import type { Env } from '../types';
-import { generateToken, validateToken, refreshAccessToken, blacklistToken } from '../services/auth/jwt';
+import { generateToken, generateTokenPair, validateToken, refreshAccessToken, blacklistToken } from '../services/auth/jwt';
 import { hashPassword, verifyPassword } from '../services/storage/d1';
 
 const auth = new Hono<{ Bindings: Env }>();
@@ -297,11 +297,15 @@ auth.get('/google/callback', async (c) => {
       'RETURNING id, email, username, role'
     ).bind(email, payload.name || email.split('@')[0], payload.sub, role, 'OAUTH_USER', payload.sub).first();
 
-    // Generate our own tokens with role
-    const tokens = await generateToken(
-      { user_id: user.id, email: user.email, role: user.role || 'user' },
-      c.env.JWT_SECRET,
-      c.env.AUTH_KV
+    // Generate our own tokens with role (use generateTokenPair like main branch)
+    const tokens = await generateTokenPair(
+      { 
+        id: user.id, 
+        email: user.email, 
+        username: user.username,
+        role: user.role || 'user' 
+      },
+      c.env
     );
 
     // Redirect to frontend with tokens
