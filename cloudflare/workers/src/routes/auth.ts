@@ -230,12 +230,15 @@ auth.get('/google', async (c) => {
 
 auth.get('/google/callback', async (c) => {
   try {
+    console.log('OAuth callback started');
     const code = c.req.query('code');
     
     if (!code) {
+      console.log('No authorization code provided');
       return c.json({ error: 'No authorization code provided' }, 400);
     }
 
+    console.log('Authorization code received, exchanging for tokens...');
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -250,10 +253,15 @@ auth.get('/google/callback', async (c) => {
     });
 
     if (!tokenResponse.ok) {
+      const errorBody = await tokenResponse.text();
+      console.error('Token exchange failed:', tokenResponse.status, errorBody);
       throw new Error('Failed to exchange authorization code');
     }
 
-    const { id_token } = await tokenResponse.json();
+    console.log('Token exchange successful');
+    const tokenData = await tokenResponse.json();
+    console.log('Token data keys:', Object.keys(tokenData));
+    const { id_token } = tokenData;
 
     // Decode and verify ID token (simplified - in production, verify signature)
     const payload = JSON.parse(atob(id_token.split('.')[1]));
