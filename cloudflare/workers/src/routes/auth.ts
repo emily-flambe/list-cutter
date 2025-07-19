@@ -195,12 +195,20 @@ auth.get('/user', async (c) => {
 
 // Google OAuth endpoints (simplified)
 auth.get('/google', async (c) => {
-  const clientId = c.env.GOOGLE_CLIENT_ID;
-  const redirectUri = c.env.GOOGLE_REDIRECT_URI;
-  
-  if (!clientId || !redirectUri) {
-    return c.json({ error: 'OAuth not configured' }, 500);
-  }
+  try {
+    const clientId = c.env.GOOGLE_CLIENT_ID;
+    const redirectUri = c.env.GOOGLE_REDIRECT_URI;
+    
+    console.log('OAuth config check:', { 
+      hasClientId: !!clientId, 
+      hasRedirectUri: !!redirectUri,
+      clientId: clientId ? clientId.substring(0, 10) + '...' : 'undefined',
+      redirectUri 
+    });
+    
+    if (!clientId || !redirectUri) {
+      return c.json({ error: 'OAuth not configured' }, 500);
+    }
 
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
     `client_id=${clientId}&` +
@@ -210,10 +218,14 @@ auth.get('/google', async (c) => {
     `access_type=offline&` +
     `prompt=consent`;
 
-  return c.json({
-    success: true,
-    authorization_url: authUrl
-  });
+    return c.json({
+      success: true,
+      authorization_url: authUrl
+    });
+  } catch (error) {
+    console.error('OAuth initiation error:', error);
+    return c.json({ error: 'OAuth initiation failed' }, 500);
+  }
 });
 
 auth.get('/google/callback', async (c) => {
