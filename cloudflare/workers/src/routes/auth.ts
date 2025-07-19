@@ -34,7 +34,11 @@ auth.post('/login', async (c) => {
       return c.json({ error: 'Invalid credentials' }, 401);
     }
 
-    // Verify password
+    // Verify password (skip if user has no password_hash - OAuth user)
+    if (!user.password_hash) {
+      return c.json({ error: 'Please use Google Sign-In for this account' }, 401);
+    }
+    
     const passwordMatch = await verifyPassword(password, user.password_hash);
     if (!passwordMatch) {
       return c.json({ error: 'Invalid credentials' }, 401);
