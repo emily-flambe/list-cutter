@@ -148,7 +148,7 @@ app.use('/api/*', rateLimitMiddleware({
 }));
 
 // More restrictive rate limiting for auth endpoints
-app.use('/api/*/auth/*', rateLimitMiddleware({ 
+app.use('/api/v1/auth/*', rateLimitMiddleware({ 
   windowMs: 300000, // 5 minutes
   maxRequests: 10   // 10 auth requests per 5 minutes
 }));
