@@ -77,7 +77,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: cloudflare/workers
-          command: deploy --env dev
+          command: deploy
           wranglerVersion: '4.24.3'
       
       - name: Deploy to Cloudflare Workers (Prod)
@@ -88,7 +88,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: cloudflare/workers
-          command: deploy
+          command: deploy --config wrangler.prod.toml
           wranglerVersion: '4.24.3'
       
       - name: Update deployment status - Success
