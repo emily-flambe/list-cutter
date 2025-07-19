@@ -313,7 +313,7 @@ auth.get('/google/callback', async (c) => {
     if (acceptHeader.includes('text/html')) {
       // Use FRONTEND_URL for development, fallback to request URL for production
       const baseUrl = c.env.FRONTEND_URL || new URL('/', c.req.url).origin;
-      const redirectUrl = new URL('/auth/callback', baseUrl);
+      const redirectUrl = new URL('/', baseUrl);
       redirectUrl.searchParams.set('oauth_success', 'true');
       redirectUrl.searchParams.set('token', tokens.access_token);
       redirectUrl.searchParams.set('refresh_token', tokens.refresh_token);
