@@ -290,9 +290,9 @@ auth.get('/google/callback', async (c) => {
       role = userCount?.count === 0 ? 'admin' : 'user';
     }
 
-    // Create or update user with role
+    // Create or update user with role (provide NULL for password_hash)
     const user = await c.env.DB.prepare(
-      'INSERT INTO users (email, username, google_id, role) VALUES (?, ?, ?, ?) ' +
+      'INSERT INTO users (email, username, google_id, role, password_hash) VALUES (?, ?, ?, ?, NULL) ' +
       'ON CONFLICT(email) DO UPDATE SET google_id = ?, updated_at = CURRENT_TIMESTAMP ' +
       'RETURNING id, email, username, role'
     ).bind(email, payload.name || email.split('@')[0], payload.sub, role, payload.sub).first();
