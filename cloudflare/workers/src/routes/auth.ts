@@ -193,6 +193,11 @@ auth.get('/user', async (c) => {
   }
 });
 
+// Test endpoint to verify route mounting
+auth.get('/test-callback', async (c) => {
+  return c.json({ message: 'Callback route is working', timestamp: new Date().toISOString() });
+});
+
 // Google OAuth endpoints (simplified)
 auth.get('/google', async (c) => {
   try {
