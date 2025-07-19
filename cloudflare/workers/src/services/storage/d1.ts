@@ -141,7 +141,7 @@ export async function createUser(env: Env, userData: UserRegistration): Promise<
  * Hash password for storage (placeholder implementation)
  * In production, use bcrypt or similar secure hashing
  */
-async function hashPassword(password: string): Promise<string> {
+export async function hashPassword(password: string): Promise<string> {
   // This is a placeholder - use bcrypt in production!
   const encoder = new TextEncoder();
   const data = encoder.encode(password + 'salt-should-be-random');
@@ -153,7 +153,7 @@ async function hashPassword(password: string): Promise<string> {
  * Verify password against hash (placeholder implementation)
  * In production, use bcrypt.compare or similar secure verification
  */
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   // This is a placeholder - use bcrypt.compare in production!
   const computedHash = await hashPassword(password);
   return computedHash === hash;

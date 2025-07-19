@@ -12,7 +12,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { generateToken, validateToken, refreshAccessToken, blacklistToken } from '../services/auth/jwt';
-import bcrypt from 'bcryptjs';
+import { hashPassword, verifyPassword } from '../services/storage/d1';
 
 const auth = new Hono<{ Bindings: Env }>();
 
@@ -35,7 +35,7 @@ auth.post('/login', async (c) => {
     }
 
     // Verify password
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    const passwordMatch = await verifyPassword(password, user.password_hash);
     if (!passwordMatch) {
       return c.json({ error: 'Invalid credentials' }, 401);
     }
@@ -81,7 +81,7 @@ auth.post('/register', async (c) => {
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await hashPassword(password);
 
     // Create user
     const result = await c.env.DB.prepare(

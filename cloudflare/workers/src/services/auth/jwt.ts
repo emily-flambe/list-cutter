@@ -643,3 +643,7 @@ export async function refreshJWT(token: string, secret: string): Promise<string 
 
   return signJWT(user, secret);
 }
+
+// Export aliases for backward compatibility with routes
+export const generateToken = generateTokenPair;
+export const validateToken = verifyJWT;
