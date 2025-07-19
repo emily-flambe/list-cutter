@@ -4,8 +4,6 @@
  */
 
 import { SecurityConfigManager } from '../config/security-config';
-import { SecurityMonitorService } from '../services/security/security-monitor';
-import { SecurityMetricsCollector } from '../services/security/metrics-collector';
 
 // File-related types
 export interface FileRecord {
@@ -45,8 +43,6 @@ declare module 'hono' {
   interface ContextVariableMap {
     // Security services
     securityConfig?: SecurityConfigManager;
-    securityMonitor?: SecurityMonitorService;
-    securityMetrics?: SecurityMetricsCollector;
     
     // Authentication/Authorization
     userId?: string;

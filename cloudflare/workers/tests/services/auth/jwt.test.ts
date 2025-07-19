@@ -33,6 +33,15 @@ const mockUser: User = {
   created_at: '2024-01-01T00:00:00Z'
 };
 
+// Mock admin user for testing
+const mockAdminUser: User = {
+  id: '2',
+  username: 'adminuser',
+  email: 'admin@example.com',
+  role: 'admin',
+  created_at: '2024-01-01T00:00:00Z'
+};
+
 describe('JWT Service', () => {
   describe('generateJWT', () => {
     it('should generate a valid JWT token', async () => {
@@ -88,6 +97,37 @@ describe('JWT Service', () => {
       };
 
       await expect(generateJWT(payload, mockEnv.JWT_SECRET, '10m')).rejects.toThrow('must include user_id and username');
+    });
+
+    it('should include role in JWT token when provided', async () => {
+      const payload = {
+        user_id: mockAdminUser.id,
+        username: mockAdminUser.username,
+        email: mockAdminUser.email,
+        role: mockAdminUser.role,
+        token_type: 'access' as const
+      };
+
+      const token = await generateJWT(payload, mockEnv.JWT_SECRET, '10m');
+      const verified = await verifyJWT(token, mockEnv.JWT_SECRET);
+      
+      expect(verified).toBeDefined();
+      expect(verified?.role).toBe('admin');
+    });
+
+    it('should generate token without role for regular users', async () => {
+      const payload = {
+        user_id: mockUser.id,
+        username: mockUser.username,
+        email: mockUser.email,
+        token_type: 'access' as const
+      };
+
+      const token = await generateJWT(payload, mockEnv.JWT_SECRET, '10m');
+      const verified = await verifyJWT(token, mockEnv.JWT_SECRET);
+      
+      expect(verified).toBeDefined();
+      expect(verified?.role).toBeUndefined();
     });
   });
 
@@ -172,6 +212,26 @@ describe('JWT Service', () => {
     it('should throw error for missing AUTH_KV', async () => {
       const envWithoutKV = { ...mockEnv, AUTH_KV: undefined };
       await expect(generateTokenPair(mockUser, envWithoutKV as any)).rejects.toThrow('AUTH_KV binding is required');
+    });
+
+    it('should include role in token pair for admin users', async () => {
+      const tokenPair = await generateTokenPair(mockAdminUser, mockEnv);
+      
+      const accessPayload = await verifyJWT(tokenPair.access_token, mockEnv.JWT_SECRET);
+      const refreshPayload = await verifyJWT(tokenPair.refresh_token, mockEnv.JWT_SECRET);
+      
+      expect(accessPayload?.role).toBe('admin');
+      expect(refreshPayload?.role).toBe('admin');
+    });
+
+    it('should not include role in token pair for regular users', async () => {
+      const tokenPair = await generateTokenPair(mockUser, mockEnv);
+      
+      const accessPayload = await verifyJWT(tokenPair.access_token, mockEnv.JWT_SECRET);
+      const refreshPayload = await verifyJWT(tokenPair.refresh_token, mockEnv.JWT_SECRET);
+      
+      expect(accessPayload?.role).toBeUndefined();
+      expect(refreshPayload?.role).toBeUndefined();
     });
   });
 
