@@ -34,8 +34,8 @@ auth.post('/login', async (c) => {
       return c.json({ error: 'Invalid credentials' }, 401);
     }
 
-    // Verify password (skip if user has no password_hash - OAuth user)
-    if (!user.password_hash) {
+    // Verify password (skip if user is OAuth-only)
+    if (user.password_hash === 'OAUTH_USER') {
       return c.json({ error: 'Please use Google Sign-In for this account' }, 401);
     }
     
@@ -290,12 +290,12 @@ auth.get('/google/callback', async (c) => {
       role = userCount?.count === 0 ? 'admin' : 'user';
     }
 
-    // Create or update user with role (provide NULL for password_hash)
+    // Create or update user with role (use placeholder for password_hash since it's NOT NULL)
     const user = await c.env.DB.prepare(
-      'INSERT INTO users (email, username, google_id, role, password_hash) VALUES (?, ?, ?, ?, NULL) ' +
+      'INSERT INTO users (email, username, google_id, role, password_hash) VALUES (?, ?, ?, ?, ?) ' +
       'ON CONFLICT(email) DO UPDATE SET google_id = ?, updated_at = CURRENT_TIMESTAMP ' +
       'RETURNING id, email, username, role'
-    ).bind(email, payload.name || email.split('@')[0], payload.sub, role, payload.sub).first();
+    ).bind(email, payload.name || email.split('@')[0], payload.sub, role, 'OAUTH_USER', payload.sub).first();
 
     // Generate our own tokens with role
     const tokens = await generateToken(
