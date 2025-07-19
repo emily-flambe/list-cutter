@@ -1,7 +1,4 @@
 import { R2StorageService } from './r2-service.js';
-import { MetricsService } from '../monitoring/metrics-service.js';
-import { UsageTracker } from '../monitoring/usage-tracker.js';
-import { MetricsConfiguration } from '../../types/metrics.js';
 import { CloudflareEnv } from '../../types/env.js';
 
 /**

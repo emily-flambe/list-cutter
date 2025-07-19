@@ -4,7 +4,6 @@ import {
   SecurityEventCategory, 
   RiskLevel 
 } from '../types/security-events';
-import { MetricsService } from './monitoring/metrics-service';
 
 export interface SecurityEvent {
   id: string;
@@ -62,16 +61,14 @@ export interface SecurityMetrics {
 
 export class SecurityEventLogger {
   private db: D1Database;
-  private metricsService: MetricsService;
   private alertWebhook?: string;
 
   constructor(
     db: D1Database,
-    metricsService: MetricsService,
+    metricsService: any, // Keep parameter for backward compatibility but don't use it
     alertWebhook?: string
   ) {
     this.db = db;
-    this.metricsService = metricsService;
     this.alertWebhook = alertWebhook;
   }
 
@@ -110,8 +107,7 @@ export class SecurityEventLogger {
         event.timestamp.toISOString()
       ).run();
 
-      // 2. Send metrics to monitoring system
-      await this.recordSecurityMetrics(event);
+      // 2. Metrics recording removed (monitoring service deleted)
 
       // 3. Trigger alerts for high-severity events
       if (this.shouldTriggerAlert(event)) {
@@ -519,20 +515,8 @@ export class SecurityEventLogger {
    * Private helper methods
    */
   private async recordSecurityMetrics(event: SecurityEvent): Promise<void> {
-    try {
-      await this.metricsService.recordSecurityMetric({
-        eventType: event.type,
-        severity: event.severity,
-        category: event.category,
-        riskLevel: event.riskLevel,
-        userId: event.userId,
-        timestamp: event.timestamp,
-        responseTime: event.responseTime,
-        metadata: event.metadata
-      });
-    } catch (error) {
-      console.error('Failed to record security metrics:', error);
-    }
+    // Metrics recording removed - monitoring service deleted
+    // This method is kept as a no-op for backward compatibility
   }
 
   private shouldTriggerAlert(event: SecurityEvent): boolean {

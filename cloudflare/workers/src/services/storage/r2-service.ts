@@ -1,6 +1,4 @@
 
-import { MetricsService } from '../monitoring/metrics-service.js';
-import { OperationData } from '../../types/metrics.js';
 
 export interface FileUploadOptions {
   userId: string;

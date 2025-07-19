@@ -3,7 +3,6 @@ import { R2StorageService } from '../services/storage/r2-service';
 import { SecurityManager } from '../services/security/security-manager';
 import { ProductionSecurityMiddleware, SecurityValidationResult, FileMetadata } from '../middleware/security-middleware';
 import { SecurityEventLogger } from '../services/security-event-logger';
-import { MetricsService } from '../services/monitoring/metrics-service';
 import { QuotaManager } from '../services/security/quota-manager';
 import { AccessControlService } from '../services/security/access-control';
 import { ComplianceManager } from '../services/security/compliance-manager';
@@ -59,7 +58,6 @@ export class SecureFileHandler {
   private r2Storage: R2StorageService;
   private securityMiddleware: ProductionSecurityMiddleware;
   private securityEventLogger: SecurityEventLogger;
-  private metricsService: MetricsService;
   private threatResponse: ThreatResponseService;
 
   constructor(
@@ -69,12 +67,11 @@ export class SecureFileHandler {
     auditLogger: SecurityEventLogger,
     complianceManager: ComplianceManager,
     quotaManager: QuotaManager,
-    metricsService: MetricsService,
+    metricsService: any, // Keep parameter for backward compatibility but don't use it
     threatResponse: ThreatResponseService
   ) {
     this.r2Storage = r2Storage;
     this.securityEventLogger = auditLogger;
-    this.metricsService = metricsService;
     this.threatResponse = threatResponse;
     
     // Initialize security middleware
@@ -222,8 +219,7 @@ export class SecureFileHandler {
         actionTaken: 'upload_completed'
       }, context);
 
-      // 9. Record upload metrics
-      await this.recordUploadMetrics(uploadResult, scanResult, startTime);
+      // 9. Metrics recording removed (monitoring service deleted)
 
       return {
         success: true,
@@ -363,8 +359,7 @@ export class SecureFileHandler {
         actionTaken: 'download_completed'
       }, context);
 
-      // 5. Record download metrics
-      await this.recordDownloadMetrics(fileObject, startTime);
+      // 5. Metrics recording removed (monitoring service deleted)
 
       return {
         success: true,
@@ -637,41 +632,5 @@ export class SecureFileHandler {
     };
   }
 
-  private async recordUploadMetrics(
-    uploadResult: { fileId: string; size: number; uploadType: string },
-    scanResult: ThreatDetectionResponse,
-    startTime: number
-  ): Promise<void> {
-    try {
-      // Record upload metrics
-      await this.metricsService.recordUploadMetrics({
-        fileId: uploadResult.fileId,
-        fileSize: uploadResult.size,
-        uploadType: uploadResult.uploadType,
-        scanDuration: scanResult.results.scanDuration,
-        scanSuccess: scanResult.success,
-        threatsDetected: scanResult.results.threats.length,
-        totalDuration: Date.now() - startTime
-      });
-    } catch (error) {
-      console.error('Failed to record upload metrics:', error);
-    }
-  }
-
-  private async recordDownloadMetrics(
-    fileObject: R2ObjectBody,
-    startTime: number
-  ): Promise<void> {
-    try {
-      // Record download metrics
-      await this.metricsService.recordDownloadMetrics({
-        fileSize: fileObject.size,
-        contentType: fileObject.httpMetadata?.contentType,
-        duration: Date.now() - startTime,
-        success: true
-      });
-    } catch (error) {
-      console.error('Failed to record download metrics:', error);
-    }
-  }
+  // Metrics recording methods removed (monitoring service deleted)
 }

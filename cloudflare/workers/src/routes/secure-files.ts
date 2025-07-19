@@ -13,7 +13,6 @@ import { ThreatResponseService } from '../services/security/threat-response';
 import { ThreatDetectionService } from '../services/security/threat-detector';
 import { PIIScannerService } from '../services/security/pii-scanner';
 import { SecurityAuditLogger } from '../services/security/audit-logger';
-import { MetricsService } from '../services/monitoring/metrics-service';
 import { R2StorageService } from '../services/storage/r2-service';
 import { SecureR2StorageService } from '../services/storage/secure-r2-service';
 import { 
