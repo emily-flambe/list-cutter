@@ -60,8 +60,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build frontend assets
+        run: |
+          cd ../../app/frontend
+          npm ci
+          npm run build
+          cd ../../cloudflare/workers
+
       - name: Deploy to Cloudflare Workers (Development)
-        run: npx wrangler deploy --env dev
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
