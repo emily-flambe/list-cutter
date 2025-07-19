@@ -75,16 +75,3 @@ jobs:
           workingDirectory: cloudflare/workers
           command: deploy
 
-      - name: Comment deployment URL
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const deployUrl = 'https://cutty-dev.emily-cogsdill.workers.dev';
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🚀 **Development deployment successful!**\n\nYour changes have been deployed to: ${deployUrl}\n\nThis is a temporary deployment for testing purposes.`
-            })
