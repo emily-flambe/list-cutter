@@ -210,7 +210,10 @@ auth.get('/google', async (c) => {
     `access_type=offline&` +
     `prompt=consent`;
 
-  return c.redirect(authUrl);
+  return c.json({
+    success: true,
+    authorization_url: authUrl
+  });
 });
 
 auth.get('/google/callback', async (c) => {
