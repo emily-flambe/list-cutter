@@ -234,6 +234,7 @@ auth.get('/google', async (c) => {
 });
 
 auth.get('/google/callback', async (c) => {
+  console.log('OAuth callback function entered');
   try {
     console.log('OAuth callback started');
     const code = c.req.query('code');
@@ -304,7 +305,12 @@ auth.get('/google/callback', async (c) => {
     return c.redirect(`${frontendUrl}/auth/callback?token=${tokens.access_token}`);
   } catch (error) {
     console.error('OAuth callback error:', error);
-    return c.json({ error: 'OAuth authentication failed' }, 500);
+    console.error('Error stack:', error.stack);
+    return c.json({ 
+      error: 'OAuth authentication failed',
+      details: error.message,
+      stack: error.stack 
+    }, 500);
   }
 });
 
