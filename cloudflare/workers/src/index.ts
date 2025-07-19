@@ -24,15 +24,8 @@ import {
 
 // Security imports
 import { SecurityConfigManager } from './config/security-config';
-import { SecurityMonitorService } from './services/security/security-monitor';
-import { SecurityMetricsCollector } from './services/security/metrics-collector';
 import { SecurityHeadersMiddleware } from './middleware/security-headers';
 import { ProductionSecurityMiddleware } from './middleware/security-middleware';
-import { SecurityManager } from './services/security/security-manager';
-import { AccessControlService } from './services/security/access-control';
-import { ComplianceManager } from './services/security/compliance-manager';
-import { QuotaManager } from './services/security/quota-manager';
-import { SecurityAuditLogger } from './services/security/audit-logger';
 import { SecurityEventLogger } from './services/security-event-logger';
 import { MetricsService } from './services/monitoring/metrics-service';
 import { verifyJWT } from './services/auth/jwt';
@@ -45,7 +38,6 @@ import dashboardMonitoringRoutes from './routes/dashboard-monitoring.js';
 import backupRoutes from './routes/backup-routes.js';
 import disasterRecoveryRoutes from './routes/disaster-recovery-routes.js';
 import dataExportRoutes from './routes/data-export-routes.js';
-import performanceOptimizationRoutes from './routes/performance-optimization.js';
 import authRoutes from './routes/auth.js';
 import accountsRoutes from './routes/accounts.js';
 import blueGreenDeploymentRoutes from './routes/deployment/blue-green.js';
@@ -54,8 +46,6 @@ import blueGreenDeploymentRoutes from './routes/deployment/blue-green.js';
 
 type HonoVariables = {
   securityConfig?: SecurityConfigManager;
-  securityMonitor?: SecurityMonitorService;
-  securityMetrics?: SecurityMetricsCollector;
   securityMiddleware?: ProductionSecurityMiddleware;
   securityEventLogger?: SecurityEventLogger;
   userId?: string;
@@ -65,8 +55,6 @@ const app = new Hono<{ Bindings: CloudflareEnv; Variables: HonoVariables }>();
 
 // Initialize security services
 let securityConfigManager: SecurityConfigManager;
-let securityMonitor: SecurityMonitorService;
-let securityMetricsCollector: SecurityMetricsCollector;
 let securityHeadersMiddleware: SecurityHeadersMiddleware;
 let productionSecurityMiddleware: ProductionSecurityMiddleware;
 let securityEventLogger: SecurityEventLogger;
@@ -84,53 +72,10 @@ app.use('*', async (c, next): Promise<void> => {
         fallbackToDefaults: true
       });
 
-      securityMonitor = new SecurityMonitorService({
-        configManager: securityConfigManager,
-        analytics: c.env.ANALYTICS,
-        kvNamespace: c.env.CUTTY_SECURITY_EVENTS,
-        alertWebhook: c.env.SECURITY_ALERT_WEBHOOK,
-        performanceThreshold: parseInt(c.env.SECURITY_PERFORMANCE_THRESHOLD || '100'),
-        enableRealTimeMonitoring: c.env.SECURITY_ENABLE_REAL_TIME_MONITORING === 'true',
-        batchSize: 100,
-        metricsRetentionDays: parseInt(c.env.SECURITY_METRICS_RETENTION_DAYS || '30')
-      });
 
-      securityMetricsCollector = new SecurityMetricsCollector({
-        configManager: securityConfigManager,
-        monitor: securityMonitor,
-        analytics: c.env.ANALYTICS,
-        kvStorage: c.env.CUTTY_SECURITY_METRICS,
-        config: {
-          enabled: true,
-          batchSize: 100,
-          flushIntervalSeconds: 60,
-          retentionDays: parseInt(c.env.SECURITY_METRICS_RETENTION_DAYS || '30'),
-          aggregationWindows: [5, 15, 60, 1440],
-          enabledMetrics: [
-            'security.auth.attempts',
-            'security.auth.failures',
-            'security.auth.duration',
-            'security.file.validations',
-            'security.file.validation_duration',
-            'security.file.threats',
-            'security.rate_limit.checks',
-            'security.rate_limit.violations',
-            'security.events.count',
-            'security.events.response_time',
-            'security.performance.duration'
-          ],
-          alertThresholds: {
-            'security.auth.failures': 10,
-            'security.file.threats': 5,
-            'security.rate_limit.violations': 100,
-            'security.performance.duration': 1000
-          }
-        }
-      });
 
       securityHeadersMiddleware = new SecurityHeadersMiddleware({
         configManager: securityConfigManager,
-        monitor: securityMonitor,
         enableNonceGeneration: true,
         enableReporting: true,
         customHeaders: {
@@ -143,22 +88,11 @@ app.use('*', async (c, next): Promise<void> => {
       // Initialize core security services if database is available
       if (c.env.DB && c.env.FILE_STORAGE) {
         const metricsService = new MetricsService(c.env.ANALYTICS, c.env.DB);
-        const securityAuditLogger = new SecurityAuditLogger(c.env.DB, c.env.ANALYTICS);
         securityEventLogger = new SecurityEventLogger(c.env.DB, metricsService, c.env.SECURITY_ALERT_WEBHOOK);
-        
-        // Initialize security management services
-        const securityManager = new SecurityManager(c.env.DB, c.env.FILE_STORAGE, c.env.ANALYTICS);
-        const accessControl = new AccessControlService(c.env.DB);
-        const complianceManager = new ComplianceManager(c.env.DB);
-        const quotaManager = new QuotaManager(c.env.DB);
 
         // Initialize production security middleware
         productionSecurityMiddleware = new ProductionSecurityMiddleware(
-          securityManager,
-          accessControl,
-          securityAuditLogger,
-          complianceManager,
-          quotaManager
+          securityConfigManager
         );
       }
 
@@ -171,8 +105,6 @@ app.use('*', async (c, next): Promise<void> => {
 
   // Store security services in context for use by other middleware/routes
   c.set('securityConfig', securityConfigManager);
-  c.set('securityMonitor', securityMonitor);
-  c.set('securityMetrics', securityMetricsCollector);
   c.set('securityMiddleware', productionSecurityMiddleware);
   c.set('securityEventLogger', securityEventLogger);
 
