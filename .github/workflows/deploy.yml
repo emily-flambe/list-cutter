@@ -15,10 +15,14 @@ on:
         options:
           - dev
           - prod
+  pull_request:
+    types: [labeled]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Only run on workflow_dispatch or when deploy-dev label is added
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.label.name == 'deploy-dev') }}
     
     permissions:
       contents: read
@@ -28,7 +32,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.event.pull_request.head.ref }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -56,21 +60,28 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const isWorkflowDispatch = '${{ github.event_name }}' === 'workflow_dispatch';
+            const environment = isWorkflowDispatch ? '${{ github.event.inputs.environment }}' : 'dev';
+            const ref = isWorkflowDispatch ? '${{ github.event.inputs.branch }}' : '${{ github.event.pull_request.head.ref }}';
+            const description = isWorkflowDispatch 
+              ? `Deploy to ${environment} via workflow dispatch`
+              : `Deploy PR #${{ github.event.pull_request.number }} to dev via label`;
+            
             const deployment = await github.rest.repos.createDeployment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: '${{ github.event.inputs.branch }}',
-              environment: '${{ github.event.inputs.environment }}',
-              description: `Deploy to ${{ github.event.inputs.environment }} via workflow dispatch`,
+              ref: ref,
+              environment: environment,
+              description: description,
               auto_merge: false,
               required_contexts: [],
-              production_environment: ${{ github.event.inputs.environment == 'prod' }}
+              production_environment: environment === 'prod'
             });
             return deployment.data.id;
           result-encoding: string
       
       - name: Deploy to Cloudflare Workers (Dev)
-        if: ${{ github.event.inputs.environment == 'dev' }}
+        if: ${{ github.event.inputs.environment == 'dev' || github.event_name == 'pull_request' }}
         id: deploy-dev
         uses: cloudflare/wrangler-action@v3
         with:
@@ -81,7 +92,7 @@ jobs:
           wranglerVersion: '4.24.3'
       
       - name: Deploy to Cloudflare Workers (Prod)
-        if: ${{ github.event.inputs.environment == 'prod' }}
+        if: ${{ github.event.inputs.environment == 'prod' && github.event_name == 'workflow_dispatch' }}
         id: deploy-prod
         uses: cloudflare/wrangler-action@v3
         with:
@@ -100,14 +111,16 @@ jobs:
               'dev': 'https://cutty-dev.listcutter.workers.dev',
               'prod': 'https://list-cutter.com'
             };
+            const isWorkflowDispatch = '${{ github.event_name }}' === 'workflow_dispatch';
+            const environment = isWorkflowDispatch ? '${{ github.event.inputs.environment }}' : 'dev';
             
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               deployment_id: ${{ steps.deployment.outputs.result }},
               state: 'success',
-              environment_url: envUrls['${{ github.event.inputs.environment }}'],
-              description: 'Deployment to ${{ github.event.inputs.environment }} succeeded'
+              environment_url: envUrls[environment],
+              description: `Deployment to ${environment} succeeded`
             });
       
       - name: Update deployment status - Failure
@@ -115,34 +128,54 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const isWorkflowDispatch = '${{ github.event_name }}' === 'workflow_dispatch';
+            const environment = isWorkflowDispatch ? '${{ github.event.inputs.environment }}' : 'dev';
+            
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               deployment_id: ${{ steps.deployment.outputs.result }},
               state: 'failure',
-              description: 'Deployment to ${{ github.event.inputs.environment }} failed'
+              description: `Deployment to ${environment} failed`
             });
       
       - name: Log deployment success
         if: success()
         run: |
-          echo "🚀 Deployment to ${{ github.event.inputs.environment }} successful!"
-          if [[ "${{ github.event.inputs.environment }}" == "dev" ]]; then
-            echo "🌐 Dev URL: https://cutty-dev.listcutter.workers.dev"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "🚀 Deployment to ${{ github.event.inputs.environment }} successful!"
+            if [[ "${{ github.event.inputs.environment }}" == "dev" ]]; then
+              echo "🌐 Dev URL: https://cutty-dev.listcutter.workers.dev"
+            else
+              echo "🌐 Production URL: https://list-cutter.com"
+            fi
+            echo "🌿 Branch: ${{ github.event.inputs.branch }}"
+            echo "📝 Commit: ${{ github.sha }}"
+            echo "🏷️ Triggered by: Manual workflow dispatch"
+            echo "⚠️ Environment: ${{ github.event.inputs.environment }}"
           else
-            echo "🌐 Production URL: https://list-cutter.com"
+            echo "🚀 PR #${{ github.event.pull_request.number }} deployed to dev!"
+            echo "🌐 Dev URL: https://cutty-dev.listcutter.workers.dev"
+            echo "🌿 PR Branch: ${{ github.event.pull_request.head.ref }}"
+            echo "📝 Commit: ${{ github.event.pull_request.head.sha }}"
+            echo "🏷️ Triggered by: deploy-dev label"
+            echo "⚠️ Environment: dev"
           fi
-          echo "🌿 Branch: ${{ github.event.inputs.branch }}"
-          echo "📝 Commit: ${{ github.sha }}"
-          echo "🏷️ Triggered by: Manual workflow dispatch"
-          echo "⚠️ Environment: ${{ github.event.inputs.environment }}"
       
       - name: Log deployment failure
         if: failure()
         run: |
-          echo "❌ Deployment to ${{ github.event.inputs.environment }} failed"
-          echo "🌿 Branch: ${{ github.event.inputs.branch }}"
-          echo "📝 Commit: ${{ github.sha }}"
-          echo "🏷️ Triggered by: Manual workflow dispatch"
-          echo "⚠️ Environment: ${{ github.event.inputs.environment }}"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "❌ Deployment to ${{ github.event.inputs.environment }} failed"
+            echo "🌿 Branch: ${{ github.event.inputs.branch }}"
+            echo "📝 Commit: ${{ github.sha }}"
+            echo "🏷️ Triggered by: Manual workflow dispatch"
+            echo "⚠️ Environment: ${{ github.event.inputs.environment }}"
+          else
+            echo "❌ PR #${{ github.event.pull_request.number }} deployment to dev failed"
+            echo "🌿 PR Branch: ${{ github.event.pull_request.head.ref }}"
+            echo "📝 Commit: ${{ github.event.pull_request.head.sha }}"
+            echo "🏷️ Triggered by: deploy-dev label"
+            echo "⚠️ Environment: dev"
+          fi
           echo "Please check the workflow logs for more details."
