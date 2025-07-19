@@ -5,29 +5,7 @@
 
 ## High-Level Architecture
 
-### Current State (Phase 7)
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   React Client  │    │  Django Backend │    │ Cloudflare Edge │
-│                 │    │   (Legacy)      │    │    (Primary)    │
-│  - Vite Build   │    │                 │    │                 │
-│  - Material UI  │    │  - REST API     │    │  - Hono.js      │
-│  - Auth Context │    │  - PostgreSQL   │    │  - D1 Database  │
-│                 │    │  - File Storage │    │  - R2 Storage   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   Migration     │
-                    │   In Progress   │
-                    │                 │
-                    │ Django → Workers│
-                    └─────────────────┘
-```
-
-### Target Architecture (Post-Migration)
+### Current Architecture
 ```
 ┌─────────────────┐    ┌─────────────────┐
 │   React Client  │    │ Cloudflare Edge │
@@ -62,12 +40,6 @@
 - **Testing**: Vitest 2.0.5 + Playwright 1.48.2
 - **Deployment**: Wrangler 4.24.3+ (v4+ required)
 
-### Backend (Legacy - Django)
-- **Framework**: Django + DRF
-- **Language**: Python 3.11+
-- **Database**: PostgreSQL
-- **Package Manager**: Poetry
-- **Status**: Being migrated to Workers
 
 ### Infrastructure
 - **CDN**: Cloudflare Global Network
@@ -187,21 +159,6 @@ GitHub Push → Actions → Tests → Security → Deploy → Validate
         Check        Perf     Scan     Deploy    Monitor
 ```
 
-## Migration Architecture
-
-### Current Migration Status
-@include ../.claude/project-config.yml#ProjectStructure
-
-### Migration Strategy
-1. **Phase 7** (Current): Testing & Optimization
-2. **Phase 8**: Deployment & Cutover  
-3. **Phase 9**: Cleanup & Documentation
-
-### Data Migration
-- **User Data**: Automated migration scripts
-- **File Migration**: Batch R2 transfer with validation
-- **Configuration**: Environment variable mapping
-- **DNS Cutover**: Gradual traffic shifting
 
 ## Monitoring and Observability
 

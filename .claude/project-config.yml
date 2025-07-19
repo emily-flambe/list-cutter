@@ -4,7 +4,7 @@
 ProjectIdentity: &ProjectIdentity
   name: "cutty"
   repository: "list-cutter"
-  description: "Django + React application being migrated to Cloudflare Workers with D1 database and R2 storage"
+  description: "React + Cloudflare Workers application with D1 database and R2 storage"
   
   naming_conventions:
     github_repository: "list-cutter"
@@ -69,9 +69,8 @@ WranglerCommands: &WranglerCommands
       - "Frontend must be built before worker deployment (creates required dist/ assets)"
 
 ProjectStructure: &ProjectStructure
-  main_application: "Django backend with React frontend"
+  main_application: "Cloudflare Workers backend with React frontend"
   target_deployment: "Separate Cloudflare Workers for dev/prod with D1 + R2"
-  migration_tools: "Comprehensive Python scripts for file migration"
   deployment_configs:
     development: "wrangler.toml - cutty-dev worker"
     production: "wrangler.prod.toml - cutty worker"

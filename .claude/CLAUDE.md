@@ -6,7 +6,7 @@
 # ⚠️  NO STAGING ENVIRONMENT EXISTS
 # 🚨🚨🚨 NEVER FORGET THIS CONFIGURATION 🚨🚨🚨
 
-Comprehensive configuration for the Cutty (List Cutter) application - a Django to Cloudflare Workers migration project.
+Comprehensive configuration for the Cutty (List Cutter) application - a Cloudflare Workers application.
 
 ## Quick Navigation
 
@@ -18,7 +18,6 @@ Comprehensive configuration for the Cutty (List Cutter) application - a Django t
 
 ### 🏗️ Architecture Documentation
 - [System Overview](.claude/architecture/overview.md) - High-level architecture and tech stack
-- [Migration Strategy](.claude/architecture/migration.md) - Django to Workers migration plan
 - [Environment Configuration](.claude/architecture/environments.md) - Development/production setup
 
 ### 🔧 Specialized Workflows
@@ -185,7 +184,6 @@ import GoogleSignInButton from './components/GoogleSignInButton';
 - **Frontend**: React + Vite (Material-UI)
 - **Testing**: Vitest + Playwright with comprehensive coverage
 - **Security**: JWT authentication, API keys, comprehensive monitoring
-- **Legacy**: Django backend (migration target)
 
 ### Key Commands for Daily Development
 
