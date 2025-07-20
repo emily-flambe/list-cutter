@@ -24,7 +24,7 @@ const LogoutConfirmation = () => {
   };
 
   return (
-    <Box sx={{ p: 4, maxWidth: 500, mx: 'auto', textAlign: 'center' }}>
+    <Box sx={{ p: 4, maxWidth: 600, mx: 'auto', textAlign: 'center' }}>
       <Typography variant="h5" gutterBottom>
         Are you SURE you want to log out?
       </Typography>
