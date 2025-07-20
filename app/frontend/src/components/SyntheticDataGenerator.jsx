@@ -101,9 +101,9 @@ const SyntheticDataGenerator = () => {
       
       console.log('✅ Synthetic data generation successful:', response.data);
       
-      if (response.data.download_url) {
-        setDownloadUrl(response.data.download_url);
-        setSuccessMessage(`Successfully generated ${formData.count} synthetic records${formData.state ? ` for ${formData.state}` : ''}`);
+      if (response.data.file && response.data.file.downloadUrl) {
+        setDownloadUrl(response.data.file.downloadUrl);
+        setSuccessMessage(`Successfully generated ${response.data.metadata.recordCount} synthetic records${response.data.metadata.state ? ` for ${response.data.metadata.state}` : ''}`);
       } else {
         setSuccessMessage('Synthetic data generated successfully');
       }
