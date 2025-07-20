@@ -10,8 +10,8 @@
   },
   "ai": {
     "contextFiles": [
-      ".ai/config.md",
-      ".ai/contexts/*.md"
+      ".project/config.md",
+      ".project/contexts/*.md"
     ],
     "personas": {
       "builder": { "emoji": "🔨", "focus": "architecture, features" },

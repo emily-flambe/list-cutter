@@ -3,10 +3,10 @@
   "description": "Django to Cloudflare Workers migration project",
   "config_version": "2.0",
   "context_files": [
-    ".ai/config.md",
-    ".ai/contexts/architecture.md",
-    ".ai/contexts/coding-standards.md",
-    ".ai/contexts/dependencies.md"
+    ".project/config.md",
+    ".project/contexts/architecture.md",
+    ".project/contexts/coding-standards.md",
+    ".project/contexts/dependencies.md"
   ],
   "settings": {
     "persona_system": "simplified",

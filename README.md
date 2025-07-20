@@ -118,21 +118,21 @@ This project uses a unified configuration framework for AI coding assistants (Cl
 
 ### Quick Setup
 ```bash
-# Initialize AI configuration
-./init-ai-config.sh
+# Initialize project configuration
+./init-project-config.sh
 ```
 
 ### Configuration Files
-- **Unified Config**: `.ai/config.md` - Main configuration for all AI tools
-- **Context Files**: `.ai/contexts/` - Modular documentation (architecture, standards, dependencies)
-- **Settings**: `.ai/settings.json` - Project settings and preferences
+- **Unified Config**: `.project/config.md` - Main configuration for all AI tools
+- **Context Files**: `.project/contexts/` - Modular documentation (architecture, standards, dependencies)
+- **Settings**: `.project/settings.json` - Project settings and preferences
 
 ### Using with AI Tools
-- **Claude Code**: Automatically reads `.ai/` and `.claude/` directories
+- **Claude Code**: Automatically reads `.project/` and `.claude/` directories
 - **Gemini CLI**: Uses symlinked configuration in `.gemini/`
-- **Other Tools**: Point to `.ai/config.md` as primary context
+- **Other Tools**: Point to `.project/config.md` as primary context
 
-See [.ai/README.md](.ai/README.md) for detailed documentation.
+See [.project/README.md](.project/README.md) for detailed documentation.
 
 # 🦑 The Legend of Cutty the Cuttlefish
 

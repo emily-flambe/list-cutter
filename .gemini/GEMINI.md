@@ -1,1 +1,1 @@
-../.ai/config.md
+../.project/config.md

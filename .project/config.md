@@ -5,15 +5,15 @@ A modern web application for list management and CSV processing built on Cloudfl
 
 ## Architecture
 <!-- See detailed architecture documentation -->
-See: .ai/contexts/architecture.md
+See: .project/contexts/architecture.md
 
 ## Coding Standards
 <!-- Language-specific guidelines and conventions -->
-See: .ai/contexts/coding-standards.md
+See: .project/contexts/coding-standards.md
 
 ## Dependencies & Versions
 <!-- Framework versions and package requirements -->
-See: .ai/contexts/dependencies.md
+See: .project/contexts/dependencies.md
 
 ## Quick Start Commands
 
@@ -61,7 +61,7 @@ wrangler deploy --config wrangler.prod.toml
 #### Claude Code
 - Use the simplified 3-persona system (Builder 🔨, Guardian 🛡️, Guide 📖)
 - Commit format: `[Persona] 🔸 Brief description`
-- Reference `.ai/config.md` for project context
+- Reference `.project/config.md` for project context
 - Leverage artifacts for substantial code generation
 
 #### Gemini CLI
@@ -71,7 +71,7 @@ wrangler deploy --config wrangler.prod.toml
 - Reference unified settings.json for consistency
 
 #### Other Agents
-- Follow the unified configuration in `.ai/`
+- Follow the unified configuration in `.project/`
 - Respect project-specific conventions
 - Use modular context files for detailed information
 
