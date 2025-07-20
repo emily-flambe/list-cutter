@@ -154,10 +154,10 @@ app.use('/api/*', rateLimitMiddleware({
   maxRequests: 60  // 60 requests per minute
 }));
 
-// More restrictive rate limiting for auth endpoints
+// More restrictive rate limiting for auth endpoints (but not for /user)
 app.use('/api/v1/auth/*', rateLimitMiddleware({ 
-  windowMs: 300000, // 5 minutes
-  maxRequests: 10   // 10 auth requests per 5 minutes
+  windowMs: 60000,  // 1 minute
+  maxRequests: 30   // 30 auth requests per minute (allow multiple components to check auth)
 }));
 
 // API version prefix
