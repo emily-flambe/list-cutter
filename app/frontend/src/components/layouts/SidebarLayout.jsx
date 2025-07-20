@@ -215,14 +215,9 @@ const SidebarLayout = ({ children }) => {
             <Avatar sx={{ bgcolor: 'var(--accent)', width: 32, height: 32 }}>
               {user?.username?.[0]?.toUpperCase()}
             </Avatar>
-            <Box>
-              <Typography variant="body2" sx={{ color: 'var(--primary-text)' }}>
-                {user?.username || 'User'}
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'var(--primary-text)', opacity: 0.7 }}>
-                Logged in
-              </Typography>
-            </Box>
+            <Typography variant="body2" sx={{ color: 'var(--primary-text)' }}>
+              {user?.username || 'User'}
+            </Typography>
           </Box>
         ) : (
           <Chip 
