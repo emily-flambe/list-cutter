@@ -200,3 +200,6 @@ cloudflare/workers/local.sqlite-wal
 
 # Screenshots
 screenshots/debug/
+
+# AI Configuration
+.ai/.env

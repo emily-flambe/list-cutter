@@ -1,0 +1,78 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "cutty",
+    "displayName": "Cutty (List Cutter)",
+    "type": "web-application",
+    "language": "typescript",
+    "framework": "cloudflare-workers",
+    "frontend": "react"
+  },
+  "ai": {
+    "contextFiles": [
+      ".ai/config.md",
+      ".ai/contexts/*.md"
+    ],
+    "personas": {
+      "builder": { "emoji": "🔨", "focus": "architecture, features" },
+      "guardian": { "emoji": "🛡️", "focus": "quality, security" },
+      "guide": { "emoji": "📖", "focus": "documentation" }
+    },
+    "model": {
+      "temperature": 0.7,
+      "maxTokens": 4096
+    }
+  },
+  "environments": {
+    "development": {
+      "worker": "cutty-dev",
+      "database": "cutty-dev",
+      "domain": "cutty-dev.emilycogsdill.com"
+    },
+    "production": {
+      "worker": "cutty",
+      "database": "cutty-prod",
+      "domain": "cutty.emilycogsdill.com"
+    }
+  },
+  "formatting": {
+    "indentSize": 2,
+    "lineWidth": 80,
+    "useTabs": false,
+    "quoteStyle": "single",
+    "semicolons": true,
+    "trailingComma": "es5"
+  },
+  "testing": {
+    "framework": "vitest",
+    "coverage": {
+      "target": 80,
+      "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/types/*"]
+    },
+    "analyticsEngine": false
+  },
+  "security": {
+    "jwtExpiry": "24h",
+    "rateLimits": {
+      "general": { "requests": 30, "window": "15m" },
+      "auth": { "requests": 5, "window": "15m" },
+      "upload": { "requests": 10, "window": "1h" }
+    }
+  },
+  "tools": {
+    "mcp": {
+      "servers": []
+    },
+    "extensions": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode"
+    ]
+  },
+  "commands": {
+    "dev": "cd cloudflare/workers && npm run dev",
+    "test": "cd cloudflare/workers && npm test",
+    "build": "npm run build",
+    "deploy:dev": "wrangler deploy",
+    "deploy:prod": "wrangler deploy --config wrangler.prod.toml"
+  }
+}

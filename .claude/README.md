@@ -1,32 +1,40 @@
 # Claude Configuration Directory
 
-This directory contains simplified configuration files for Claude Code to understand the Cutty (List Cutter) project.
+This directory contains Claude-specific configuration that extends the unified AI framework.
 
-## Files
+## Unified Configuration
 
-- **CLAUDE.md** - Main configuration file with project overview and key commands
-- **project-config.yml** - Project settings, environments, and common commands
-- **troubleshooting.yml** - Common issues and fixes
-- **subagents.yml** - AI persona system (3 core personas)
-- **commands-all.md** - Comprehensive command reference
-- **architecture-overview.md** - System architecture and tech stack
+The primary configuration for this project is now in the `.ai/` directory:
+- **Main Config**: `.ai/config.md`
+- **Architecture**: `.ai/contexts/architecture.md`
+- **Standards**: `.ai/contexts/coding-standards.md`
+- **Dependencies**: `.ai/contexts/dependencies.md`
 
-## Simplified Structure
+## Claude-Specific Files
 
-We've reduced from 15+ files to 6 core files by:
-- Consolidating 8 subagents to 3 personas
-- Merging 5 YAML configs to 2
-- Flattening 3 subdirectories
-- Removing duplicate content
-- Direct content instead of @includes
+This directory maintains simplified Claude-specific references:
+- `claude_project.json` - Claude project metadata
+- Legacy simplified configs (being phased out in favor of `.ai/`)
 
-## Usage
+## Migration Notice
 
-Claude Code will automatically read these files to understand:
-- Project structure and naming
-- Development workflows
-- Deployment procedures
-- Troubleshooting steps
-- Architecture decisions
+We've migrated to a unified AI configuration framework that works with:
+- Claude Code
+- Gemini CLI
+- Other AI coding assistants
 
-The simplified structure makes it easier to maintain and update the configuration.
+For the most up-to-date configuration, refer to:
+1. `.ai/config.md` - Primary configuration
+2. `.ai/contexts/` - Detailed context files
+3. `.ai/settings.json` - Unified settings
+
+## Using with Claude Code
+
+Claude Code will automatically read both:
+1. The unified `.ai/` directory
+2. This `.claude/` directory for any Claude-specific overrides
+
+The unified configuration provides better maintainability and consistency across different AI tools.
+
+---
+*See [.ai/README.md](../.ai/README.md) for complete documentation of the unified framework.*
