@@ -15,6 +15,12 @@ See: .project/contexts/coding-standards.md
 <!-- Framework versions and package requirements -->
 See: .project/contexts/dependencies.md
 
+## Debugging & Troubleshooting
+<!-- Hard-earned tribal knowledge and debugging procedures -->
+See: .project/contexts/debugging-lessons.md
+See: .project/contexts/troubleshooting.md
+See: .project/contexts/development-workflows.md
+
 ## Quick Start Commands
 
 ### Development

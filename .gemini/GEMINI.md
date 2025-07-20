@@ -107,5 +107,26 @@ npx wrangler versions upload --dry-run
 - API key support for programmatic access
 - Multi-layered rate limiting
 
+## Debugging & Development Resources
+
+### Essential References
+- **Debugging Lessons**: `.project/contexts/debugging-lessons.md` - Hard-earned tribal knowledge
+- **Development Workflows**: `.project/contexts/development-workflows.md` - Daily commands and procedures  
+- **Troubleshooting Guide**: `.project/contexts/troubleshooting.md` - Systematic problem-solving
+- **Architecture Details**: `.project/contexts/architecture.md` - Technical specifications
+- **Coding Standards**: `.project/contexts/coding-standards.md` - Development guidelines
+
+### Quick Emergency Commands
+```bash
+# Quick health check
+curl https://cutty.emilycogsdill.com/api/health
+
+# Rollback deployment
+wrangler deployments list && wrangler rollback [deployment-id]
+
+# Clean environment reproduction
+rm -rf node_modules package-lock.json && npm ci
+```
+
 ---
-*For detailed technical specifications, see: `.project/config.md` and `.project/contexts/`*
+*For complete technical specifications and debugging procedures, see: `.project/config.md` and `.project/contexts/`*
