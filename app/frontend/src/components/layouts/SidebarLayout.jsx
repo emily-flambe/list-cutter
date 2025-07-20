@@ -69,7 +69,7 @@ const SidebarLayout = ({ children }) => {
               Authorization: `Bearer ${token}`,
             },
           });
-          setUser(response.data);
+          setUser(response.data.user || response.data);
         } catch (error) {
           console.error("Failed to fetch user data:", error);
           setUser(null);
