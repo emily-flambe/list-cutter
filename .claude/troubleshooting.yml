@@ -1,0 +1,48 @@
+# Simplified Troubleshooting & Lessons Learned
+
+CriticalChecks:
+  wrangler_version: "Must be v4.0.0+ (check: npx wrangler --version)"
+  environment_vars: ".dev.vars must exist with JWT_SECRET and API_KEY_SALT"
+  
+CommonIssues:
+  deployment_fails:
+    symptoms: ["Internal error", "Binding field error"]
+    checks:
+      - "Verify wrangler.toml assets directory matches frontend build location"
+      - "Check deployment type (Workers, not Pages) in Cloudflare dashboard"
+      - "Run: npm ci (not npm install) to match CI environment"
+    
+  typescript_errors:
+    symptoms: ["Build fails", "Type errors"]
+    approach: "Build first, perfect types later"
+    fixes:
+      - "Focus on npm run build success"
+      - "Use type assertions sparingly: Number(value) || 0"
+      - "Skip Analytics Engine in tests (comment out in vitest.config.ts)"
+  
+  oauth_issues:
+    symptoms: ["Invalid redirect_uri", "State parameter mismatch"]
+    fixes:
+      - "Verify all OAuth secrets are set correctly"
+      - "Check redirect URI matches Google Console exactly"
+      - "Ensure JWT_SECRET is configured"
+
+QuickFixes:
+  clean_install: |
+    rm -rf node_modules package-lock.json
+    npm ci
+  
+  verify_deployment: |
+    npx wrangler versions upload --dry-run
+    npx wrangler deploy --dry-run
+  
+  check_oauth: |
+    wrangler secret list | grep GOOGLE
+    curl 'http://localhost:8787/api/v1/auth/google'
+
+KeyLessons:
+  - "Always reproduce CI environment locally before debugging"
+  - "Workers deployment != Pages deployment (different build commands)"
+  - "Test mocks must match TypeScript interfaces exactly"
+  - "Multi-layered problems require systematic layer-by-layer fixes"
+  - "Package.json name must match worker name for consistency"

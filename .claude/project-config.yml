@@ -1,104 +1,64 @@
-# Project Configuration
-# Project-specific identity and naming conventions
+# Simplified Project Configuration for Cutty (List Cutter)
+# Consolidated from multiple YAML files
 
-ProjectIdentity: &ProjectIdentity
+Project:
   name: "cutty"
   repository: "list-cutter"
-  description: "Django + React application being migrated to Cloudflare Workers with D1 database and R2 storage"
+  description: "Django to Cloudflare Workers migration with D1 database and R2 storage"
   
-  naming_conventions:
-    github_repository: "list-cutter"
-    cloudflare_resources: "cutty-*"
-    domains:
-      - "cutty.emilycogsdill.com"
-      - "list-cutter.emilycogsdill.com"
-    worker_name: "cutty"
-    database_names:
-      - "cutty-dev"
-      - "cutty-prod"
-    r2_buckets:
-      - "cutty-files-dev"
-      - "cutty-files-prod"
-
-WranglerCommands: &WranglerCommands
-  version_requirements:
-    minimum_version: "4.0.0"
-    current_version: "4.24.3"
-    validation_command: "npx wrangler --version"
-    compatibility_note: "Wrangler v4+ required for proper binding syntax and deployment features"
-  
-  database_operations:
-    - "wrangler d1 create cutty-db"
-    - "wrangler d1 execute cutty-db --file=schema.sql"
-  
-  r2_storage_operations:
-    - "wrangler r2 bucket create cutty-files-dev"
-    - "wrangler r2 bucket cors put cutty-files-dev --file cors.json"
-  
-  deployment_configuration:
-    workers:
-      development:
-        name: "cutty-dev"
-        domain: "cutty-dev.emilycogsdill.com"
-        config_file: "wrangler.toml"
-        environment: "development"
-        deploy_command: "npm run deploy:dev"
-        deploy_command_alt: "wrangler deploy"
+  environments:
+    development:
+      worker: "cutty-dev"
+      database: "cutty-dev"
+      domain: "cutty-dev.emilycogsdill.com"
       
-      production:
-        name: "cutty"
-        domain: "cutty.emilycogsdill.com"
-        config_file: "wrangler.prod.toml"
-        environment: "production"
-        deploy_command: "npm run deploy:production"
-        deploy_command_alt: "wrangler deploy --config wrangler.prod.toml"
-    
-    build_sequence:
-      full_build_from_workers_dir: |
-        # Build frontend assets first (required for worker static serving)
-        cd ../../app/frontend && npm run build && cd ../../cloudflare/workers
-        # Build and deploy worker
-        npm run build && npm run deploy:production
-      
-      development_only: "npm run deploy:dev"
-      production_only: "npm run deploy:production"
-    
-    setup_requirements:
-      - "Rename workers in Cloudflare dashboard: 'cutty' → 'cutty-dev', 'cutty-production' → 'cutty'"
-      - "Set secrets for both workers: JWT_SECRET, API_KEY_SALT"
-      - "Frontend must be built before worker deployment (creates required dist/ assets)"
+    production:
+      worker: "cutty"
+      database: "cutty-prod"
+      domain: "cutty.emilycogsdill.com"
 
-ProjectStructure: &ProjectStructure
-  main_application: "Django backend with React frontend"
-  target_deployment: "Separate Cloudflare Workers for dev/prod with D1 + R2"
-  migration_tools: "Comprehensive Python scripts for file migration"
-  deployment_configs:
-    development: "wrangler.toml - cutty-dev worker"
-    production: "wrangler.prod.toml - cutty worker"
-  architecture_note: "Clean separation: dev worker 'cutty-dev' and production worker 'cutty' with separate configurations"
+Commands:
+  # Development
+  dev:
+    start_backend: "cd cloudflare/workers && npm run dev"
+    start_frontend: "cd app/frontend && npm run dev"
+    test: "cd cloudflare/workers && npm test"
+    build: "npm run build && npx wrangler versions upload --dry-run"
+  
+  # Deployment
+  deploy:
+    development: "wrangler deploy"
+    production: "wrangler deploy --config wrangler.prod.toml"
+    
+  # Database
+  database:
+    migrate_dev: "wrangler d1 execute cutty-dev --file=migrations/[migration].sql"
+    migrate_prod: "wrangler d1 execute cutty-prod --file=migrations/[migration].sql"
+    
+  # OAuth Setup
+  oauth:
+    set_secrets: |
+      wrangler secret put GOOGLE_CLIENT_ID
+      wrangler secret put GOOGLE_CLIENT_SECRET
+      wrangler secret put GOOGLE_REDIRECT_URI
 
-CommitStandards: &CommitStandards
-  frequency: "Make frequent, small commits rather than large monolithic changes"
-  message_format: "[SubagentName] 🔸 Brief description"
+GitHubIssues:
+  # Use gh issue create directly - no templates needed
+  command: 'gh issue create --title "Title" --body "Description" --label "label1,label2"'
+  
+  common_labels:
+    - bug
+    - enhancement
+    - priority:high
+    - priority:medium
+    - priority:low
+    - security
+    - performance
+
+CommitStandards:
+  format: "[Persona] 🔸 Brief description"
+  frequency: "Small, frequent commits"
   examples:
-    - "[Benny] 🦫 Redesign D1 schema for better performance"
-    - "[Buzzy] 🐝 Add CSV file upload endpoint"
-    - "[Scout] 🦅 Refactor authentication middleware"
-    - "[Sherlock] 🐕‍🦺 Fix memory leak in file processing"
-    - "[Dash] 🐆 Optimize database query performance"
-    - "[Tank] 🦔 Add rate limiting to API endpoints"
-    - "[Liberty] 🦅 Update deployment pipeline configuration"
-    - "[Echo] 🦜 Update API documentation for new endpoints"
-  
-  guidelines:
-    - Keep commits focused on single concern or feature
-    - Use descriptive but concise messages (50 chars or less preferred)
-    - Include appropriate subagent emoji for easy identification
-    - Explain 'what' changed, not 'how' (code shows implementation details)
-    - Reference issue numbers when applicable
-
-SubagentWorkflow: &SubagentWorkflow
-  selection_criteria: "Choose subagent based on primary task focus and expertise area"
-  personality_consistency: "Maintain consistent subagent personality throughout interaction"
-  handoff_protocol: "Natural handoffs between subagents when scope or focus changes"
-  collaboration_style: "Subagents can work together on complex tasks requiring multiple specialties"
+    - "[Builder] 🔨 Add CSV upload endpoint"
+    - "[Guardian] 🛡️ Fix authentication vulnerability"
+    - "[Guide] 📖 Update API documentation"
