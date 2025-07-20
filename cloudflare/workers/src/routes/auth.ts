@@ -170,7 +170,7 @@ auth.post('/refresh', async (c) => {
   }
 });
 
-// Get user profile endpoint
+// Get user profile endpoint - fixed validateToken params
 auth.get('/user', async (c) => {
   try {
     const authHeader = c.req.header('Authorization');
