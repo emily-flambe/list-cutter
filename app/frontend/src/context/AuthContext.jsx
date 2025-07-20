@@ -31,15 +31,15 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserData = async (token) => {
     try {
-      const response = await api.get('/api/v1/accounts/user');
-      setUser(response.data);
+      const response = await api.get('/api/v1/auth/user');
+      setUser(response.data.user || response.data);
     } catch (error) {
       if (error.response && error.response.status === 401) {
         console.error('Failed to fetch user data:', error);
         console.log('Attempting to refresh token...');
         await refreshToken();
         try {
-          const response = await api.get('/api/v1/accounts/user');
+          const response = await api.get('/api/v1/auth/user');
           setUser(response.data);
         } catch (retryError) {
           console.error('Failed to fetch user data after refreshing token:', retryError);
@@ -109,8 +109,8 @@ export const AuthProvider = ({ children }) => {
     if (storedToken) {
       try {
         // Try to fetch user data to validate token
-        const response = await api.get('/api/v1/accounts/user');
-        setUser(response.data);
+        const response = await api.get('/api/v1/auth/user');
+        setUser(response.data.user || response.data);
       } catch (error) {
         if (error.response && (error.response.status === 401 || error.response.status === 400)) {
           console.log('Stored token is invalid, clearing tokens');

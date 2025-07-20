@@ -59,24 +59,26 @@ const FontSwitcher = ({ compact = false }) => {
             },
           }}
         >
-          {Object.entries(fontVariants).map(([key, font]) => (
-            <MenuItem
-              key={key}
-              onClick={() => handleFontChange(key)}
-              selected={currentFont === key}
-              sx={{
-                fontFamily: font.fontFamily,
-                '&.Mui-selected': {
-                  backgroundColor: 'var(--accent)',
-                  '&:hover': {
-                    backgroundColor: 'var(--dark-accent)',
+          {Object.entries(fontVariants)
+            .sort(([, a], [, b]) => a.name.localeCompare(b.name))
+            .map(([key, font]) => (
+              <MenuItem
+                key={key}
+                onClick={() => handleFontChange(key)}
+                selected={currentFont === key}
+                sx={{
+                  fontFamily: font.fontFamily,
+                  '&.Mui-selected': {
+                    backgroundColor: 'var(--accent)',
+                    '&:hover': {
+                      backgroundColor: 'var(--dark-accent)',
+                    },
                   },
-                },
-              }}
-            >
-              {font.name}
-            </MenuItem>
-          ))}
+                }}
+              >
+                {font.name}
+              </MenuItem>
+            ))}
         </Menu>
       </>
     );
@@ -118,24 +120,26 @@ const FontSwitcher = ({ compact = false }) => {
           },
         }}
       >
-        {Object.entries(fontVariants).map(([key, font]) => (
-          <MenuItem
-            key={key}
-            onClick={() => handleFontChange(key)}
-            selected={currentFont === key}
-            sx={{
-              fontFamily: font.fontFamily,
-              '&.Mui-selected': {
-                backgroundColor: 'var(--accent)',
-                '&:hover': {
-                  backgroundColor: 'var(--dark-accent)',
+        {Object.entries(fontVariants)
+          .sort(([, a], [, b]) => a.name.localeCompare(b.name))
+          .map(([key, font]) => (
+            <MenuItem
+              key={key}
+              onClick={() => handleFontChange(key)}
+              selected={currentFont === key}
+              sx={{
+                fontFamily: font.fontFamily,
+                '&.Mui-selected': {
+                  backgroundColor: 'var(--accent)',
+                  '&:hover': {
+                    backgroundColor: 'var(--dark-accent)',
+                  },
                 },
-              },
-            }}
-          >
-            {font.name}
-          </MenuItem>
-        ))}
+              }}
+            >
+              {font.name}
+            </MenuItem>
+          ))}
       </Menu>
     </Box>
   );

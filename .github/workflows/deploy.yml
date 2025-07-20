@@ -1,13 +1,8 @@
-name: Deploy to Environment
+name: Deploy
 
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to deploy'
-        required: true
-        type: string
-        default: 'main'
       environment:
         description: 'Environment to deploy to'
         required: true
@@ -20,15 +15,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     
-    permissions:
-      contents: read
-      deployments: write
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.branch }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -51,98 +40,20 @@ jobs:
         working-directory: cloudflare/workers
         run: npm ci
       
-      - name: Create GitHub deployment
-        id: deployment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const deployment = await github.rest.repos.createDeployment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: '${{ github.event.inputs.branch }}',
-              environment: '${{ github.event.inputs.environment }}',
-              description: `Deploy to ${{ github.event.inputs.environment }} via workflow dispatch`,
-              auto_merge: false,
-              required_contexts: [],
-              production_environment: ${{ github.event.inputs.environment == 'prod' }}
-            });
-            return deployment.data.id;
-          result-encoding: string
-      
       - name: Deploy to Cloudflare Workers (Dev)
         if: ${{ github.event.inputs.environment == 'dev' }}
-        id: deploy-dev
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: cloudflare/workers
           command: deploy
-          wranglerVersion: '4.24.3'
       
       - name: Deploy to Cloudflare Workers (Prod)
         if: ${{ github.event.inputs.environment == 'prod' }}
-        id: deploy-prod
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: cloudflare/workers
           command: deploy --config wrangler.prod.toml
-          wranglerVersion: '4.24.3'
-      
-      - name: Update deployment status - Success
-        if: success()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const envUrls = {
-              'dev': 'https://cutty-dev.listcutter.workers.dev',
-              'prod': 'https://list-cutter.com'
-            };
-            
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: ${{ steps.deployment.outputs.result }},
-              state: 'success',
-              environment_url: envUrls['${{ github.event.inputs.environment }}'],
-              description: 'Deployment to ${{ github.event.inputs.environment }} succeeded'
-            });
-      
-      - name: Update deployment status - Failure
-        if: failure()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: ${{ steps.deployment.outputs.result }},
-              state: 'failure',
-              description: 'Deployment to ${{ github.event.inputs.environment }} failed'
-            });
-      
-      - name: Log deployment success
-        if: success()
-        run: |
-          echo "🚀 Deployment to ${{ github.event.inputs.environment }} successful!"
-          if [[ "${{ github.event.inputs.environment }}" == "dev" ]]; then
-            echo "🌐 Dev URL: https://cutty-dev.listcutter.workers.dev"
-          else
-            echo "🌐 Production URL: https://list-cutter.com"
-          fi
-          echo "🌿 Branch: ${{ github.event.inputs.branch }}"
-          echo "📝 Commit: ${{ github.sha }}"
-          echo "🏷️ Triggered by: Manual workflow dispatch"
-          echo "⚠️ Environment: ${{ github.event.inputs.environment }}"
-      
-      - name: Log deployment failure
-        if: failure()
-        run: |
-          echo "❌ Deployment to ${{ github.event.inputs.environment }} failed"
-          echo "🌿 Branch: ${{ github.event.inputs.branch }}"
-          echo "📝 Commit: ${{ github.sha }}"
-          echo "🏷️ Triggered by: Manual workflow dispatch"
-          echo "⚠️ Environment: ${{ github.event.inputs.environment }}"
-          echo "Please check the workflow logs for more details."

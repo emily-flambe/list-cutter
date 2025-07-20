@@ -138,23 +138,83 @@ export async function createUser(env: Env, userData: UserRegistration): Promise<
 }
 
 /**
- * Hash password for storage (placeholder implementation)
- * In production, use bcrypt or similar secure hashing
+ * Hash password for storage using PBKDF2
+ * Uses secure random salt and multiple iterations
  */
-async function hashPassword(password: string): Promise<string> {
-  // This is a placeholder - use bcrypt in production!
+export async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
-  const data = encoder.encode(password + 'salt-should-be-random');
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return btoa(String.fromCharCode(...new Uint8Array(hash)));
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits']
+  );
+  
+  const hash = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    256
+  );
+  
+  // Combine salt and hash for storage
+  const hashArray = new Uint8Array(hash);
+  const combined = new Uint8Array(salt.length + hashArray.length);
+  combined.set(salt);
+  combined.set(hashArray, salt.length);
+  
+  return btoa(String.fromCharCode(...combined));
 }
 
 /**
- * Verify password against hash (placeholder implementation)
- * In production, use bcrypt.compare or similar secure verification
+ * Verify password against hash using PBKDF2
  */
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  // This is a placeholder - use bcrypt.compare in production!
-  const computedHash = await hashPassword(password);
-  return computedHash === hash;
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  try {
+    const encoder = new TextEncoder();
+    const combined = new Uint8Array(atob(hash).split('').map(c => c.charCodeAt(0)));
+    
+    // Extract salt (first 16 bytes) and hash (remaining bytes)
+    const salt = combined.slice(0, 16);
+    const storedHash = combined.slice(16);
+    
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(password),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits']
+    );
+    
+    const computedHash = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt: salt,
+        iterations: 100000,
+        hash: 'SHA-256'
+      },
+      keyMaterial,
+      256
+    );
+    
+    const computedHashArray = new Uint8Array(computedHash);
+    
+    // Constant-time comparison
+    if (storedHash.length !== computedHashArray.length) return false;
+    let result = 0;
+    for (let i = 0; i < storedHash.length; i++) {
+      result |= storedHash[i] ^ computedHashArray[i];
+    }
+    return result === 0;
+  } catch (error) {
+    console.error('Password verification error:', error);
+    return false;
+  }
 }

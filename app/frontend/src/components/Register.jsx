@@ -23,7 +23,6 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [connectivityTest, setConnectivityTest] = useState(null);
   
   // Check if this is an OAuth callback
   const urlParams = new URLSearchParams(window.location.search);
@@ -33,35 +32,6 @@ const Register = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const testConnectivity = async () => {
-    setConnectivityTest({ loading: true });
-    try {
-      console.log('Testing API connectivity...');
-      console.log('API Base URL:', api.defaults.baseURL);
-      
-      // Test the auth/test endpoint
-      const response = await api.get('/api/v1/auth/test');
-      console.log('Connectivity test response:', response.data);
-      
-      setConnectivityTest({
-        success: true,
-        message: `✅ API Connected! Environment: ${response.data.environment}`,
-        details: response.data
-      });
-    } catch (error) {
-      console.error('Connectivity test failed:', error);
-      setConnectivityTest({
-        success: false,
-        message: '❌ API Connection Failed',
-        error: error.response?.data || error.message || 'Unknown error',
-        details: {
-          status: error.response?.status,
-          baseURL: api.defaults.baseURL,
-          fullURL: error.config?.url
-        }
-      });
-    }
-  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -249,41 +219,6 @@ const Register = () => {
         </Typography>
       </Divider>
 
-      {/* API Connectivity Test Section */}
-      <Box sx={{ mb: 3, p: 2, border: '1px solid #ddd', borderRadius: 1, backgroundColor: '#f9f9f9' }}>
-        <Typography variant="h6" gutterBottom>
-          🔧 Debug: API Connectivity Test
-        </Typography>
-        <Button 
-          variant="outlined" 
-          onClick={testConnectivity} 
-          disabled={connectivityTest?.loading}
-          sx={{ mb: 2 }}
-        >
-          {connectivityTest?.loading ? 'Testing...' : 'Test API Connection'}
-        </Button>
-        
-        {connectivityTest && !connectivityTest.loading && (
-          <Alert 
-            severity={connectivityTest.success ? "success" : "error"} 
-            sx={{ mb: 1 }}
-          >
-            <Typography variant="body2">
-              {connectivityTest.message}
-            </Typography>
-            {connectivityTest.details && (
-              <Box component="pre" sx={{ fontSize: '0.8rem', mt: 1, overflow: 'auto' }}>
-                {JSON.stringify(connectivityTest.details, null, 2)}
-              </Box>
-            )}
-            {connectivityTest.error && (
-              <Box component="pre" sx={{ fontSize: '0.8rem', mt: 1, overflow: 'auto' }}>
-                Error: {JSON.stringify(connectivityTest.error, null, 2)}
-              </Box>
-            )}
-          </Alert>
-        )}
-      </Box>
 
       <Box
         component="form"

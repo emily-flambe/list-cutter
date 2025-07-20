@@ -31,12 +31,7 @@ import {
   ExpandLess,
   ExpandMore,
   ChevronLeft as ChevronLeftIcon,
-  WaterDrop as WaterDropIcon,
-  // Other aquatic options:
-  // Water as WaterIcon,
-  // Waves as WavesIcon,
-  // Pool as PoolIcon,
-  // Sailing as SailingIcon,
+  AutoAwesome as AutoAwesomeIcon,
   // Anchor as AnchorIcon,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
@@ -69,7 +64,7 @@ const SidebarLayout = ({ children }) => {
               Authorization: `Bearer ${token}`,
             },
           });
-          setUser(response.data);
+          setUser(response.data.user || response.data);
         } catch (error) {
           console.error("Failed to fetch user data:", error);
           setUser(null);
@@ -207,40 +202,61 @@ const SidebarLayout = ({ children }) => {
       </Box>
 
       {/* User Info */}
-      <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        {loadingUser ? (
+      {loadingUser ? (
+        <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <Chip label="Loading..." size="small" />
-        ) : token ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Avatar sx={{ bgcolor: 'var(--accent)', width: 32, height: 32 }}>
-              {user?.username?.[0]?.toUpperCase()}
-            </Avatar>
-            <Box>
+        </Box>
+      ) : token ? (
+        <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Avatar sx={{ bgcolor: 'var(--accent)', width: 32, height: 32 }}>
+                {user?.username?.[0]?.toUpperCase()}
+              </Avatar>
               <Typography variant="body2" sx={{ color: 'var(--primary-text)' }}>
                 {user?.username || 'User'}
               </Typography>
-              <Typography variant="caption" sx={{ color: 'var(--primary-text)', opacity: 0.7 }}>
-                Logged in
-              </Typography>
             </Box>
+            <IconButton
+              component={Link}
+              to="/logout"
+              size="small"
+              sx={{ 
+                color: 'var(--primary-text)', 
+                '&:hover': { 
+                  backgroundColor: 'rgba(255,0,0,0.1)' 
+                } 
+              }}
+              title="Logout"
+            >
+              <LogoutIcon fontSize="small" />
+            </IconButton>
           </Box>
-        ) : (
-          <Chip 
-            label="Not logged in :(" 
-            size="small" 
-            color="warning"
-            component={Link}
-            to="/login"
-            clickable
-            sx={{
-              textDecoration: 'none',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 152, 0, 0.2)',
-              }
-            }}
-          />
-        )}
-      </Box>
+        </Box>
+      ) : (
+        <Box sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <List sx={{ py: 0 }}>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/login"
+                selected={location.pathname === '/login'}
+                sx={{
+                  '&.Mui-selected': {
+                    backgroundColor: 'var(--accent)',
+                    '&:hover': { backgroundColor: 'var(--dark-accent)' },
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
+                  <LoginIcon />
+                </ListItemIcon>
+                <ListItemText primary="Login" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Box>
+      )}
 
       {/* Navigation */}
       <List sx={{ flexGrow: 1, py: 1 }}>
@@ -259,7 +275,7 @@ const SidebarLayout = ({ children }) => {
             <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
               <HomeIcon />
             </ListItemIcon>
-            <ListItemText primary="About" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} />
+            <ListItemText primary="About" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
           </ListItemButton>
         </ListItem>
 
@@ -279,7 +295,7 @@ const SidebarLayout = ({ children }) => {
               <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
                 <ContentCutIcon />
               </ListItemIcon>
-              <ListItemText primary="CSV Cutter" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} />
+              <ListItemText primary="CSV Cutter" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
             </ListItemButton>
           </ListItem>
         )}
@@ -300,7 +316,7 @@ const SidebarLayout = ({ children }) => {
               <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
                 <ContentCutIcon />
               </ListItemIcon>
-              <ListItemText primary="CSV Cutter PLUS" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} />
+              <ListItemText primary="CSV Cutter PLUS" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
             </ListItemButton>
           </ListItem>
         )}
@@ -312,7 +328,7 @@ const SidebarLayout = ({ children }) => {
                 <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
                   <FolderIcon />
                 </ListItemIcon>
-                <ListItemText primary="Files" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} />
+                <ListItemText primary="Files" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
                 {filesOpen ? <ExpandLess sx={{ color: 'var(--primary-text)' }} /> : <ExpandMore sx={{ color: 'var(--primary-text)' }} />}
               </ListItemButton>
             </ListItem>
@@ -333,7 +349,7 @@ const SidebarLayout = ({ children }) => {
                   <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
                     <UploadFileIcon />
                   </ListItemIcon>
-                  <ListItemText primary="Upload" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} />
+                  <ListItemText primary="Upload" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
                 </ListItemButton>
                 <ListItemButton
                   component={Link}
@@ -350,7 +366,7 @@ const SidebarLayout = ({ children }) => {
                   <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
                     <FolderIcon />
                   </ListItemIcon>
-                  <ListItemText primary="Manage" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} />
+                  <ListItemText primary="Manage" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
                 </ListItemButton>
                 <ListItemButton
                   component={Link}
@@ -367,7 +383,7 @@ const SidebarLayout = ({ children }) => {
                   <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
                     <AccountTreeIcon />
                   </ListItemIcon>
-                  <ListItemText primary="Lineage" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} />
+                  <ListItemText primary="Lineage" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
                 </ListItemButton>
               </List>
             </Collapse>
@@ -387,7 +403,7 @@ const SidebarLayout = ({ children }) => {
                 <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
                   <PersonIcon />
                 </ListItemIcon>
-                <ListItemText primary="Load Person Records" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} />
+                <ListItemText primary="Load Person Records" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
               </ListItemButton>
             </ListItem>
           </>
@@ -408,7 +424,7 @@ const SidebarLayout = ({ children }) => {
             <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
               <HelpIcon />
             </ListItemIcon>
-            <ListItemText primary="FAQ" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} />
+            <ListItemText primary="FAQ" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
           </ListItemButton>
         </ListItem>
       </List>
@@ -427,11 +443,11 @@ const SidebarLayout = ({ children }) => {
               }}
             >
               <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                <WaterDropIcon />
+                <AutoAwesomeIcon />
               </ListItemIcon>
               <ListItemText 
                 primary="Appearance" 
-                sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} 
+                sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} 
               />
               {appearanceOpen ? <ExpandLess sx={{ color: 'var(--primary-text)' }} /> : <ExpandMore sx={{ color: 'var(--primary-text)' }} />}
             </ListItemButton>
@@ -440,75 +456,17 @@ const SidebarLayout = ({ children }) => {
             <Box sx={{ pl: 2, pr: 1, pb: 1 }}>
               {/* Theme Switcher */}
               <Box sx={{ mb: 1.5 }}>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: 'var(--primary-text)', 
-                    fontSize: '0.75rem',
-                    opacity: 0.7,
-                    mb: 0.5,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  Theme
-                </Typography>
                 <ThemeSwitcher />
               </Box>
               
               {/* Font Switcher */}
               <Box>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: 'var(--primary-text)', 
-                    fontSize: '0.75rem',
-                    opacity: 0.7,
-                    mb: 0.5,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  Font
-                </Typography>
                 <FontSwitcher />
               </Box>
             </Box>
           </Collapse>
         </List>
         
-        {/* Auth Actions */}
-        <Box>
-          {token ? (
-            <ListItemButton
-              component={Link}
-              to="/logout"
-              sx={{
-                borderRadius: 1,
-                '&:hover': { backgroundColor: 'rgba(255,0,0,0.1)' },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                <LogoutIcon />
-              </ListItemIcon>
-              <ListItemText primary="Logout" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} />
-            </ListItemButton>
-          ) : (
-            <ListItemButton
-              component={Link}
-              to="/login"
-              sx={{
-                borderRadius: 1,
-                '&:hover': { backgroundColor: 'var(--accent)' },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                <LoginIcon />
-              </ListItemIcon>
-              <ListItemText primary="Login" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)' } }} />
-            </ListItemButton>
-          )}
-        </Box>
       </Box>
     </Box>
   );
