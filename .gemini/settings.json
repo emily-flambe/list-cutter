@@ -1,1 +1,43 @@
-../.project/settings.json
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "cutty",
+    "type": "web-application",
+    "language": "typescript",
+    "framework": "cloudflare-workers"
+  },
+  "ai": {
+    "contextFiles": [
+      "GEMINI.md",
+      "../.project/config.md",
+      "../.project/contexts/*.md"
+    ],
+    "model": {
+      "temperature": 0.7,
+      "maxTokens": 4096
+    }
+  },
+  "gemini": {
+    "contextFileName": ["GEMINI.md"],
+    "enableMCP": true,
+    "workspaceValidation": true
+  },
+  "formatting": {
+    "indentSize": 2,
+    "lineWidth": 80,
+    "useTabs": false
+  },
+  "tools": {
+    "mcp": {
+      "servers": []
+    },
+    "fileOperations": {
+      "respectGitignore": true,
+      "maxFileSize": "10MB"
+    }
+  },
+  "security": {
+    "enableSymlinkValidation": true,
+    "restrictToWorkspace": true
+  }
+}

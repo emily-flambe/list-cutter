@@ -116,12 +116,6 @@ wrangler tail
 
 This project uses a unified configuration framework for AI coding assistants (Claude Code, Gemini CLI, etc.).
 
-### Quick Setup
-```bash
-# Initialize project configuration
-./init-project-config.sh
-```
-
 ### Configuration Files
 - **Unified Config**: `.project/config.md` - Main configuration for all AI tools
 - **Context Files**: `.project/contexts/` - Modular documentation (architecture, standards, dependencies)
@@ -129,8 +123,8 @@ This project uses a unified configuration framework for AI coding assistants (Cl
 
 ### Using with AI Tools
 - **Claude Code**: Automatically reads `.project/` and `.claude/` directories
-- **Gemini CLI**: Uses symlinked configuration in `.gemini/`
-- **Other Tools**: Point to `.project/config.md` as primary context
+- **Gemini CLI**: Reads `.gemini/GEMINI.md` (includes unified config for consistency)
+- **Other AI Tools**: Point directly to `.project/config.md` as primary context
 
 See [.project/README.md](.project/README.md) for detailed documentation.
 

@@ -6,31 +6,28 @@ This directory contains a unified configuration framework that works seamlessly 
 
 ```
 .project/
-├── config.md           # Main configuration file
-├── settings.json       # Unified settings
-├── .env.example       # Environment variables template
-├── contexts/          # Modular context files
+├── config.md              # Main configuration file
+├── settings.json          # Unified settings
+├── .env.example          # Environment variables template
+├── database-schema.json  # Database schema definition
+├── contexts/             # Modular context files
 │   ├── architecture.md
 │   ├── coding-standards.md
 │   └── dependencies.md
-├── scripts/           # Utility scripts
-└── README.md          # This file
+├── scripts/              # Utility scripts
+│   └── generate-d1-schema.js
+└── README.md             # This file
 ```
 
 ## Quick Start
 
-1. **Initialize the configuration:**
-   ```bash
-   ./init-project-config.sh
-   ```
-
-2. **Set up environment variables:**
+1. **Set up environment variables:**
    ```bash
    cp .project/.env.example .project/.env
    # Edit .project/.env with your values
    ```
 
-3. **Customize for your project:**
+2. **Customize for your project:**
    - Edit `.project/config.md` with project overview
    - Update context files in `.project/contexts/`
    - Modify `.project/settings.json` as needed
@@ -43,10 +40,10 @@ This directory contains a unified configuration framework that works seamlessly 
 - Uses unified context from `.project/config.md`
 
 ### Gemini CLI
-- Reads configuration via symlinks:
-  - `.gemini/GEMINI.md` → `.project/config.md`
-  - `.gemini/settings.json` → `.project/settings.json`
-- Fully compatible with unified framework
+- Reads project context from `.gemini/GEMINI.md` (required by Gemini CLI)
+- GEMINI.md includes content from `.project/config.md` for consistency
+- Project settings in `.gemini/settings.json`
+- Use `/memory refresh` to reload context after changes
 
 ### Other AI Agents
 - Point to `.project/config.md` as primary context
