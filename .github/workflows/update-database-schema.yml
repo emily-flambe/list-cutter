@@ -1,0 +1,131 @@
+name: Update Database Schema Documentation
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Force update even if no changes detected'
+        required: false
+        default: 'false'
+        type: boolean
+  
+  # Automatic trigger on push to main with migration changes
+  push:
+    branches: [main]
+    paths:
+      - 'cloudflare/workers/migrations/*.sql'
+      - 'cloudflare/workers/migrations/**/*.sql'
+  
+  # Also trigger on PR merge to main
+  pull_request:
+    branches: [main]
+    types: [closed]
+    paths:
+      - 'cloudflare/workers/migrations/*.sql'
+      - 'cloudflare/workers/migrations/**/*.sql'
+
+jobs:
+  update-schema:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Check for migration changes
+        id: check_changes
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.force_update }}" == "true" ]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "reason=Manual force update requested" >> $GITHUB_OUTPUT
+          elif git diff --name-only HEAD~1..HEAD | grep -E "cloudflare/workers/migrations/.*\.sql$" > /dev/null; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "reason=Migration files changed in recent commit" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "changes=true" >> $GITHUB_OUTPUT  
+            echo "reason=Manual update requested" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "reason=No migration file changes detected" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Parse migration files and extract schema
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          node .project/scripts/parse-migrations.js
+      
+      - name: Update architecture documentation
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          node .project/scripts/update-architecture.js
+      
+      - name: Check for documentation changes
+        if: steps.check_changes.outputs.changes == 'true'
+        id: doc_changes
+        run: |
+          if git diff --exit-code .project/database-schema.json .project/contexts/architecture.md > /dev/null; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.changes == 'true' && steps.doc_changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .project/database-schema.json .project/contexts/architecture.md
+          git commit -m "🤖 Auto-update database schema documentation
+          
+          ${{ steps.check_changes.outputs.reason }}
+          
+          Updated files:
+          - .project/database-schema.json
+          - .project/contexts/architecture.md
+          
+          🤖 Generated with GitHub Actions"
+          git push
+      
+      - name: Create PR comment (if running on PR)
+        if: github.event_name == 'pull_request' && steps.doc_changes.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🤖 **Database Schema Auto-Update**\n\nThe database schema documentation has been automatically updated based on the migration file changes in this PR.\n\nUpdated files:\n- `.project/database-schema.json`\n- `.project/contexts/architecture.md`\n\nNo manual intervention required! ✨'
+            })
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Schema Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Changes detected:** ${{ steps.check_changes.outputs.changes }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Reason:** ${{ steps.check_changes.outputs.reason }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.doc_changes.outputs.has_changes }}" == "true" ]; then
+            echo "**Documentation updated:** ✅ Yes" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Documentation updated:** ℹ️ No changes needed" >> $GITHUB_STEP_SUMMARY
+          fi

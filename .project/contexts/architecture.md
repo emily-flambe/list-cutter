@@ -41,6 +41,23 @@ Users → Cloudflare Edge → Workers → D1 Database
 
 ## Database Schema (D1)
 
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 
+🚨 CRITICAL DATABASE SCHEMA MAINTENANCE ALERT 🚨
+🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+
+🚨 MANDATORY REQUIREMENT: WHENEVER YOU CREATE A NEW MIGRATION FILE 🚨
+
+1. 🔥 UPDATE THE SCHEMA TABLES BELOW IMMEDIATELY 🔥
+2. 🔥 ENSURE EXACT MATCH WITH ACTUAL DATABASE STRUCTURE 🔥
+3. 🔥 NO EXCEPTIONS - THIS IS CRITICAL FOR PROJECT INTEGRITY 🔥
+
+🚨 THE SCHEMA DOCUMENTATION BELOW MUST ALWAYS REFLECT THE CURRENT STATE 🚨
+🚨 OF ALL MIGRATION FILES - ANY DEVIATION WILL CAUSE MAJOR ISSUES 🚨
+
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+
 ### Core Tables
 ```sql
 -- Users & Authentication
