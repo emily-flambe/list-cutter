@@ -20,6 +20,7 @@ import ManageFiles from './components/ManageFiles';
 import FileLineage from './components/FileLineage';
 import LoadPersonRecords from './components/LoadPersonRecords';
 import FAQ from './components/FAQ';
+import SyntheticDataGenerator from './components/SyntheticDataGenerator';
 
 // Design Testing Component
 import DesignTester from './components/DesignTester';
@@ -71,6 +72,7 @@ function AppWithLayouts() {
             <Route path="/load_person_records" element={<LoadPersonRecords />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/design-tester" element={<DesignTester />} />
+            <Route path="/synthetic-data" element={<SyntheticDataGenerator />} />
           </Routes>
         </SidebarLayout>
       </Router>

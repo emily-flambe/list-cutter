@@ -32,6 +32,7 @@ import {
   ExpandMore,
   ChevronLeft as ChevronLeftIcon,
   AutoAwesome as AutoAwesomeIcon,
+  DataObject as DataObjectIcon,
   // Anchor as AnchorIcon,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
@@ -100,6 +101,8 @@ const SidebarLayout = ({ children }) => {
           return "Act like you've been here before!";
         case '/login':
           return "Have we met?";
+        case '/synthetic-data':
+          return "Creating FAKE PEOPLE for your testing needs! (Don't worry, I won't tell anyone they're not real)";
         case '/faq':
           return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.15rem' } };
         case '/logout':
@@ -404,6 +407,25 @@ const SidebarLayout = ({ children }) => {
                   <PersonIcon />
                 </ListItemIcon>
                 <ListItemText primary="Load Person Records" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/synthetic-data"
+                selected={location.pathname === '/synthetic-data'}
+                sx={{
+                  '&.Mui-selected': {
+                    backgroundColor: 'var(--accent)',
+                    '&:hover': { backgroundColor: 'var(--dark-accent)' },
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
+                  <DataObjectIcon />
+                </ListItemIcon>
+                <ListItemText primary="Synthetic Data" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
               </ListItemButton>
             </ListItem>
           </>
