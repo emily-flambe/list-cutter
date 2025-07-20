@@ -1,6 +1,5 @@
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 import api from '../api';
-import { AuthContext } from '../context/AuthContext';
 // Optimized direct imports for better tree-shaking and build performance
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -15,7 +14,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Link from '@mui/material/Link';
 
 const SyntheticDataGenerator = () => {
-  const { token } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     count: 100,
     state: ''
@@ -37,17 +35,6 @@ const SyntheticDataGenerator = () => {
     'Wisconsin', 'Wyoming'
   ];
 
-  // Check if user is logged in
-  if (!token) {
-    return (
-      <Box sx={{ textAlign: 'center', mt: 4 }}>
-        <Typography variant="h4">Access Denied</Typography>
-        <Alert severity="error" sx={{ mt: 2, maxWidth: 400, mx: 'auto' }}>
-          You must be logged in to access the synthetic data generator.
-        </Alert>
-      </Box>
-    );
-  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;

@@ -102,7 +102,7 @@ const SidebarLayout = ({ children }) => {
         case '/login':
           return "Have we met?";
         case '/synthetic-data':
-          return "Creating FAKE PEOPLE for your testing needs! (Don't worry, I won't tell anyone they're not real)";
+          return "LET'S SPILL SOME INK.";
         case '/faq':
           return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.15rem' } };
         case '/logout':
@@ -282,47 +282,26 @@ const SidebarLayout = ({ children }) => {
           </ListItemButton>
         </ListItem>
 
-        {!token && (
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to="/csv_cutter"
-              selected={location.pathname === '/csv_cutter'}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'var(--accent)',
-                  '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                <ContentCutIcon />
-              </ListItemIcon>
-              <ListItemText primary="CSV Cutter" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-            </ListItemButton>
-          </ListItem>
-        )}
+        {/* Synthetic Data Generator - Available for all users */}
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/synthetic-data"
+            selected={location.pathname === '/synthetic-data'}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: 'var(--accent)',
+                '&:hover': { backgroundColor: 'var(--dark-accent)' },
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
+              <DataObjectIcon />
+            </ListItemIcon>
+            <ListItemText primary="Generate Fake Data (PREVIEW)" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
+          </ListItemButton>
+        </ListItem>
 
-        {token && (
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to="/csv_cutter_plus"
-              selected={location.pathname === '/csv_cutter_plus'}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'var(--accent)',
-                  '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                <ContentCutIcon />
-              </ListItemIcon>
-              <ListItemText primary="CSV Cutter PLUS" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-            </ListItemButton>
-          </ListItem>
-        )}
 
         {token && (
           <>
@@ -410,24 +389,6 @@ const SidebarLayout = ({ children }) => {
               </ListItemButton>
             </ListItem>
 
-            <ListItem disablePadding>
-              <ListItemButton
-                component={Link}
-                to="/synthetic-data"
-                selected={location.pathname === '/synthetic-data'}
-                sx={{
-                  '&.Mui-selected': {
-                    backgroundColor: 'var(--accent)',
-                    '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                  <DataObjectIcon />
-                </ListItemIcon>
-                <ListItemText primary="Synthetic Data" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-              </ListItemButton>
-            </ListItem>
           </>
         )}
 

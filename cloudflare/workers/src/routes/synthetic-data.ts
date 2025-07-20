@@ -11,27 +11,28 @@ import { SyntheticDataGenerator } from '../services/synthetic-data-generator';
 
 const syntheticData = new Hono<{ Bindings: Env }>();
 
-// Middleware to verify authentication
+// Optional authentication middleware - extract user ID if present
 syntheticData.use('*', async (c, next) => {
   const authHeader = c.req.header('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'Unauthorized' }, 401);
+  
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const payload = await validateToken(token, c.env.JWT_SECRET, c.env.AUTH_KV);
+      c.set('userId', payload.user_id);
+    } catch (error) {
+      // Authentication failed, but we'll continue without setting userId
+      console.log('Optional authentication failed:', error);
+    }
   }
-
-  try {
-    const token = authHeader.substring(7);
-    const payload = await validateToken(token, c.env.JWT_SECRET, c.env.AUTH_KV);
-    c.set('userId', payload.user_id);
-    await next();
-  } catch (error) {
-    return c.json({ error: 'Invalid token' }, 401);
-  }
+  
+  await next();
 });
 
 // Generate synthetic data endpoint
 syntheticData.post('/generate', async (c) => {
   try {
-    const userId = c.get('userId');
+    const userId = c.get('userId') || 'anonymous';
     const requestData: SyntheticDataRequest = await c.req.json();
 
     // Input validation
@@ -91,28 +92,30 @@ syntheticData.post('/generate', async (c) => {
       }
     });
 
-    // Save file metadata to database
-    await c.env.DB.prepare(`
-      INSERT INTO files (
-        id, user_id, filename, original_filename, file_size, mime_type, r2_key,
-        upload_status, row_count, column_count, columns_metadata, tags
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      fileId,
-      userId,
-      filename,
-      filename,
-      csvBuffer.length,
-      'text/csv',
-      fileKey,
-      'completed',
-      requestData.count + 1, // +1 for header row
-      9, // Number of columns
-      JSON.stringify([
-        'voter_id', 'first_name', 'last_name', 'address', 'city', 'state', 'zip', 'phone', 'email'
-      ]),
-      JSON.stringify(['synthetic-data', 'voter-data', requestData.state].filter(Boolean))
-    ).run();
+    // Save file metadata to database only for authenticated users
+    if (userId !== 'anonymous') {
+      await c.env.DB.prepare(`
+        INSERT INTO files (
+          id, user_id, filename, original_filename, file_size, mime_type, r2_key,
+          upload_status, row_count, column_count, columns_metadata, tags
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        fileId,
+        userId,
+        filename,
+        filename,
+        csvBuffer.length,
+        'text/csv',
+        fileKey,
+        'completed',
+        requestData.count + 1, // +1 for header row
+        9, // Number of columns
+        JSON.stringify([
+          'voter_id', 'first_name', 'last_name', 'address', 'city', 'state', 'zip', 'phone', 'email'
+        ]),
+        JSON.stringify(['synthetic-data', 'voter-data', requestData.state].filter(Boolean))
+      ).run();
+    }
 
     // Prepare response
     const response: SyntheticDataResponse = {
