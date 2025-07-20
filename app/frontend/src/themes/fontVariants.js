@@ -1,27 +1,27 @@
 // Font variants for testing different typography while preserving Cutty's special fonts
 export const fontVariants = {
-  earthmomma: {
-    name: 'Earthbound',
-    fontFamily: '"Earthmomma", monospace',
-    webFont: null, // Local font file
-    isPixelFont: true,
-  },
-  
   senorSaturno: {
-    name: 'Señor Saturno',
+    name: 'Mr. Saturn',
     fontFamily: '"SenorSaturno", monospace',
     webFont: null, // Local font file
     isPixelFont: true,
   },
   
+  undertale: {
+    name: 'Undertale',
+    fontFamily: '"Undertale", monospace',
+    webFont: null, // Local font file
+    isPixelFont: true,
+  },
+  
   comicSans: {
-    name: 'Comic Sans MS',
+    name: 'Comic Sans lmao',
     fontFamily: '"Comic Sans MS", "Comic Sans", cursive, sans-serif',
     webFont: null, // System font
   },
   
   imFell: {
-    name: 'IM Fell Double Pica',
+    name: 'Expedition 33',
     fontFamily: '"IM Fell Double Pica", serif',
     webFont: 'https://fonts.googleapis.com/css2?family=IM+Fell+Double+Pica:ital@0;1&display=swap',
   },
@@ -38,34 +38,17 @@ export const fontVariants = {
     webFont: null, // System font
   },
   
-  pressStart: {
-    name: 'Press Start (Retro)',
-    fontFamily: '"Press Start 2P", monospace',
-    webFont: 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap',
-  },
-  
-  pixelify: {
-    name: 'Pixelify Sans',
-    fontFamily: '"Pixelify Sans", monospace',
-    webFont: 'https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap',
-  },
-  
   silkscreen: {
     name: 'Silkscreen',
     fontFamily: '"Silkscreen", monospace',
     webFont: 'https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap',
   },
   
-  vt323: {
-    name: 'VT323 (Terminal)',
-    fontFamily: '"VT323", monospace',
-    webFont: 'https://fonts.googleapis.com/css2?family=VT323&display=swap',
-  },
-  
-  sfPro: {
-    name: 'SF Pro (Apple)',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif',
-    webFont: null, // System font on Apple devices
+  inter: {
+    name: 'Inter (FOR NORMIES)',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+    webFont: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+    isPixelFont: false,
   },
   
   wingdings: {
@@ -103,50 +86,23 @@ export const applyFont = (fontName) => {
   root.style.setProperty('--main-font-family', font.fontFamily);
   
   // Apply font-specific size adjustments
-  if (fontName === 'earthmomma') {
-    // Earthmomma is designed for 6pt, but we'll scale it up for web readability
-    root.style.setProperty('--font-scale', '2.5');
-    root.style.fontSize = '18px';
-    root.style.lineHeight = '1.5';
-    root.style.letterSpacing = '0.5px';
-    // Disable font smoothing for pixel fonts
-    root.style.webkitFontSmoothing = 'none';
-  } else if (fontName === 'senorSaturno') {
-    // Senor Saturno is another Earthbound-style font - needs to be bigger
-    root.style.setProperty('--font-scale', '2.8');
-    root.style.fontSize = '24px';
+  if (fontName === 'senorSaturno') {
+    // Senor Saturno - adjusted to smaller size
+    root.style.setProperty('--font-scale', '1.2');
+    root.style.fontSize = '16px';
     root.style.lineHeight = '1.4';
-    root.style.letterSpacing = '0.5px';
-    // Disable font smoothing for pixel fonts
-    root.style.webkitFontSmoothing = 'none';
-  } else if (fontName === 'pressStart') {
-    // Press Start is a pixel font, needs adjustment for readability
-    root.style.setProperty('--font-scale', '0.75');
-    root.style.fontSize = '14px';
-    root.style.lineHeight = '2';
-    // Adjust specific elements
-    document.querySelectorAll('button, .MuiButton-root').forEach(el => {
-      el.style.fontSize = '0.75rem';
-    });
-    document.querySelectorAll('.MuiTypography-body1').forEach(el => {
-      el.style.fontSize = '0.8rem';
-    });
-    document.querySelectorAll('.MuiTypography-body2').forEach(el => {
-      el.style.fontSize = '0.7rem';
-    });
-    document.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(el => {
-      el.style.fontSize = '1rem';
-    });
-  } else if (fontName === 'pixelify' || fontName === 'silkscreen') {
-    // Pixelify and Silkscreen need slight adjustments
+    root.style.letterSpacing = '0.3px';
+  } else if (fontName === 'undertale') {
+    // Undertale (PixelOperator) font adjustments
+    root.style.setProperty('--font-scale', '1.8');
+    root.style.fontSize = '20px';
+    root.style.lineHeight = '1.5';
+    root.style.letterSpacing = '0.3px';
+  } else if (fontName === 'silkscreen') {
+    // Silkscreen needs slight adjustments
     root.style.setProperty('--font-scale', '0.9');
     root.style.fontSize = '16px';
     root.style.lineHeight = '1.8';
-  } else if (fontName === 'vt323') {
-    // VT323 is larger, needs to be scaled up
-    root.style.setProperty('--font-scale', '1.1');
-    root.style.fontSize = '20px';
-    root.style.lineHeight = '1.4';
   } else {
     // Reset to default sizes
     root.style.setProperty('--font-scale', '1');
@@ -174,7 +130,7 @@ export const applyFont = (fontName) => {
 };
 
 export const getCurrentFont = () => {
-  return localStorage.getItem('cutty-font') || 'comicSans';
+  return localStorage.getItem('cutty-font') || 'inter';
 };
 
 // Initialize font system
