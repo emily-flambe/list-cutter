@@ -43,9 +43,16 @@ app.use('*', secureHeaders());
 // CORS configuration - Allow same-origin and development (moved before prettyJSON)
 app.use('*', cors({
   origin: (origin, c) => {
-    // In development, allow all origins (including localhost on any port and any local IP)
+    // Log for debugging
+    console.log('CORS check - Origin:', origin, 'Environment:', c?.env?.ENVIRONMENT);
+    
+    // In development, allow localhost and 127.0.0.1 origins
     const environment = c?.env?.ENVIRONMENT || 'development';
     if (environment === 'development') {
+      // Allow localhost, 127.0.0.1, and any port combinations
+      if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return origin || '*';
+      }
       return origin || '*';
     }
     
