@@ -154,11 +154,22 @@ app.use('/api/*', rateLimitMiddleware({
   maxRequests: 60  // 60 requests per minute
 }));
 
-// More restrictive rate limiting for auth endpoints (but not for /user)
-app.use('/api/v1/auth/*', rateLimitMiddleware({ 
-  windowMs: 60000,  // 1 minute
-  maxRequests: 30   // 30 auth requests per minute (allow multiple components to check auth)
-}));
+// More restrictive rate limiting for auth endpoints (but more lenient for /user endpoint)
+app.use('/api/v1/auth/*', async (c, next) => {
+  // Give the /user endpoint higher limits since multiple components check auth status
+  if (c.req.path === '/api/v1/auth/user' || c.req.path === '/api/auth/user') {
+    return rateLimitMiddleware({ 
+      windowMs: 60000,  // 1 minute
+      maxRequests: 100  // 100 requests per minute for user checks
+    })(c, next);
+  }
+  
+  // Regular auth endpoints get standard limits
+  return rateLimitMiddleware({ 
+    windowMs: 60000,  // 1 minute
+    maxRequests: 30   // 30 auth requests per minute
+  })(c, next);
+});
 
 // API version prefix
 const v1 = app.basePath('/api/v1');

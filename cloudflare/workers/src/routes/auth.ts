@@ -44,15 +44,16 @@ auth.post('/login', async (c) => {
       return c.json({ error: 'Invalid credentials' }, 401);
     }
 
-    // Generate tokens with role
-    const tokens = await generateToken(
+    // Generate tokens with role (use generateTokenPair)
+    const tokens = await generateTokenPair(
       { 
-        user_id: user.id, 
+        id: user.id,
+        user_id: user.id,
+        username: user.username,
         email: user.email,
         role: user.role || 'user' // Include role in token
       },
-      c.env.JWT_SECRET,
-      c.env.AUTH_KV
+      c.env
     );
 
     return c.json({
@@ -108,10 +109,15 @@ auth.post('/register', async (c) => {
     const userId = result.meta.last_row_id;
 
     // Generate tokens with role
-    const tokens = await generateToken(
-      { user_id: userId, email, role },
-      c.env.JWT_SECRET,
-      c.env.AUTH_KV
+    const tokens = await generateTokenPair(
+      { 
+        id: userId,
+        user_id: userId,
+        username: username || email.split('@')[0],
+        email,
+        role 
+      },
+      c.env
     );
 
     return c.json({
@@ -300,7 +306,8 @@ auth.get('/google/callback', async (c) => {
     // Generate our own tokens with role (use generateTokenPair like main branch)
     const tokens = await generateTokenPair(
       { 
-        id: user.id, 
+        id: user.id,
+        user_id: user.id,  // JWT service expects user_id, not id
         email: user.email, 
         username: user.username,
         role: user.role || 'user' 
