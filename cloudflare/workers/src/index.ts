@@ -13,6 +13,7 @@ import './types/hono-context';
 import filesRoutes from './routes/files';
 import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin';
+import syntheticDataRoutes from './routes/synthetic-data';
 
 // Import security middleware
 import { rateLimitMiddleware } from './services/security';
@@ -178,6 +179,7 @@ const v1 = app.basePath('/api/v1');
 v1.route('/files', filesRoutes); // File operations at /api/v1/files/*
 v1.route('/auth', authRoutes); // Authentication routes at /api/v1/auth/*
 v1.route('/admin', adminRoutes); // Admin routes at /api/v1/admin/*
+v1.route('/synthetic-data', syntheticDataRoutes); // Synthetic data generation at /api/v1/synthetic-data/*
 
 // Frontend serving logic for non-API routes
 app.get('*', async (c, next): Promise<Response> => {
