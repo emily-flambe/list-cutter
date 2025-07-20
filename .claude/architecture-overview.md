@@ -2,14 +2,13 @@
 
 ## System Architecture
 
-### Current State (Hybrid)
-- **Frontend**: React (Vite) → Can connect to either backend
-- **Backend Option 1**: Django (Legacy) - Being phased out
-- **Backend Option 2**: Cloudflare Workers (New) - Migration target
+### Current Architecture (100% Cloudflare)
+- **Frontend**: React (Vite)
+- **Backend**: Cloudflare Workers + Hono.js
 - **Database**: D1 (SQLite at edge)
 - **Storage**: R2 object storage with CDN
 
-### Target Architecture (100% Cloudflare)
+### Architecture Flow
 ```
 Users → Cloudflare Edge → Workers → D1 Database
                       ↓
@@ -124,9 +123,9 @@ oauth_rate_limits (id, ip_address, event_type, created_at)
 - Monitoring endpoints
 
 ### In Progress 🚧
-- Full Django API compatibility
 - Advanced list features
 - Batch operations
+- Enhanced file processing
 
 ### Planned 📋
 - Real-time collaboration

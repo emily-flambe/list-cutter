@@ -6,7 +6,7 @@
 - **NO STAGING ENVIRONMENT**
 
 ## Project Overview
-Django to Cloudflare Workers migration project with:
+Modern web application built on Cloudflare Workers platform with:
 - **Backend**: Cloudflare Workers (Hono.js + TypeScript)
 - **Database**: Cloudflare D1 (SQLite at edge)
 - **Storage**: Cloudflare R2 object storage

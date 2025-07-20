@@ -4,7 +4,7 @@
 Project:
   name: "cutty"
   repository: "list-cutter"
-  description: "Django to Cloudflare Workers migration with D1 database and R2 storage"
+  description: "Modern web application built on Cloudflare Workers with D1 database and R2 storage"
   
   environments:
     development:
