@@ -179,7 +179,7 @@ auth.get('/user', async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const payload = await validateToken(token, c.env.JWT_SECRET, c.env.AUTH_KV);
+    const payload = await validateToken(token, c.env.JWT_SECRET);
 
     // Get user from database including role
     const user = await c.env.DB.prepare(
