@@ -82,20 +82,19 @@ wrangler deploy --config wrangler.prod.toml
 ### Tool-Specific Instructions
 
 #### Claude Code
-- Use the simplified 3-persona system (Builder 🔨, Guardian 🛡️, Guide 📖)
-- Commit format: `[Persona] 🔸 Brief description`
+- Use the cute animal subagent system defined in `.claude/subagents.yml`
 - Reference `.project/config.md` for project context
 - Leverage artifacts for substantial code generation
 
 ##### Subagent Usage (Claude Code Specific)
-- **Deploy subagents liberally** - Use them frequently for complex tasks
-- **Cute animal names required** - Always give subagents adorable animal names
-- **Emojis mandatory** - Include relevant animal emojis with names
-- **Examples**: "🐸 Freddy the Frog", "🦝 Ranger the Raccoon", "🐿️ Squirrel Scout"
-- **When to use**: Multi-step tasks, research, complex debugging, file searches
+- **Use predefined animal team** - Reference `.claude/subagents.yml` for specialized roles
+- **Available team members**: Bella 🦫, Charlie 🐱, Ruby 🐰, Sassy 🐍, Scout 🐿️, Penny 🐧, Ollie 🦉, Daisy 🐬, Max 🐭
+- **Select by expertise** - Choose animals based on task requirements (architecture, features, security, etc.)
+- **Commit format**: Use each animal's defined commit style (e.g., `[Bella] 🦫`, `[Charlie] 🐱`)
+- **Deploy liberally**: Use for multi-step tasks, research, complex debugging, file searches
 
 #### Gemini CLI
-- Use GEMINI.md symlink for automatic context loading
+- Reference `.project/config.md` for project context
 - Leverage MCP servers when available
 - Use built-in tools for file operations
 - Reference unified settings.json for consistency

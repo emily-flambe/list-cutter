@@ -110,22 +110,14 @@ Modular documentation:
 
 ## Troubleshooting
 
-### Symlinks Not Working
-```bash
-# Recreate symlinks
-rm -f .gemini/GEMINI.md .gemini/settings.json
-ln -sf ../.project/config.md .gemini/GEMINI.md
-ln -sf ../.project/settings.json .gemini/settings.json
-```
-
 ### Configuration Not Loading
 - Ensure `.project/config.md` exists
 - Check file permissions
-- Verify symlinks point correctly
+- Verify all tools reference `.project/` directory directly
 
 ### Tool-Specific Issues
 - Claude: Check `.claude/` directory
-- Gemini: Verify `.gemini/` symlinks
+- Gemini: Reference `.project/config.md` directly
 - Others: Point directly to `.project/config.md`
 
 ---
