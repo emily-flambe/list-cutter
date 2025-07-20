@@ -185,20 +185,49 @@ auth.get('/user', async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const payload = await validateToken(token, c.env.JWT_SECRET);
+    
+    // Add debug logging
+    console.log('Validating token for /user endpoint');
+    
+    let payload;
+    try {
+      payload = await validateToken(token, c.env.JWT_SECRET);
+      console.log('Token payload:', payload);
+    } catch (tokenError) {
+      console.error('Token validation error:', tokenError);
+      return c.json({ error: 'Invalid token' }, 401);
+    }
 
-    // Get user from database including role
+    // Get user from database including role - handle both user_id and id fields
+    const userId = payload.user_id || payload.id;
+    if (!userId) {
+      console.error('No user ID in token payload:', payload);
+      return c.json({ error: 'Invalid token payload' }, 401);
+    }
+
     const user = await c.env.DB.prepare(
       'SELECT id, email, username, role, created_at FROM users WHERE id = ?'
-    ).bind(payload.user_id).first();
+    ).bind(userId).first();
 
     if (!user) {
+      console.error('User not found for ID:', userId);
       return c.json({ error: 'User not found' }, 404);
     }
 
-    return c.json({ success: true, user });
+    // Return user in the expected format
+    return c.json({ 
+      success: true, 
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role || 'user',
+        created_at: user.created_at
+      }
+    });
   } catch (error) {
     console.error('Get user error:', error);
+    console.error('Error stack:', error.stack);
     return c.json({ error: 'Failed to get user' }, 500);
   }
 });

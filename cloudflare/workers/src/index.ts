@@ -171,23 +171,6 @@ app.use('/api/v1/auth/*', async (c, next) => {
   })(c, next);
 });
 
-// Also apply the same rate limiting for legacy /api/auth/* endpoints
-app.use('/api/auth/*', async (c, next) => {
-  // Give the /user endpoint higher limits since multiple components check auth status
-  if (c.req.path.endsWith('/user')) {
-    return rateLimitMiddleware({ 
-      windowMs: 60000,  // 1 minute
-      maxRequests: 100  // 100 requests per minute for user checks
-    })(c, next);
-  }
-  
-  // Regular auth endpoints get standard limits
-  return rateLimitMiddleware({ 
-    windowMs: 60000,  // 1 minute
-    maxRequests: 30   // 30 auth requests per minute
-  })(c, next);
-});
-
 // API version prefix
 const v1 = app.basePath('/api/v1');
 
@@ -195,10 +178,6 @@ const v1 = app.basePath('/api/v1');
 v1.route('/files', filesRoutes); // File operations at /api/v1/files/*
 v1.route('/auth', authRoutes); // Authentication routes at /api/v1/auth/*
 v1.route('/admin', adminRoutes); // Admin routes at /api/v1/admin/*
-
-// Backward compatibility routes (redirect old /api/ to /api/v1/)
-const legacyApi = app.basePath('/api');
-legacyApi.route('/auth', authRoutes); // Backward compatibility for /api/auth/*
 
 // Frontend serving logic for non-API routes
 app.get('*', async (c, next): Promise<Response> => {
