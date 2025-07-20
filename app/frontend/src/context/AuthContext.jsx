@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }) => {
       try {
         // Try to fetch user data to validate token
         const response = await api.get('/api/v1/auth/user');
-        setUser(response.data);
+        setUser(response.data.user || response.data);
       } catch (error) {
         if (error.response && (error.response.status === 401 || error.response.status === 400)) {
           console.log('Stored token is invalid, clearing tokens');
