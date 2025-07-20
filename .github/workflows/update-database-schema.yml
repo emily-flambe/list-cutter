@@ -51,6 +51,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Install Wrangler CLI
+        run: npm install -g wrangler
+      
+      - name: Authenticate Wrangler
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: wrangler whoami
+      
       - name: Check for migration changes
         id: check_changes
         run: |
@@ -68,21 +76,18 @@ jobs:
             echo "reason=No migration file changes detected" >> $GITHUB_OUTPUT
           fi
       
-      - name: Parse migration files and extract schema
+      - name: Generate D1 schema documentation
         if: steps.check_changes.outputs.changes == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          node .project/scripts/parse-migrations.js
-      
-      - name: Update architecture documentation
-        if: steps.check_changes.outputs.changes == 'true'
-        run: |
-          node .project/scripts/update-architecture.js
+          node .project/scripts/generate-d1-schema.js
       
       - name: Check for documentation changes
         if: steps.check_changes.outputs.changes == 'true'
         id: doc_changes
         run: |
-          if git diff --exit-code .project/database-schema.json .project/contexts/architecture.md > /dev/null; then
+          if git diff --exit-code .project/database-schema.json .project/contexts/d1_schema.md > /dev/null; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
@@ -93,14 +98,14 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add .project/database-schema.json .project/contexts/architecture.md
-          git commit -m "🤖 Auto-update database schema documentation
+          git add .project/database-schema.json .project/contexts/d1_schema.md
+          git commit -m "🤖 Auto-update D1 database schema documentation
           
           ${{ steps.check_changes.outputs.reason }}
           
           Updated files:
-          - .project/database-schema.json
-          - .project/contexts/architecture.md
+          - .project/database-schema.json (JSON data)
+          - .project/contexts/d1_schema.md (markdown docs)
           
           🤖 Generated with GitHub Actions"
           git push
@@ -114,7 +119,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '🤖 **Database Schema Auto-Update**\n\nThe database schema documentation has been automatically updated based on the migration file changes in this PR.\n\nUpdated files:\n- `.project/database-schema.json`\n- `.project/contexts/architecture.md`\n\nNo manual intervention required! ✨'
+              body: '🤖 **D1 Database Schema Auto-Update**\n\nThe database schema documentation has been automatically updated based on the migration file changes in this PR.\n\nUpdated files:\n- `.project/database-schema.json` (JSON data)\n- `.project/contexts/d1_schema.md` (comprehensive docs)\n\nView the schema documentation: [d1_schema.md](.project/contexts/d1_schema.md)\n\nNo manual intervention required! ✨'
             })
       
       - name: Summary

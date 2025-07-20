@@ -2,23 +2,47 @@
 
 ## TypeScript
 
-### General Rules
-- **Strict Mode**: Always use TypeScript strict mode
-- **Explicit Types**: Prefer explicit return types for functions
-- **Type Safety**: Avoid `any` type except when absolutely necessary
-- **Interfaces**: Prefer interfaces over type aliases for object shapes
-- **Enums**: Use const enums for better performance
+### Pragmatic Rules (Build Success > Type Perfection)
+- **Strict Mode**: Use when practical; prioritize build success over perfect types
+- **Explicit Types**: Add when helpful, but don't block progress for type perfection
+- **Type Safety**: Use `any` during migration/prototyping; improve incrementally
+- **Runtime Validation**: Prefer Zod validation over type assertions for real safety
+- **Migration-First**: Get builds working, then iteratively improve types
 
-### Type Conversions
+### Type Conversions (Proven Safe Patterns)
 ```typescript
-// Safe conversions (preferred)
+// Runtime-safe conversions (from project lessons learned)
 const count = Number(result?.count) || 0;
 const name = String(user?.name) || 'Unknown';
 const items = Array.isArray(data) ? data : [];
 
-// Avoid unsafe assertions
+// Safe enum validation
+const severity = (['low','medium','high'].includes(event.severity) 
+  ? event.severity 
+  : 'medium') as 'low' | 'medium' | 'high';
+
+// Safe database result handling
+const row = result as Record<string, unknown>;
+const safeField = String(row.field_name);
+
+// AVOID: Unsafe assertions without runtime validation
 // BAD: const count = result.count as number;
 // BAD: const user = data as User;
+```
+
+### Build-First Philosophy (Lessons Learned)
+```typescript
+// PRIORITY: Working builds > Perfect types
+// Based on debugging lessons from Issues #65, #67
+
+// 1. Get builds working first
+npm run build  // Must pass
+
+// 2. Then validate deployment
+npx wrangler versions upload --dry-run  // Must succeed
+
+// 3. Incrementally improve types
+npx tsc --noEmit  // Fix when practical, don't block builds
 ```
 
 ### Error Handling
@@ -150,13 +174,29 @@ describe('UserService', () => {
 });
 ```
 
-### Testing Philosophy
-- Simple, focused tests
-- Mock external dependencies
-- Test behavior, not implementation
-- Aim for 80%+ coverage on critical paths
+### Testing Philosophy (Keep It Simple)
+- **Simple, practical, maintainable tests** - Never overengineer
+- **Focus on core functionality** - Test essential behavior only
+- **Use realistic mocks** - Match actual implementations, not theoretical perfection
+- **CRITICAL**: Analytics Engine MUST be disabled in test config
+- **Avoid complex custom error types** - Keep expectations realistic for test environments
 
 ## Git Conventions
+
+### 🚨 CRITICAL: Worktree Management
+- **MANDATORY**: New worktrees MUST ONLY be created in the `worktrees/` folder
+- **COMMAND**: `git worktree add worktrees/branch-name branch-name`
+- **FORBIDDEN**: Creating worktrees anywhere else in the project structure
+- **REASON**: Maintains clean project organization and prevents conflicts
+- **NO EXCEPTIONS**: This rule applies to all development work
+
+### 🚨 CRITICAL: Deployment Environment Names
+- **WORKERS**: Only `cutty-dev` (dev) and `cutty` (prod) exist
+- **DATABASES**: Only `cutty-dev` (dev) and `cutty-prod` (prod) exist
+- **NO STAGING**: There is no staging environment, never create one
+- **LOCAL DEV**: MUST use `wrangler dev --remote` with cutty-dev
+- **FORBIDDEN**: Creating local databases, staging variants, or additional workers
+- **EXACT COMPLIANCE**: Any deviation breaks CI/CD and integrations
 
 ### Commit Messages
 Format: `[Persona] 🔸 Brief description`

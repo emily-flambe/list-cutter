@@ -82,12 +82,19 @@ Modular documentation:
    - Exclude `.env` (but include `.env.example`)
    - Track changes to configurations
 
-2. **Team Collaboration**
+2. **🚨 CRITICAL: Git Worktree Management**
+   - **MANDATORY**: All new worktrees MUST be created in `worktrees/` folder ONLY
+   - **COMMAND**: `git worktree add worktrees/branch-name branch-name`
+   - **FORBIDDEN**: Creating worktrees anywhere else in project structure
+   - **RATIONALE**: Maintains clean organization and prevents conflicts
+   - **NO EXCEPTIONS**: This rule applies to all AI assistants and developers
+
+3. **Team Collaboration**
    - Document AI usage in main README
    - Keep configurations up to date
    - Share context improvements
 
-3. **Maintenance**
+4. **Maintenance**
    - Review configurations regularly
    - Update dependencies and versions
    - Refine AI instructions based on usage

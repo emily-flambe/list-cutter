@@ -1,16 +1,1819 @@
 {
   "version": "1.0.0",
-  "last_updated": "auto-generated",
+  "last_updated": "2025-07-20T15:02:25.104Z",
   "migration_path": "cloudflare/workers/migrations",
-  "latest_migration": "auto-detected",
+  "latest_migration": "d1_compatible_schema.sql",
   "schema": {
-    "tables": {},
-    "indexes": {},
+    "tables": {
+      "users": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_users_email",
+            "columns": [
+              "email"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_users_username",
+            "columns": [
+              "username"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_users_is_active",
+            "columns": [
+              "is_active"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "files": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_files_user_id",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_files_r2_key",
+            "columns": [
+              "r2_key"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_files_created_at",
+            "columns": [
+              "created_at"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_files_status",
+            "columns": [
+              "upload_status"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_files_checksum",
+            "columns": [
+              "checksum"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_files_storage_class",
+            "columns": [
+              "storage_class"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "saved_filters": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_saved_filters_user_id",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_saved_filters_file_id",
+            "columns": [
+              "file_id"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "api_keys": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_api_keys_user_id",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_api_keys_key_hash",
+            "columns": [
+              "key_hash"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_api_keys_key_prefix",
+            "columns": [
+              "key_prefix"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_api_keys_active",
+            "columns": [
+              "is_active"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_api_keys_expires",
+            "columns": [
+              "expires_at"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "api_key_usage": {
+        "columns": {
+          "id": {
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": null,
+            "auto_increment": true
+          },
+          "key_id": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "timestamp": {
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "endpoint": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "method": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "ip_address": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "user_agent": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "response_status": {
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "response_time": {
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_api_key_usage_key_id",
+            "columns": [
+              "key_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_api_key_usage_timestamp",
+            "columns": [
+              "timestamp"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_api_key_usage_endpoint",
+            "columns": [
+              "endpoint"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "audit_logs": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_audit_logs_user_id",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_audit_logs_created_at",
+            "columns": [
+              "created_at"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_audit_logs_action",
+            "columns": [
+              "action"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "security_events": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "timestamp": {
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "event_type": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "user_id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "ip_address": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "user_agent": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "endpoint": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "method": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "success": {
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "error_code": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "error_message": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "metadata": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_security_events_timestamp",
+            "columns": [
+              "timestamp"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_security_events_type",
+            "columns": [
+              "event_type"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_security_events_user_id",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_security_events_ip",
+            "columns": [
+              "ip_address"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_security_events_success",
+            "columns": [
+              "success"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "security_analytics": {
+        "columns": {
+          "id": {
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": null,
+            "auto_increment": true
+          },
+          "date": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "event_type": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "count": {
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "success_count": {
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "failure_count": {
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "avg_response_time": {
+            "type": "REAL",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "created_at": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_security_analytics_date",
+            "columns": [
+              "date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_security_analytics_type",
+            "columns": [
+              "event_type"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "multipart_uploads": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_multipart_uploads_user_id",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_multipart_uploads_upload_id",
+            "columns": [
+              "upload_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_multipart_uploads_status",
+            "columns": [
+              "status"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_multipart_uploads_expires_at",
+            "columns": [
+              "expires_at"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "file_access_logs": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_file_access_logs_file_id",
+            "columns": [
+              "file_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_file_access_logs_user_id",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_file_access_logs_action",
+            "columns": [
+              "action"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_file_access_logs_created_at",
+            "columns": [
+              "created_at"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "file_processing_queue": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_file_processing_queue_status",
+            "columns": [
+              "status"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_file_processing_queue_priority",
+            "columns": [
+              "priority"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_file_processing_queue_scheduled_at",
+            "columns": [
+              "scheduled_at"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_file_processing_queue_file_id",
+            "columns": [
+              "file_id"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "storage_metrics": {
+        "columns": {
+          "id": {
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": null,
+            "auto_increment": true
+          },
+          "user_id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "metric_type": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "metric_value": {
+            "type": "INTEGER",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "measurement_date": {
+            "type": "DATE",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "created_at": {
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": "CURRENT_TIMESTAMP",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_storage_metrics_user_id",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_storage_metrics_date",
+            "columns": [
+              "measurement_date"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_storage_metrics_type",
+            "columns": [
+              "metric_type"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "alert_configurations": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_alert_configurations_enabled",
+            "columns": [
+              "is_enabled"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_alert_configurations_type",
+            "columns": [
+              "alert_type"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "alert_instances": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_alert_instances_config_id",
+            "columns": [
+              "configuration_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_alert_instances_status",
+            "columns": [
+              "status"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_alert_instances_triggered_at",
+            "columns": [
+              "triggered_at"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "backup_configurations": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_backup_configurations_enabled",
+            "columns": [
+              "is_enabled"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "backup_instances": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_backup_instances_config_id",
+            "columns": [
+              "configuration_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_backup_instances_status",
+            "columns": [
+              "status"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_backup_instances_created_at",
+            "columns": [
+              "created_at"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "user_quotas": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_user_quotas_user_id",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_user_quotas_type",
+            "columns": [
+              "quota_type"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_user_quotas_enabled",
+            "columns": [
+              "is_enabled"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "file_access_permissions": {
+        "columns": {
+          "id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": "(lower(hex(randomblob(16",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_file_access_permissions_file_id",
+            "columns": [
+              "file_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_file_access_permissions_user_id",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_file_access_permissions_active",
+            "columns": [
+              "is_active"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "schema_version": {
+        "columns": {
+          "version": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "applied_at": {
+            "type": "DATETIME",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": "CURRENT_TIMESTAMP",
+            "auto_increment": false
+          },
+          "description": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": []
+      },
+      "users_new": {
+        "columns": {
+          "id": {
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": null,
+            "auto_increment": true
+          },
+          "username": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": true,
+            "default": null,
+            "auto_increment": false
+          },
+          "email": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": true,
+            "default": null,
+            "auto_increment": false
+          },
+          "password_hash": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "role": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": "'user'",
+            "auto_increment": false
+          },
+          "google_id": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": true,
+            "default": null,
+            "auto_increment": false
+          },
+          "created_at": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": "CURRENT_TIMESTAMP",
+            "auto_increment": false
+          },
+          "updated_at": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": "CURRENT_TIMESTAMP",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": []
+      },
+      "oauth_states": {
+        "columns": {
+          "id": {
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": null,
+            "auto_increment": true
+          },
+          "state_token": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": true,
+            "default": null,
+            "auto_increment": false
+          },
+          "return_url": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "created_at": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": "CURRENT_TIMESTAMP",
+            "auto_increment": false
+          },
+          "expires_at": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "used_at": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_oauth_states_token",
+            "columns": [
+              "state_token"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_oauth_states_expires",
+            "columns": [
+              "expires_at"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "oauth_security_events": {
+        "columns": {
+          "id": {
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": null,
+            "auto_increment": true
+          },
+          "event_type": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "severity": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": "'info'",
+            "auto_increment": false
+          },
+          "user_id": {
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "ip_address": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "user_agent": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "details": {
+            "type": "TEXT",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "created_at": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": "CURRENT_TIMESTAMP",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_oauth_events_type",
+            "columns": [
+              "event_type"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_oauth_events_severity",
+            "columns": [
+              "severity"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_oauth_events_user",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_oauth_events_created",
+            "columns": [
+              "created_at"
+            ],
+            "unique": false
+          }
+        ]
+      },
+      "oauth_rate_limits": {
+        "columns": {
+          "id": {
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": true,
+            "unique": false,
+            "default": null,
+            "auto_increment": true
+          },
+          "ip_address": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "user_id": {
+            "type": "INTEGER",
+            "nullable": true,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "event_type": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": null,
+            "auto_increment": false
+          },
+          "created_at": {
+            "type": "TEXT",
+            "nullable": false,
+            "primary_key": false,
+            "unique": false,
+            "default": "CURRENT_TIMESTAMP",
+            "auto_increment": false
+          }
+        },
+        "constraints": [],
+        "indexes": [
+          {
+            "name": "idx_oauth_rate_limits_ip",
+            "columns": [
+              "ip_address"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_oauth_rate_limits_user",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_oauth_rate_limits_type",
+            "columns": [
+              "event_type"
+            ],
+            "unique": false
+          },
+          {
+            "name": "idx_oauth_rate_limits_created",
+            "columns": [
+              "created_at"
+            ],
+            "unique": false
+          }
+        ]
+      }
+    },
+    "indexes": {
+      "users": [
+        {
+          "name": "idx_users_email",
+          "columns": [
+            "email"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_users_username",
+          "columns": [
+            "username"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_users_is_active",
+          "columns": [
+            "is_active"
+          ],
+          "unique": false
+        }
+      ],
+      "files": [
+        {
+          "name": "idx_files_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_files_r2_key",
+          "columns": [
+            "r2_key"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_files_created_at",
+          "columns": [
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_files_status",
+          "columns": [
+            "upload_status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_files_checksum",
+          "columns": [
+            "checksum"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_files_storage_class",
+          "columns": [
+            "storage_class"
+          ],
+          "unique": false
+        }
+      ],
+      "saved_filters": [
+        {
+          "name": "idx_saved_filters_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_saved_filters_file_id",
+          "columns": [
+            "file_id"
+          ],
+          "unique": false
+        }
+      ],
+      "api_keys": [
+        {
+          "name": "idx_api_keys_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_api_keys_key_hash",
+          "columns": [
+            "key_hash"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_api_keys_key_prefix",
+          "columns": [
+            "key_prefix"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_api_keys_active",
+          "columns": [
+            "is_active"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_api_keys_expires",
+          "columns": [
+            "expires_at"
+          ],
+          "unique": false
+        }
+      ],
+      "api_key_usage": [
+        {
+          "name": "idx_api_key_usage_key_id",
+          "columns": [
+            "key_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_api_key_usage_timestamp",
+          "columns": [
+            "timestamp"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_api_key_usage_endpoint",
+          "columns": [
+            "endpoint"
+          ],
+          "unique": false
+        }
+      ],
+      "security_events": [
+        {
+          "name": "idx_security_events_timestamp",
+          "columns": [
+            "timestamp"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_security_events_type",
+          "columns": [
+            "event_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_security_events_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_security_events_ip",
+          "columns": [
+            "ip_address"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_security_events_success",
+          "columns": [
+            "success"
+          ],
+          "unique": false
+        }
+      ],
+      "security_analytics": [
+        {
+          "name": "idx_security_analytics_date",
+          "columns": [
+            "date"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_security_analytics_type",
+          "columns": [
+            "event_type"
+          ],
+          "unique": false
+        }
+      ],
+      "audit_logs": [
+        {
+          "name": "idx_audit_logs_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_audit_logs_created_at",
+          "columns": [
+            "created_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_audit_logs_action",
+          "columns": [
+            "action"
+          ],
+          "unique": false
+        }
+      ],
+      "multipart_uploads": [
+        {
+          "name": "idx_multipart_uploads_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_multipart_uploads_upload_id",
+          "columns": [
+            "upload_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_multipart_uploads_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_multipart_uploads_expires_at",
+          "columns": [
+            "expires_at"
+          ],
+          "unique": false
+        }
+      ],
+      "file_access_logs": [
+        {
+          "name": "idx_file_access_logs_file_id",
+          "columns": [
+            "file_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_file_access_logs_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_file_access_logs_action",
+          "columns": [
+            "action"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_file_access_logs_created_at",
+          "columns": [
+            "created_at"
+          ],
+          "unique": false
+        }
+      ],
+      "file_processing_queue": [
+        {
+          "name": "idx_file_processing_queue_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_file_processing_queue_priority",
+          "columns": [
+            "priority"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_file_processing_queue_scheduled_at",
+          "columns": [
+            "scheduled_at"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_file_processing_queue_file_id",
+          "columns": [
+            "file_id"
+          ],
+          "unique": false
+        }
+      ],
+      "storage_metrics": [
+        {
+          "name": "idx_storage_metrics_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_storage_metrics_date",
+          "columns": [
+            "measurement_date"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_storage_metrics_type",
+          "columns": [
+            "metric_type"
+          ],
+          "unique": false
+        }
+      ],
+      "alert_configurations": [
+        {
+          "name": "idx_alert_configurations_enabled",
+          "columns": [
+            "is_enabled"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_alert_configurations_type",
+          "columns": [
+            "alert_type"
+          ],
+          "unique": false
+        }
+      ],
+      "alert_instances": [
+        {
+          "name": "idx_alert_instances_config_id",
+          "columns": [
+            "configuration_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_alert_instances_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_alert_instances_triggered_at",
+          "columns": [
+            "triggered_at"
+          ],
+          "unique": false
+        }
+      ],
+      "backup_configurations": [
+        {
+          "name": "idx_backup_configurations_enabled",
+          "columns": [
+            "is_enabled"
+          ],
+          "unique": false
+        }
+      ],
+      "backup_instances": [
+        {
+          "name": "idx_backup_instances_config_id",
+          "columns": [
+            "configuration_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_backup_instances_status",
+          "columns": [
+            "status"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_backup_instances_created_at",
+          "columns": [
+            "created_at"
+          ],
+          "unique": false
+        }
+      ],
+      "user_quotas": [
+        {
+          "name": "idx_user_quotas_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_user_quotas_type",
+          "columns": [
+            "quota_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_user_quotas_enabled",
+          "columns": [
+            "is_enabled"
+          ],
+          "unique": false
+        }
+      ],
+      "file_access_permissions": [
+        {
+          "name": "idx_file_access_permissions_file_id",
+          "columns": [
+            "file_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_file_access_permissions_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_file_access_permissions_active",
+          "columns": [
+            "is_active"
+          ],
+          "unique": false
+        }
+      ],
+      "oauth_states": [
+        {
+          "name": "idx_oauth_states_token",
+          "columns": [
+            "state_token"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_oauth_states_expires",
+          "columns": [
+            "expires_at"
+          ],
+          "unique": false
+        }
+      ],
+      "oauth_security_events": [
+        {
+          "name": "idx_oauth_events_type",
+          "columns": [
+            "event_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_oauth_events_severity",
+          "columns": [
+            "severity"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_oauth_events_user",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_oauth_events_created",
+          "columns": [
+            "created_at"
+          ],
+          "unique": false
+        }
+      ],
+      "oauth_rate_limits": [
+        {
+          "name": "idx_oauth_rate_limits_ip",
+          "columns": [
+            "ip_address"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_oauth_rate_limits_user",
+          "columns": [
+            "user_id"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_oauth_rate_limits_type",
+          "columns": [
+            "event_type"
+          ],
+          "unique": false
+        },
+        {
+          "name": "idx_oauth_rate_limits_created",
+          "columns": [
+            "created_at"
+          ],
+          "unique": false
+        }
+      ]
+    },
     "triggers": {}
   },
   "metadata": {
     "auto_generated": true,
     "source": "GitHub Actions workflow",
-    "warning": "DO NOT EDIT MANUALLY - This file is automatically generated from migration files"
+    "warning": "DO NOT EDIT MANUALLY - This file is automatically generated from migration files",
+    "table_count": 23,
+    "total_indexes": 69
   }
 }

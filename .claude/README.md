@@ -12,9 +12,9 @@ The primary configuration for this project is now in the `.project/` directory:
 
 ## Claude-Specific Files
 
-This directory maintains simplified Claude-specific references:
+This directory contains only Claude Code specific supplements:
 - `claude_project.json` - Claude project metadata
-- Legacy simplified configs (being phased out in favor of `.project/`)
+- `subagents.yml` - 3-persona system (Builder 🔨, Guardian 🛡️, Guide 📖)
 
 ## Migration Notice
 

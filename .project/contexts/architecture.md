@@ -8,15 +8,6 @@
 - **Database**: Cloudflare D1 (SQLite at edge)
 - **Storage**: Cloudflare R2 (S3-compatible object storage)
 
-### Architecture Flow
-```
-Users → Cloudflare Edge → Workers → D1 Database
-                      ↓
-                    R2 Storage (CDN)
-```
-
-## Technology Stack
-
 ### Backend (Cloudflare Workers)
 - **Runtime**: Cloudflare Workers v8 isolates
 - **Framework**: Hono.js (lightweight web framework)
@@ -39,6 +30,45 @@ Users → Cloudflare Edge → Workers → D1 Database
 - **CDN**: Cloudflare global network
 - **CI/CD**: GitHub Actions
 
+## 🚨 DEPLOYMENT ENVIRONMENTS - ABSOLUTE COMPLIANCE REQUIRED 🚨
+
+### 🔴 CRITICAL: Only 2 Environments Exist
+
+#### Development Environment
+- **Worker Name**: `cutty-dev` (EXACT - NO VARIATIONS)
+- **Database Name**: `cutty-dev` (EXACT - NO VARIATIONS)
+- **Domain**: `cutty-dev.emilycogsdill.com`
+- **Wrangler Config**: Default `wrangler.toml`
+- **Deploy Command**: `wrangler deploy`
+
+#### Production Environment  
+- **Worker Name**: `cutty` (EXACT - NO VARIATIONS)
+- **Database Name**: `cutty-prod` (EXACT - NO VARIATIONS)
+- **Domain**: `cutty.emilycogsdill.com`
+- **Wrangler Config**: `wrangler.prod.toml`
+- **Deploy Command**: `wrangler deploy --config wrangler.prod.toml`
+
+### 🚫 FORBIDDEN - THESE DO NOT EXIST
+- **NO STAGING**: There is no staging environment
+- **NO LOCAL DATABASES**: Never create local D1 instances
+- **NO VARIANTS**: No test, staging, local, or other named environments
+- **NO ADDITIONAL WORKERS**: Only cutty-dev and cutty exist
+- **NO ADDITIONAL DATABASES**: Only cutty-dev and cutty-prod exist
+
+### 🔧 Local Development Rules
+- **MANDATORY**: Use `--remote` flag to connect to `cutty-dev`
+- **FORBIDDEN**: Creating local databases with `wrangler d1 create`
+- **COMMAND**: `wrangler dev --remote` (connects to cutty-dev worker)
+- **DATABASE**: Always uses remote `cutty-dev` database
+
+### ⚠️ Compliance Warning
+**ANY deviation from these exact naming conventions will break:**
+- CI/CD pipelines
+- Environment configurations  
+- OAuth redirect URIs
+- Database connections
+- API integrations
+
 ## Database Schema (D1)
 
 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
@@ -47,104 +77,23 @@ Users → Cloudflare Edge → Workers → D1 Database
 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 🔴 🚨 
 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
 
-🚨 MANDATORY REQUIREMENT: WHENEVER YOU CREATE A NEW MIGRATION FILE 🚨
+🚨 DATABASE SCHEMA IS NOW AUTOMATICALLY MAINTAINED! 🚨
 
-1. 🔥 UPDATE THE SCHEMA TABLES BELOW IMMEDIATELY 🔥
-2. 🔥 ENSURE EXACT MATCH WITH ACTUAL DATABASE STRUCTURE 🔥
-3. 🔥 NO EXCEPTIONS - THIS IS CRITICAL FOR PROJECT INTEGRITY 🔥
+✅ **AUTOMATED DOCUMENTATION**: Schema docs are auto-generated from live D1 database
+✅ **ALWAYS CURRENT**: Documentation reflects the actual deployed database state  
+✅ **NO MANUAL WORK**: GitHub Actions handles all schema documentation updates
+✅ **COMPREHENSIVE**: Full table structures, indexes, constraints, and relationships
 
-🚨 THE SCHEMA DOCUMENTATION BELOW MUST ALWAYS REFLECT THE CURRENT STATE 🚨
-🚨 OF ALL MIGRATION FILES - ANY DEVIATION WILL CAUSE MAJOR ISSUES 🚨
+📖 **VIEW COMPLETE SCHEMA DOCUMENTATION**: [d1_schema.md](./d1_schema.md)
+
+🤖 The schema documentation is automatically updated whenever:
+- Migration files are changed and pushed to main branch
+- Manual workflow trigger is activated via GitHub Actions
+- Database structure changes are detected
+
+🚨 NEVER EDIT THE SCHEMA DOCS MANUALLY - They are auto-generated! 🚨
 
 🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
-
-### Core Tables
-```sql
--- Users & Authentication
-users (
-  id INTEGER PRIMARY KEY,
-  username TEXT UNIQUE NOT NULL,
-  email TEXT UNIQUE NOT NULL,
-  password_hash TEXT,
-  google_id TEXT UNIQUE,
-  provider TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)
-
--- API Keys
-api_keys (
-  id INTEGER PRIMARY KEY,
-  user_id INTEGER NOT NULL,
-  key_hash TEXT NOT NULL,
-  name TEXT,
-  permissions TEXT,
-  last_used DATETIME,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-)
-
--- Lists & Data
-lists (
-  id INTEGER PRIMARY KEY,
-  user_id INTEGER NOT NULL,
-  name TEXT NOT NULL,
-  type TEXT,
-  settings TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-)
-
--- List Items
-list_items (
-  id INTEGER PRIMARY KEY,
-  list_id INTEGER NOT NULL,
-  content TEXT,
-  metadata TEXT,
-  position INTEGER,
-  FOREIGN KEY (list_id) REFERENCES lists(id)
-)
-
--- File Uploads
-uploads (
-  id INTEGER PRIMARY KEY,
-  user_id INTEGER NOT NULL,
-  filename TEXT NOT NULL,
-  r2_key TEXT NOT NULL,
-  size INTEGER,
-  mimetype TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-)
-```
-
-### OAuth & Security Tables
-```sql
--- OAuth State Management
-oauth_states (
-  state TEXT PRIMARY KEY,
-  nonce TEXT NOT NULL,
-  expires_at DATETIME NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)
-
--- Security Event Logging
-oauth_security_events (
-  id INTEGER PRIMARY KEY,
-  event_type TEXT NOT NULL,
-  ip_address TEXT,
-  user_agent TEXT,
-  user_id INTEGER,
-  metadata TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)
-
--- Rate Limiting
-oauth_rate_limits (
-  id INTEGER PRIMARY KEY,
-  ip_address TEXT NOT NULL,
-  event_type TEXT NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)
-```
 
 ## API Routes (v1)
 
