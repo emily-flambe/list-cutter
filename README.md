@@ -1,15 +1,15 @@
-# Cutty (List Cutter)
+# Cutty
 
 <div align="center">
   <img src="app/frontend/src/assets/cutty_logo.png" alt="Cutty the Cuttlefish" width="200">
 </div>
 
-A web application for processing and managing CSV files.
+Hello! It's me, Cutty - your best friend! _I will never abandon you_
 
 ## Tech Stack
 
 - **Frontend**: React + Vite + Material-UI
-- **Backend**: Cloudflare Workers (Hono.js)
+- **Backend**: Cloudflare Workers
 - **Database**: Cloudflare D1
 - **Storage**: Cloudflare R2
 - **Authentication**: JWT + Google OAuth
@@ -112,7 +112,7 @@ cd app/frontend && npm run build
 wrangler tail
 ```
 
-## 🦑 The Legend of Cutty the Cuttlefish
+# 🦑 The Legend of Cutty the Cuttlefish
 
 In the deep digital oceans of data, there lives a brave little cuttlefish named Cutty. Unlike other sea creatures who swim away from tangled seaweed and messy coral formations, Cutty discovered a unique gift - the ability to cut through confusion and bring order to chaos.
 
