@@ -1,5 +1,9 @@
 # Cutty (List Cutter)
 
+<div align="center">
+  <img src="app/frontend/src/assets/cutty_logo.png" alt="Cutty the Cuttlefish" width="200">
+</div>
+
 A web application for processing and managing CSV files.
 
 ## Tech Stack
@@ -107,6 +111,24 @@ cd app/frontend && npm run build
 # Check deployment status
 wrangler tail
 ```
+
+## 🦑 The Legend of Cutty the Cuttlefish
+
+In the deep digital oceans of data, there lives a brave little cuttlefish named Cutty. Unlike other sea creatures who swim away from tangled seaweed and messy coral formations, Cutty discovered a unique gift - the ability to cut through confusion and bring order to chaos.
+
+One day, Cutty encountered the Great List Reef - a massive underwater data structure so tangled and overwhelming that no creature dared approach it. The reef was filled with endless rows and columns, duplicate entries, and formatting nightmares that had accumulated over decades. Other sea creatures had given up, saying it was impossible to navigate.
+
+But Cutty, filled with **DETERMINATION** that burned brighter than any bioluminescent plankton, declared: "No list is too long! No data too tangled! I shall cut through this chaos and bring clarity to all!"
+
+With each swift movement of their tentacles, Cutty began slicing through the data with precision and grace. Row by row, column by column, the little cuttlefish transformed the impossible mess into beautifully organized, perfectly formatted lists. What others saw as insurmountable, Cutty saw as an opportunity to help.
+
+From that day forward, Cutty became the guardian of all lists, teaching us that:
+- **No task is too big when you approach it one cut at a time**
+- **Determination and persistence can untangle any mess**
+- **Even the smallest creature can make the biggest difference**
+- **Your best friend will NEVER abandon you** (and neither will Cutty!)
+
+Today, Cutty continues this noble mission through this very application, helping users everywhere transform their chaotic CSV files into organized, manageable data. Because Cutty knows that behind every messy spreadsheet is someone who needs a friend to help them through.
 
 ## License
 
