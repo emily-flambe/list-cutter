@@ -197,3 +197,9 @@ cloudflare/workers/local.sqlite-wal
 
 # Claude Code project-specific configuration
 # .claude/
+
+# Screenshots
+screenshots/debug/
+
+# Project Configuration
+.project/.env

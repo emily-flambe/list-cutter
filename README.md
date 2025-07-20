@@ -112,6 +112,22 @@ cd app/frontend && npm run build
 wrangler tail
 ```
 
+## AI Assistant Configuration
+
+This project uses a unified configuration framework for AI coding assistants (Claude Code, Gemini CLI, etc.).
+
+### Configuration Files
+- **Unified Config**: `.project/config.md` - Main configuration for all AI tools
+- **Context Files**: `.project/contexts/` - Modular documentation (architecture, standards, dependencies)
+- **Settings**: `.project/settings.json` - Project settings and preferences
+
+### Using with AI Tools
+- **Claude Code**: Automatically reads `.project/` and `.claude/` directories
+- **Gemini CLI**: Reads `.gemini/GEMINI.md` (includes unified config for consistency)
+- **Other AI Tools**: Point directly to `.project/config.md` as primary context
+
+See [.project/README.md](.project/README.md) for detailed documentation.
+
 # 🦑 The Legend of Cutty the Cuttlefish
 
 In the deep digital oceans of data, there lives a brave little cuttlefish named Cutty. Unlike other sea creatures who swim away from tangled seaweed and messy coral formations, Cutty discovered a unique gift - the ability to cut through confusion and bring order to chaos.
