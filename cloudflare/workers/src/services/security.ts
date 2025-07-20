@@ -125,31 +125,109 @@ export function validateFile(
 }
 
 /**
+ * In-memory rate limiter for development
+ * Avoids KV operations to prevent 429 errors
+ */
+class InMemoryRateLimiter {
+  private requests: Map<string, { count: number; resetAt: number }> = new Map();
+  private readonly windowMs: number;
+  private readonly maxRequests: number;
+
+  constructor(windowMs = 60000, maxRequests = 60) {
+    this.windowMs = windowMs;
+    this.maxRequests = maxRequests;
+  }
+
+  checkLimit(identifier: string): { allowed: boolean; remaining: number } {
+    const now = Date.now();
+    const data = this.requests.get(identifier);
+
+    if (!data || data.resetAt < now) {
+      // New window
+      this.requests.set(identifier, {
+        count: 1,
+        resetAt: now + this.windowMs
+      });
+      return { allowed: true, remaining: this.maxRequests - 1 };
+    }
+
+    if (data.count >= this.maxRequests) {
+      return { allowed: false, remaining: 0 };
+    }
+
+    // Increment count
+    data.count++;
+    return { allowed: true, remaining: this.maxRequests - data.count };
+  }
+
+  // Clean up old entries periodically
+  cleanup() {
+    const now = Date.now();
+    for (const [key, data] of this.requests.entries()) {
+      if (data.resetAt < now) {
+        this.requests.delete(key);
+      }
+    }
+  }
+}
+
+// Global in-memory limiter for development
+const devRateLimiter = new InMemoryRateLimiter();
+
+/**
  * Rate limiting middleware
  */
 export function rateLimitMiddleware(options?: { windowMs?: number; maxRequests?: number }) {
   return async (c: Context<{ Bindings: Env }>, next: Function) => {
+    // In development, use in-memory rate limiting to avoid KV rate limits
+    if (c.env.ENVIRONMENT === 'development') {
+      const identifier = c.req.header('CF-Connecting-IP') || 
+                       c.req.header('X-Forwarded-For') || 
+                       c.req.header('X-Real-IP') ||
+                       'dev-' + (c.req.header('User-Agent') || 'unknown');
+
+      const limiter = new InMemoryRateLimiter(options?.windowMs, options?.maxRequests);
+      const { allowed, remaining } = limiter.checkLimit(identifier);
+
+      // Set rate limit headers
+      c.header('X-RateLimit-Limit', String(options?.maxRequests || 60));
+      c.header('X-RateLimit-Remaining', String(remaining));
+
+      if (!allowed) {
+        return c.json({ error: 'Rate limit exceeded' }, 429);
+      }
+
+      return next();
+    }
+
+    // Production: Use KV-based rate limiting
     const kv = c.env.AUTH_KV;
     if (!kv) {
       console.error('AUTH_KV not configured for rate limiting');
       return next();
     }
 
-    const limiter = new RateLimiter(kv, options?.windowMs, options?.maxRequests);
-    
-    // Use IP address or user ID as identifier
-    const identifier = c.req.header('CF-Connecting-IP') || 
-                     c.req.header('X-Forwarded-For') || 
-                     'unknown';
+    try {
+      const limiter = new RateLimiter(kv, options?.windowMs, options?.maxRequests);
+      
+      // Use IP address or user ID as identifier
+      const identifier = c.req.header('CF-Connecting-IP') || 
+                       c.req.header('X-Forwarded-For') || 
+                       'unknown';
 
-    const { allowed, remaining } = await limiter.checkLimit(identifier);
+      const { allowed, remaining } = await limiter.checkLimit(identifier);
 
-    // Set rate limit headers
-    c.header('X-RateLimit-Limit', String(options?.maxRequests || 60));
-    c.header('X-RateLimit-Remaining', String(remaining));
+      // Set rate limit headers
+      c.header('X-RateLimit-Limit', String(options?.maxRequests || 60));
+      c.header('X-RateLimit-Remaining', String(remaining));
 
-    if (!allowed) {
-      return c.json({ error: 'Rate limit exceeded' }, 429);
+      if (!allowed) {
+        return c.json({ error: 'Rate limit exceeded' }, 429);
+      }
+    } catch (error) {
+      // If KV operations fail, log but don't block the request
+      console.error('Rate limiting error:', error);
+      // Continue without rate limiting rather than failing the request
     }
 
     return next();

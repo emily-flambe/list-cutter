@@ -145,7 +145,7 @@ auth.post('/logout', async (c) => {
     }
 
     const token = authHeader.substring(7);
-    await blacklistToken(token, c.env.AUTH_KV);
+    await blacklistToken(token, 'user_logout', c.env);
 
     return c.json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
@@ -165,20 +165,34 @@ auth.post('/refresh', async (c) => {
 
     const tokens = await refreshAccessToken(
       refresh_token,
-      c.env.JWT_SECRET,
-      c.env.AUTH_KV
+      c.env
     );
 
-    return c.json({ success: true, tokens });
+    if (!tokens) {
+      return c.json({ error: 'Invalid or expired refresh token' }, 401);
+    }
+
+    // Return in the format the frontend expects
+    return c.json({ 
+      success: true, 
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token
+    });
   } catch (error) {
     console.error('Token refresh error:', error);
     return c.json({ error: 'Token refresh failed' }, 401);
   }
 });
 
-// Get user profile endpoint - fixed validateToken params
+// Get user profile endpoint
 auth.get('/user', async (c) => {
   try {
+    // Check environment variables
+    if (!c.env.JWT_SECRET) {
+      console.error('JWT_SECRET not available');
+      return c.json({ error: 'Server configuration error' }, 500);
+    }
+
     const authHeader = c.req.header('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return c.json({ error: 'No token provided' }, 401);
@@ -186,22 +200,21 @@ auth.get('/user', async (c) => {
 
     const token = authHeader.substring(7);
     
-    // Add debug logging
-    console.log('Validating token for /user endpoint');
-    
     let payload;
     try {
       payload = await validateToken(token, c.env.JWT_SECRET);
-      console.log('Token payload:', payload);
     } catch (tokenError) {
       console.error('Token validation error:', tokenError);
+      return c.json({ error: 'Invalid token' }, 401);
+    }
+
+    if (!payload) {
       return c.json({ error: 'Invalid token' }, 401);
     }
 
     // Get user from database including role - handle both user_id and id fields
     const userId = payload.user_id || payload.id;
     if (!userId) {
-      console.error('No user ID in token payload:', payload);
       return c.json({ error: 'Invalid token payload' }, 401);
     }
 
@@ -210,13 +223,14 @@ auth.get('/user', async (c) => {
     ).bind(userId).first();
 
     if (!user) {
-      console.error('User not found for ID:', userId);
       return c.json({ error: 'User not found' }, 404);
     }
 
     // Return user in the expected format
-    return c.json({ 
-      success: true, 
+    // Frontend expects either response.data.user (nested) or response.data (direct)
+    // Return nested format to match other endpoints (login/register)
+    return c.json({
+      success: true,
       user: {
         id: user.id,
         email: user.email,
@@ -227,14 +241,8 @@ auth.get('/user', async (c) => {
     });
   } catch (error) {
     console.error('Get user error:', error);
-    console.error('Error stack:', error.stack);
     return c.json({ error: 'Failed to get user' }, 500);
   }
-});
-
-// Test endpoint to verify route mounting
-auth.get('/test-callback', async (c) => {
-  return c.json({ message: 'Callback route is working', timestamp: new Date().toISOString() });
 });
 
 // Google OAuth endpoints (simplified)
@@ -242,13 +250,6 @@ auth.get('/google', async (c) => {
   try {
     const clientId = c.env.GOOGLE_CLIENT_ID;
     const redirectUri = c.env.GOOGLE_REDIRECT_URI;
-    
-    console.log('OAuth config check:', { 
-      hasClientId: !!clientId, 
-      hasRedirectUri: !!redirectUri,
-      clientId: clientId ? clientId.substring(0, 10) + '...' : 'undefined',
-      redirectUri 
-    });
     
     if (!clientId || !redirectUri) {
       return c.json({ error: 'OAuth not configured' }, 500);
@@ -273,17 +274,12 @@ auth.get('/google', async (c) => {
 });
 
 auth.get('/google/callback', async (c) => {
-  console.log('OAuth callback function entered');
   try {
-    console.log('OAuth callback started');
     const code = c.req.query('code');
     
     if (!code) {
-      console.log('No authorization code provided');
       return c.json({ error: 'No authorization code provided' }, 400);
     }
-
-    console.log('Authorization code received, exchanging for tokens...');
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -303,9 +299,7 @@ auth.get('/google/callback', async (c) => {
       throw new Error('Failed to exchange authorization code');
     }
 
-    console.log('Token exchange successful');
     const tokenData = await tokenResponse.json();
-    console.log('Token data keys:', Object.keys(tokenData));
     const { id_token } = tokenData;
 
     // Decode and verify ID token (simplified - in production, verify signature)
