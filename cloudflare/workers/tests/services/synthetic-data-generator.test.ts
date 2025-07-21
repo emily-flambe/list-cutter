@@ -3,15 +3,15 @@ import { SyntheticDataGenerator } from '../../src/services/synthetic-data-genera
 
 describe('SyntheticDataGenerator', () => {
   describe('generateVoterRecords', () => {
-    it('should generate the correct number of records', () => {
+    it('should generate the correct number of records', async () => {
       const count = 10;
-      const records = SyntheticDataGenerator.generateVoterRecords(count);
+      const records = await SyntheticDataGenerator.generateVoterRecords(count);
       
       expect(records).toHaveLength(count);
     });
 
-    it('should generate records with all required fields', () => {
-      const records = SyntheticDataGenerator.generateVoterRecords(1);
+    it('should generate records with all required fields', async () => {
+      const records = await SyntheticDataGenerator.generateVoterRecords(1);
       const record = records[0];
       
       expect(record).toHaveProperty('voter_id');
@@ -36,54 +36,54 @@ describe('SyntheticDataGenerator', () => {
       expect(record.email).toBeTruthy();
     });
 
-    it('should generate unique voter IDs', () => {
-      const records = SyntheticDataGenerator.generateVoterRecords(100);
+    it('should generate unique voter IDs', async () => {
+      const records = await SyntheticDataGenerator.generateVoterRecords(100);
       const voterIds = records.map(r => r.voter_id);
       const uniqueIds = new Set(voterIds);
       
       expect(uniqueIds.size).toBe(records.length);
     });
 
-    it('should filter by state when provided', () => {
+    it('should filter by state when provided', async () => {
       const state = 'CA';
-      const records = SyntheticDataGenerator.generateVoterRecords(10, state);
+      const records = await SyntheticDataGenerator.generateVoterRecords(10, state);
       
       records.forEach(record => {
         expect(record.state).toBe(state);
       });
     });
 
-    it('should throw error for invalid count', () => {
-      expect(() => SyntheticDataGenerator.generateVoterRecords(0))
-        .toThrow('Count must be between 1 and 1000');
+    it('should throw error for invalid count', async () => {
+      await expect(SyntheticDataGenerator.generateVoterRecords(0))
+        .rejects.toThrow('Count must be between 1 and 1000');
       
-      expect(() => SyntheticDataGenerator.generateVoterRecords(1001))
-        .toThrow('Count must be between 1 and 1000');
+      await expect(SyntheticDataGenerator.generateVoterRecords(1001))
+        .rejects.toThrow('Count must be between 1 and 1000');
     });
 
-    it('should throw error for invalid state', () => {
-      expect(() => SyntheticDataGenerator.generateVoterRecords(10, 'XX'))
-        .toThrow('Invalid state code: XX');
+    it('should throw error for invalid state', async () => {
+      await expect(SyntheticDataGenerator.generateVoterRecords(10, 'XX'))
+        .rejects.toThrow('Invalid state code(s): XX');
     });
 
-    it('should generate valid email format', () => {
-      const records = SyntheticDataGenerator.generateVoterRecords(5);
+    it('should generate valid email format', async () => {
+      const records = await SyntheticDataGenerator.generateVoterRecords(5);
       
       records.forEach(record => {
         expect(record.email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
       });
     });
 
-    it('should generate valid phone format', () => {
-      const records = SyntheticDataGenerator.generateVoterRecords(5);
+    it('should generate valid phone format', async () => {
+      const records = await SyntheticDataGenerator.generateVoterRecords(5);
       
       records.forEach(record => {
         expect(record.phone).toMatch(/^\(\d{3}\) \d{3}-\d{4}$/);
       });
     });
 
-    it('should generate valid ZIP code format', () => {
-      const records = SyntheticDataGenerator.generateVoterRecords(5);
+    it('should generate valid ZIP code format', async () => {
+      const records = await SyntheticDataGenerator.generateVoterRecords(5);
       
       records.forEach(record => {
         expect(record.zip).toMatch(/^\d{5}$/);
@@ -92,8 +92,8 @@ describe('SyntheticDataGenerator', () => {
   });
 
   describe('recordsToCSV', () => {
-    it('should convert records to CSV format', () => {
-      const records = SyntheticDataGenerator.generateVoterRecords(2);
+    it('should convert records to CSV format', async () => {
+      const records = await SyntheticDataGenerator.generateVoterRecords(2);
       const csv = SyntheticDataGenerator.recordsToCSV(records);
       
       const lines = csv.split('\n');
@@ -109,8 +109,8 @@ describe('SyntheticDataGenerator', () => {
       });
     });
 
-    it('should properly quote addresses that may contain commas', () => {
-      const records = SyntheticDataGenerator.generateVoterRecords(1);
+    it('should properly quote addresses that may contain commas', async () => {
+      const records = await SyntheticDataGenerator.generateVoterRecords(1);
       const csv = SyntheticDataGenerator.recordsToCSV(records);
       
       const lines = csv.split('\n');

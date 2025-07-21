@@ -26,23 +26,40 @@ describe('SyntheticDataGenerator', () => {
       });
     });
 
-    it('should generate records for multiple states', async () => {
+    it('should distribute records evenly across multiple states', async () => {
       const states = ['NY', 'TX', 'FL'];
       const records = await SyntheticDataGenerator.generateVoterRecords(30, states);
       
       expect(records).toHaveLength(30);
       
-      // Check that records are distributed among the requested states
+      // Check that records are evenly distributed among the requested states
       const stateCount = new Map<string, number>();
       records.forEach(record => {
         expect(states).toContain(record.state);
         stateCount.set(record.state, (stateCount.get(record.state) || 0) + 1);
       });
       
-      // Each state should have at least one record
+      // Each state should have exactly 10 records (30 / 3 = 10)
       states.forEach(state => {
-        expect(stateCount.get(state)).toBeGreaterThan(0);
+        expect(stateCount.get(state)).toBe(10);
       });
+    });
+
+    it('should handle uneven distribution when count is not divisible by state count', async () => {
+      const states = ['CA', 'NY', 'TX'];
+      const records = await SyntheticDataGenerator.generateVoterRecords(10, states);
+      
+      expect(records).toHaveLength(10);
+      
+      const stateCount = new Map<string, number>();
+      records.forEach(record => {
+        expect(states).toContain(record.state);
+        stateCount.set(record.state, (stateCount.get(record.state) || 0) + 1);
+      });
+      
+      // 10 records across 3 states should be: 4, 3, 3 (first state gets the extra)
+      const counts = Array.from(stateCount.values()).sort((a, b) => b - a);
+      expect(counts).toEqual([4, 3, 3]);
     });
 
     it('should handle no state filter', async () => {
