@@ -303,93 +303,24 @@ const SidebarLayout = ({ children }) => {
         </ListItem>
 
 
-        {/* Files Section - Available for all users (for now, same access as logged-in users) */}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => setFilesOpen(!filesOpen)}>
-            <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText primary="Files" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-            {filesOpen ? <ExpandLess sx={{ color: 'var(--primary-text)' }} /> : <ExpandMore sx={{ color: 'var(--primary-text)' }} />}
-          </ListItemButton>
-        </ListItem>
-        <Collapse in={filesOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton
-              component={Link}
-              to="/file_upload"
-              selected={location.pathname === '/file_upload'}
-              sx={{
-                pl: 4,
-                '&.Mui-selected': {
-                  backgroundColor: 'var(--accent)',
-                  '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                <UploadFileIcon />
-              </ListItemIcon>
-              <ListItemText primary="Upload" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-            </ListItemButton>
-            <ListItemButton
-              component={Link}
-              to="/manage_files"
-              selected={location.pathname === '/manage_files'}
-              sx={{
-                pl: 4,
-                '&.Mui-selected': {
-                  backgroundColor: 'var(--accent)',
-                  '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                <FolderIcon />
-              </ListItemIcon>
-              <ListItemText primary="Manage" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-            </ListItemButton>
-            <ListItemButton
-              component={Link}
-              to="/file_lineage"
-              selected={location.pathname === '/file_lineage'}
-              sx={{
-                pl: 4,
-                '&.Mui-selected': {
-                  backgroundColor: 'var(--accent)',
-                  '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                <AccountTreeIcon />
-              </ListItemIcon>
-              <ListItemText primary="Lineage" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        {/* Load Person Records - Available for all users (for now, same access as logged-in users) */}
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/load_person_records"
-            selected={location.pathname === '/load_person_records'}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: 'var(--accent)',
-                '&:hover': { backgroundColor: 'var(--dark-accent)' },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-              <PersonIcon />
-            </ListItemIcon>
-            <ListItemText primary="Load Person Records" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-          </ListItemButton>
-        </ListItem>
-
-        {/* TODO: Future logged-in-only features can be added here with token && (...) wrapper */}
+        {/* TODO: Future logged-in-only features (Files, Load Person Records, etc.) can be added here with token && (...) wrapper */}
+        {/* 
+        Example for future logged-in-only features:
+        {token && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => setFilesOpen(!filesOpen)}>
+                <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
+                  <FolderIcon />
+                </ListItemIcon>
+                <ListItemText primary="Files" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
+                {filesOpen ? <ExpandLess sx={{ color: 'var(--primary-text)' }} /> : <ExpandMore sx={{ color: 'var(--primary-text)' }} />}
+              </ListItemButton>
+            </ListItem>
+            ... etc
+          </>
+        )}
+        */}
 
         <ListItem disablePadding>
           <ListItemButton
