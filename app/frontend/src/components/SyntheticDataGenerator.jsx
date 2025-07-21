@@ -153,6 +153,37 @@ const SyntheticDataGenerator = () => {
     }
   };
 
+  const handleDownload = async () => {
+    try {
+      // Check if user is authenticated by looking at the download URL
+      const isAuthenticated = downloadUrl.includes('/api/v1/files/');
+      
+      if (isAuthenticated) {
+        // For authenticated users, we need to fetch with the Authorization header
+        const response = await api.get(downloadUrl, {
+          responseType: 'blob'
+        });
+        
+        // Create a blob URL and trigger download
+        const blob = new Blob([response.data], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'synthetic-data.csv';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        // For anonymous users, use the regular link download
+        window.location.href = downloadUrl;
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      setErrors({ non_field_errors: 'Failed to download file. Please try again.' });
+    }
+  };
+
   return (
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
       <Box sx={{ textAlign: 'center', mb: 4 }}>
@@ -192,9 +223,9 @@ const SyntheticDataGenerator = () => {
           <Typography variant="body2" sx={{ mb: 1 }}>
             Your synthetic data is ready!
           </Typography>
-          <Link 
-            href={downloadUrl} 
-            download 
+          <Button
+            onClick={handleDownload}
+            variant="contained"
             sx={{ 
               fontWeight: 'bold',
               textDecoration: 'none',
@@ -210,7 +241,7 @@ const SyntheticDataGenerator = () => {
             }}
           >
             Download CSV File
-          </Link>
+          </Button>
         </Box>
       )}
 
