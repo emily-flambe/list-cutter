@@ -2,7 +2,7 @@ import type { SyntheticVoterRecord } from '../types';
 import { LocationDataService } from './location-data-service';
 
 /**
- * Synthetic Data Generator Service
+ * Generate Fake Data Service
  * Generates fake voter registration data for testing purposes
  */
 export class SyntheticDataGenerator {

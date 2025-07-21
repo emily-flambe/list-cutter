@@ -239,7 +239,7 @@ const Layout = ({ children }) => {
                               sx={{ paddingLeft: 4 }}
                             >
                               <ListItemIcon><DataArrayIcon /></ListItemIcon>
-                              <ListItemText primary="Synthetic Data Generator" />
+                              <ListItemText primary="Generate Fake Data" />
                             </ListItemButton>
                           </ListItem>
                         </List>

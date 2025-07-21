@@ -16,6 +16,8 @@ This directory contains a unified configuration framework that works seamlessly 
 │   └── dependencies.md
 ├── scripts/              # Utility scripts
 │   └── generate-d1-schema.js
+├── api-docs/             # API documentation
+│   └── synthetic-data.md
 └── README.md             # This file
 ```
 
@@ -71,6 +73,9 @@ Modular documentation:
 - `architecture.md` - System design and tech stack
 - `coding-standards.md` - Code style and conventions
 - `dependencies.md` - Package versions and requirements
+
+### API Documentation
+- `api-docs/synthetic-data.md` - Synthetic data generator API endpoints
 
 ## Best Practices
 
