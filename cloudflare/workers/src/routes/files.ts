@@ -16,8 +16,27 @@ import { validateToken } from '../services/auth/jwt';
 
 const files = new Hono<{ Bindings: Env }>();
 
-// Middleware to verify authentication
+// Middleware to verify authentication (skip for download endpoint)
 files.use('*', async (c, next) => {
+  // Allow anonymous access to download endpoint for synthetic data
+  if (c.req.method === 'GET' && c.req.path.match(/\/[a-f0-9-]{36}$/)) {
+    // This is a download request, check for auth but don't require it
+    const authHeader = c.req.header('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const payload = await validateToken(token, c.env.JWT_SECRET, c.env.AUTH_KV);
+        c.set('userId', payload.user_id);
+      } catch (error) {
+        // Authentication failed, but we'll continue without setting userId
+        console.log('Optional authentication failed for download:', error);
+      }
+    }
+    await next();
+    return;
+  }
+
+  // For all other endpoints, require authentication
   const authHeader = c.req.header('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return c.json({ error: 'Unauthorized' }, 401);
@@ -97,23 +116,32 @@ files.post('/upload', async (c) => {
   }
 });
 
-// Download file endpoint
+// Download file endpoint - allows anonymous access for synthetic data
 files.get('/:fileId', async (c) => {
   try {
     const userId = c.get('userId');
     const fileId = c.req.param('fileId');
 
-    // Get file metadata from database
-    const fileRecord = await c.env.DB.prepare(
-      'SELECT * FROM files WHERE id = ? AND user_id = ?'
-    ).bind(fileId, userId).first();
+    // Get file metadata from database - check both authenticated and anonymous users
+    let fileRecord;
+    if (userId) {
+      // Authenticated user - check their files
+      fileRecord = await c.env.DB.prepare(
+        'SELECT * FROM files WHERE id = ? AND user_id = ?'
+      ).bind(fileId, userId).first();
+    } else {
+      // Anonymous user - check for synthetic data files
+      fileRecord = await c.env.DB.prepare(
+        'SELECT * FROM files WHERE id = ? AND user_id = ? AND tags LIKE ?'
+      ).bind(fileId, 'anonymous', '%synthetic-data%').first();
+    }
 
     if (!fileRecord) {
       return c.json({ error: 'File not found' }, 404);
     }
 
     // Get file from R2
-    const object = await c.env.FILE_STORAGE.get(fileRecord.file_key);
+    const object = await c.env.FILE_STORAGE.get(fileRecord.r2_key || fileRecord.file_key);
     
     if (!object) {
       return c.json({ error: 'File data not found' }, 404);
@@ -122,9 +150,9 @@ files.get('/:fileId', async (c) => {
     // Return file with appropriate headers
     return new Response(object.body, {
       headers: {
-        'Content-Type': fileRecord.mime_type || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${fileRecord.filename}"`,
-        'Content-Length': fileRecord.size_bytes.toString()
+        'Content-Type': fileRecord.mime_type || 'text/csv',
+        'Content-Disposition': `attachment; filename="${fileRecord.original_filename || fileRecord.filename}"`,
+        'Content-Length': (fileRecord.file_size || fileRecord.size_bytes).toString()
       }
     });
   } catch (error) {

@@ -12,6 +12,10 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import CircularProgress from '@mui/material/CircularProgress';
 import Link from '@mui/material/Link';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const SyntheticDataGenerator = () => {
   const [formData, setFormData] = useState({
@@ -23,16 +27,13 @@ const SyntheticDataGenerator = () => {
   const [downloadUrl, setDownloadUrl] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // US States list for dropdown
+  // US State codes for dropdown
   const usStates = [
-    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
-    'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
-    'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
-    'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
-    'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
-    'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
-    'Wisconsin', 'Wyoming'
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
   ];
 
 
@@ -140,12 +141,12 @@ const SyntheticDataGenerator = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
+    <Box sx={{ maxWidth: 750, mx: 'auto', mt: 4 }}>
       <Typography variant="h4" gutterBottom>
         Synthetic Data Generator
       </Typography>
       
-      <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
+      <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary', lineHeight: 1.6 }}>
         Generate synthetic person records for testing and development purposes. 
         All generated data is completely fictional and not based on real individuals.
       </Typography>
@@ -180,7 +181,17 @@ const SyntheticDataGenerator = () => {
       <Box
         component="form"
         onSubmit={handleSubmit}
-        sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}
+        sx={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: 3,
+          p: 3,
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+          boxShadow: 1,
+          border: '1px solid',
+          borderColor: 'divider'
+        }}
       >
         {/* Count Input */}
         <TextField
@@ -236,8 +247,13 @@ const SyntheticDataGenerator = () => {
           disabled={loading}
           sx={{ 
             mt: 2, 
-            height: 48,
-            fontSize: '1rem'
+            height: 56,
+            fontSize: '1.1rem',
+            fontWeight: 600,
+            boxShadow: 2,
+            '&:hover': {
+              boxShadow: 4
+            }
           }}
           fullWidth
         >
@@ -253,25 +269,112 @@ const SyntheticDataGenerator = () => {
       </Box>
 
       {/* Information Section */}
-      <Box sx={{ mt: 4, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-        <Typography variant="h6" gutterBottom>
-          About Synthetic Data
-        </Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>
-          The generated data includes realistic but fictional information such as:
-        </Typography>
-        <Typography variant="body2" color="text.secondary" component="ul" sx={{ pl: 2 }}>
-          <li>Full names (first and last)</li>
-          <li>Email addresses</li>
-          <li>Phone numbers</li>
-          <li>Addresses (street, city, state, ZIP)</li>
-          <li>Birth dates</li>
-          <li>Demographics</li>
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
-          Note: All data is completely fictional and generated algorithmically.
-        </Typography>
-      </Box>
+      <Accordion sx={{ mt: 5, border: '1px solid', borderColor: 'divider', borderRadius: 1, boxShadow: 'none' }}>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          sx={{ 
+            bgcolor: 'background.paper',
+            borderRadius: '4px 4px 0 0',
+            minHeight: 48,
+            '&:hover': { bgcolor: 'action.hover' }
+          }}
+        >
+          <Typography variant="subtitle1" sx={{ fontWeight: 500, color: 'text.primary' }}>
+            About Synthetic Data
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails sx={{ 
+          bgcolor: 'background.paper', 
+          p: 3,
+          textAlign: 'left'
+        }}>
+          <Typography variant="body1" color="text.primary" sx={{ mb: 3, lineHeight: 1.6 }}>
+            The generated data includes realistic but fictional information such as:
+          </Typography>
+          
+          <Box component="ul" sx={{ 
+            m: 0, 
+            p: 0, 
+            pl: 2,
+            listStyle: 'disc',
+            '& li': {
+              mb: 1.5,
+              color: 'text.primary',
+              fontSize: '0.875rem',
+              lineHeight: 1.5
+            },
+            '& ul': {
+              mt: 0.5,
+              pl: 2,
+              listStyle: 'circle',
+              '& li': {
+                mb: 0.5,
+                fontSize: '0.8125rem',
+                color: 'text.secondary'
+              }
+            }
+          }}>
+            <li>
+              Full names (first and last)
+              <ul>
+                <li>Random selection from common American first/last names</li>
+              </ul>
+            </li>
+            <li>
+              Email addresses
+              <ul>
+                <li>Generated using person's name plus common email providers</li>
+              </ul>
+            </li>
+            <li>
+              Phone numbers
+              <ul>
+                <li>Follow real US phone number patterns with fake digits</li>
+              </ul>
+            </li>
+            <li>
+              Addresses (street, city, state, ZIP)
+              <ul>
+                <li>Realistic street numbers + names with real cities/states</li>
+              </ul>
+            </li>
+            <li>
+              Birth dates
+              <ul>
+                <li>Random dates ensuring logical adult ages (no future dates)</li>
+              </ul>
+            </li>
+            <li>
+              Demographics
+              <ul>
+                <li>Unique IDs and duplicate prevention</li>
+              </ul>
+            </li>
+          </Box>
+
+          <Box sx={{ 
+            mt: 3, 
+            pt: 2, 
+            borderTop: '1px solid', 
+            borderColor: 'divider'
+          }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+              Note: All data is completely fictional and generated algorithmically.
+            </Typography>
+            
+            <Typography variant="body2" color="text.secondary">
+              <Link 
+                href="https://github.com/emilycogsdill/list-cutter/blob/main/cloudflare/workers/src/services/synthetic-data-generator.ts" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                sx={{ fontWeight: 500, textDecoration: 'none' }}
+              >
+                View source code →
+              </Link>
+            </Typography>
+          </Box>
+        </AccordionDetails>
+      </Accordion>
     </Box>
   );
 };

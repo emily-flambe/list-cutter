@@ -232,6 +232,44 @@ curl 'http://localhost:8787/api/v1/auth/google'
 
 ---
 
+## Visual Debugging with Screenshots
+
+### **MCP Screenshot Tool for Frontend Debugging**
+Use the `mcp__screenshot-website-fast__take_screenshot` tool to capture visual state for debugging:
+
+```bash
+# Local development debugging
+# URL: http://localhost:5173
+# Use when: Frontend issues, styling problems, component rendering issues
+
+# Dev deployment debugging  
+# URL: https://cutty-dev.emilycogsdill.com
+# Use when: Environment-specific issues, deployment verification
+```
+
+### **Screenshot Debugging Workflow**
+1. **Before/After Comparisons**: Take screenshots before implementing changes
+2. **Cross-Environment Validation**: Compare local vs dev deployment rendering
+3. **Bug Report Documentation**: Include screenshots when reporting frontend issues
+4. **Responsive Testing**: Capture different viewport sizes using width parameter
+
+### **Common Screenshot Use Cases**
+- **Authentication Flow**: Capture OAuth login/callback pages
+- **Dashboard Rendering**: Verify chart and data visualization display
+- **Mobile Responsiveness**: Test layout at different screen sizes
+- **Error States**: Document how errors appear to users
+- **Component Styling**: Debug CSS issues across environments
+
+### **Local Authentication Testing**
+For local development and testing:
+```
+Username: test
+Password: aoeusnth
+```
+**Use when**: Testing authentication flows, user-specific features, or any functionality requiring login during local development.
+
+---
+
 ## Emergency Procedures
 
 ### **Rollback Procedure**

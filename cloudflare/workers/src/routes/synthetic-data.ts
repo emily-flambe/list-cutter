@@ -117,7 +117,11 @@ syntheticData.post('/generate', async (c) => {
       ).run();
     }
 
-    // Prepare response
+    // Prepare response with direct download URL for anonymous users
+    const downloadUrl = userId === 'anonymous' 
+      ? `/api/v1/synthetic-data/download/${fileId}`
+      : `/api/v1/files/${fileId}`;
+
     const response: SyntheticDataResponse = {
       success: true,
       file: {
@@ -125,7 +129,7 @@ syntheticData.post('/generate', async (c) => {
         name: filename,
         size: csvBuffer.length,
         type: 'text/csv',
-        downloadUrl: `/api/v1/files/${fileId}`
+        downloadUrl: downloadUrl
       },
       metadata: {
         recordCount: requestData.count,
@@ -152,6 +156,46 @@ syntheticData.post('/generate', async (c) => {
       error: 'Synthetic data generation failed',
       details: ['An unexpected error occurred while generating data']
     }, 500);
+  }
+});
+
+// Direct download endpoint for anonymous synthetic data files
+syntheticData.get('/download/:fileId', async (c) => {
+  try {
+    const fileId = c.req.param('fileId');
+    
+    // Construct the R2 key for anonymous synthetic data
+    const fileKey = `synthetic-data/anonymous/${fileId}`;
+    
+    // Try to find the actual file in R2 by listing objects with the prefix
+    const objects = await c.env.FILE_STORAGE.list({ prefix: fileKey });
+    
+    if (!objects.objects || objects.objects.length === 0) {
+      return c.json({ error: 'File not found' }, 404);
+    }
+    
+    // Get the first matching file
+    const actualKey = objects.objects[0].key;
+    const object = await c.env.FILE_STORAGE.get(actualKey);
+    
+    if (!object) {
+      return c.json({ error: 'File data not found' }, 404);
+    }
+    
+    // Extract filename from the key
+    const filename = actualKey.split('/').pop() || 'synthetic-data.csv';
+    
+    // Return file with appropriate headers
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Length': object.size?.toString() || '0'
+      }
+    });
+  } catch (error) {
+    console.error('Synthetic data download error:', error);
+    return c.json({ error: 'Download failed' }, 500);
   }
 });
 
