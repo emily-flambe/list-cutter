@@ -157,7 +157,7 @@ const SyntheticDataGenerator = () => {
     <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
       <Box sx={{ textAlign: 'center', mb: 4 }}>
         <Typography variant="h4" gutterBottom>
-          Synthetic Data Generator
+          Generate Fake Data
         </Typography>
         
         <Box component="ul" sx={{ 
@@ -429,7 +429,7 @@ const SyntheticDataGenerator = () => {
           }}>
             <Typography variant="body2" color="text.secondary">
               <Link 
-                href="https://github.com/emilycogsdill/list-cutter/blob/main/cloudflare/workers/src/services/synthetic-data-generator.ts" 
+                href="https://github.com/emily-flambe/list-cutter/blob/main/cloudflare/workers/src/services/synthetic-data-generator.ts" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 sx={{ fontWeight: 500, textDecoration: 'none' }}
