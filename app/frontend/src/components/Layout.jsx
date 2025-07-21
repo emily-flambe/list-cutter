@@ -21,6 +21,7 @@ import ContentCutIcon from '@mui/icons-material/ContentCut';
 import ListIcon from '@mui/icons-material/List';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import PersonIcon from '@mui/icons-material/Person';
+import DataArrayIcon from '@mui/icons-material/DataArray';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext, useEffect, useState } from 'react';
@@ -102,6 +103,8 @@ const Layout = ({ children }) => {
           return "Act like you've been here before!";
         case '/login':
           return "Have we met?";
+        case '/synthetic-data':
+          return "Creating FAKE people? That's MY job!";
         case '/faq':
           return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.15rem' } };
         case '/logout':
@@ -227,6 +230,16 @@ const Layout = ({ children }) => {
                             >
                               <ListItemIcon><PersonIcon /></ListItemIcon>
                               <ListItemText primary="Load Person Records" />
+                            </ListItemButton>
+                          </ListItem>
+                          <ListItem key="synthetic_data" disablePadding>
+                            <ListItemButton 
+                              component={Link} 
+                              to="/synthetic-data" 
+                              sx={{ paddingLeft: 4 }}
+                            >
+                              <ListItemIcon><DataArrayIcon /></ListItemIcon>
+                              <ListItemText primary="Generate Fake Data" />
                             </ListItemButton>
                           </ListItem>
                         </List>

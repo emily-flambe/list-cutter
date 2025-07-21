@@ -1,185 +1,228 @@
 # Coding Standards
 
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+🔴 🚨 ANTI-OVERENGINEERING MANDATE - SIMPLICITY ABOVE ALL 🚨 🔴
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+
+## 🛑 CORE PHILOSOPHY: RADICAL SIMPLICITY 🛑
+
+### ⚡ SIMPLICITY COMMANDMENTS ⚡
+1. **SIMPLE WORKS** - Complex solutions are FORBIDDEN unless absolutely necessary
+2. **BORING IS BEAUTIFUL** - Use the most obvious, straightforward approach first
+3. **NO CLEVER CODE** - If it needs explanation, it's too complex
+4. **ONE THING WELL** - Each function/component does exactly one thing
+5. **COPY-PASTE > ABSTRACTION** - Duplication is better than premature abstraction
+6. **FLAT OVER NESTED** - Avoid deep nesting, hierarchies, or complex structures
+7. **EXPLICIT OVER IMPLICIT** - Make everything obvious and readable
+8. **DELETE BEFORE ADD** - Remove complexity before adding features
+
+### 🚫 OVERENGINEERING WARNING SIGNS 🚫
+**STOP IMMEDIATELY if you're considering:**
+- Abstract base classes or inheritance hierarchies
+- Complex design patterns (Factory, Builder, Strategy, etc.)
+- Generic type systems with multiple constraints
+- Middleware chains longer than 2 functions
+- Configuration systems with multiple layers
+- "Future-proofing" for hypothetical requirements
+- Dynamic code generation or metaprogramming
+- Complex state machines or orchestrators
+- Multi-layered abstraction frameworks
+- Custom dependency injection systems
+
+### ⚠️ COMPLEXITY BUDGET ⚠️
+- **Files**: Max 200 lines (if longer, split into smaller files)
+- **Functions**: Max 20 lines (if longer, extract smaller functions)
+- **Parameters**: Max 4 per function (use objects for more)
+- **Nesting**: Max 3 levels deep (flatten with early returns)
+- **Dependencies**: Only add if absolutely essential
+- **Abstractions**: Only after 3+ identical implementations exist
+
 ## TypeScript
 
-### Pragmatic Rules (Build Success > Type Perfection)
-- **Strict Mode**: Use when practical; prioritize build success over perfect types
-- **Explicit Types**: Add when helpful, but don't block progress for type perfection
-- **Type Safety**: Use `any` during migration/prototyping; improve incrementally
-- **Runtime Validation**: Prefer Zod validation over type assertions for real safety
-- **Migration-First**: Get builds working, then iteratively improve types
+### 🎯 SIMPLICITY-FIRST RULES (Build Success > Type Perfection) 🎯
+- **SIMPLE TYPES**: Use basic types (`string`, `number`, `boolean`) over complex unions
+- **NO TYPE GYMNASTICS**: Avoid mapped types, conditional types, template literals
+- **ANY IS OK**: Use `any` freely during development; perfectionism is forbidden
+- **BASIC INTERFACES**: Simple object shapes only, no inheritance or generics
+- **RUNTIME VALIDATION**: Prefer Zod validation over type system complexity
+- **BUILD FIRST**: Get it working, then improve types if time permits
 
-### Type Conversions (Proven Safe Patterns)
+### 🔧 DEAD SIMPLE TYPE CONVERSIONS 🔧
 ```typescript
-// Runtime-safe conversions (from project lessons learned)
-const count = Number(result?.count) || 0;
-const name = String(user?.name) || 'Unknown';
+// SIMPLE CONVERSIONS - No overthinking!
+const count = Number(data) || 0;
+const name = String(data) || '';
 const items = Array.isArray(data) ? data : [];
 
-// Safe enum validation
-const severity = (['low','medium','high'].includes(event.severity) 
-  ? event.severity 
-  : 'medium') as 'low' | 'medium' | 'high';
+// SIMPLE VALIDATION - Keep it obvious
+const status = ['active', 'inactive'].includes(data) ? data : 'active';
 
-// Safe database result handling
-const row = result as Record<string, unknown>;
-const safeField = String(row.field_name);
+// SIMPLE SAFETY - Use `any` and validate at runtime
+const row = result as any;
+const field = String(row.field_name || '');
 
-// AVOID: Unsafe assertions without runtime validation
-// BAD: const count = result.count as number;
-// BAD: const user = data as User;
+// ✅ GOOD: Simple, obvious, works
+// ❌ BAD: Complex type gymnastics that nobody understands
 ```
 
-### Build-First Philosophy (Lessons Learned)
+### 🚀 SHIP-FIRST PHILOSOPHY 🚀
 ```typescript
-// PRIORITY: Working builds > Perfect types
-// Based on debugging lessons from Issues #65, #67
+// RULE #1: WORKING CODE > PERFECT CODE
+// If it builds and works, ship it!
 
-// 1. Get builds working first
-npm run build  // Must pass
+// Step 1: Make it work (use `any` liberally)
+const data: any = await fetchData();
+const result: any = processData(data);
 
-// 2. Then validate deployment
-npx wrangler versions upload --dry-run  // Must succeed
+// Step 2: Make sure it builds
+npm run build  // Must pass or you can't ship
 
-// 3. Incrementally improve types
-npx tsc --noEmit  // Fix when practical, don't block builds
+// Step 3: Deploy and test
+npx wrangler versions upload --dry-run
+
+// Step 4: ONLY improve types if you have time and it's easy
+// Don't block shipping for type perfection!
 ```
 
-### Error Handling
+### 💥 SIMPLE ERROR HANDLING 💥
 ```typescript
-// Always handle errors explicitly
+// SIMPLE: Catch it, log it, return something useful
 try {
   const result = await operation();
-  return { success: true, data: result };
-} catch (error) {
-  console.error('Operation failed:', error);
-  return { success: false, error: error.message };
+  return result;
+} catch (error: any) {
+  console.error('Failed:', error);
+  return null; // or throw error, whatever's simpler
 }
+
+// AVOID: Complex error hierarchies, custom error classes, error boundaries
+// KEEP IT SIMPLE: try/catch, log, return/throw
 ```
 
-## React
+## React - KEEP IT SIMPLE
 
-### Component Guidelines
-- **Functional Components**: Use hooks, no class components
-- **File Naming**: PascalCase for components (e.g., `UserList.tsx`)
-- **Props**: Define with TypeScript interfaces
-- **Hooks**: Custom hooks start with `use` (e.g., `useAuth`)
+### 🎨 ANTI-OVERENGINEERING REACT RULES 🎨
+- **FUNCTIONS ONLY**: No class components, no HOCs, no complex patterns
+- **BASIC PROPS**: Simple objects, avoid complex prop drilling solutions
+- **MINIMAL HOOKS**: Use built-in hooks, avoid complex custom hooks
+- **NO MAGIC**: If a component does more than one thing, split it
+- **FLAT STRUCTURE**: Avoid deep component hierarchies
 
-### Component Structure
+### 📝 DEAD SIMPLE COMPONENTS 📝
 ```typescript
-interface UserListProps {
-  users: User[];
-  onSelect: (user: User) => void;
+// SIMPLE PROPS - No complex interfaces
+interface Props {
+  users: any[];
+  onSelect: (user: any) => void;
 }
 
-export function UserList({ users, onSelect }: UserListProps) {
-  // Hooks at the top
-  const [selected, setSelected] = useState<string | null>(null);
-  
-  // Event handlers
-  const handleSelect = (user: User) => {
-    setSelected(user.id);
-    onSelect(user);
-  };
-  
-  // Render
+// SIMPLE COMPONENT - Does one thing only
+export function UserList({ users, onSelect }: Props) {
   return (
     <div>
       {users.map(user => (
-        <UserItem key={user.id} user={user} onClick={handleSelect} />
+        <div key={user.id} onClick={() => onSelect(user)}>
+          {user.name}
+        </div>
       ))}
     </div>
   );
 }
+
+// ✅ GOOD: Simple, obvious, no magic
+// ❌ BAD: Complex state management, custom hooks, abstractions
 ```
 
-## API Development (Hono.js)
+## API Development - BRUTALLY SIMPLE
 
-### Route Structure
+### 🛣️ SIMPLE ROUTES 🛣️
 ```typescript
-// Consistent error responses
+// SIMPLE ENDPOINT - One thing, obvious result
 app.get('/api/v1/users/:id', async (c) => {
   try {
-    const { id } = c.req.param();
-    const user = await getUserById(id);
+    const id = c.req.param('id');
+    const user = await db.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();
     
-    if (!user) {
-      return c.json({ error: 'User not found' }, 404);
-    }
-    
-    return c.json({ data: user });
-  } catch (error) {
-    return c.json({ error: 'Internal server error' }, 500);
+    if (!user) return c.json({ error: 'Not found' }, 404);
+    return c.json(user);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
   }
 });
+
+// ✅ GOOD: Direct SQL, simple logic, obvious flow
+// ❌ BAD: Service layers, repositories, complex abstractions
 ```
 
-### Middleware Pattern
+### 🔐 SIMPLE MIDDLEWARE 🔐
 ```typescript
-// Authentication middleware
-export async function requireAuth(c: Context, next: Next) {
+// SIMPLE AUTH - Check token, set user, done
+export async function requireAuth(c: any, next: any) {
   const token = c.req.header('Authorization')?.replace('Bearer ', '');
   
-  if (!token) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  if (!token) return c.json({ error: 'No token' }, 401);
   
   try {
-    const user = await verifyToken(token);
+    const user = jwt.verify(token, SECRET);
     c.set('user', user);
     await next();
   } catch {
-    return c.json({ error: 'Invalid token' }, 401);
+    return c.json({ error: 'Bad token' }, 401);
   }
 }
+
+// ✅ GOOD: One function, clear purpose, no complexity
+// ❌ BAD: Middleware chains, complex auth systems, role hierarchies
 ```
 
-## Database (D1)
+## Database - RAW AND SIMPLE
 
-### Query Patterns
+### 🗄️ DEAD SIMPLE QUERIES 🗄️
 ```typescript
-// Use prepared statements
-const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
-const result = await stmt.bind(email).first();
+// SIMPLE SELECT - Direct query, no abstractions
+const user = await db.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();
 
-// Batch operations
-const batch = users.map(user => 
-  db.prepare('INSERT INTO users (name, email) VALUES (?, ?)')
-    .bind(user.name, user.email)
-);
-await db.batch(batch);
+// SIMPLE INSERT - Straightforward, no magic
+const result = await db.prepare('INSERT INTO users (name, email) VALUES (?, ?)')
+  .bind(name, email).run();
+
+// SIMPLE UPDATE - Update and done
+await db.prepare('UPDATE users SET name = ? WHERE id = ?').bind(name, id).run();
+
+// ✅ GOOD: Raw SQL, obvious intent, no ORM complexity
+// ❌ BAD: Query builders, ORMs, complex abstractions
 ```
 
-### Migration Standards
-- Filename: `NNNN_description.sql` (e.g., `0001_create_users.sql`)
-- Always include rollback comments
-- One logical change per migration
+### 📋 SIMPLE MIGRATIONS 📋
+- Filename: `001_add_table.sql` (simple numbers)
+- One change per file
+- Plain SQL only, no fancy migration tools
 
-## Testing
+## Testing - BASIC AND EFFECTIVE
 
-### Test Structure
+### 🧪 STUPIDLY SIMPLE TESTS 🧪
 ```typescript
-describe('UserService', () => {
-  it('should create a user with valid data', async () => {
-    // Arrange
-    const userData = { name: 'Test', email: 'test@example.com' };
-    
-    // Act
-    const user = await createUser(userData);
-    
-    // Assert
-    expect(user).toBeDefined();
-    expect(user.email).toBe(userData.email);
-  });
+// SIMPLE TEST - Call function, check result
+it('creates user', async () => {
+  const user = await createUser({ name: 'Test', email: 'test@test.com' });
+  expect(user.name).toBe('Test');
 });
+
+// SIMPLE MOCK - Replace function with fake
+vi.mock('./database', () => ({
+  getUser: () => ({ id: 1, name: 'Test' })
+}));
+
+// ✅ GOOD: Basic assertions, simple mocks
+// ❌ BAD: Complex test frameworks, elaborate setup/teardown
 ```
 
-### Testing Philosophy (Keep It Simple)
-- **Simple, practical, maintainable tests** - Never overengineer
-- **Focus on core functionality** - Test essential behavior only
-- **Use realistic mocks** - Match actual implementations, not theoretical perfection
-- **CRITICAL**: Analytics Engine MUST be disabled in test config
-- **Avoid complex custom error types** - Keep expectations realistic for test environments
+### 🎯 ANTI-OVERENGINEERING TEST RULES 🎯
+- **TEST HAPPY PATH ONLY** - Don't test every edge case
+- **SIMPLE MOCKS** - Mock the minimum needed to make tests pass
+- **NO TEST FRAMEWORKS** - Use built-in test runner, basic assertions
+- **NO ELABORATE SETUP** - Each test should be independent and simple
+- **FOCUS ON CORE FEATURES** - Test what matters, ignore the rest
 
 ## Git Conventions
 
@@ -242,74 +285,78 @@ import { API_VERSION } from '../constants';
 
 ## Performance Guidelines
 
-### Optimization Rules
-1. Measure before optimizing
-2. Optimize critical paths first
-3. Use caching strategically
-4. Prefer streaming for large data
-5. Implement pagination for lists
+### ⚡ SIMPLE PERFORMANCE RULES ⚡
+1. **DON'T OPTIMIZE** - Make it work first, optimize only if needed
+2. **SIMPLE CACHING** - Basic cache.get/set, no complex strategies
+3. **BASIC PAGINATION** - Simple LIMIT/OFFSET, no fancy cursors
+4. **MEASURE LAST** - Only after users complain about speed
 
-### Common Patterns
+### 📦 DEAD SIMPLE PATTERNS 📦
 ```typescript
-// Pagination
-const page = Number(c.req.query('page')) || 1;
-const limit = Math.min(Number(c.req.query('limit')) || 20, 100);
-const offset = (page - 1) * limit;
+// SIMPLE PAGINATION - Just offset and limit
+const page = Number(req.query.page) || 1;
+const items = await db.prepare('SELECT * FROM items LIMIT 20 OFFSET ?')
+  .bind((page - 1) * 20).all();
 
-// Caching
+// SIMPLE CACHE - Check cache, fetch if needed, cache result
 const cached = await cache.get(key);
 if (cached) return cached;
-
 const data = await fetchData();
-await cache.set(key, data, { expirationTtl: 300 });
+cache.set(key, data);
 return data;
+
+// ✅ GOOD: Obvious, works, easy to understand
+// ❌ BAD: Complex pagination cursors, cache invalidation strategies
 ```
 
-## Security Best Practices
+## Security - BASIC BUT SECURE
 
-### Input Validation
+### 🔒 SIMPLE SECURITY RULES 🔒
 ```typescript
-// Use Zod for validation
-import { z } from 'zod';
+// SIMPLE VALIDATION - Basic checks, no complex schemas
+const email = String(input.email);
+const password = String(input.password);
 
-const UserSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  name: z.string().min(1).max(100)
-});
+if (!email.includes('@')) return { error: 'Bad email' };
+if (password.length < 8) return { error: 'Password too short' };
 
-// Validate input
-const result = UserSchema.safeParse(input);
-if (!result.success) {
-  return c.json({ error: result.error.issues }, 400);
-}
+// SIMPLE SANITIZATION - Escape what you need to escape
+const cleanName = input.name.replace(/[<>&"]/g, '');
+
+// ✅ GOOD: Basic validation, obvious checks
+// ❌ BAD: Complex validation libraries, elaborate schemas
 ```
 
-### Sensitive Data
-- Never log passwords or tokens
-- Use environment variables for secrets
-- Hash passwords with bcrypt/argon2
-- Sanitize user input in responses
+### 🛡️ ESSENTIAL SECURITY 🛡️
+- **DON'T LOG SECRETS** - No passwords, tokens, keys in logs
+- **USE ENV VARS** - Secrets go in environment variables
+- **HASH PASSWORDS** - Use bcrypt, argon2, or similar
+- **ESCAPE OUTPUT** - Sanitize anything shown to users
 
-## Documentation
+## Documentation - MINIMAL AND USEFUL
 
-### Code Comments
+### 📝 SIMPLE COMMENTS 📝
 ```typescript
-/**
- * Creates a new user in the database
- * @param userData - User information to create
- * @returns Newly created user or throws on error
- */
-export async function createUser(userData: CreateUserInput): Promise<User> {
-  // Implementation
+// Creates a user - that's it
+export async function createUser(data: any) {
+  return await db.prepare('INSERT INTO users (name, email) VALUES (?, ?)')
+    .bind(data.name, data.email).run();
 }
+
+// ✅ GOOD: Brief, explains what it does
+// ❌ BAD: JSDoc comments, type documentation, elaborate descriptions
 ```
 
-### API Documentation
-- Document all endpoints
-- Include request/response examples
-- Specify error conditions
-- Note rate limits
+### 📖 BASIC DOCS 📖
+- **README ONLY** - One file with setup instructions
+- **NO ELABORATE DOCS** - Code should be self-explanatory
+- **SIMPLE COMMENTS** - Explain why, not what
+- **EXAMPLES OVER DESCRIPTIONS** - Show, don't tell
 
 ---
-*These standards ensure consistent, maintainable, and secure code across the project.*
+
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+🔴 **FINAL REMINDER: WHEN IN DOUBT, CHOOSE SIMPLE** 🔴
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+
+*These standards prioritize shipping working code over engineering perfection.*

@@ -32,6 +32,7 @@ import {
   ExpandMore,
   ChevronLeft as ChevronLeftIcon,
   AutoAwesome as AutoAwesomeIcon,
+  DataObject as DataObjectIcon,
   // Anchor as AnchorIcon,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
@@ -100,6 +101,8 @@ const SidebarLayout = ({ children }) => {
           return "Act like you've been here before!";
         case '/login':
           return "Have we met?";
+        case '/synthetic-data':
+          return "LET'S SPILL SOME INK.";
         case '/faq':
           return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.15rem' } };
         case '/logout':
@@ -279,48 +282,30 @@ const SidebarLayout = ({ children }) => {
           </ListItemButton>
         </ListItem>
 
-        {!token && (
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to="/csv_cutter"
-              selected={location.pathname === '/csv_cutter'}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'var(--accent)',
-                  '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                <ContentCutIcon />
-              </ListItemIcon>
-              <ListItemText primary="CSV Cutter" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-            </ListItemButton>
-          </ListItem>
-        )}
+        {/* Generate Fake Data - Available for all users */}
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/synthetic-data"
+            selected={location.pathname === '/synthetic-data'}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: 'var(--accent)',
+                '&:hover': { backgroundColor: 'var(--dark-accent)' },
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
+              <DataObjectIcon />
+            </ListItemIcon>
+            <ListItemText primary="Generate Fake Data (PREVIEW)" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
+          </ListItemButton>
+        </ListItem>
 
-        {token && (
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to="/csv_cutter_plus"
-              selected={location.pathname === '/csv_cutter_plus'}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'var(--accent)',
-                  '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                <ContentCutIcon />
-              </ListItemIcon>
-              <ListItemText primary="CSV Cutter PLUS" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-            </ListItemButton>
-          </ListItem>
-        )}
 
+        {/* TODO: Future logged-in-only features (Files, Load Person Records, etc.) can be added here with token && (...) wrapper */}
+        {/* 
+        Example for future logged-in-only features:
         {token && (
           <>
             <ListItem disablePadding>
@@ -332,82 +317,10 @@ const SidebarLayout = ({ children }) => {
                 {filesOpen ? <ExpandLess sx={{ color: 'var(--primary-text)' }} /> : <ExpandMore sx={{ color: 'var(--primary-text)' }} />}
               </ListItemButton>
             </ListItem>
-            <Collapse in={filesOpen} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding>
-                <ListItemButton
-                  component={Link}
-                  to="/file_upload"
-                  selected={location.pathname === '/file_upload'}
-                  sx={{
-                    pl: 4,
-                    '&.Mui-selected': {
-                      backgroundColor: 'var(--accent)',
-                      '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                    <UploadFileIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Upload" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-                </ListItemButton>
-                <ListItemButton
-                  component={Link}
-                  to="/manage_files"
-                  selected={location.pathname === '/manage_files'}
-                  sx={{
-                    pl: 4,
-                    '&.Mui-selected': {
-                      backgroundColor: 'var(--accent)',
-                      '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                    <FolderIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Manage" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-                </ListItemButton>
-                <ListItemButton
-                  component={Link}
-                  to="/file_lineage"
-                  selected={location.pathname === '/file_lineage'}
-                  sx={{
-                    pl: 4,
-                    '&.Mui-selected': {
-                      backgroundColor: 'var(--accent)',
-                      '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                    <AccountTreeIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Lineage" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-                </ListItemButton>
-              </List>
-            </Collapse>
-
-            <ListItem disablePadding>
-              <ListItemButton
-                component={Link}
-                to="/load_person_records"
-                selected={location.pathname === '/load_person_records'}
-                sx={{
-                  '&.Mui-selected': {
-                    backgroundColor: 'var(--accent)',
-                    '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                  <PersonIcon />
-                </ListItemIcon>
-                <ListItemText primary="Load Person Records" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-              </ListItemButton>
-            </ListItem>
+            ... etc
           </>
         )}
+        */}
 
         <ListItem disablePadding>
           <ListItemButton

@@ -16,6 +16,8 @@ This directory contains a unified configuration framework that works seamlessly 
 │   └── dependencies.md
 ├── scripts/              # Utility scripts
 │   └── generate-d1-schema.js
+├── api-docs/             # API documentation
+│   └── synthetic-data.md
 └── README.md             # This file
 ```
 
@@ -72,6 +74,9 @@ Modular documentation:
 - `coding-standards.md` - Code style and conventions
 - `dependencies.md` - Package versions and requirements
 
+### API Documentation
+- `api-docs/synthetic-data.md` - Synthetic data generator API endpoints
+
 ## Best Practices
 
 1. **Version Control**
@@ -110,22 +115,14 @@ Modular documentation:
 
 ## Troubleshooting
 
-### Symlinks Not Working
-```bash
-# Recreate symlinks
-rm -f .gemini/GEMINI.md .gemini/settings.json
-ln -sf ../.project/config.md .gemini/GEMINI.md
-ln -sf ../.project/settings.json .gemini/settings.json
-```
-
 ### Configuration Not Loading
 - Ensure `.project/config.md` exists
 - Check file permissions
-- Verify symlinks point correctly
+- Verify all tools reference `.project/` directory directly
 
 ### Tool-Specific Issues
 - Claude: Check `.claude/` directory
-- Gemini: Verify `.gemini/` symlinks
+- Gemini: Reference `.project/config.md` directly
 - Others: Point directly to `.project/config.md`
 
 ---

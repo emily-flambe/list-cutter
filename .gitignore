@@ -200,6 +200,7 @@ cloudflare/workers/local.sqlite-wal
 
 # Screenshots
 screenshots/debug/
+tmp/
 
 # Project Configuration
 .project/.env
