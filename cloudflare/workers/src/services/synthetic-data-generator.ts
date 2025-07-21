@@ -58,7 +58,7 @@ export class SyntheticDataGenerator {
 
   /**
    * Generate synthetic voter records
-   * @param count Number of records to generate (1-1000)
+   * @param count Total number of records to generate (1-1000), evenly distributed across selected states
    * @param stateOrStates Optional state filter(s) - can be a single state or array of states
    * @returns Array of synthetic voter records
    */
@@ -86,14 +86,28 @@ export class SyntheticDataGenerator {
     const usedVoterIds = new Set<string>();
     const locationService = LocationDataService.getInstance();
 
-    for (let i = 0; i < count; i++) {
-      // If multiple states provided, randomly select one for each record
-      const selectedState = validStates 
-        ? validStates[Math.floor(Math.random() * validStates.length)]
-        : undefined;
+    // If multiple states are selected, distribute records evenly across them
+    if (validStates && validStates.length > 1) {
+      const recordsPerState = Math.floor(count / validStates.length);
+      const remainingRecords = count % validStates.length;
+      
+      for (let stateIndex = 0; stateIndex < validStates.length; stateIndex++) {
+        const state = validStates[stateIndex];
+        // Add one extra record to the first N states if there's a remainder
+        const recordsForThisState = recordsPerState + (stateIndex < remainingRecords ? 1 : 0);
         
-      const record = await this.generateSingleRecord(selectedState, usedVoterIds, locationService);
-      records.push(record);
+        for (let i = 0; i < recordsForThisState; i++) {
+          const record = await this.generateSingleRecord(state, usedVoterIds, locationService);
+          records.push(record);
+        }
+      }
+    } else {
+      // Single state or no state filter - generate all records normally
+      for (let i = 0; i < count; i++) {
+        const selectedState = validStates ? validStates[0] : undefined;
+        const record = await this.generateSingleRecord(selectedState, usedVoterIds, locationService);
+        records.push(record);
+      }
     }
 
     return records;

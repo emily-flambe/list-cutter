@@ -160,10 +160,23 @@ const SyntheticDataGenerator = () => {
           Synthetic Data Generator
         </Typography>
         
-        <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-          Generate synthetic person records for testing and development purposes. 
-          All generated data is completely fictional and not based on real individuals.
-        </Typography>
+        <Box component="ul" sx={{ 
+          color: 'text.secondary', 
+          lineHeight: 1.6,
+          textAlign: 'left',
+          pl: 4,
+          pr: 2,
+          m: 0,
+          listStyle: 'disc',
+          fontSize: '0.875rem',
+          '& li': {
+            mb: 0.5
+          }
+        }}>
+          <li>Generate synthetic person records for testing and development purposes</li>
+          <li>All generated data is completely fictional and not based on real individuals</li>
+          <li>Area codes, cities, and ZIP codes are based on real geographic data</li>
+        </Box>
       </Box>
 
       {/* Success Message */}
@@ -225,7 +238,7 @@ const SyntheticDataGenerator = () => {
         <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
           {/* Count Input */}
           <TextField
-            label="Number of Records"
+            label="Total Number of Records"
             name="count"
             type="number"
             variant="outlined"
@@ -291,6 +304,11 @@ const SyntheticDataGenerator = () => {
                 {errors.states}
               </Typography>
             )}
+            {!errors.states && formData.states.length > 1 && (
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.5, textAlign: 'left' }}>
+                Records will be evenly distributed across all selected states
+              </Typography>
+            )}
           </FormControl>
         </Box>
 
@@ -333,7 +351,7 @@ const SyntheticDataGenerator = () => {
           }}
         >
           <Typography variant="subtitle1" sx={{ fontWeight: 500, color: 'text.primary' }}>
-            About Synthetic Data
+            How It's Made
           </Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ 
@@ -341,10 +359,6 @@ const SyntheticDataGenerator = () => {
           p: 3,
           textAlign: 'left'
         }}>
-          <Typography variant="body1" color="text.primary" sx={{ mb: 3, lineHeight: 1.6 }}>
-            The generated data includes realistic but fictional information such as:
-          </Typography>
-          
           <Box component="ul" sx={{ 
             m: 0, 
             p: 0, 
@@ -382,13 +396,14 @@ const SyntheticDataGenerator = () => {
             <li>
               Phone numbers
               <ul>
-                <li>Follow real US phone number patterns with fake digits</li>
+                <li>Follow real US phone number patterns with real area codes for selected states</li>
               </ul>
             </li>
             <li>
               Addresses (street, city, state, ZIP)
               <ul>
-                <li>Realistic street numbers + names with real cities/states</li>
+                <li>Cities, states, and ZIP codes use real data for a selection of states</li>
+                <li>Street addresses are a random combination of a number and a typical street name</li>
               </ul>
             </li>
             <li>
@@ -398,9 +413,10 @@ const SyntheticDataGenerator = () => {
               </ul>
             </li>
             <li>
-              Demographics
+              Voter IDs
               <ul>
-                <li>Unique IDs and duplicate prevention</li>
+                <li>Unique identifiers in format ABC123456 (3 letters + 6 numbers)</li>
+                <li>Any resemblance to other voter ID formats is purely coincidental!</li>
               </ul>
             </li>
           </Box>
@@ -411,10 +427,6 @@ const SyntheticDataGenerator = () => {
             borderTop: '1px solid', 
             borderColor: 'divider'
           }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
-              Note: All data is completely fictional and generated algorithmically.
-            </Typography>
-            
             <Typography variant="body2" color="text.secondary">
               <Link 
                 href="https://github.com/emilycogsdill/list-cutter/blob/main/cloudflare/workers/src/services/synthetic-data-generator.ts" 
