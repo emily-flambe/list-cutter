@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import type { Env, SyntheticDataRequest, SyntheticDataResponse } from '../types';
 import { validateToken } from '../services/auth/jwt';
 import { SyntheticDataGenerator } from '../services/synthetic-data-generator';
+import { LocationDataService } from '../services/location-data-service';
 
 const syntheticData = new Hono<{ Bindings: Env }>();
 
@@ -27,6 +28,25 @@ syntheticData.use('*', async (c, next) => {
   }
   
   await next();
+});
+
+// Get supported states endpoint
+syntheticData.get('/supported-states', async (c) => {
+  try {
+    const locationService = LocationDataService.getInstance();
+    const states = await locationService.getSupportedStates();
+    
+    return c.json({ 
+      success: true,
+      states: states 
+    });
+  } catch (error) {
+    console.error('Failed to get supported states:', error);
+    return c.json({ 
+      error: 'Failed to retrieve supported states',
+      states: [] // Return empty array as fallback
+    }, 500);
+  }
 });
 
 // Generate synthetic data endpoint
@@ -50,18 +70,26 @@ syntheticData.post('/generate', async (c) => {
       }, 400);
     }
 
-    // Validate state if provided
+    // Validate state/states if provided
     if (requestData.state && typeof requestData.state !== 'string') {
       return c.json({ 
         error: 'Invalid input', 
         details: ['state must be a string'] 
       }, 400);
     }
+    
+    if (requestData.states && (!Array.isArray(requestData.states) || !requestData.states.every(s => typeof s === 'string'))) {
+      return c.json({ 
+        error: 'Invalid input', 
+        details: ['states must be an array of strings'] 
+      }, 400);
+    }
 
-    // Generate synthetic data
-    const records = SyntheticDataGenerator.generateVoterRecords(
+    // Generate synthetic data - prioritize states array over single state
+    const stateFilter = requestData.states || requestData.state;
+    const records = await SyntheticDataGenerator.generateVoterRecords(
       requestData.count, 
-      requestData.state
+      stateFilter
     );
 
     // Convert to CSV
@@ -71,7 +99,17 @@ syntheticData.post('/generate', async (c) => {
     // Generate file metadata
     const fileId = crypto.randomUUID();
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const statePrefix = requestData.state ? `${requestData.state}-` : '';
+    
+    // Create state prefix based on what was provided
+    let statePrefix = '';
+    if (requestData.states && requestData.states.length > 0) {
+      statePrefix = requestData.states.length === 1 
+        ? `${requestData.states[0]}-`
+        : `${requestData.states.length}states-`;
+    } else if (requestData.state) {
+      statePrefix = `${requestData.state}-`;
+    }
+    
     const filename = `synthetic-voter-data-${statePrefix}${requestData.count}-records-${timestamp}.csv`;
     const fileKey = `synthetic-data/${userId}/${fileId}/${filename}`;
 
@@ -88,7 +126,8 @@ syntheticData.post('/generate', async (c) => {
         uploadedAt: new Date().toISOString(),
         type: 'synthetic-data',
         recordCount: requestData.count.toString(),
-        state: requestData.state || ''
+        state: requestData.state || '',
+        states: requestData.states ? requestData.states.join(',') : ''
       }
     });
 
@@ -113,7 +152,7 @@ syntheticData.post('/generate', async (c) => {
         JSON.stringify([
           'voter_id', 'first_name', 'last_name', 'address', 'city', 'state', 'zip', 'phone', 'email'
         ]),
-        JSON.stringify(['synthetic-data', 'voter-data', requestData.state].filter(Boolean))
+        JSON.stringify(['synthetic-data', 'voter-data', ...(requestData.states || [requestData.state])].filter(Boolean))
       ).run();
     }
 
@@ -134,7 +173,8 @@ syntheticData.post('/generate', async (c) => {
       metadata: {
         recordCount: requestData.count,
         generatedAt: new Date().toISOString(),
-        state: requestData.state
+        state: requestData.state,
+        states: requestData.states
       }
     };
 

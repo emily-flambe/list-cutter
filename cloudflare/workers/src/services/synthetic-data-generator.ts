@@ -1,4 +1,5 @@
 import type { SyntheticVoterRecord } from '../types';
+import { LocationDataService } from './location-data-service';
 
 /**
  * Synthetic Data Generator Service
@@ -58,23 +59,40 @@ export class SyntheticDataGenerator {
   /**
    * Generate synthetic voter records
    * @param count Number of records to generate (1-1000)
-   * @param state Optional state filter
+   * @param stateOrStates Optional state filter(s) - can be a single state or array of states
    * @returns Array of synthetic voter records
    */
-  public static generateVoterRecords(count: number, state?: string): SyntheticVoterRecord[] {
+  public static async generateVoterRecords(count: number, stateOrStates?: string | string[]): Promise<SyntheticVoterRecord[]> {
     if (count < 1 || count > 1000) {
       throw new Error('Count must be between 1 and 1000');
     }
 
-    if (state && !this.US_STATES.includes(state.toUpperCase())) {
-      throw new Error(`Invalid state code: ${state}`);
+    // Handle both single state and array of states
+    let validStates: string[] | undefined;
+    
+    if (stateOrStates) {
+      const states = Array.isArray(stateOrStates) ? stateOrStates : [stateOrStates];
+      
+      // Validate all states
+      const invalidStates = states.filter(s => !this.US_STATES.includes(s.toUpperCase()));
+      if (invalidStates.length > 0) {
+        throw new Error(`Invalid state code(s): ${invalidStates.join(', ')}`);
+      }
+      
+      validStates = states.map(s => s.toUpperCase());
     }
 
     const records: SyntheticVoterRecord[] = [];
     const usedVoterIds = new Set<string>();
+    const locationService = LocationDataService.getInstance();
 
     for (let i = 0; i < count; i++) {
-      const record = this.generateSingleRecord(state?.toUpperCase(), usedVoterIds);
+      // If multiple states provided, randomly select one for each record
+      const selectedState = validStates 
+        ? validStates[Math.floor(Math.random() * validStates.length)]
+        : undefined;
+        
+      const record = await this.generateSingleRecord(selectedState, usedVoterIds, locationService);
       records.push(record);
     }
 
@@ -84,7 +102,11 @@ export class SyntheticDataGenerator {
   /**
    * Generate a single voter record
    */
-  private static generateSingleRecord(state?: string, usedIds?: Set<string>): SyntheticVoterRecord {
+  private static async generateSingleRecord(
+    state?: string, 
+    usedIds?: Set<string>,
+    locationService?: LocationDataService
+  ): Promise<SyntheticVoterRecord> {
     const firstName = this.randomChoice(this.FIRST_NAMES);
     const lastName = this.randomChoice(this.LAST_NAMES);
     
@@ -95,23 +117,35 @@ export class SyntheticDataGenerator {
     } while (usedIds?.has(voterId));
     usedIds?.add(voterId);
 
+    // Get location service instance if not provided
+    const locService = locationService || LocationDataService.getInstance();
+
     // Use provided state or random state
     const selectedState = state || this.randomChoice(this.US_STATES);
     
-    // Get city for the state (fallback to generic cities if state not in our list)
-    const cities = this.CITIES_BY_STATE[selectedState] || ['Springfield', 'Franklin', 'Georgetown', 'Madison', 'Clinton'];
-    const city = this.randomChoice(cities);
+    // Get real city/ZIP combination from location service
+    const cityZipData = await locService.getRandomCityZip(selectedState);
+    
+    let city: string;
+    let zip: string;
+    
+    if (cityZipData) {
+      city = cityZipData.city;
+      zip = cityZipData.zip;
+    } else {
+      // Fallback to old method if no data available
+      const cities = this.CITIES_BY_STATE[selectedState] || ['Springfield', 'Franklin', 'Georgetown', 'Madison', 'Clinton'];
+      city = this.randomChoice(cities);
+      zip = String(Math.floor(Math.random() * 90000) + 10000);
+    }
 
     // Generate address
     const streetNumber = Math.floor(Math.random() * 9999) + 1;
     const streetName = this.randomChoice(this.STREET_NAMES);
     const address = `${streetNumber} ${streetName}`;
 
-    // Generate ZIP code (simplified - just random 5 digits)
-    const zip = String(Math.floor(Math.random() * 90000) + 10000);
-
-    // Generate phone number
-    const areaCode = Math.floor(Math.random() * 800) + 200; // 200-999
+    // Generate phone number with real area code for the state
+    const areaCode = await locService.getRandomAreaCode(selectedState);
     const exchange = Math.floor(Math.random() * 800) + 200; // 200-999
     const number = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     const phone = `(${areaCode}) ${exchange}-${number}`;

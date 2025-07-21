@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../api';
 // Optimized direct imports for better tree-shaking and build performance
 import Box from '@mui/material/Box';
@@ -20,21 +20,34 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 const SyntheticDataGenerator = () => {
   const [formData, setFormData] = useState({
     count: 100,
-    state: ''
+    states: []
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [supportedStates, setSupportedStates] = useState([]);
+  const [loadingStates, setLoadingStates] = useState(true);
 
-  // US State codes for dropdown
-  const usStates = [
-    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
-  ];
+  // Fetch supported states on component mount
+  useEffect(() => {
+    const fetchSupportedStates = async () => {
+      try {
+        const response = await api.get('/api/v1/synthetic-data/supported-states');
+        if (response.data.states) {
+          setSupportedStates(response.data.states);
+        }
+      } catch (error) {
+        console.error('Failed to fetch supported states:', error);
+        // Fall back to hardcoded states that we know have data
+        setSupportedStates(['CA', 'FL', 'GA', 'IL', 'NY', 'OH', 'PA', 'TX']);
+      } finally {
+        setLoadingStates(false);
+      }
+    };
+
+    fetchSupportedStates();
+  }, []);
 
 
   const handleChange = (e) => {
@@ -82,7 +95,7 @@ const SyntheticDataGenerator = () => {
       
       const payload = {
         count: formData.count,
-        ...(formData.state && { state: formData.state })
+        ...(formData.states.length > 0 && { states: formData.states })
       };
 
       const response = await api.post('/api/v1/synthetic-data/generate', payload);
@@ -141,15 +154,17 @@ const SyntheticDataGenerator = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 750, mx: 'auto', mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Synthetic Data Generator
-      </Typography>
-      
-      <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary', lineHeight: 1.6 }}>
-        Generate synthetic person records for testing and development purposes. 
-        All generated data is completely fictional and not based on real individuals.
-      </Typography>
+    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
+      <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Synthetic Data Generator
+        </Typography>
+        
+        <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+          Generate synthetic person records for testing and development purposes. 
+          All generated data is completely fictional and not based on real individuals.
+        </Typography>
+      </Box>
 
       {/* Success Message */}
       {successMessage && (
@@ -160,14 +175,30 @@ const SyntheticDataGenerator = () => {
 
       {/* Download Link */}
       {downloadUrl && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <Typography variant="body2">
-            Your synthetic data is ready! 
-            <Link href={downloadUrl} download sx={{ ml: 1, fontWeight: 'bold' }}>
-              Download CSV File
-            </Link>
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Your synthetic data is ready!
           </Typography>
-        </Alert>
+          <Link 
+            href={downloadUrl} 
+            download 
+            sx={{ 
+              fontWeight: 'bold',
+              textDecoration: 'none',
+              bgcolor: 'primary.main',
+              color: 'white',
+              px: 2,
+              py: 1,
+              borderRadius: 1,
+              display: 'inline-block',
+              '&:hover': {
+                bgcolor: 'primary.dark'
+              }
+            }}
+          >
+            Download CSV File
+          </Link>
+        </Box>
       )}
 
       {/* Error Messages */}
@@ -182,9 +213,6 @@ const SyntheticDataGenerator = () => {
         component="form"
         onSubmit={handleSubmit}
         sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: 3,
           p: 3,
           bgcolor: 'background.paper',
           borderRadius: 2,
@@ -193,52 +221,78 @@ const SyntheticDataGenerator = () => {
           borderColor: 'divider'
         }}
       >
-        {/* Count Input */}
-        <TextField
-          label="Number of Records"
-          name="count"
-          type="number"
-          variant="outlined"
-          value={formData.count}
-          onChange={handleChange}
-          required
-          disabled={loading}
-          error={Boolean(errors.count)}
-          helperText={errors.count || 'Enter a number between 1 and 1000'}
-          inputProps={{
-            min: 1,
-            max: 1000
-          }}
-          fullWidth
-        />
-
-        {/* State Filter */}
-        <FormControl fullWidth>
-          <InputLabel id="state-select-label">State (Optional)</InputLabel>
-          <Select
-            labelId="state-select-label"
-            label="State (Optional)"
-            name="state"
-            value={formData.state}
+        {/* Form Fields Row */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+          {/* Count Input */}
+          <TextField
+            label="Number of Records"
+            name="count"
+            type="number"
+            variant="outlined"
+            value={formData.count}
             onChange={handleChange}
+            required
             disabled={loading}
-            error={Boolean(errors.state)}
-          >
-            <MenuItem value="">
-              <em>All States</em>
-            </MenuItem>
-            {usStates.map((state) => (
-              <MenuItem key={state} value={state}>
-                {state}
-              </MenuItem>
-            ))}
-          </Select>
-          {errors.state && (
-            <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
-              {errors.state}
-            </Typography>
-          )}
-        </FormControl>
+            error={Boolean(errors.count)}
+            helperText={errors.count}
+            inputProps={{
+              min: 1,
+              max: 1000
+            }}
+            sx={{ flex: 1 }}
+          />
+
+          {/* State Filter */}
+          <FormControl sx={{ flex: 1 }}>
+            <InputLabel id="states-select-label">States (Optional)</InputLabel>
+            <Select
+              labelId="states-select-label"
+              label="States (Optional)"
+              name="states"
+              multiple
+              value={formData.states}
+              onChange={handleChange}
+              disabled={loading || loadingStates}
+              error={Boolean(errors.states)}
+              renderValue={(selected) => {
+                if (selected.length === 0) return 'All Available States';
+                if (selected.length === supportedStates.length) return 'All Available States';
+                return selected.join(', ');
+              }}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    '& .MuiMenuItem-root': {
+                      justifyContent: 'flex-start'
+                    }
+                  }
+                }
+              }}
+            >
+              {loadingStates ? (
+                <MenuItem disabled>
+                  <CircularProgress size={16} sx={{ mr: 1 }} />
+                  Loading states...
+                </MenuItem>
+              ) : supportedStates.length === 0 ? (
+                <MenuItem disabled>
+                  No states available
+                </MenuItem>
+              ) : (
+                supportedStates.map((state) => (
+                  <MenuItem key={state} value={state}>
+                    {state}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+            {errors.states && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                {errors.states}
+              </Typography>
+            )}
+          </FormControl>
+        </Box>
 
         {/* Generate Button */}
         <Button
@@ -246,7 +300,6 @@ const SyntheticDataGenerator = () => {
           variant="contained"
           disabled={loading}
           sx={{ 
-            mt: 2, 
             height: 56,
             fontSize: '1.1rem',
             fontWeight: 600,
@@ -269,7 +322,7 @@ const SyntheticDataGenerator = () => {
       </Box>
 
       {/* Information Section */}
-      <Accordion sx={{ mt: 5, border: '1px solid', borderColor: 'divider', borderRadius: 1, boxShadow: 'none' }}>
+      <Accordion sx={{ mt: 4, border: '1px solid', borderColor: 'divider', borderRadius: 1, boxShadow: 'none' }}>
         <AccordionSummary
           expandIcon={<ExpandMoreIcon />}
           sx={{ 

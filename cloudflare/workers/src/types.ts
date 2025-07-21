@@ -147,7 +147,8 @@ declare module 'hono' {
 // Synthetic Data Generation types
 export interface SyntheticDataRequest {
   count: number; // 1-1000
-  state?: string; // Optional state filter
+  state?: string; // Optional single state filter (deprecated)
+  states?: string[]; // Optional multiple state filters
 }
 
 export interface SyntheticVoterRecord {
@@ -175,6 +176,7 @@ export interface SyntheticDataResponse {
     recordCount: number;
     generatedAt: string;
     state?: string;
+    states?: string[];
   };
 }
 
