@@ -20,11 +20,12 @@ import {
 import cuttyLogo from '../assets/cutty_logo.png';
 
 const ChatBot = () => {
+  console.log('ChatBot component loaded - v1.1'); // Deployment test
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Hey there! I'm Cutty the Cuttlefish. Your friendly list optimization assistant. How can I help you organize your lists today?",
+      text: "Hello! It's me, your best friend! (v1.1 deployed)",
       sender: 'assistant',
       timestamp: new Date()
     }
@@ -58,9 +59,13 @@ const ChatBot = () => {
     setError(null);
 
     try {
-      // Debug: Log the API key (remove in production!)
-      console.log('API Key available:', !!import.meta.env.VITE_AI_WORKER_API_KEY);
-      console.log('API Key value:', import.meta.env.VITE_AI_WORKER_API_KEY);
+      // Check if API key is available (for debugging)
+      if (!import.meta.env.VITE_AI_WORKER_API_KEY) {
+        console.error('AI Worker API key not found in environment');
+        setError('Chat service is not configured. Please try again later.');
+        setIsLoading(false);
+        return;
+      }
       
       // Call AI worker directly
       const response = await fetch('https://ai.emilycogsdill.com/api/v1/chat', {
@@ -76,6 +81,8 @@ const ChatBot = () => {
       });
 
       if (!response.ok) {
+        const errorData = await response.text();
+        console.error('API Error:', errorData);
         throw new Error('Failed to send message');
       }
 
