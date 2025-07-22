@@ -58,12 +58,21 @@ const ChatBot = () => {
     setError(null);
 
     try {
-      const response = await fetch('/api/v1/chat', {
+      // Debug: Log the API key (remove in production!)
+      console.log('API Key available:', !!import.meta.env.VITE_AI_WORKER_API_KEY);
+      console.log('API Key value:', import.meta.env.VITE_AI_WORKER_API_KEY);
+      
+      // Call AI worker directly
+      const response = await fetch('https://ai.emilycogsdill.com/api/v1/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_AI_WORKER_API_KEY}`
         },
-        body: JSON.stringify({ message: inputValue })
+        body: JSON.stringify({ 
+          message: inputValue,
+          systemPrompt: "You are Cutty the Cuttlefish, a helpful assistant for the Cutty app that generates synthetic person data. Be friendly and enthusiastic. You are a playful cuttlefish character. Keep your responses concise and brief - aim for 1-2 sentences maximum while maintaining your friendly, helpful personality."
+        })
       });
 
       if (!response.ok) {
@@ -74,7 +83,7 @@ const ChatBot = () => {
       
       const assistantMessage = {
         id: Date.now() + 1,
-        text: data.response || data.message || "I'm here to help! Could you tell me more about what you need?",
+        text: data.response || "I'm here to help! Could you tell me more about what you need?",
         sender: 'assistant',
         timestamp: new Date()
       };
@@ -213,7 +222,7 @@ const ChatBot = () => {
                     })
                   }}
                 >
-                  <Typography variant="body2">{message.text}</Typography>
+                  <Typography variant="body2" sx={{ textAlign: 'left' }}>{message.text}</Typography>
                 </Paper>
               </Box>
             ))}
