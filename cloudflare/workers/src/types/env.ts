@@ -8,6 +8,10 @@ export interface CloudflareEnv {
   JWT_AUDIENCE: string;
   FRONTEND_URL?: string;
   
+  // AI Worker Integration
+  AI_WORKER_URL: string;
+  AI_WORKER_API_KEY: string;
+  
   // Security environment variables
   SECURITY_PERFORMANCE_THRESHOLD?: string;
   SECURITY_ALERT_WEBHOOK?: string;

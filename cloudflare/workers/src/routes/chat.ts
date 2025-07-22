@@ -31,35 +31,32 @@ chat.post('/', async (c) => {
       return c.json({ error: 'Message too long (max 4000 characters)' }, 400);
     }
 
-    // TODO: Replace with actual AI worker endpoint
-    // For now, mock the external AI service call
-    const aiWorkerUrl = 'https://api.example.com/ai/chat'; // Replace with actual endpoint
-    
     try {
-      // In production, this would be an actual fetch to the AI worker
-      // const response = await fetch(aiWorkerUrl, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${c.env.AI_API_KEY}` // Add to env if needed
-      //   },
-      //   body: JSON.stringify({
-      //     messages: [
-      //       { role: 'system', content: CUTTY_SYSTEM_PROMPT },
-      //       { role: 'user', content: message }
-      //     ]
-      //   })
-      // });
+      // Call external AI worker with the correct API format
+      const aiResponse = await fetch(`${c.env.AI_WORKER_URL}/api/v1/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${c.env.AI_WORKER_API_KEY}`
+        },
+        body: JSON.stringify({
+          message: message,
+          systemPrompt: CUTTY_SYSTEM_PROMPT
+        })
+      });
 
-      // Mock response for development
-      const mockResponse = {
-        reply: `Hello! I'm Cutty the Cuttlefish 🦑! I received your message: "${message}". I'm here to help you with synthetic data generation. What kind of test data would you like to create today?`,
-        timestamp: new Date().toISOString()
-      };
+      if (!aiResponse.ok) {
+        throw new Error(`AI service error: ${aiResponse.status}`);
+      }
 
+      const aiData = await aiResponse.json();
+      
       return c.json({
         success: true,
-        data: mockResponse
+        data: {
+          reply: aiData.response,
+          timestamp: new Date().toISOString()
+        }
       });
 
     } catch (aiError) {

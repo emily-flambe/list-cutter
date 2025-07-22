@@ -13,10 +13,19 @@ describe('Chat Endpoint', () => {
     app.route('/api/v1/chat', chat);
     mockEnv = createMockEnv() as CloudflareEnv;
     vi.clearAllMocks();
+    
+    // Mock global fetch for AI worker calls
+    global.fetch = vi.fn();  
   });
 
   describe('POST /api/v1/chat', () => {
     it('should return a response for valid messages', async () => {
+      // Mock successful AI worker response
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ response: 'Hello! I\'m Cutty the Cuttlefish 🦑! I can help you generate synthetic data for testing!' })
+      });
+
       const req = new Request('http://localhost/api/v1/chat', {
         method: 'POST',
         headers: {
@@ -36,10 +45,27 @@ describe('Chat Endpoint', () => {
       expect(data.data).toHaveProperty('reply');
       expect(data.data).toHaveProperty('timestamp');
       expect(data.data.reply).toContain('Cutty the Cuttlefish');
-      expect(data.data.reply).toContain('synthetic data generation');
+      
+      // Verify fetch was called with correct parameters
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://ai.example.com/api/v1/chat',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer test-ai-worker-key'
+          })
+        })
+      );
     });
 
     it('should handle messages with special characters', async () => {
+      // Mock successful AI worker response
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ response: 'I can definitely help with data containing special characters!' })
+      });
+
       const req = new Request('http://localhost/api/v1/chat', {
         method: 'POST',
         headers: {
