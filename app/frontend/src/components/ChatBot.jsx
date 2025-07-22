@@ -9,20 +9,22 @@ import {
   Fade,
   CircularProgress,
   Alert,
-  Collapse
+  Collapse,
+  Avatar
 } from '@mui/material';
 import {
   Chat as ChatIcon,
   Close as CloseIcon,
   Send as SendIcon
 } from '@mui/icons-material';
+import cuttyLogo from '../assets/cutty_logo.png';
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Hey there! I'm Cutty the Cuttlefish 🦑 Your friendly list optimization assistant. How can I help you organize your lists today?",
+      text: "Hey there! I'm Cutty the Cuttlefish. Your friendly list optimization assistant. How can I help you organize your lists today?",
       sender: 'assistant',
       timestamp: new Date()
     }
@@ -104,7 +106,8 @@ const ChatBot = () => {
           position: 'fixed',
           bottom: 16,
           right: 16,
-          display: isOpen ? 'none' : 'flex'
+          display: isOpen ? 'none' : 'flex',
+          zIndex: 1300
         }}
       >
         <ChatIcon />
@@ -118,13 +121,14 @@ const ChatBot = () => {
             position: 'fixed',
             bottom: 16,
             right: 16,
-            width: { xs: '90%', sm: 400 },
-            height: { xs: '70vh', sm: 600 },
-            maxHeight: '80vh',
+            width: { xs: '85%', sm: 350 },
+            minHeight: 300,
+            maxHeight: { xs: '70vh', sm: 600 },
             display: isOpen ? 'flex' : 'none',
             flexDirection: 'column',
             borderRadius: 2,
-            overflow: 'hidden'
+            overflow: 'hidden',
+            zIndex: 1400
           }}
         >
           {/* Header */}
@@ -151,10 +155,14 @@ const ChatBot = () => {
           {/* Messages Area */}
           <Box
             sx={{
-              flex: 1,
-              overflow: 'auto',
-              p: 2,
-              bgcolor: 'grey.50'
+              flexGrow: 1,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              pl: 1,
+              pr: 0,
+              py: 2,
+              bgcolor: 'background.default',
+              minHeight: 0
             }}
           >
             {messages.map((message) => (
@@ -163,17 +171,46 @@ const ChatBot = () => {
                 sx={{
                   mb: 2,
                   display: 'flex',
-                  justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start'
+                  justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
+                  alignItems: 'flex-end',
+                  gap: message.sender === 'assistant' ? 1.5 : 1
                 }}
               >
+                {message.sender === 'assistant' && (
+                  <Avatar
+                    src={cuttyLogo}
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      bgcolor: 'transparent',
+                      ml: 0,
+                      flexShrink: 0
+                    }}
+                  />
+                )}
                 <Paper
                   elevation={1}
                   sx={{
                     p: 1.5,
                     maxWidth: '70%',
-                    bgcolor: message.sender === 'user' ? 'primary.main' : 'white',
+                    bgcolor: message.sender === 'user' ? 'primary.main' : 'background.paper',
                     color: message.sender === 'user' ? 'white' : 'text.primary',
-                    borderRadius: 2
+                    borderRadius: message.sender === 'user' ? 2 : '18px',
+                    position: 'relative',
+                    ...(message.sender === 'assistant' && {
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        left: -8,
+                        bottom: 10,
+                        width: 0,
+                        height: 0,
+                        borderStyle: 'solid',
+                        borderWidth: '10px 10px 10px 0',
+                        borderColor: 'transparent transparent transparent',
+                        borderRightColor: 'background.paper'
+                      }
+                    })
                   }}
                 >
                   <Typography variant="body2">{message.text}</Typography>
@@ -181,8 +218,38 @@ const ChatBot = () => {
               </Box>
             ))}
             {isLoading && (
-              <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
-                <Paper elevation={1} sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-end', mb: 2, gap: 1.5 }}>
+                <Avatar
+                  src={cuttyLogo}
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    bgcolor: 'transparent',
+                    ml: 0,
+                    flexShrink: 0
+                  }}
+                />
+                <Paper 
+                  elevation={1} 
+                  sx={{ 
+                    p: 1.5, 
+                    bgcolor: 'background.paper', 
+                    borderRadius: '18px',
+                    position: 'relative',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      left: -8,
+                      bottom: 10,
+                      width: 0,
+                      height: 0,
+                      borderStyle: 'solid',
+                      borderWidth: '10px 10px 10px 0',
+                      borderColor: 'transparent transparent transparent',
+                      borderRightColor: 'background.paper'
+                    }
+                  }}
+                >
                   <CircularProgress size={20} />
                 </Paper>
               </Box>
@@ -198,7 +265,7 @@ const ChatBot = () => {
           </Collapse>
 
           {/* Input Area */}
-          <Box sx={{ p: 2, bgcolor: 'white', borderTop: 1, borderColor: 'divider' }}>
+          <Box sx={{ p: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <TextField
                 fullWidth

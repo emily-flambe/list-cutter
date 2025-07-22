@@ -19,7 +19,13 @@ Always be friendly, encouraging, and focus on making data generation easy and ac
 // POST /api/v1/chat - Chat with Cutty
 chat.post('/', async (c) => {
   try {
-    const body = await c.req.json();
+    let body;
+    try {
+      body = await c.req.json();
+    } catch (jsonError) {
+      return c.json({ error: 'Invalid request body' }, 400);
+    }
+    
     const { message } = body;
 
     // Validate input
