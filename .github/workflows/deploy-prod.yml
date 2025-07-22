@@ -1,0 +1,44 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies - Frontend
+        working-directory: app/frontend
+        run: npm ci
+      
+      - name: Build Frontend
+        working-directory: app/frontend
+        run: npm run build
+        env:
+          CI: true
+          NODE_ENV: production
+          VITE_AI_WORKER_API_KEY: ${{ secrets.AI_WORKER_API_KEY }}
+      
+      - name: Install dependencies - Cloudflare Worker
+        working-directory: cloudflare/workers
+        run: npm ci
+      
+      - name: Deploy to Cloudflare Workers (Production)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare/workers
+          command: deploy --config wrangler.prod.toml
