@@ -211,7 +211,7 @@ app.get('*', async (c, next): Promise<Response> => {
       
       // Set CSP for same-origin API access with Cloudflare analytics support
       response.headers.set('Content-Security-Policy', 
-        `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://cloudflareinsights.com https://*.google-analytics.com https://*.googletagmanager.com https://*.doubleclick.net`
+        `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://ai.emilycogsdill.com https://cloudflareinsights.com https://*.google-analytics.com https://*.googletagmanager.com https://*.doubleclick.net`
       );
       
       // Set caching headers based on file type
@@ -252,7 +252,7 @@ app.get('*', async (c, next): Promise<Response> => {
         'X-XSS-Protection': '1; mode=block',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
-        'Content-Security-Policy': `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://cloudflareinsights.com https://*.google-analytics.com https://*.googletagmanager.com https://*.doubleclick.net`
+        'Content-Security-Policy': `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://ai.emilycogsdill.com https://cloudflareinsights.com https://*.google-analytics.com https://*.googletagmanager.com https://*.doubleclick.net`
       }
     });
     
