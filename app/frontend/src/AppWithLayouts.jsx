@@ -8,6 +8,9 @@ import { createDynamicTheme } from './themes/muiTheme';
 // Layout Component - using sidebar layout only
 import SidebarLayout from './components/layouts/SidebarLayout';
 
+// Chat Component
+import ChatBot from './components/ChatBot';
+
 // Page Components
 import Home from './components/Home';
 import Login from './components/Login';
@@ -59,6 +62,7 @@ function AppWithLayouts() {
       <AuthProvider>
         <Router>
           <SidebarLayout>
+            <ChatBot />
             <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
