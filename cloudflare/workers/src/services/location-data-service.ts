@@ -110,9 +110,9 @@ export class LocationDataService {
   }
 
   /**
-   * Get a random area code for a state
+   * Get a random area code for a state and optionally match to city
    */
-  public async getRandomAreaCode(state?: string): Promise<string> {
+  public async getRandomAreaCode(state?: string, city?: string): Promise<string> {
     const data = await this.getLocationData();
     
     if (state) {
@@ -121,6 +121,17 @@ export class LocationDataService {
         // Fallback to generic area codes if state not found
         return this.generateFallbackAreaCode();
       }
+      
+      // If city is provided, try to find area codes for that specific city
+      if (city) {
+        const cityAreaCodes = stateAreaCodes.filter(ac => ac.city === city);
+        if (cityAreaCodes.length > 0) {
+          // Return area code matching the city
+          return cityAreaCodes[Math.floor(Math.random() * cityAreaCodes.length)].areaCode;
+        }
+        // If no exact city match, fall back to state-level selection
+      }
+      
       return stateAreaCodes[Math.floor(Math.random() * stateAreaCodes.length)].areaCode;
     }
     
