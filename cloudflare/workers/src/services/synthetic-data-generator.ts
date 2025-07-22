@@ -158,8 +158,8 @@ export class SyntheticDataGenerator {
     const streetName = this.randomChoice(this.STREET_NAMES);
     const address = `${streetNumber} ${streetName}`;
 
-    // Generate phone number with real area code for the state
-    const areaCode = await locService.getRandomAreaCode(selectedState);
+    // Generate phone number with real area code for the city and state
+    const areaCode = await locService.getRandomAreaCode(selectedState, city);
     const exchange = Math.floor(Math.random() * 800) + 200; // 200-999
     const number = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
     const phone = `(${areaCode}) ${exchange}-${number}`;
