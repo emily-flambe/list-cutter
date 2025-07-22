@@ -1,0 +1,229 @@
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Fab,
+  Paper,
+  IconButton,
+  TextField,
+  Box,
+  Typography,
+  Fade,
+  CircularProgress,
+  Alert,
+  Collapse
+} from '@mui/material';
+import {
+  Chat as ChatIcon,
+  Close as CloseIcon,
+  Send as SendIcon
+} from '@mui/icons-material';
+
+const ChatBot = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      text: "Hey there! I'm Cutty the Cuttlefish 🦑 Your friendly list optimization assistant. How can I help you organize your lists today?",
+      sender: 'assistant',
+      timestamp: new Date()
+    }
+  ]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (!inputValue.trim() || isLoading) return;
+
+    const userMessage = {
+      id: Date.now(),
+      text: inputValue,
+      sender: 'user',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/v1/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: inputValue })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      const data = await response.json();
+      
+      const assistantMessage = {
+        id: Date.now() + 1,
+        text: data.response || data.message || "I'm here to help! Could you tell me more about what you need?",
+        sender: 'assistant',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (err) {
+      setError('Oops! Something went wrong. Please try again.');
+      console.error('Chat error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <>
+      {/* Floating Chat Button */}
+      <Fab
+        color="primary"
+        aria-label="chat"
+        onClick={() => setIsOpen(!isOpen)}
+        sx={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16,
+          display: isOpen ? 'none' : 'flex'
+        }}
+      >
+        <ChatIcon />
+      </Fab>
+
+      {/* Chat Window */}
+      <Fade in={isOpen}>
+        <Paper
+          elevation={6}
+          sx={{
+            position: 'fixed',
+            bottom: 16,
+            right: 16,
+            width: { xs: '90%', sm: 400 },
+            height: { xs: '70vh', sm: 600 },
+            maxHeight: '80vh',
+            display: isOpen ? 'flex' : 'none',
+            flexDirection: 'column',
+            borderRadius: 2,
+            overflow: 'hidden'
+          }}
+        >
+          {/* Header */}
+          <Box
+            sx={{
+              bgcolor: 'primary.main',
+              color: 'white',
+              p: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Typography variant="h6">Chat with Cutty</Typography>
+            <IconButton
+              size="small"
+              onClick={() => setIsOpen(false)}
+              sx={{ color: 'white' }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          {/* Messages Area */}
+          <Box
+            sx={{
+              flex: 1,
+              overflow: 'auto',
+              p: 2,
+              bgcolor: 'grey.50'
+            }}
+          >
+            {messages.map((message) => (
+              <Box
+                key={message.id}
+                sx={{
+                  mb: 2,
+                  display: 'flex',
+                  justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start'
+                }}
+              >
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 1.5,
+                    maxWidth: '70%',
+                    bgcolor: message.sender === 'user' ? 'primary.main' : 'white',
+                    color: message.sender === 'user' ? 'white' : 'text.primary',
+                    borderRadius: 2
+                  }}
+                >
+                  <Typography variant="body2">{message.text}</Typography>
+                </Paper>
+              </Box>
+            ))}
+            {isLoading && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2 }}>
+                <Paper elevation={1} sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2 }}>
+                  <CircularProgress size={20} />
+                </Paper>
+              </Box>
+            )}
+            <div ref={messagesEndRef} />
+          </Box>
+
+          {/* Error Alert */}
+          <Collapse in={!!error}>
+            <Alert severity="error" onClose={() => setError(null)} sx={{ m: 1 }}>
+              {error}
+            </Alert>
+          </Collapse>
+
+          {/* Input Area */}
+          <Box sx={{ p: 2, bgcolor: 'white', borderTop: 1, borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Type your message..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={isLoading}
+                multiline
+                maxRows={3}
+              />
+              <IconButton
+                color="primary"
+                onClick={handleSend}
+                disabled={!inputValue.trim() || isLoading}
+              >
+                <SendIcon />
+              </IconButton>
+            </Box>
+          </Box>
+        </Paper>
+      </Fade>
+    </>
+  );
+};
+
+export default ChatBot;
