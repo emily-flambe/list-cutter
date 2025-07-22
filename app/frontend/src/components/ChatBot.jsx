@@ -20,12 +20,11 @@ import {
 import cuttyLogo from '../assets/cutty_logo.png';
 
 const ChatBot = () => {
-  console.log('ChatBot component loaded - v1.1'); // Deployment test
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Hello! It's me, your best friend! (v1.1 deployed)",
+      text: "Hello! It's me, your best friend!",
       sender: 'assistant',
       timestamp: new Date()
     }
