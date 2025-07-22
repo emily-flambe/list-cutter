@@ -2,11 +2,14 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { createDynamicTheme } from './themes/muiTheme';
 
 // Layout Component - using sidebar layout only
 import SidebarLayout from './components/layouts/SidebarLayout';
+
+// Chat Component - Lazy load to avoid SSR issues
+const ChatBot = lazy(() => import('./components/ChatBot'));
 
 // Page Components
 import Home from './components/Home';
@@ -59,6 +62,9 @@ function AppWithLayouts() {
       <AuthProvider>
         <Router>
           <SidebarLayout>
+            <Suspense fallback={null}>
+              <ChatBot />
+            </Suspense>
             <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />

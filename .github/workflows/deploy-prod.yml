@@ -1,57 +1,24 @@
-name: Cloudflare Workers CI
+name: Deploy to Production
 
 on:
-  pull_request:
+  push:
     branches: [ main ]
-    paths:
-      - 'cloudflare/workers/**'
-      - '.github/workflows/cloudflare-workers-ci.yml'
 
 jobs:
-  test:
-    name: Build & Test
+  deploy-production:
+    name: Deploy to Production
     runs-on: ubuntu-latest
     
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
-      - name: Install dependencies
-        working-directory: cloudflare/workers
-        run: npm ci
-
-      - name: Build project
-        working-directory: cloudflare/workers
-        run: npm run build
-
-      - name: Run tests
-        working-directory: cloudflare/workers
-        run: npm test
-
-  deploy-dev:
-    name: Deploy to Development
-    needs: test
-    runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.labels.*.name, 'deploy-dev')
-    
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
+      
       - name: Install dependencies - Frontend
         working-directory: app/frontend
         run: npm ci
@@ -67,12 +34,11 @@ jobs:
       - name: Install dependencies - Cloudflare Worker
         working-directory: cloudflare/workers
         run: npm ci
-
-      - name: Deploy to Cloudflare Workers (Development)
+      
+      - name: Deploy to Cloudflare Workers (Production)
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: cloudflare/workers
-          command: deploy
-
+          command: deploy --config wrangler.prod.toml
