@@ -1,11 +1,11 @@
-import { Agent, AgentNamespace } from 'agents';
-import { tool } from 'agents';
+import { Agent } from 'agents';
+import { AIChatAgent } from 'agents/ai-chat-agent';
 import { openai } from '@ai-sdk/openai';
-import { streamText } from 'ai';
-import SyntheticDataGenerator from '../services/synthetic-data-generator';
+import { streamText, tool } from 'ai';
+import { SyntheticDataGenerator } from '../services/synthetic-data-generator';
 import { Env } from '../types/env';
 
-export class CuttyAgent extends Agent {
+export class CuttyAgent extends AIChatAgent {
   private syntheticDataGenerator: SyntheticDataGenerator;
   private env: Env;
 
@@ -249,5 +249,5 @@ Always be clear about what actions you're taking and what the results are.`;
   }
 }
 
-// Export the namespace for binding
-export const CuttyAgentNamespace = AgentNamespace(CuttyAgent);
+// Export the agent class directly for Durable Object binding
+export { CuttyAgent as CuttyAgentNamespace };
