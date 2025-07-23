@@ -143,6 +143,12 @@ preview_id = "c490355daf9b4b84b484303d08c42eb2"
 binding = "ANALYTICS"
 dataset = "cutty-metrics"
 
+# Durable Objects for AI Agent
+[[durable_objects]]
+binding = "CUTTY_AGENT"
+class_name = "CuttyAgent"
+script_name = "cutty-dev"
+
 # Cron triggers configured using wrangler CLI after deployment
 # Due to API parsing issues with complex cron configs in wrangler.toml,
 # these will be set up separately using: wrangler triggers deploy

@@ -181,6 +181,24 @@ v1.route('/auth', authRoutes); // Authentication routes at /api/v1/auth/*
 v1.route('/admin', adminRoutes); // Admin routes at /api/v1/admin/*
 v1.route('/synthetic-data', syntheticDataRoutes); // Synthetic data generation at /api/v1/synthetic-data/*
 
+// Agent routes - handle AI agent requests
+app.all('/api/v1/agent/*', async (c) => {
+  const id = c.env.CUTTY_AGENT.idFromName('default');
+  const agentStub = c.env.CUTTY_AGENT.get(id);
+  
+  // Forward the request to the Durable Object
+  const url = new URL(c.req.url);
+  url.pathname = url.pathname.replace('/api/v1/agent', '');
+  
+  const newRequest = new Request(url.toString(), {
+    method: c.req.method,
+    headers: c.req.raw.headers,
+    body: c.req.raw.body,
+  });
+  
+  return agentStub.fetch(newRequest);
+});
+
 // Frontend serving logic for non-API routes
 app.get('*', async (c, next): Promise<Response> => {
   // Skip API routes - let them be handled by the API handlers above
@@ -295,4 +313,8 @@ app.onError((err, c): Response => {
   );
 });
 
+// Export the Hono app as default
 export default app;
+
+// Export Durable Objects
+export { CuttyAgent } from './agent/CuttyAgent';
