@@ -1,0 +1,21 @@
+# Development environment variables
+# Copy this file and create .dev.vars with your actual values
+
+# Required for authentication
+JWT_SECRET=your-jwt-secret-here
+API_KEY_SALT=your-api-key-salt-here
+
+# Google OAuth (from Cloudflare dashboard in production)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:8788/api/v1/auth/google/callback
+
+# AI Worker API Key (for existing chatbot)
+AI_WORKER_API_KEY=your-ai-worker-api-key
+
+# OpenAI API Key (for the new AI Agent)
+OPENAI_API_KEY=your-openai-api-key-here
+
+# Cutty Agent Configuration
+AGENT_ENABLED=true
+AGENT_URL=https://cutty-agent.emily-cogsdill.workers.dev
