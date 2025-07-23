@@ -13,8 +13,8 @@ GOOGLE_REDIRECT_URI=http://localhost:8788/api/v1/auth/google/callback
 # AI Worker API Key (for existing chatbot)
 AI_WORKER_API_KEY=your-ai-worker-api-key
 
-# OpenAI API Key (for the new AI Agent)
-OPENAI_API_KEY=your-openai-api-key-here
+# Anthropic API Key (for Cutty AI Agent - uses Claude)
+ANTHROPIC_API_KEY=your-anthropic-api-key-here
 
 # Cutty Agent Configuration
 AGENT_ENABLED=true

@@ -4,7 +4,7 @@ CuttyAgent is an AI-powered assistant built using Cloudflare's Agent framework. 
 
 ## Features
 
-- **Natural Language Processing**: Powered by OpenAI's GPT-4
+- **Natural Language Processing**: Powered by Anthropic's Claude 3.5 Sonnet
 - **Tool Integration**: Execute actions based on user requests
 - **Streaming Responses**: Real-time chat experience
 - **Session Management**: Maintains conversation history
@@ -66,7 +66,7 @@ Check if the agent is running and healthy.
 
 ### Prerequisites
 - Cloudflare account
-- OpenAI API key
+- Anthropic API key
 - Node.js 18+
 
 ### Setup
@@ -78,7 +78,7 @@ Check if the agent is running and healthy.
 
 2. Create `.dev.vars` file:
    ```
-   OPENAI_API_KEY=your-openai-api-key
+   ANTHROPIC_API_KEY=your-anthropic-api-key
    JWT_SECRET=dev-secret
    API_KEY_SALT=dev-salt
    ```

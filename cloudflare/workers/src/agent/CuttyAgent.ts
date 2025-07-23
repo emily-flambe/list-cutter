@@ -1,6 +1,6 @@
 import { Agent } from 'agents';
 import { AIChatAgent } from 'agents/ai-chat-agent';
-import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
 import { streamText, tool } from 'ai';
 import { SyntheticDataGenerator } from '../services/synthetic-data-generator';
 import { Env } from '../types/env';
@@ -169,8 +169,8 @@ Always be clear about what actions you're taking and what the results are.`;
 
       // Use streamText for real-time responses
       const result = await streamText({
-        model: openai('gpt-4o', {
-          apiKey: this.env.OPENAI_API_KEY,
+        model: anthropic('claude-3-5-sonnet-20241022', {
+          apiKey: this.env.ANTHROPIC_API_KEY,
         }),
         system: this.getSystemPrompt(),
         messages: history,

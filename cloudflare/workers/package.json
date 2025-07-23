@@ -48,7 +48,7 @@
     "wrangler": "^4.24.3"
   },
   "dependencies": {
-    "@ai-sdk/openai": "1.3.23",
+    "@ai-sdk/anthropic": "1.3.0",
     "@vitest/coverage-v8": "2.0.5",
     "agents": "0.0.109",
     "ai": "4.3.19",

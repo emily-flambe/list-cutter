@@ -12,8 +12,8 @@ export interface CloudflareEnv {
   AI_WORKER_URL: string;
   AI_WORKER_API_KEY: string;
   
-  // OpenAI API Key for AI Agent
-  OPENAI_API_KEY: string;
+  // Anthropic API Key for AI Agent (Cutty uses Claude)
+  ANTHROPIC_API_KEY: string;
   
   // Security environment variables
   SECURITY_PERFORMANCE_THRESHOLD?: string;
