@@ -333,6 +333,15 @@ const cleanName = input.name.replace(/[<>&"]/g, '');
 - **HASH PASSWORDS** - Use bcrypt, argon2, or similar
 - **ESCAPE OUTPUT** - Sanitize anything shown to users
 
+## Bug Fixing - SOLVE DON'T SIDESTEP
+
+### 🐛 BUG RESOLUTION MANDATE 🐛
+- **NEVER COMMENT OUT** - Never resolve a bug by just commenting out problematic code
+- **NEVER MOCK AWAY** - Never resolve a bug by mocking the failing component
+- **FIX THE ROOT CAUSE** - Always identify and fix the actual problem
+- **EXCEPTIONS ONLY ON REQUEST** - Only comment out or mock if explicitly requested
+- **UNDERSTAND BEFORE FIXING** - Debug to understand why it's failing first
+
 ## Documentation - MINIMAL AND USEFUL
 
 ### 📝 SIMPLE COMMENTS 📝
