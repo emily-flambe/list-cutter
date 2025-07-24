@@ -98,32 +98,54 @@ export const useAgentChat = () => {
   const currentResponseRef = useRef('');
   const currentMessageIdRef = useRef(null);
   const isStreamingRef = useRef(false);
+  const lastMessageTimeRef = useRef(0);
+  const messageDebounceMs = 100; // Prevent duplicate messages within 100ms
 
   const handleAgentMessage = (data) => {
-    console.log('📥 Received from agent:', data);
+    console.log('📥 Received from agent:', JSON.stringify(data, null, 2));
+    
+    // Skip completely empty messages
+    if (!data || Object.keys(data).length === 0) {
+      console.log('🚫 Skipping completely empty message');
+      return;
+    }
     
     // Handle Cloudflare Agents SDK response format
     if (data.type === 'cf_agent_use_chat_response' && data.body) {
+      console.log('🌊 Processing streaming response');
       isStreamingRef.current = true;
       parseStreamingResponse(data.body, data.done);
     } 
     // Handle action messages from agent
     else if (data.type === 'action') {
+      console.log('⚡ Processing action message');
       handleAgentAction(data.action, data.data);
     }
-    // Fallback for other message formats - but check if content exists and not streaming
-    else if ((data.content || data.message) && !isStreamingRef.current) {
+    // Skip if we're in streaming mode and this isn't a streaming message
+    else if (isStreamingRef.current && !data.type?.includes('chat_response')) {
+      console.log('🚫 Skipping non-streaming message during stream');
+      return;
+    }
+    // Fallback for other message formats - but check if content exists
+    else if ((data.content || data.message)) {
       const content = data.content || data.message || '';
       
       // Only add message if it has actual content
       if (content.trim().length > 0) {
+        // Check for duplicate messages sent too quickly
+        const now = Date.now();
+        if (now - lastMessageTimeRef.current < messageDebounceMs) {
+          console.log('⏭️ Skipping duplicate message (too fast)');
+          return;
+        }
+        lastMessageTimeRef.current = now;
+        
         console.log('📝 Adding non-streaming message:', content);
         const message = {
-          id: Date.now(),
+          id: now,
           role: 'assistant',
           content: content,
-          timestamp: new Date().toISOString(),
-          ...data
+          timestamp: new Date().toISOString()
         };
         
         setMessages(prev => [...prev, message]);
@@ -132,7 +154,7 @@ export const useAgentChat = () => {
         console.log('⚠️ Skipping empty fallback message');
       }
     } else {
-      console.log('⚠️ Unknown message format, skipping:', data);
+      console.log('⚠️ Unknown message format, skipping');
     }
   };
 
@@ -241,6 +263,9 @@ export const useAgentChat = () => {
     };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+    
+    // Reset streaming state for new message
+    isStreamingRef.current = false;
 
     // Filter out empty messages before sending to avoid API errors
     const validMessages = messages.filter(msg => 
