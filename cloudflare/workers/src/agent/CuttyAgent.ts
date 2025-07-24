@@ -1,6 +1,6 @@
 import { Agent } from 'agents';
 import { AIChatAgent } from 'agents/ai-chat-agent';
-import { anthropic } from '@ai-sdk/anthropic';
+import { createAnthropic } from 'ai/anthropic';
 import { streamText, tool } from 'ai';
 import { SyntheticDataGenerator } from '../services/synthetic-data-generator';
 import { Env } from '../types/env';
@@ -167,11 +167,14 @@ Always be clear about what actions you're taking and what the results are.`;
       // Add user message to history
       history.push({ role: 'user', content: message });
 
+      // Create Anthropic instance
+      const anthropic = createAnthropic({
+        apiKey: this.env.ANTHROPIC_API_KEY,
+      });
+
       // Use streamText for real-time responses
       const result = await streamText({
-        model: anthropic('claude-3-5-sonnet-20241022', {
-          apiKey: this.env.ANTHROPIC_API_KEY,
-        }),
+        model: anthropic('claude-3-5-sonnet-20241022'),
         system: this.getSystemPrompt(),
         messages: history,
         tools: this.tools,

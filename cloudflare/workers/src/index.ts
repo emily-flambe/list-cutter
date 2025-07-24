@@ -301,4 +301,4 @@ app.onError((err, c): Response => {
 export default app;
 
 // Export Durable Objects
-export { CuttyAgent } from './agent/CuttyAgent';
+// CuttyAgent export removed - using external agent via WebSocket proxy

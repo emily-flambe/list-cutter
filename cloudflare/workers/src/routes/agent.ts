@@ -3,24 +3,10 @@ import type { Env } from '../types/env';
 
 const agent = new Hono<{ Bindings: Env }>();
 
-// Check if external agent is enabled
+// Agent is always proxied to external service
 agent.use('*', async (c, next) => {
   if (c.env.AGENT_ENABLED !== 'true') {
-    // Fallback to local Durable Object
-    const id = c.env.CUTTY_AGENT.idFromName('default');
-    const agentStub = c.env.CUTTY_AGENT.get(id);
-    
-    // Forward the request to the Durable Object
-    const url = new URL(c.req.url);
-    url.pathname = url.pathname.replace('/api/v1/agent', '');
-    
-    const newRequest = new Request(url.toString(), {
-      method: c.req.method,
-      headers: c.req.raw.headers,
-      body: c.req.raw.body,
-    });
-    
-    return agentStub.fetch(newRequest);
+    return c.json({ error: 'Agent service is disabled' }, 503);
   }
   await next();
 });
@@ -36,9 +22,31 @@ agent.get('/chat/:sessionId', async (c) => {
     return c.json({ error: 'Expected WebSocket connection' }, 400);
   }
   
-  // Forward the WebSocket connection to agent
-  const url = new URL(`/agents/chat/${sessionId}`, agentUrl);
-  return fetch(url, c.req.raw);
+  try {
+    // Forward the WebSocket connection to agent
+    const url = new URL(`/agents/chat/${sessionId}`, agentUrl);
+    
+    // Create new headers, preserving important ones
+    const headers = new Headers(c.req.raw.headers);
+    
+    // Make the request to the agent
+    const response = await fetch(url, {
+      method: c.req.method,
+      headers: headers,
+      // @ts-ignore - WebSocket upgrade needs special handling in Workers
+      webSocket: true,
+    });
+    
+    if (response.status !== 101) {
+      console.error('WebSocket upgrade failed:', response.status, await response.text());
+      return c.text('WebSocket upgrade failed', 502);
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('WebSocket proxy error:', error);
+    return c.text('WebSocket proxy error', 502);
+  }
 });
 
 // Get message history endpoint
@@ -46,8 +54,18 @@ agent.get('/chat/:sessionId/messages', async (c) => {
   const { sessionId } = c.req.param();
   const agentUrl = c.env.AGENT_URL || 'https://cutty-agent.emilycogsdill.com';
   
-  const response = await fetch(`${agentUrl}/agents/chat/${sessionId}/get-messages`);
-  return c.json(await response.json());
+  try {
+    const response = await fetch(`${agentUrl}/agents/chat/${sessionId}/get-messages`);
+    if (!response.ok) {
+      console.error('Failed to get messages:', response.status);
+      return c.json({ messages: [] });
+    }
+    const data = await response.json();
+    return c.json(data);
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    return c.json({ messages: [] });
+  }
 });
 
 // Health check

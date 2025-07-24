@@ -144,10 +144,11 @@ binding = "ANALYTICS"
 dataset = "cutty-metrics"
 
 # Durable Objects for AI Agent
-[[durable_objects]]
-binding = "CUTTY_AGENT"
-class_name = "CuttyAgent"
-script_name = "cutty-dev"
+# [[durable_objects]]
+# binding = "CUTTY_AGENT"
+# class_name = "CuttyAgent"
+# script_name = "cutty-dev"
+# Commented out - using external agent via WebSocket proxy
 
 # Cron triggers configured using wrangler CLI after deployment
 # Due to API parsing issues with complex cron configs in wrangler.toml,

@@ -109,7 +109,7 @@ const ChatBotWebSocket = () => {
         <DialogContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
           <Box sx={{ flex: 1, overflowY: 'auto', mb: 2 }}>
             {messages.length === 0 && (
-              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'grey.50' }}>
+              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="h6" gutterBottom>
                   Welcome to Cutty Chat! 🦑
                 </Typography>
@@ -144,8 +144,10 @@ const ChatBotWebSocket = () => {
                   sx={{
                     p: 2,
                     maxWidth: '70%',
-                    bgcolor: message.role === 'user' ? 'primary.main' : 'grey.100',
-                    color: message.role === 'user' ? 'white' : 'text.primary'
+                    bgcolor: message.role === 'user' ? 'primary.dark' : 'background.paper',
+                    color: message.role === 'user' ? 'primary.contrastText' : 'text.primary',
+                    border: message.role === 'assistant' ? '1px solid' : 'none',
+                    borderColor: 'divider'
                   }}
                 >
                   <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -169,7 +171,7 @@ const ChatBotWebSocket = () => {
             {isLoading && (
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Avatar src={cuttyAvatar} sx={{ width: 32, height: 32, mr: 1 }} />
-                <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
+                <Paper sx={{ p: 2, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
                   <CircularProgress size={20} />
                 </Paper>
               </Box>
@@ -201,12 +203,13 @@ const ChatBotWebSocket = () => {
               disabled={!input.trim() || !isConnected}
               sx={{
                 bgcolor: 'primary.main',
-                color: 'white',
+                color: 'primary.contrastText',
                 '&:hover': {
                   bgcolor: 'primary.dark',
                 },
                 '&.Mui-disabled': {
                   bgcolor: 'action.disabledBackground',
+                  color: 'action.disabled'
                 }
               }}
             >
