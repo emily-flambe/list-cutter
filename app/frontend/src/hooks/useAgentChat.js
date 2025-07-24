@@ -33,6 +33,7 @@ export const useAgentChat = () => {
 
     console.log('Connecting to agent:', wsUrl);
     console.log('✅ CUTTY-AGENT FIX APPLIED: Direct WebSocket connection to agent service');
+    console.log('🔍 Session ID:', sessionId);
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
@@ -79,34 +80,103 @@ export const useAgentChat = () => {
     try {
       // Always use proxy through worker for API calls
       const url = `/api/v1/agent/chat/${sessionId}/messages`;
+      console.log('📋 Loading message history for session:', sessionId);
       
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setMessages(data.messages || data || []);
+        console.log('✅ Message history loaded:', data.messages?.length || 0, 'messages');
+      } else {
+        console.error('❌ Failed to load message history:', response.status);
       }
     } catch (error) {
       console.error('Failed to load history:', error);
     }
   };
 
+  const currentResponseRef = useRef('');
+  const currentMessageIdRef = useRef(null);
+
   const handleAgentMessage = (data) => {
+    console.log('📥 Received from agent:', data);
+    
+    // Handle Cloudflare Agents SDK response format
+    if (data.type === 'cf_agent_use_chat_response' && data.body) {
+      parseStreamingResponse(data.body, data.done);
+    } 
     // Handle action messages from agent
-    if (data.type === 'action') {
+    else if (data.type === 'action') {
       handleAgentAction(data.action, data.data);
     }
+    // Fallback for other message formats
+    else {
+      const message = {
+        id: Date.now(),
+        role: 'assistant',
+        content: data.content || data.message || '',
+        timestamp: new Date().toISOString(),
+        ...data
+      };
+      
+      setMessages(prev => [...prev, message]);
+      setIsLoading(false);
+    }
+  };
+
+  const parseStreamingResponse = (body, isDone) => {
+    // Handle different streaming data types
+    if (body.startsWith('0:')) {
+      // Text content delta
+      try {
+        const text = JSON.parse(body.slice(2).trim());
+        currentResponseRef.current += text;
+        
+        // Update or create the assistant message
+        setMessages(prev => {
+          const lastMessage = prev[prev.length - 1];
+          if (lastMessage && lastMessage.role === 'assistant' && lastMessage.id === currentMessageIdRef.current) {
+            // Update existing message
+            return prev.slice(0, -1).concat({
+              ...lastMessage,
+              content: currentResponseRef.current
+            });
+          } else {
+            // Create new message
+            currentMessageIdRef.current = `msg-${Date.now()}`;
+            return [...prev, {
+              id: currentMessageIdRef.current,
+              role: 'assistant',
+              content: currentResponseRef.current,
+              timestamp: new Date().toISOString()
+            }];
+          }
+        });
+      } catch (e) {
+        console.error('Failed to parse text delta:', e);
+      }
+    } else if (body.startsWith('f:')) {
+      // Message metadata
+      try {
+        const metadata = JSON.parse(body.slice(2).trim());
+        if (metadata.messageId) {
+          currentMessageIdRef.current = metadata.messageId;
+        }
+      } catch (e) {
+        console.error('Failed to parse metadata:', e);
+      }
+    } else if (body.startsWith('e:')) {
+      // Completion data - message is complete
+      currentResponseRef.current = '';
+      currentMessageIdRef.current = null;
+      setIsLoading(false);
+    }
     
-    // Add message to chat
-    const message = {
-      id: Date.now(),
-      role: 'assistant',
-      content: data.content || data.message || '',
-      timestamp: new Date().toISOString(),
-      ...data
-    };
-    
-    setMessages(prev => [...prev, message]);
-    setIsLoading(false);
+    if (isDone) {
+      currentResponseRef.current = '';
+      currentMessageIdRef.current = null;
+      setIsLoading(false);
+    }
   };
 
   const handleAgentAction = (action, data) => {
@@ -126,9 +196,13 @@ export const useAgentChat = () => {
       return;
     }
 
-    // Add user message to chat
+    // Generate unique IDs
+    const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Add user message to chat UI immediately
     const userMessage = {
-      id: Date.now(),
+      id: messageId,
       role: 'user',
       content,
       timestamp: new Date().toISOString()
@@ -136,15 +210,30 @@ export const useAgentChat = () => {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    // Send to agent with context
-    wsRef.current.send(JSON.stringify({
-      message: content,
-      context: {
-        user: user?.email,
-        page: window.location.pathname
+    // Create message in Cloudflare Agents SDK format
+    const agentMessage = {
+      type: "cf_agent_use_chat_request",
+      id: requestId,
+      init: {
+        method: "POST",
+        body: JSON.stringify({
+          messages: messages.concat({
+            id: messageId,
+            role: "user",
+            content: content,
+            createdAt: new Date().toISOString(),
+            metadata: {
+              user: user?.email,
+              page: window.location.pathname
+            }
+          })
+        })
       }
-    }));
-  }, [user]);
+    };
+
+    console.log('📤 Sending message to agent:', agentMessage);
+    wsRef.current.send(JSON.stringify(agentMessage));
+  }, [user, messages]);
 
   useEffect(() => {
     connect();
