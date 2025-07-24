@@ -1,245 +1,251 @@
-# Tasks
+# Tasks - Updated for WebSocket Integration
 
 ## Overview
 
-Implementation tasks for Cutty Agent PoC integration. Tasks are split between the `cutty-agent` and `list-cutter` repositories.
+Implementation tasks for Cutty Agent WebSocket integration. The agent is already deployed at `https://cutty-agent.emilycogsdill.com`. These tasks focus on integrating it with the list-cutter app to enable agent actions on behalf of users.
+
+## Current Status
+
+- ✅ Agent deployed at: `https://cutty-agent.emilycogsdill.com`
+- ✅ Agent has WebSocket support at `/agents/chat/{sessionId}`
+- ✅ Tools implemented: `getSupportedStates`, `explainFeature`
+- ⏳ Need to integrate with list-cutter app via WebSocket proxy
 
 ## Task List
 
-### Phase 1: Agent Repository Setup (cutty-agent repo)
+### Phase 1: Backend WebSocket Proxy Setup (list-cutter repo)
 
-#### Task 1: Initialize Agent Repository
-**Repository**: cutty-agent  
+#### Task 1: Create WebSocket Proxy Routes
+**Repository**: list-cutter  
 **Time**: 30 minutes  
 **Dependencies**: None
 
-1. Create new repository at `github.com/emily-flambe/cutty-agent`
-2. Clone locally to `~/Documents/GitHub/cutty-agent`
-3. Initialize from agents-starter template:
-   ```bash
-   npx create-cloudflare@latest . --template=cloudflare/agents-starter
-   ```
-4. Commit initial template code
+1. Create `cloudflare/workers/src/routes/agent.ts`:
+   - WebSocket proxy endpoint at `/chat/:sessionId`
+   - Message history endpoint at `/chat/:sessionId/messages`
+   - Health check endpoint at `/health`
+2. Mount routes at `/api/v1/agent/*` in index.ts
+3. Handle conditional routing based on `AGENT_ENABLED` env var
 
-**Acceptance**: Repository created with starter template files
+**Acceptance**: Backend can proxy WebSocket connections to agent
 
 ---
 
-#### Task 2: Configure Agent Identity
-**Repository**: cutty-agent  
-**Time**: 20 minutes  
+#### Task 2: Update Environment Configuration
+**Repository**: list-cutter  
+**Time**: 15 minutes  
+**Dependencies**: None
+
+1. Verify in `cloudflare/workers/.dev.vars`:
+   ```env
+   AGENT_ENABLED=true
+   AGENT_URL=https://cutty-agent.emilycogsdill.com
+   ```
+2. Add to `app/frontend/.env.development`:
+   ```env
+   VITE_AGENT_ENABLED=true
+   ```
+3. Update GitHub Actions workflows for deployment env vars
+
+**Acceptance**: Environment variables properly configured
+
+---
+
+### Phase 2: Frontend WebSocket Integration (list-cutter repo)
+
+#### Task 3: Create useAgentChat Hook
+**Repository**: list-cutter  
+**Time**: 45 minutes  
 **Dependencies**: Task 1
 
-1. Update `package.json` with project details
-2. Configure `wrangler.jsonc`:
-   - Set name to `cutty-agent`
-   - Configure Durable Objects binding
-   - Remove environment configurations
-3. Create `.dev.vars` with Anthropic API key
-4. Update `.gitignore` for security
+1. Create `app/frontend/src/hooks/useAgentChat.js`:
+   - WebSocket connection management
+   - Session ID generation per tab
+   - Auto-reconnection logic
+   - Message history loading
+   - Action event handling
+2. Handle agent actions via CustomEvent dispatch
+3. Maintain connection state
 
-**Acceptance**: `npm run dev` starts without errors
+**Acceptance**: Hook establishes and maintains WebSocket connection
 
 ---
 
-#### Task 3: Implement Cutty Personality
-**Repository**: cutty-agent  
+#### Task 4: Replace ChatBot Component
+**Repository**: list-cutter  
 **Time**: 1 hour  
-**Dependencies**: Task 2
-
-1. Update system prompt in `src/server.ts`:
-   - Add Cutty the Cuttlefish personality
-   - Define available capabilities
-   - Set helpful tone
-2. Switch from OpenAI to Anthropic:
-   - Install `@ai-sdk/anthropic`
-   - Update imports and model configuration
-   - Use `claude-3-5-sonnet-20241022`
-
-**Acceptance**: Agent responds as Cutty when tested locally
-
----
-
-#### Task 4: Create getSupportedStates Tool
-**Repository**: cutty-agent  
-**Time**: 30 minutes  
 **Dependencies**: Task 3
 
-1. Create/update `src/tools.ts`:
-   - Define `getSupportedStates` tool
-   - Return hardcoded array: ['CA', 'FL', 'GA', 'IL', 'NY', 'OH', 'PA', 'TX']
-   - Add clear response message
-2. Register tool in agent
-3. Test tool execution
+1. Create new WebSocket-based ChatBot component
+2. Features to implement:
+   - Connection status indicator
+   - Message history display
+   - Typing indicators
+   - Session info (dev mode)
+   - Auto-reconnection UI feedback
+3. Remove hardcoded `ai.emilycogsdill.com` endpoint
+4. Use `VITE_AGENT_ENABLED` for conditional rendering
 
-**Acceptance**: Asking "what states do you support?" triggers tool
+**Acceptance**: ChatBot uses WebSocket for real-time communication
 
 ---
 
-#### Task 5: Deploy Agent to Cloudflare
-**Repository**: cutty-agent  
+#### Task 5: Implement Action Handling
+**Repository**: list-cutter  
 **Time**: 30 minutes  
 **Dependencies**: Task 4
 
-1. Run `npx wrangler login` if needed
-2. Deploy with `npm run deploy`
-3. Note deployed URL: `https://cutty-agent.emily-cogsdill.workers.dev`
-4. Test health endpoint: `/health`
-5. Test chat functionality with deployed agent
+1. Add event listener for 'agent-action' events
+2. Create action handlers for:
+   - Form filling
+   - Navigation
+   - UI state changes
+3. Add confirmation dialogs for sensitive actions
+4. Log all actions for debugging
 
-**Acceptance**: Agent accessible at public URL with working health check
-
----
-
-### Phase 2: Main App Integration (list-cutter repo)
-
-#### Task 6: Add Environment Variables
-**Repository**: list-cutter  
-**Time**: 15 minutes  
-**Dependencies**: Task 5 (need deployed agent URL)
-
-1. Add to `cloudflare/workers/.dev.vars`:
-   ```env
-   AGENT_ENABLED=true
-   AGENT_URL=https://cutty-agent.emily-cogsdill.workers.dev
-   ```
-2. Add to `app/frontend/.env`:
-   ```env
-   VITE_AGENT_ENABLED=true
-   VITE_AGENT_URL=https://cutty-agent.emily-cogsdill.workers.dev
-   ```
-3. Update `.env.example` files for documentation
-
-**Acceptance**: Environment variables load correctly in both backend and frontend
-
----
-
-#### Task 7: Update ChatBot Component
-**Repository**: list-cutter  
-**Time**: 30 minutes  
-**Dependencies**: Task 6
-
-1. Edit `app/frontend/src/components/ChatBot.jsx`:
-   ```javascript
-   const chatEndpoint = import.meta.env.VITE_AGENT_ENABLED === 'true'
-     ? `${import.meta.env.VITE_AGENT_URL}/api/chat`
-     : '/api/v1/chat';
-   ```
-2. Update fetch call to use `chatEndpoint`
-3. No other changes needed (keep existing error handling)
-
-**Acceptance**: ChatBot uses agent URL when flag enabled
+**Acceptance**: Agent can trigger UI actions via WebSocket messages
 
 ---
 
 ### Phase 3: Integration Testing
 
-#### Task 8: Test Development Integration
+#### Task 6: Test Local Development
 **Repository**: list-cutter  
-**Time**: 45 minutes  
-**Dependencies**: Tasks 5 and 7
+**Time**: 30 minutes  
+**Dependencies**: Tasks 1-5
 
-1. Start main app with --remote (uses cutty-dev and deployed agent):
+1. Start list-cutter locally:
    ```bash
    cd ~/Documents/GitHub/list-cutter/worktrees/cutty-agent
-   make dev  # Uses wrangler dev --remote
+   npm run dev
    ```
-2. Access app at http://localhost:5173
-3. Test scenarios:
-   - Send regular chat message
-   - Ask "what states do you support?"
-   - Verify responses display correctly
-   - Check browser console for CORS errors
-   - Verify agent URL in Network tab shows cutty-agent.emily-cogsdill.workers.dev
+2. Verify WebSocket connection in DevTools
+3. Test chat messages and responses
+4. Test "what states do you support?" tool
+5. Verify session isolation between tabs
 
-**Acceptance**: No errors, tool executes, responses from deployed agent
+**Acceptance**: WebSocket chat works locally with deployed agent
 
 ---
 
-#### Task 9: Test Cutty-Dev Deployment
+#### Task 7: Test Agent Actions
+**Repository**: list-cutter  
+**Time**: 45 minutes  
+**Dependencies**: Task 6
+
+1. Test tool executions:
+   - getSupportedStates (auto-executes)
+   - explainFeature (requires confirmation)
+2. Monitor CustomEvent dispatches
+3. Verify action handling
+4. Test error scenarios
+
+**Acceptance**: Agent tools execute and actions are handled correctly
+
+---
+
+#### Task 8: Deploy to Staging
+**Repository**: list-cutter  
+**Time**: 30 minutes  
+**Dependencies**: Task 7
+
+1. Deploy to cutty-dev:
+   ```bash
+   cd cloudflare/workers
+   npm run deploy:dev
+   ```
+2. Test at https://cutty-dev.emilycogsdill.com
+3. Verify WebSocket upgrade works through Cloudflare
+4. Test all scenarios from Task 7
+
+**Acceptance**: Integration works on staging environment
+
+---
+
+### Phase 4: Production Readiness
+
+#### Task 9: Add Monitoring
 **Repository**: list-cutter  
 **Time**: 30 minutes  
 **Dependencies**: Task 8
 
-1. Deploy main app to cutty-dev:
-   ```bash
-   cd ~/Documents/GitHub/list-cutter/worktrees/cutty-agent/cloudflare/workers
-   npm run deploy:dev  # Deploys to cutty-dev.emilycogsdill.com
-   ```
-2. Access https://cutty-dev.emilycogsdill.com
-3. Test same scenarios as Task 8
-4. Monitor response times
-5. Check agent logs: `cd cutty-agent && npm run logs`
+1. Add WebSocket connection metrics
+2. Log agent action events
+3. Monitor reconnection attempts
+4. Set up error tracking
+5. Create dashboard in Cloudflare Analytics
 
-**Acceptance**: Integration works on cutty-dev with deployed agent
+**Acceptance**: Can monitor WebSocket health and usage
 
 ---
 
-#### Task 10: Feature Flag Testing
+#### Task 10: Security Review
 **Repository**: list-cutter  
-**Time**: 20 minutes  
-**Dependencies**: Task 9
+**Time**: 30 minutes  
+**Dependencies**: Task 8
 
-1. Test with `AGENT_ENABLED=false`:
-   - Verify falls back to Workers AI
-   - No errors or warnings
-   - Existing functionality intact
-2. Toggle flag and restart:
-   - Verify switches to agent
-   - Test rapid toggling
-3. Document toggle behavior
+1. Verify session IDs are secure
+2. Add rate limiting for WebSocket connections
+3. Validate all agent actions
+4. Review CORS configuration
+5. Add input sanitization
 
-**Acceptance**: Clean switching between AI Worker and Agent
+**Acceptance**: Security measures in place
 
 ---
 
-### Phase 4: Documentation & Cleanup
-
-#### Task 11: Create Integration Documentation
+#### Task 11: Documentation
 **Repository**: Both  
 **Time**: 45 minutes  
 **Dependencies**: Task 10
 
-1. In cutty-agent repo:
-   - Update README.md with setup instructions
-   - Document environment variables
-   - Add troubleshooting section
-2. In list-cutter repo:
-   - Update main README with agent option
-   - Document feature flag
-   - Add to CHANGELOG.md
+1. Update list-cutter README:
+   - WebSocket integration details
+   - Environment variable docs
+   - Troubleshooting guide
+2. Create architecture diagram
+3. Document action event system
+4. Add to CHANGELOG.md
 
-**Acceptance**: Clear documentation for future developers
+**Acceptance**: Complete documentation for developers
 
 ---
 
-#### Task 12: Performance & Monitoring Check
-**Repository**: cutty-agent  
+#### Task 12: Production Deployment
+**Repository**: list-cutter  
 **Time**: 30 minutes  
 **Dependencies**: Task 11
 
-1. Monitor agent for 24 hours:
-   - Check uptime
-   - Review error logs
-   - Measure response times
-2. Document findings in `POC_FINDINGS.md`
-3. Create issues for any problems found
-4. Make go/no-go recommendation
+1. Set GitHub repository variables:
+   - `AGENT_ENABLED=true`
+   - `AGENT_URL=https://cutty-agent.emilycogsdill.com`
+2. Create PR and deploy to production
+3. Monitor for 24 hours
+4. Document any issues
 
-**Acceptance**: Documented decision on proceeding to V1
+**Acceptance**: Agent integration live in production
 
 ---
 
 ## Summary
 
 Total Tasks: 12  
-Estimated Time: 6.5 hours active work + 24 hour monitoring  
-Critical Path: Tasks 1→2→3→4→5 for agent, then 8→9→10 for integration testing
+Estimated Time: 6.5 hours active work  
+Critical Path: WebSocket proxy → Frontend hook → ChatBot component → Testing
 
 ## Success Criteria
 
-- [ ] Agent deployed and accessible
-- [ ] Main app can toggle between AI Worker and Agent
-- [ ] getSupportedStates tool executes successfully
-- [ ] No breaking changes to existing functionality
-- [ ] Clear documentation for V1 development
+- [x] Agent already deployed and accessible
+- [ ] WebSocket proxy functioning
+- [ ] Real-time chat with session isolation
+- [ ] Agent can execute actions in UI
+- [ ] Clean fallback to existing chat
+- [ ] Production deployment successful
+
+## Key Differences from Original Plan
+
+1. **Agent Already Deployed**: Skip Phase 1 agent setup
+2. **WebSocket Focus**: Not REST API - enables real-time actions
+3. **Session Management**: Each tab gets isolated conversation
+4. **Action System**: Agent can control UI via events
+5. **No Local Agent**: Always use deployed agent service

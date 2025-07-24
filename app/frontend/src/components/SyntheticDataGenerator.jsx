@@ -49,6 +49,65 @@ const SyntheticDataGenerator = () => {
     fetchSupportedStates();
   }, []);
 
+  // Listen for agent form fill events
+  useEffect(() => {
+    const handleAgentFormFill = (event) => {
+      console.log('📝 Received agent-form-fill event:', event.detail);
+      
+      if (event.detail) {
+        const newFormData = { ...formData };
+        
+        // Handle count
+        if (event.detail.count !== undefined) {
+          const count = parseInt(event.detail.count);
+          if (!isNaN(count) && count >= 1 && count <= 1000) {
+            newFormData.count = count;
+          }
+        }
+        
+        // Handle states (can be a single state string or an array)
+        if (event.detail.states !== undefined) {
+          if (Array.isArray(event.detail.states)) {
+            // Filter to only include valid states from supportedStates
+            newFormData.states = event.detail.states.filter(state => 
+              supportedStates.includes(state)
+            );
+          } else if (typeof event.detail.states === 'string' && event.detail.states) {
+            // Convert single state to array if it's supported
+            const stateUpper = event.detail.states.toUpperCase();
+            if (supportedStates.includes(stateUpper)) {
+              newFormData.states = [stateUpper];
+            }
+          }
+        }
+        
+        // Handle state (singular) - for backward compatibility
+        if (event.detail.state !== undefined && !event.detail.states) {
+          const stateUpper = event.detail.state.toUpperCase();
+          if (supportedStates.includes(stateUpper)) {
+            newFormData.states = [stateUpper];
+          }
+        }
+        
+        // Update the form data
+        setFormData(newFormData);
+        
+        // Clear any existing errors
+        setErrors({});
+        setSuccessMessage('');
+        setDownloadUrl('');
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('agent-form-fill', handleAgentFormFill);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('agent-form-fill', handleAgentFormFill);
+    };
+  }, [formData, supportedStates]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
