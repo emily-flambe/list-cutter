@@ -97,30 +97,42 @@ export const useAgentChat = () => {
 
   const currentResponseRef = useRef('');
   const currentMessageIdRef = useRef(null);
+  const isStreamingRef = useRef(false);
 
   const handleAgentMessage = (data) => {
     console.log('📥 Received from agent:', data);
     
     // Handle Cloudflare Agents SDK response format
     if (data.type === 'cf_agent_use_chat_response' && data.body) {
+      isStreamingRef.current = true;
       parseStreamingResponse(data.body, data.done);
     } 
     // Handle action messages from agent
     else if (data.type === 'action') {
       handleAgentAction(data.action, data.data);
     }
-    // Fallback for other message formats
-    else {
-      const message = {
-        id: Date.now(),
-        role: 'assistant',
-        content: data.content || data.message || '',
-        timestamp: new Date().toISOString(),
-        ...data
-      };
+    // Fallback for other message formats - but check if content exists and not streaming
+    else if ((data.content || data.message) && !isStreamingRef.current) {
+      const content = data.content || data.message || '';
       
-      setMessages(prev => [...prev, message]);
-      setIsLoading(false);
+      // Only add message if it has actual content
+      if (content.trim().length > 0) {
+        console.log('📝 Adding non-streaming message:', content);
+        const message = {
+          id: Date.now(),
+          role: 'assistant',
+          content: content,
+          timestamp: new Date().toISOString(),
+          ...data
+        };
+        
+        setMessages(prev => [...prev, message]);
+        setIsLoading(false);
+      } else {
+        console.log('⚠️ Skipping empty fallback message');
+      }
+    } else {
+      console.log('⚠️ Unknown message format, skipping:', data);
     }
   };
 
@@ -183,6 +195,7 @@ export const useAgentChat = () => {
       });
       currentResponseRef.current = '';
       currentMessageIdRef.current = null;
+      isStreamingRef.current = false;
       setIsLoading(false);
     }
     
@@ -193,6 +206,7 @@ export const useAgentChat = () => {
       ));
       currentResponseRef.current = '';
       currentMessageIdRef.current = null;
+      isStreamingRef.current = false;
       setIsLoading(false);
     }
   };
