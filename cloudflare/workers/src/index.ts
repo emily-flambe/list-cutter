@@ -14,6 +14,7 @@ import filesRoutes from './routes/files';
 import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin';
 import syntheticDataRoutes from './routes/synthetic-data';
+import agentRoutes from './routes/agent';
 
 // Import security middleware
 import { rateLimitMiddleware } from './services/security';
@@ -23,6 +24,9 @@ type HonoVariables = {
 };
 
 const app = new Hono<{ Bindings: CloudflareEnv; Variables: HonoVariables }>();
+
+// Content Security Policy - single source of truth
+const CSP_POLICY = `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://ai.emilycogsdill.com https://cutty-agent.emilycogsdill.com wss://cutty-agent.emilycogsdill.com https://cloudflareinsights.com https://*.google-analytics.com https://*.googletagmanager.com https://*.doubleclick.net`;
 
 // Basic initialization middleware
 app.use('*', async (c, next): Promise<void> => {
@@ -180,6 +184,7 @@ v1.route('/files', filesRoutes); // File operations at /api/v1/files/*
 v1.route('/auth', authRoutes); // Authentication routes at /api/v1/auth/*
 v1.route('/admin', adminRoutes); // Admin routes at /api/v1/admin/*
 v1.route('/synthetic-data', syntheticDataRoutes); // Synthetic data generation at /api/v1/synthetic-data/*
+v1.route('/agent', agentRoutes); // Agent WebSocket proxy at /api/v1/agent/*
 
 // Frontend serving logic for non-API routes
 app.get('*', async (c, next): Promise<Response> => {
@@ -209,10 +214,8 @@ app.get('*', async (c, next): Promise<Response> => {
       response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
       response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
       
-      // Set CSP for same-origin API access with Cloudflare analytics support
-      response.headers.set('Content-Security-Policy', 
-        `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://ai.emilycogsdill.com https://cloudflareinsights.com https://*.google-analytics.com https://*.googletagmanager.com https://*.doubleclick.net`
-      );
+      // Set CSP for same-origin API access with Cloudflare analytics support and Cutty Agent
+      response.headers.set('Content-Security-Policy', CSP_POLICY);
       
       // Set caching headers based on file type
       const pathname = c.req.path;
@@ -252,7 +255,7 @@ app.get('*', async (c, next): Promise<Response> => {
         'X-XSS-Protection': '1; mode=block',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
-        'Content-Security-Policy': `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://ai.emilycogsdill.com https://cloudflareinsights.com https://*.google-analytics.com https://*.googletagmanager.com https://*.doubleclick.net`
+        'Content-Security-Policy': CSP_POLICY
       }
     });
     
@@ -295,4 +298,8 @@ app.onError((err, c): Response => {
   );
 });
 
+// Export the Hono app as default
 export default app;
+
+// Export Durable Objects
+// CuttyAgent export removed - using external agent via WebSocket proxy

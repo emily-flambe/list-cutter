@@ -36,6 +36,8 @@ jobs:
           CI: true
           NODE_ENV: production
           VITE_AI_WORKER_API_KEY: ${{ secrets.AI_WORKER_API_KEY }}
+          VITE_AGENT_ENABLED: ${{ vars.AGENT_ENABLED || 'false' }}
+          VITE_AGENT_URL: ${{ vars.AGENT_URL || 'https://cutty-agent.emily-cogsdill.workers.dev' }}
       
       - name: Install dependencies - Cloudflare Worker
         working-directory: cloudflare/workers

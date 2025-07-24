@@ -12,6 +12,13 @@ export interface CloudflareEnv {
   AI_WORKER_URL: string;
   AI_WORKER_API_KEY: string;
   
+  // Anthropic API Key for AI Agent (Cutty uses Claude)
+  ANTHROPIC_API_KEY: string;
+  
+  // Agent Integration
+  AGENT_ENABLED?: string;
+  AGENT_URL?: string;
+  
   // Security environment variables
   SECURITY_PERFORMANCE_THRESHOLD?: string;
   SECURITY_ALERT_WEBHOOK?: string;
@@ -57,6 +64,9 @@ export interface CloudflareEnv {
   
   // Optional bindings
   RATE_LIMITER?: DurableObjectNamespace;
+  
+  // AI Agent Durable Object
+  CUTTY_AGENT: DurableObjectNamespace;
 }
 
 // Alias for backwards compatibility and cleaner imports

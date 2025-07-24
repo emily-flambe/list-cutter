@@ -140,6 +140,18 @@ rm -rf node_modules package-lock.json && npm ci
 npx wrangler versions upload --dry-run
 ```
 
+### 🚨 Frontend Changes Not Deploying 🚨
+**CRITICAL**: `make deploy-dev` does NOT automatically build the frontend!
+- Frontend changes require rebuilding before deployment
+- Always run `make build-frontend` before `make deploy-dev`
+- Or use `make build` to build both frontend and backend
+
+```bash
+# Correct deployment workflow for frontend changes:
+make build-frontend  # Build React app first
+make deploy-dev      # Then deploy worker + assets
+```
+
 ### OAuth Problems
 - Verify all OAuth secrets are set
 - Check redirect URI matches Google Console

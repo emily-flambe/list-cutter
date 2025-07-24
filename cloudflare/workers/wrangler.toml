@@ -57,6 +57,8 @@ SECURITY_PERFORMANCE_THRESHOLD = "100"
 SECURITY_METRICS_RETENTION_DAYS = "30"
 SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
 AI_WORKER_URL = "https://ai.emilycogsdill.com"
+AGENT_ENABLED = "true"
+AGENT_URL = "https://cutty-agent.emilycogsdill.com"
 # ✅ SECRETS CONFIGURED: All required secrets are set via Cloudflare Dashboard
 # ✅ JWT_SECRET - Authentication tokens (CONFIGURED)
 # ✅ API_KEY_SALT - API key generation (CONFIGURED)  
@@ -142,6 +144,13 @@ preview_id = "c490355daf9b4b84b484303d08c42eb2"
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"
 dataset = "cutty-metrics"
+
+# Durable Objects for AI Agent
+# [[durable_objects]]
+# binding = "CUTTY_AGENT"
+# class_name = "CuttyAgent"
+# script_name = "cutty-dev"
+# Commented out - using external agent via WebSocket proxy
 
 # Cron triggers configured using wrangler CLI after deployment
 # Due to API parsing issues with complex cron configs in wrangler.toml,
