@@ -8,6 +8,8 @@ export const useAgentChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 5;
   
   // Generate unique session ID per tab
   const [sessionId] = useState(() => {
@@ -22,9 +24,10 @@ export const useAgentChat = () => {
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
+    // Always use proxy through worker for WebSocket connections
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin;
-    const wsUrl = `${protocol}//${new URL(baseUrl).host}/api/v1/agent/chat/${sessionId}`;
+    const host = window.location.host;
+    const wsUrl = `${protocol}//${host}/api/v1/agent/chat/${sessionId}`;
 
     console.log('Connecting to agent:', wsUrl);
     const ws = new WebSocket(wsUrl);
@@ -32,6 +35,7 @@ export const useAgentChat = () => {
     ws.onopen = () => {
       console.log('Connected to Cutty Agent');
       setIsConnected(true);
+      reconnectAttemptsRef.current = 0; // Reset attempts on successful connection
       loadMessageHistory();
     };
 
@@ -52,12 +56,16 @@ export const useAgentChat = () => {
       setIsConnected(false);
       wsRef.current = null;
       
-      // Auto-reconnect after 3 seconds
-      if (!reconnectTimeoutRef.current) {
+      // Auto-reconnect after 3 seconds with max attempts
+      if (!reconnectTimeoutRef.current && reconnectAttemptsRef.current < maxReconnectAttempts) {
+        reconnectAttemptsRef.current++;
+        console.log(`Reconnecting... Attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts}`);
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnectTimeoutRef.current = null;
           connect();
         }, 3000);
+      } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+        console.error('Max reconnection attempts reached. Please refresh the page to try again.');
       }
     };
 
@@ -66,10 +74,13 @@ export const useAgentChat = () => {
 
   const loadMessageHistory = async () => {
     try {
-      const response = await fetch(`/api/v1/agent/chat/${sessionId}/messages`);
+      // Always use proxy through worker for API calls
+      const url = `/api/v1/agent/chat/${sessionId}/messages`;
+      
+      const response = await fetch(url);
       if (response.ok) {
-        const history = await response.json();
-        setMessages(history);
+        const data = await response.json();
+        setMessages(data.messages || data || []);
       }
     } catch (error) {
       console.error('Failed to load history:', error);

@@ -26,6 +26,8 @@ agent.get('/chat/:sessionId', async (c) => {
   const url = new URL(`/agents/chat/default?sessionId=${sessionId}`, agentUrl);
   console.log(`[WebSocket Proxy] Forwarding to: ${url.toString()}`);
   
+  // Note: WebSocket proxying in local dev has limitations
+  // This works better when deployed to Cloudflare Workers
   return fetch(url, c.req.raw);
 });
 

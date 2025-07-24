@@ -57,6 +57,8 @@ SECURITY_PERFORMANCE_THRESHOLD = "100"
 SECURITY_METRICS_RETENTION_DAYS = "30"
 SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
 AI_WORKER_URL = "https://ai.emilycogsdill.com"
+AGENT_ENABLED = "true"
+AGENT_URL = "https://cutty-agent.emilycogsdill.com"
 # ✅ SECRETS CONFIGURED: All required secrets are set via Cloudflare Dashboard
 # ✅ JWT_SECRET - Authentication tokens (CONFIGURED)
 # ✅ API_KEY_SALT - API key generation (CONFIGURED)  
