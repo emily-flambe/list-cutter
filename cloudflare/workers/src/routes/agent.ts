@@ -22,30 +22,18 @@ agent.get('/chat/:sessionId', async (c) => {
     return c.json({ error: 'Expected WebSocket connection' }, 400);
   }
   
+  // Forward the WebSocket connection to agent
+  // The agent expects /agents/chat/default and will replace "default" with session ID
+  const url = new URL(`/agents/chat/default?sessionId=${sessionId}`, agentUrl);
+  console.log(`[WebSocket Proxy] Forwarding to: ${url.toString()}`);
+  
   try {
-    // Forward the WebSocket connection to agent
-    const url = new URL(`/agents/chat/${sessionId}`, agentUrl);
-    
-    // Create new headers, preserving important ones
-    const headers = new Headers(c.req.raw.headers);
-    
-    // Make the request to the agent
-    const response = await fetch(url, {
-      method: c.req.method,
-      headers: headers,
-      // @ts-ignore - WebSocket upgrade needs special handling in Workers
-      webSocket: true,
-    });
-    
-    if (response.status !== 101) {
-      console.error('WebSocket upgrade failed:', response.status, await response.text());
-      return c.text('WebSocket upgrade failed', 502);
-    }
-    
+    const response = await fetch(url, c.req.raw);
+    console.log(`[WebSocket Proxy] Response status: ${response.status}`);
     return response;
   } catch (error) {
-    console.error('WebSocket proxy error:', error);
-    return c.text('WebSocket proxy error', 502);
+    console.error('[WebSocket Proxy] Error:', error);
+    return c.text('WebSocket proxy failed', 502);
   }
 });
 
@@ -55,7 +43,7 @@ agent.get('/chat/:sessionId/messages', async (c) => {
   const agentUrl = c.env.AGENT_URL || 'https://cutty-agent.emilycogsdill.com';
   
   try {
-    const response = await fetch(`${agentUrl}/agents/chat/${sessionId}/get-messages`);
+    const response = await fetch(`${agentUrl}/agents/chat/default/get-messages?sessionId=${sessionId}`);
     if (!response.ok) {
       console.error('Failed to get messages:', response.status);
       return c.json({ messages: [] });
