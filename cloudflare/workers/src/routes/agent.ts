@@ -23,18 +23,10 @@ agent.get('/chat/:sessionId', async (c) => {
   }
   
   // Forward the WebSocket connection to agent
-  // The agent expects /agents/chat/default and will replace "default" with session ID
   const url = new URL(`/agents/chat/default?sessionId=${sessionId}`, agentUrl);
   console.log(`[WebSocket Proxy] Forwarding to: ${url.toString()}`);
   
-  try {
-    const response = await fetch(url, c.req.raw);
-    console.log(`[WebSocket Proxy] Response status: ${response.status}`);
-    return response;
-  } catch (error) {
-    console.error('[WebSocket Proxy] Error:', error);
-    return c.text('WebSocket proxy failed', 502);
-  }
+  return fetch(url, c.req.raw);
 });
 
 // Get message history endpoint
