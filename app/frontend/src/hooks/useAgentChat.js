@@ -131,27 +131,30 @@ export const useAgentChat = () => {
       try {
         const text = JSON.parse(body.slice(2).trim());
         currentResponseRef.current += text;
+        console.log('🔤 Text delta received:', text, '| Total length:', currentResponseRef.current.length);
         
-        // Update or create the assistant message
-        setMessages(prev => {
-          const lastMessage = prev[prev.length - 1];
-          if (lastMessage && lastMessage.role === 'assistant' && lastMessage.id === currentMessageIdRef.current) {
-            // Update existing message
-            return prev.slice(0, -1).concat({
-              ...lastMessage,
-              content: currentResponseRef.current
-            });
-          } else {
-            // Create new message
-            currentMessageIdRef.current = `msg-${Date.now()}`;
-            return [...prev, {
-              id: currentMessageIdRef.current,
-              role: 'assistant',
-              content: currentResponseRef.current,
-              timestamp: new Date().toISOString()
-            }];
-          }
-        });
+        // Only update or create message if we have content
+        if (currentResponseRef.current.trim().length > 0) {
+          setMessages(prev => {
+            const lastMessage = prev[prev.length - 1];
+            if (lastMessage && lastMessage.role === 'assistant' && lastMessage.id === currentMessageIdRef.current) {
+              // Update existing message
+              return prev.slice(0, -1).concat({
+                ...lastMessage,
+                content: currentResponseRef.current
+              });
+            } else {
+              // Create new message only if we have content
+              currentMessageIdRef.current = `msg-${Date.now()}`;
+              return [...prev, {
+                id: currentMessageIdRef.current,
+                role: 'assistant',
+                content: currentResponseRef.current,
+                timestamp: new Date().toISOString()
+              }];
+            }
+          });
+        }
       } catch (e) {
         console.error('Failed to parse text delta:', e);
       }
@@ -167,12 +170,27 @@ export const useAgentChat = () => {
       }
     } else if (body.startsWith('e:')) {
       // Completion data - message is complete
+      console.log('✅ Stream complete, cleaning up empty messages');
+      // Remove any empty assistant messages on completion
+      setMessages(prev => {
+        const filtered = prev.filter(msg => 
+          msg.role !== 'assistant' || (msg.content && msg.content.trim().length > 0)
+        );
+        if (filtered.length < prev.length) {
+          console.log('🧹 Removed', prev.length - filtered.length, 'empty message(s)');
+        }
+        return filtered;
+      });
       currentResponseRef.current = '';
       currentMessageIdRef.current = null;
       setIsLoading(false);
     }
     
     if (isDone) {
+      // Clean up empty messages when done
+      setMessages(prev => prev.filter(msg => 
+        msg.role !== 'assistant' || (msg.content && msg.content.trim().length > 0)
+      ));
       currentResponseRef.current = '';
       currentMessageIdRef.current = null;
       setIsLoading(false);
@@ -210,6 +228,19 @@ export const useAgentChat = () => {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
+    // Filter out empty messages before sending to avoid API errors
+    const validMessages = messages.filter(msg => 
+      msg.content && msg.content.trim().length > 0
+    );
+    
+    // Add debugging to track message history
+    console.log('📊 Message history before filtering:', messages.map(m => ({
+      role: m.role,
+      content: m.content,
+      contentLength: m.content?.length || 0
+    })));
+    console.log('✅ Valid messages after filtering:', validMessages.length);
+
     // Create message in Cloudflare Agents SDK format
     const agentMessage = {
       type: "cf_agent_use_chat_request",
@@ -217,7 +248,7 @@ export const useAgentChat = () => {
       init: {
         method: "POST",
         body: JSON.stringify({
-          messages: messages.concat({
+          messages: validMessages.concat({
             id: messageId,
             role: "user",
             content: content,
