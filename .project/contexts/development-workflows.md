@@ -1,5 +1,30 @@
 # Development Workflows & Commands
 
+## 🚨 CRITICAL: Frontend Deployment Workflow 🚨
+
+### The Frontend Build Trap
+**PROBLEM**: `make deploy-dev` does NOT automatically build the frontend!
+- This is a common source of confusion when frontend changes don't appear after deployment
+- The deploy command only deploys what's already built in `app/frontend/dist/`
+- If you don't rebuild the frontend first, your changes won't be deployed
+
+### Correct Frontend Deployment Process
+```bash
+# ALWAYS do this for frontend changes:
+make build-frontend  # Step 1: Build the React app
+make deploy-dev      # Step 2: Deploy worker + built assets
+
+# Alternative: Build everything then deploy
+make build          # Builds both frontend and backend in parallel
+make deploy-dev     # Deploy everything
+```
+
+### Quick Verification
+After deployment, check the browser console for your changes:
+- Look for updated console.log messages
+- Check the network tab for new asset hashes (e.g., `ChatBotWebSocket.BRcb6Ovf.js`)
+- Hard refresh (Cmd+Shift+R) if needed
+
 ## Essential Development Commands
 
 ### **Daily Development Startup**

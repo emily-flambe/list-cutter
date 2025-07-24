@@ -24,12 +24,15 @@ export const useAgentChat = () => {
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    // Always use proxy through worker for WebSocket connections
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/api/v1/agent/chat/${sessionId}`;
+    // Connect directly to the agent service
+    // Cloudflare Workers cannot proxy WebSocket connections
+    const agentUrl = import.meta.env.VITE_AGENT_URL || 'https://cutty-agent.emilycogsdill.com';
+    const wsProtocol = agentUrl.startsWith('https') ? 'wss' : 'ws';
+    const agentHost = agentUrl.replace(/^https?:\/\//, '');
+    const wsUrl = `${wsProtocol}://${agentHost}/agents/chat/default?sessionId=${sessionId}`;
 
     console.log('Connecting to agent:', wsUrl);
+    console.log('✅ CUTTY-AGENT FIX APPLIED: Direct WebSocket connection to agent service');
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {

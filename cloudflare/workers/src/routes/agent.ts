@@ -11,7 +11,8 @@ agent.use('*', async (c, next) => {
   await next();
 });
 
-// Proxy WebSocket connections to the agent service
+// WebSocket endpoint - Cloudflare Workers cannot proxy WebSocket connections
+// The client must connect directly to the agent service
 agent.get('/chat/:sessionId', async (c) => {
   const { sessionId } = c.req.param();
   const agentUrl = c.env.AGENT_URL || 'https://cutty-agent.emilycogsdill.com';
@@ -22,13 +23,13 @@ agent.get('/chat/:sessionId', async (c) => {
     return c.json({ error: 'Expected WebSocket connection' }, 400);
   }
   
-  // Forward the WebSocket connection to agent
-  const url = new URL(`/agents/chat/default?sessionId=${sessionId}`, agentUrl);
-  console.log(`[WebSocket Proxy] Forwarding to: ${url.toString()}`);
-  
-  // Note: WebSocket proxying in local dev has limitations
-  // This works better when deployed to Cloudflare Workers
-  return fetch(url, c.req.raw);
+  // Return error explaining WebSocket proxy limitation
+  return c.json({ 
+    error: 'WebSocket proxy not supported',
+    message: 'Cloudflare Workers cannot proxy WebSocket connections. The client must connect directly to the agent service.',
+    agentUrl: agentUrl,
+    suggestedUrl: `${agentUrl}/agents/chat/default?sessionId=${sessionId}`
+  }, 501);
 });
 
 // Get message history endpoint
