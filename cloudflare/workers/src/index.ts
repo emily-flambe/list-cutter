@@ -65,7 +65,9 @@ app.use('*', cors({
     const allowedOrigins = [
       'https://cutty.emilycogsdill.com', 
       'https://835ef64d-cutty.emily-cogsdill.workers.dev', 
-      'https://cutty.emily-cogsdill.workers.dev'
+      'https://cutty.emily-cogsdill.workers.dev',
+      'https://cutty-agent.emilycogsdill.com',
+      'https://cutty-agent.emily-cogsdill.workers.dev'
     ];
     return allowedOrigins.includes(origin || '') ? origin : false;
   },
