@@ -241,7 +241,6 @@ const ChatBotWebSocket = () => {
                     <Typography variant="caption" color="text.secondary" paragraph sx={{ mb: 1 }}>
                       Ask me to help you generate synthetic data! It's all I can do right now. I'm a growing boy! (cuttlefish)
                     </Typography>
-                    </Box>
                   </Box>
                 </Box>
               </Paper>
