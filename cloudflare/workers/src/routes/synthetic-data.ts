@@ -256,16 +256,23 @@ syntheticData.get('/download/:fileId', async (c) => {
           console.log('[SYNTHETIC DATA DOWNLOAD] Found file key in KV store:', fileKey);
         } else {
           // Workaround for file ID corruption issue
-          // Try with last digit ± 1
+          // Try with last character ± 1 (handles hex digits)
           const baseId = fileId.substring(0, fileId.length - 1);
-          const lastDigit = parseInt(fileId[fileId.length - 1]);
+          const lastChar = fileId[fileId.length - 1];
+          const lastCharCode = lastChar.charCodeAt(0);
           
           console.log('[SYNTHETIC DATA DOWNLOAD] Exact ID not found, trying fuzzy match...');
+          console.log('[SYNTHETIC DATA DOWNLOAD] Last character:', lastChar, 'code:', lastCharCode);
           
           for (let offset = -1; offset <= 1; offset++) {
             if (offset === 0) continue; // Skip the original ID we already tried
             
-            const tryId = baseId + ((lastDigit + offset + 10) % 10); // Handle wrap-around
+            // Handle both numeric and hex characters
+            const newCharCode = lastCharCode + offset;
+            const newChar = String.fromCharCode(newCharCode);
+            const tryId = baseId + newChar;
+            
+            console.log('[SYNTHETIC DATA DOWNLOAD] Trying fuzzy match with:', tryId);
             const tryKey = await c.env.TEMP_FILE_KEYS.get(`synthetic-file:${tryId}`);
             
             if (tryKey) {
@@ -280,6 +287,8 @@ syntheticData.get('/download/:fileId', async (c) => {
             // Debug: List all keys to understand the issue
             const kvList = await c.env.TEMP_FILE_KEYS.list({ prefix: 'synthetic-file:' });
             console.log('[SYNTHETIC DATA DOWNLOAD] No fuzzy match found. All KV keys:', kvList.keys.map(k => k.name));
+          } else {
+            console.log('[SYNTHETIC DATA DOWNLOAD] Fuzzy match successful, fileKey:', fileKey);
           }
         }
       } catch (kvError) {
@@ -289,6 +298,7 @@ syntheticData.get('/download/:fileId', async (c) => {
     
     // If we have the exact key from KV, try to fetch directly
     if (fileKey) {
+      console.log('[SYNTHETIC DATA DOWNLOAD] Attempting direct fetch with fileKey:', fileKey);
       try {
         const object = await c.env.FILE_STORAGE.get(fileKey);
         if (object) {
@@ -303,10 +313,14 @@ syntheticData.get('/download/:fileId', async (c) => {
               'Cache-Control': 'no-cache'
             }
           });
+        } else {
+          console.warn('[SYNTHETIC DATA DOWNLOAD] R2 object not found for fileKey:', fileKey);
         }
       } catch (directError) {
         console.warn('[SYNTHETIC DATA DOWNLOAD] Direct fetch with KV key failed:', directError);
       }
+    } else {
+      console.log('[SYNTHETIC DATA DOWNLOAD] No fileKey from KV, falling back to R2 listing');
     }
     
     // Fallback to listing approach
@@ -345,14 +359,17 @@ syntheticData.get('/download/:fileId', async (c) => {
     if (!listResult.objects || listResult.objects.length === 0) {
       console.log('[SYNTHETIC DATA DOWNLOAD] No files found with prefix:', filePrefix);
       
-      // Try fuzzy matching with last digit ± 1
+      // Try fuzzy matching with last character ± 1
       const baseId = fileId.substring(0, fileId.length - 1);
-      const lastDigit = parseInt(fileId[fileId.length - 1]);
+      const lastChar = fileId[fileId.length - 1];
+      const lastCharCode = lastChar.charCodeAt(0);
       
       for (let offset = -1; offset <= 1; offset++) {
         if (offset === 0) continue; // Skip the original ID we already tried
         
-        const tryId = baseId + ((lastDigit + offset + 10) % 10);
+        const newCharCode = lastCharCode + offset;
+        const newChar = String.fromCharCode(newCharCode);
+        const tryId = baseId + newChar;
         const tryPrefix = `synthetic-data/anonymous/${tryId}/`;
         
         const fuzzyResult = await c.env.FILE_STORAGE.list({
@@ -361,7 +378,7 @@ syntheticData.get('/download/:fileId', async (c) => {
         });
         
         if (fuzzyResult.objects && fuzzyResult.objects.length > 0) {
-          console.warn(`[SYNTHETIC DATA DOWNLOAD] Fuzzy match found with offset ${offset}: ${tryId} (original: ${fileId})`);
+          console.warn(`[SYNTHETIC DATA DOWNLOAD] R2 fuzzy match found with offset ${offset}: ${tryId} (original: ${fileId})`);
           listResult = fuzzyResult;
           fileId = tryId; // Update fileId for consistency
           filePrefix = tryPrefix;
