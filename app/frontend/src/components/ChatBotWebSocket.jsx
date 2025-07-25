@@ -109,17 +109,32 @@ const ChatBotWebSocket = () => {
         <DialogContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
           <Box sx={{ flex: 1, overflowY: 'auto', mb: 2 }}>
             {messages.length === 0 && (
-              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="h6" gutterBottom>
-                  Welcome to Cutty Chat! 🦑
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  I can help you understand the Cutty app and answer questions about:
-                </Typography>
-                <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
-                  <Chip label="Supported states for data generation" size="small" />
-                  <Chip label="How to use app features" size="small" />
-                  <Chip label="List generation and management" size="small" />
+              <Paper sx={{ p: 3, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                  <Avatar 
+                    src={cuttyAvatar} 
+                    sx={{ width: 48, height: 48, flexShrink: 0 }} 
+                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Hello there, friend! I'm Cutty! 🌊
+                    </Typography>
+                    <Typography variant="body2" color="text.primary" paragraph>
+                      Your brave little cuttlefish helper, ready to cut through any data confusion! I'll never abandon you - that's a promise!
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      I'm here to help you with:
+                    </Typography>
+                    <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-start' }}>
+                      <Chip label="📊 Processing your CSV files with precision" size="small" variant="outlined" />
+                      <Chip label="🗺️ Generating synthetic data for any state" size="small" variant="outlined" />
+                      <Chip label="✂️ Cutting through complex data challenges" size="small" variant="outlined" />
+                      <Chip label="💪 Being your steadfast data companion" size="small" variant="outlined" />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontStyle: 'italic' }}>
+                      Just ask me anything! Remember: no list is too long, no data too tangled!
+                    </Typography>
+                  </Box>
                 </Box>
               </Paper>
             )}
