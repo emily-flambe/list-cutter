@@ -1,4 +1,5 @@
-import { Hono } from 'hono';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { swaggerUI } from '@hono/swagger-ui';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { prettyJSON } from 'hono/pretty-json';
@@ -13,7 +14,7 @@ import './types/hono-context';
 import filesRoutes from './routes/files';
 import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin';
-import syntheticDataRoutes from './routes/synthetic-data';
+import syntheticDataRoutes from './routes/synthetic-data-openapi';
 import agentRoutes from './routes/agent';
 
 // Import security middleware
@@ -23,7 +24,7 @@ type HonoVariables = {
   userId?: string;
 };
 
-const app = new Hono<{ Bindings: CloudflareEnv; Variables: HonoVariables }>();
+const app = new OpenAPIHono<{ Bindings: CloudflareEnv; Variables: HonoVariables }>();
 
 // Content Security Policy - single source of truth
 const CSP_POLICY = `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: https://www.google-analytics.com; connect-src 'self' http://localhost:8788 https://*.emily-cogsdill.workers.dev wss://*.emily-cogsdill.workers.dev https://ai.emilycogsdill.com https://cutty-agent.emilycogsdill.com wss://cutty-agent.emilycogsdill.com https://cloudflareinsights.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://stats.g.doubleclick.net`;
@@ -266,6 +267,18 @@ app.get('*', async (c, next): Promise<Response> => {
     return next();
   }
 });
+
+// OpenAPI documentation
+app.doc('/api/openapi.json', {
+  openapi: '3.0.0',
+  info: {
+    version: '1.0.0',
+    title: 'Cutty API',
+  },
+});
+
+// Swagger UI
+app.get('/api/docs', swaggerUI({ url: '/api/openapi.json' }));
 
 // 404 handler
 app.notFound((c): Response => {
