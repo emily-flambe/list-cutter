@@ -239,12 +239,8 @@ const ChatBotWebSocket = () => {
                       Hi! I'm Cutty, your best friend!
                     </Typography>
                     <Typography variant="caption" color="text.secondary" paragraph sx={{ mb: 1 }}>
-                      I can help you:
+                      Ask me to help you generate synthetic data! It's all I can do right now. I'm a growing boy! (cuttlefish)
                     </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      <Chip label="📊 Process CSV files" size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
-                      <Chip label="🗺️ Generate test data" size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
-                      <Chip label="✂️ Cut data lists" size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
                     </Box>
                   </Box>
                 </Box>
