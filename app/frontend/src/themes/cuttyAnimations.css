@@ -39,6 +39,8 @@
 
 .cutty-logo {
   transition: transform 0.3s ease, filter 0.3s ease;
+  max-width: 100%;
+  height: auto;
 }
 
 .cutty-logo:hover {
