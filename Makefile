@@ -49,6 +49,6 @@ build-deploy-prod:
 	@echo "🎨 Building React frontend for production..."
 	@cd app/frontend && npm run build
 	@echo "🚀 Deploying to production worker..."
-	@cd cloudflare/workers && npm run deploy-prod
+	@cd cloudflare/workers && npm run deploy:production
 	@echo "✅ Production deployment completed!"
 	@echo "🌐 Access at: https://cutty.app"

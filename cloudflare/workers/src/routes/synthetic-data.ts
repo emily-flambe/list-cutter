@@ -98,19 +98,16 @@ syntheticData.post('/generate', async (c) => {
 
     // Generate file metadata
     const fileId = crypto.randomUUID();
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    console.log('[SYNTHETIC DATA GENERATE] Generated file ID:', fileId);
+    const now = new Date();
+    const timestamp = now.getUTCFullYear().toString() +
+      (now.getUTCMonth() + 1).toString().padStart(2, '0') +
+      now.getUTCDate().toString().padStart(2, '0') +
+      now.getUTCHours().toString().padStart(2, '0') +
+      now.getUTCMinutes().toString().padStart(2, '0') +
+      now.getUTCSeconds().toString().padStart(2, '0');
     
-    // Create state prefix based on what was provided
-    let statePrefix = '';
-    if (requestData.states && requestData.states.length > 0) {
-      statePrefix = requestData.states.length === 1 
-        ? `${requestData.states[0]}-`
-        : `${requestData.states.length}states-`;
-    } else if (requestData.state) {
-      statePrefix = `${requestData.state}-`;
-    }
-    
-    const filename = `synthetic-voter-data-${statePrefix}${requestData.count}-records-${timestamp}.csv`;
+    const filename = `${timestamp}_synthetic_data_export.csv`;
     const fileKey = `synthetic-data/${userId}/${fileId}/${filename}`;
     console.log('[SYNTHETIC DATA GENERATE] Storing file with key:', fileKey);
 
@@ -222,6 +219,7 @@ syntheticData.post('/generate', async (c) => {
       }
     };
 
+    console.log('[SYNTHETIC DATA GENERATE] Returning file ID in response:', fileId);
     return c.json(response);
   } catch (error) {
     console.error('Synthetic data generation error:', error);
@@ -256,6 +254,14 @@ syntheticData.get('/download/:fileId', async (c) => {
         fileKey = await c.env.TEMP_FILE_KEYS.get(`synthetic-file:${fileId}`);
         if (fileKey) {
           console.log('[SYNTHETIC DATA DOWNLOAD] Found file key in KV store:', fileKey);
+        } else {
+          // Debug: Check if there's a similar key with different first character
+          const fileIdPattern = fileId.substring(1);
+          console.log('[SYNTHETIC DATA DOWNLOAD] Checking for similar file IDs with pattern:', fileIdPattern);
+          
+          // List all keys to debug (temporary - remove in production)
+          const kvList = await c.env.TEMP_FILE_KEYS.list({ prefix: 'synthetic-file:' });
+          console.log('[SYNTHETIC DATA DOWNLOAD] All KV keys:', kvList.keys.map(k => k.name));
         }
       } catch (kvError) {
         console.warn('[SYNTHETIC DATA DOWNLOAD] KV lookup failed (non-critical):', kvError);

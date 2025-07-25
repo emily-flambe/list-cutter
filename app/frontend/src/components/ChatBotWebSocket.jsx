@@ -228,22 +228,51 @@ const ChatBotWebSocket = () => {
         <DialogContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
           <Box sx={{ flex: 1, overflowY: 'auto', mb: 2 }}>
             {messages.length === 0 && (
-              <Paper sx={{ p: 2, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                  <Avatar 
-                    src={cuttyAvatar} 
-                    sx={{ width: 36, height: 36, flexShrink: 0 }} 
-                  />
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
-                      Hi! I'm Cutty, your best friend!
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" paragraph sx={{ mb: 1 }}>
-                      Ask me to help you generate synthetic data! It's all I can do right now. I'm a growing boy! (cuttlefish)
-                    </Typography>
-                  </Box>
-                </Box>
-              </Paper>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                <Avatar 
+                  src={cuttyAvatar} 
+                  sx={{ width: 32, height: 32, mr: 1 }} 
+                />
+                <Paper sx={{ 
+                  p: 2, 
+                  bgcolor: 'background.paper', 
+                  border: '1px solid', 
+                  borderColor: 'divider',
+                  position: 'relative',
+                  maxWidth: '70%',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '8px',
+                    left: '-8px',
+                    width: 0,
+                    height: 0,
+                    borderStyle: 'solid',
+                    borderWidth: '8px 8px 8px 0',
+                    borderColor: 'transparent',
+                    borderRightColor: 'divider'
+                  },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '8px',
+                    left: '-7px',
+                    width: 0,
+                    height: 0,
+                    borderStyle: 'solid',
+                    borderWidth: '8px 8px 8px 0',
+                    borderColor: 'transparent',
+                    borderRightColor: 'background.paper'
+                  }
+                }}>
+                  <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                    Hi! I'm Cutty, your best friend!
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" paragraph sx={{ mb: 1 }}>
+                    Ask me to help you generate synthetic data! It's all I can do right now. I'm a growing boy! (cuttlefish)
+                  </Typography>
+                </Paper>
+              </Box>
             )}
 
             {messages.map((message) => (
@@ -269,7 +298,34 @@ const ChatBotWebSocket = () => {
                     bgcolor: message.role === 'user' ? 'primary.dark' : 'background.paper',
                     color: message.role === 'user' ? 'primary.contrastText' : 'text.primary',
                     border: message.role === 'assistant' ? '1px solid' : 'none',
-                    borderColor: 'divider'
+                    borderColor: 'divider',
+                    position: 'relative',
+                    ...(message.role === 'assistant' && {
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: '8px',
+                        left: '-8px',
+                        width: 0,
+                        height: 0,
+                        borderStyle: 'solid',
+                        borderWidth: '8px 8px 8px 0',
+                        borderColor: 'transparent',
+                        borderRightColor: 'divider'
+                      },
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        top: '8px',
+                        left: '-7px',
+                        width: 0,
+                        height: 0,
+                        borderStyle: 'solid',
+                        borderWidth: '8px 8px 8px 0',
+                        borderColor: 'transparent',
+                        borderRightColor: 'background.paper'
+                      }
+                    })
                   }}
                 >
                   <Typography 
@@ -297,7 +353,37 @@ const ChatBotWebSocket = () => {
             {isLoading && (
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Avatar src={cuttyAvatar} sx={{ width: 32, height: 32, mr: 1 }} />
-                <Paper sx={{ p: 2, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+                <Paper sx={{ 
+                  p: 2, 
+                  bgcolor: 'background.paper', 
+                  border: '1px solid', 
+                  borderColor: 'divider',
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '8px',
+                    left: '-8px',
+                    width: 0,
+                    height: 0,
+                    borderStyle: 'solid',
+                    borderWidth: '8px 8px 8px 0',
+                    borderColor: 'transparent',
+                    borderRightColor: 'divider'
+                  },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '8px',
+                    left: '-7px',
+                    width: 0,
+                    height: 0,
+                    borderStyle: 'solid',
+                    borderWidth: '8px 8px 8px 0',
+                    borderColor: 'transparent',
+                    borderRightColor: 'background.paper'
+                  }
+                }}>
                   <CircularProgress size={20} />
                 </Paper>
               </Box>
