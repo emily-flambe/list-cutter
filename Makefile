@@ -1,6 +1,6 @@
 # Cutty Development Makefile
 
-.PHONY: help backend frontend deploy-dev build-deploy-dev
+.PHONY: help backend frontend deploy-dev build-deploy-dev build-deploy-prod
 
 # Default target - show help
 .DEFAULT_GOAL := help
@@ -16,6 +16,7 @@ help:
 	@echo "🚀 Deployment:"
 	@echo "  make deploy-dev       - Deploy to cutty-dev environment"
 	@echo "  make build-deploy-dev - Build frontend and deploy to dev"
+	@echo "  make build-deploy-prod - Build frontend and deploy to production"
 
 # Start backend development server
 backend:
@@ -42,3 +43,12 @@ build-deploy-dev:
 	@cd cloudflare/workers && npm run deploy
 	@echo "✅ Build and deployment completed!"
 	@echo "🌐 Access at: https://cutty-dev.emilycogsdill.com"
+
+# Build frontend and deploy to production
+build-deploy-prod:
+	@echo "🎨 Building React frontend for production..."
+	@cd app/frontend && npm run build
+	@echo "🚀 Deploying to production worker..."
+	@cd cloudflare/workers && npm run deploy-prod
+	@echo "✅ Production deployment completed!"
+	@echo "🌐 Access at: https://cutty.app"

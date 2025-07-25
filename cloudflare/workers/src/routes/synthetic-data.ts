@@ -290,11 +290,21 @@ syntheticData.get('/download/:fileId', async (c) => {
     console.log('[SYNTHETIC DATA DOWNLOAD] Fallback: Looking for files with prefix:', filePrefix);
     
     // List objects with the prefix to find the actual file
-    // Use a more aggressive listing approach
-    const listResult = await c.env.FILE_STORAGE.list({ 
+    // Use a more aggressive listing approach with retry
+    let listResult = await c.env.FILE_STORAGE.list({ 
       prefix: filePrefix,
       limit: 10  // Increased limit to catch any variations
     });
+    
+    // If no results, wait and retry (R2 eventual consistency)
+    if ((!listResult.objects || listResult.objects.length === 0) && !fileKey) {
+      console.log('[SYNTHETIC DATA DOWNLOAD] No files found, waiting for R2 consistency...');
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+      listResult = await c.env.FILE_STORAGE.list({ 
+        prefix: filePrefix,
+        limit: 10
+      });
+    }
     
     console.log('[SYNTHETIC DATA DOWNLOAD] List result:', {
       truncated: listResult.truncated,
@@ -353,11 +363,18 @@ syntheticData.get('/download/:fileId', async (c) => {
     const actualKey = listResult.objects[0].key;
     console.log('[SYNTHETIC DATA DOWNLOAD] Found file with key:', actualKey);
     
-    // Retrieve the actual file
-    const object = await c.env.FILE_STORAGE.get(actualKey);
+    // Add retry logic for R2 eventual consistency
+    let object = await c.env.FILE_STORAGE.get(actualKey);
+    let retries = 0;
+    while (!object && retries < 3) {
+      console.log(`[SYNTHETIC DATA DOWNLOAD] Retry ${retries + 1} for key:`, actualKey);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      object = await c.env.FILE_STORAGE.get(actualKey);
+      retries++;
+    }
     
     if (!object) {
-      console.log('[SYNTHETIC DATA DOWNLOAD] Failed to retrieve file data for key:', actualKey);
+      console.log('[SYNTHETIC DATA DOWNLOAD] Failed to retrieve file data for key after retries:', actualKey);
       return c.json({ error: 'File data not found' }, 404);
     }
     

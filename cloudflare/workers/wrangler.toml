@@ -140,6 +140,14 @@ binding = "AUTH_KV"
 id = "c490355daf9b4b84b484303d08c42eb2"
 preview_id = "c490355daf9b4b84b484303d08c42eb2"
 
+# TEMP_FILE_KEYS namespace for handling R2 eventual consistency
+# TODO: Create this KV namespace using: wrangler kv namespace create "TEMP_FILE_KEYS"
+# Then update the id and preview_id below with the actual namespace ID
+# [[kv_namespaces]]
+# binding = "TEMP_FILE_KEYS"
+# id = "temp-file-keys-placeholder"
+# preview_id = "temp-file-keys-placeholder"
+
 # Analytics Engine binding - Required for monitoring
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"

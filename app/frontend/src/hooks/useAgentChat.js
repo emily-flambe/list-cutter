@@ -29,7 +29,8 @@ export const useAgentChat = () => {
     const agentUrl = import.meta.env.VITE_AGENT_URL || 'https://cutty-agent.emilycogsdill.com';
     const wsProtocol = agentUrl.startsWith('https') ? 'wss' : 'ws';
     const agentHost = agentUrl.replace(/^https?:\/\//, '');
-    const wsUrl = `${wsProtocol}://${agentHost}/agents/chat/default?sessionId=${sessionId}`;
+    const currentHost = window.location.origin;
+    const wsUrl = `${wsProtocol}://${agentHost}/agents/chat/default?sessionId=${sessionId}&origin=${encodeURIComponent(currentHost)}`;
 
     const ws = new WebSocket(wsUrl);
     
@@ -267,7 +268,8 @@ export const useAgentChat = () => {
             createdAt: new Date().toISOString(),
             metadata: {
               user: user?.email,
-              page: window.location.pathname
+              page: window.location.pathname,
+              origin: window.location.origin
             }
           })
         })
