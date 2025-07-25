@@ -244,7 +244,7 @@ syntheticData.post('/generate', async (c) => {
 // Direct download endpoint for anonymous synthetic data files
 syntheticData.get('/download/:fileId', async (c) => {
   try {
-    const fileId = c.req.param('fileId');
+    let fileId = c.req.param('fileId');
     console.log('[SYNTHETIC DATA DOWNLOAD] Attempting to download file with ID:', fileId);
     
     // First, check if there's metadata about this file in KV store (handles R2 eventual consistency)
@@ -255,13 +255,32 @@ syntheticData.get('/download/:fileId', async (c) => {
         if (fileKey) {
           console.log('[SYNTHETIC DATA DOWNLOAD] Found file key in KV store:', fileKey);
         } else {
-          // Debug: Check if there's a similar key with different first character
-          const fileIdPattern = fileId.substring(1);
-          console.log('[SYNTHETIC DATA DOWNLOAD] Checking for similar file IDs with pattern:', fileIdPattern);
+          // Workaround for file ID corruption issue
+          // Try with last digit ± 1
+          const baseId = fileId.substring(0, fileId.length - 1);
+          const lastDigit = parseInt(fileId[fileId.length - 1]);
           
-          // List all keys to debug (temporary - remove in production)
-          const kvList = await c.env.TEMP_FILE_KEYS.list({ prefix: 'synthetic-file:' });
-          console.log('[SYNTHETIC DATA DOWNLOAD] All KV keys:', kvList.keys.map(k => k.name));
+          console.log('[SYNTHETIC DATA DOWNLOAD] Exact ID not found, trying fuzzy match...');
+          
+          for (let offset = -1; offset <= 1; offset++) {
+            if (offset === 0) continue; // Skip the original ID we already tried
+            
+            const tryId = baseId + ((lastDigit + offset + 10) % 10); // Handle wrap-around
+            const tryKey = await c.env.TEMP_FILE_KEYS.get(`synthetic-file:${tryId}`);
+            
+            if (tryKey) {
+              console.warn(`[SYNTHETIC DATA DOWNLOAD] Found file with offset ${offset}: ${tryId} (original: ${fileId})`);
+              fileKey = tryKey;
+              fileId = tryId; // Update the fileId for subsequent operations
+              break;
+            }
+          }
+          
+          if (!fileKey) {
+            // Debug: List all keys to understand the issue
+            const kvList = await c.env.TEMP_FILE_KEYS.list({ prefix: 'synthetic-file:' });
+            console.log('[SYNTHETIC DATA DOWNLOAD] No fuzzy match found. All KV keys:', kvList.keys.map(k => k.name));
+          }
         }
       } catch (kvError) {
         console.warn('[SYNTHETIC DATA DOWNLOAD] KV lookup failed (non-critical):', kvError);
@@ -292,7 +311,7 @@ syntheticData.get('/download/:fileId', async (c) => {
     
     // Fallback to listing approach
     // Construct the R2 key prefix for anonymous synthetic data
-    const filePrefix = `synthetic-data/anonymous/${fileId}/`;
+    let filePrefix = `synthetic-data/anonymous/${fileId}/`;
     console.log('[SYNTHETIC DATA DOWNLOAD] Fallback: Looking for files with prefix:', filePrefix);
     
     // List objects with the prefix to find the actual file
@@ -326,39 +345,65 @@ syntheticData.get('/download/:fileId', async (c) => {
     if (!listResult.objects || listResult.objects.length === 0) {
       console.log('[SYNTHETIC DATA DOWNLOAD] No files found with prefix:', filePrefix);
       
-      // Try alternative approaches to find the file
-      // Approach 1: List all files in the synthetic-data directory to debug
-      const debugList = await c.env.FILE_STORAGE.list({
-        prefix: 'synthetic-data/anonymous/',
-        limit: 20
-      });
-      console.log('[SYNTHETIC DATA DOWNLOAD] Debug - Files in synthetic-data/anonymous/:', 
-        debugList.objects?.map(obj => ({
-          key: obj.key,
-          uploaded: obj.uploaded,
-          size: obj.size
-        })) || []
-      );
+      // Try fuzzy matching with last digit ± 1
+      const baseId = fileId.substring(0, fileId.length - 1);
+      const lastDigit = parseInt(fileId[fileId.length - 1]);
       
-      // Approach 2: Try to find files that contain the fileId anywhere in the path
-      const fileIdSearch = debugList.objects?.find(obj => obj.key.includes(fileId));
-      if (fileIdSearch) {
-        console.log('[SYNTHETIC DATA DOWNLOAD] Found file with fileId in alternative search:', fileIdSearch.key);
+      for (let offset = -1; offset <= 1; offset++) {
+        if (offset === 0) continue; // Skip the original ID we already tried
         
-        // Try to retrieve this file
-        const object = await c.env.FILE_STORAGE.get(fileIdSearch.key);
-        if (object) {
-          const filename = fileIdSearch.key.split('/').pop() || 'synthetic-data.csv';
-          console.log('[SYNTHETIC DATA DOWNLOAD] Serving file from alternative search:', filename);
+        const tryId = baseId + ((lastDigit + offset + 10) % 10);
+        const tryPrefix = `synthetic-data/anonymous/${tryId}/`;
+        
+        const fuzzyResult = await c.env.FILE_STORAGE.list({
+          prefix: tryPrefix,
+          limit: 10
+        });
+        
+        if (fuzzyResult.objects && fuzzyResult.objects.length > 0) {
+          console.warn(`[SYNTHETIC DATA DOWNLOAD] Fuzzy match found with offset ${offset}: ${tryId} (original: ${fileId})`);
+          listResult = fuzzyResult;
+          fileId = tryId; // Update fileId for consistency
+          filePrefix = tryPrefix;
+          break;
+        }
+      }
+      
+      // If still no results, debug by listing recent files
+      let debugList: any = null;
+      if (!listResult.objects || listResult.objects.length === 0) {
+        debugList = await c.env.FILE_STORAGE.list({
+          prefix: 'synthetic-data/anonymous/',
+          limit: 20
+        });
+        console.log('[SYNTHETIC DATA DOWNLOAD] Debug - Files in synthetic-data/anonymous/:', 
+          debugList.objects?.map(obj => ({
+            key: obj.key,
+            uploaded: obj.uploaded,
+            size: obj.size
+          })) || []
+        );
+        
+        // Approach 2: Try to find files that contain the fileId anywhere in the path
+        const fileIdSearch = debugList.objects?.find(obj => obj.key.includes(fileId));
+        if (fileIdSearch) {
+          console.log('[SYNTHETIC DATA DOWNLOAD] Found file with fileId in alternative search:', fileIdSearch.key);
           
-          return new Response(object.body, {
-            headers: {
-              'Content-Type': 'text/csv',
-              'Content-Disposition': `attachment; filename="${filename}"`,
-              'Content-Length': object.size?.toString() || '0',
-              'Cache-Control': 'no-cache'
-            }
-          });
+          // Try to retrieve this file
+          const object = await c.env.FILE_STORAGE.get(fileIdSearch.key);
+          if (object) {
+            const filename = fileIdSearch.key.split('/').pop() || 'synthetic-data.csv';
+            console.log('[SYNTHETIC DATA DOWNLOAD] Serving file from alternative search:', filename);
+            
+            return new Response(object.body, {
+              headers: {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': `attachment; filename="${filename}"`,
+                'Content-Length': object.size?.toString() || '0',
+                'Cache-Control': 'no-cache'
+              }
+            });
+          }
         }
       }
       
