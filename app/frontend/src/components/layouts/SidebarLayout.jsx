@@ -44,6 +44,7 @@ import api from '../../api';
 
 const drawerWidth = 280;
 
+// Fixed sidebar cutoff issue - v2
 const SidebarLayout = ({ children }) => {
   const location = useLocation();
   const theme = useTheme();
@@ -135,12 +136,23 @@ const SidebarLayout = ({ children }) => {
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Sidebar Header with Cutty's Dialogue */}
       <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          mb: 2,
+          overflow: 'hidden',
+          minHeight: '80px'
+        }}>
           <img 
             src={cuttlefishLogo} 
             alt="Cutty Logo" 
             className={location.pathname === '/logout' ? "cutty-logo cutty-angry" : "cutty-logo"}
-            style={{ height: '80px', marginRight: '12px' }} 
+            style={{ 
+              height: '80px', 
+              marginRight: '12px',
+              flexShrink: 0,
+              objectFit: 'contain'
+            }} 
           />
           <Typography 
             variant="h4" 
@@ -148,9 +160,13 @@ const SidebarLayout = ({ children }) => {
             sx={{ 
               color: 'var(--primary-text)',
               fontFamily: '"SenorSaturno", monospace',
-              fontSize: '42px',
+              fontSize: { xs: '32px', sm: '38px', md: '42px' },
               letterSpacing: '1px',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              minWidth: 0
             }}
           >
             Cutty
@@ -393,7 +409,7 @@ const SidebarLayout = ({ children }) => {
           sx={{
             width: '100%',
             bgcolor: 'var(--navbar-bg)',
-            zIndex: theme.zIndex.drawer + 1,
+            zIndex: theme.zIndex.drawer - 1,
           }}
         >
           <Toolbar>

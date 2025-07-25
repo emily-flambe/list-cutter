@@ -23,7 +23,6 @@ syntheticData.use('*', async (c, next) => {
       c.set('userId', payload.user_id);
     } catch (error) {
       // Authentication failed, but we'll continue without setting userId
-      console.log('Optional authentication failed:', error);
     }
   }
   
@@ -53,6 +52,7 @@ syntheticData.get('/supported-states', async (c) => {
 syntheticData.post('/generate', async (c) => {
   try {
     const userId = c.get('userId') || 'anonymous';
+    console.log('[SYNTHETIC DATA GENERATE] User ID:', userId);
     const requestData: SyntheticDataRequest = await c.req.json();
 
     // Input validation
@@ -112,24 +112,54 @@ syntheticData.post('/generate', async (c) => {
     
     const filename = `synthetic-voter-data-${statePrefix}${requestData.count}-records-${timestamp}.csv`;
     const fileKey = `synthetic-data/${userId}/${fileId}/${filename}`;
+    console.log('[SYNTHETIC DATA GENERATE] Storing file with key:', fileKey);
 
     // Upload to R2
-    await c.env.FILE_STORAGE.put(fileKey, csvBuffer, {
-      httpMetadata: {
-        contentType: 'text/csv',
-        contentDisposition: `attachment; filename="${filename}"`
-      },
-      customMetadata: {
-        userId,
-        originalName: filename,
-        size: csvBuffer.length.toString(),
-        uploadedAt: new Date().toISOString(),
-        type: 'synthetic-data',
-        recordCount: requestData.count.toString(),
-        state: requestData.state || '',
-        states: requestData.states ? requestData.states.join(',') : ''
+    try {
+      await c.env.FILE_STORAGE.put(fileKey, csvBuffer, {
+        httpMetadata: {
+          contentType: 'text/csv',
+          contentDisposition: `attachment; filename="${filename}"`
+        },
+        customMetadata: {
+          userId,
+          originalName: filename,
+          size: csvBuffer.length.toString(),
+          uploadedAt: new Date().toISOString(),
+          type: 'synthetic-data',
+          recordCount: requestData.count.toString(),
+          state: requestData.state || '',
+          states: requestData.states ? requestData.states.join(',') : ''
+        }
+      });
+      console.log('[SYNTHETIC DATA GENERATE] File successfully uploaded to R2 with key:', fileKey);
+      
+      // Verify the file was uploaded
+      const verifyUpload = await c.env.FILE_STORAGE.head(fileKey);
+      console.log('[SYNTHETIC DATA GENERATE] Upload verification:', {
+        exists: !!verifyUpload,
+        size: verifyUpload?.size,
+        uploadedAt: verifyUpload?.uploaded
+      });
+      
+      // Store the file key temporarily in KV to handle R2 eventual consistency
+      // This ensures immediate download availability
+      if (userId === 'anonymous' && c.env.TEMP_FILE_KEYS) {
+        try {
+          await c.env.TEMP_FILE_KEYS.put(
+            `synthetic-file:${fileId}`,
+            fileKey,
+            { expirationTtl: 3600 } // Expire after 1 hour
+          );
+          console.log('[SYNTHETIC DATA GENERATE] Stored file key in KV for immediate access');
+        } catch (kvError) {
+          console.warn('[SYNTHETIC DATA GENERATE] Failed to store in KV (non-critical):', kvError);
+        }
       }
-    });
+    } catch (uploadError) {
+      console.error('[SYNTHETIC DATA GENERATE] Failed to upload file to R2:', uploadError);
+      throw new Error('Failed to store generated data');
+    }
 
     // Save file metadata to database only for authenticated users
     if (userId !== 'anonymous') {
@@ -160,6 +190,20 @@ syntheticData.post('/generate', async (c) => {
     const downloadUrl = userId === 'anonymous' 
       ? `/api/v1/synthetic-data/download/${fileId}`
       : `/api/v1/files/${fileId}`;
+    
+    console.log('[SYNTHETIC DATA GENERATE] Generated download URL:', downloadUrl, 'for userId:', userId);
+    
+    // Verify the file exists in R2 before returning
+    try {
+      const verifyKey = await c.env.FILE_STORAGE.head(fileKey);
+      if (!verifyKey) {
+        console.error('[SYNTHETIC DATA GENERATE] WARNING: File not found immediately after upload:', fileKey);
+      } else {
+        console.log('[SYNTHETIC DATA GENERATE] File verified in R2:', fileKey, 'size:', verifyKey.size);
+      }
+    } catch (verifyError) {
+      console.error('[SYNTHETIC DATA GENERATE] Failed to verify file:', verifyError);
+    }
 
     const response: SyntheticDataResponse = {
       success: true,
@@ -203,38 +247,135 @@ syntheticData.post('/generate', async (c) => {
 syntheticData.get('/download/:fileId', async (c) => {
   try {
     const fileId = c.req.param('fileId');
+    console.log('[SYNTHETIC DATA DOWNLOAD] Attempting to download file with ID:', fileId);
     
-    // Construct the R2 key for anonymous synthetic data
-    const fileKey = `synthetic-data/anonymous/${fileId}`;
+    // First, check if there's metadata about this file in KV store (handles R2 eventual consistency)
+    let fileKey: string | null = null;
+    if (c.env.TEMP_FILE_KEYS) {
+      try {
+        fileKey = await c.env.TEMP_FILE_KEYS.get(`synthetic-file:${fileId}`);
+        if (fileKey) {
+          console.log('[SYNTHETIC DATA DOWNLOAD] Found file key in KV store:', fileKey);
+        }
+      } catch (kvError) {
+        console.warn('[SYNTHETIC DATA DOWNLOAD] KV lookup failed (non-critical):', kvError);
+      }
+    }
     
-    // Try to find the actual file in R2 by listing objects with the prefix
-    const objects = await c.env.FILE_STORAGE.list({ prefix: fileKey });
+    // If we have the exact key from KV, try to fetch directly
+    if (fileKey) {
+      try {
+        const object = await c.env.FILE_STORAGE.get(fileKey);
+        if (object) {
+          const filename = fileKey.split('/').pop() || 'synthetic-data.csv';
+          console.log('[SYNTHETIC DATA DOWNLOAD] Serving file directly from KV-stored key:', filename);
+          
+          return new Response(object.body, {
+            headers: {
+              'Content-Type': 'text/csv',
+              'Content-Disposition': `attachment; filename="${filename}"`,
+              'Content-Length': object.size?.toString() || '0',
+              'Cache-Control': 'no-cache'
+            }
+          });
+        }
+      } catch (directError) {
+        console.warn('[SYNTHETIC DATA DOWNLOAD] Direct fetch with KV key failed:', directError);
+      }
+    }
     
-    if (!objects.objects || objects.objects.length === 0) {
+    // Fallback to listing approach
+    // Construct the R2 key prefix for anonymous synthetic data
+    const filePrefix = `synthetic-data/anonymous/${fileId}/`;
+    console.log('[SYNTHETIC DATA DOWNLOAD] Fallback: Looking for files with prefix:', filePrefix);
+    
+    // List objects with the prefix to find the actual file
+    // Use a more aggressive listing approach
+    const listResult = await c.env.FILE_STORAGE.list({ 
+      prefix: filePrefix,
+      limit: 10  // Increased limit to catch any variations
+    });
+    
+    console.log('[SYNTHETIC DATA DOWNLOAD] List result:', {
+      truncated: listResult.truncated,
+      cursor: listResult.cursor,
+      objectCount: listResult.objects?.length || 0,
+      objects: listResult.objects?.map(obj => ({
+        key: obj.key,
+        size: obj.size,
+        uploaded: obj.uploaded
+      })) || []
+    });
+    
+    if (!listResult.objects || listResult.objects.length === 0) {
+      console.log('[SYNTHETIC DATA DOWNLOAD] No files found with prefix:', filePrefix);
+      
+      // Try alternative approaches to find the file
+      // Approach 1: List all files in the synthetic-data directory to debug
+      const debugList = await c.env.FILE_STORAGE.list({
+        prefix: 'synthetic-data/anonymous/',
+        limit: 20
+      });
+      console.log('[SYNTHETIC DATA DOWNLOAD] Debug - Files in synthetic-data/anonymous/:', 
+        debugList.objects?.map(obj => ({
+          key: obj.key,
+          uploaded: obj.uploaded,
+          size: obj.size
+        })) || []
+      );
+      
+      // Approach 2: Try to find files that contain the fileId anywhere in the path
+      const fileIdSearch = debugList.objects?.find(obj => obj.key.includes(fileId));
+      if (fileIdSearch) {
+        console.log('[SYNTHETIC DATA DOWNLOAD] Found file with fileId in alternative search:', fileIdSearch.key);
+        
+        // Try to retrieve this file
+        const object = await c.env.FILE_STORAGE.get(fileIdSearch.key);
+        if (object) {
+          const filename = fileIdSearch.key.split('/').pop() || 'synthetic-data.csv';
+          console.log('[SYNTHETIC DATA DOWNLOAD] Serving file from alternative search:', filename);
+          
+          return new Response(object.body, {
+            headers: {
+              'Content-Type': 'text/csv',
+              'Content-Disposition': `attachment; filename="${filename}"`,
+              'Content-Length': object.size?.toString() || '0',
+              'Cache-Control': 'no-cache'
+            }
+          });
+        }
+      }
+      
       return c.json({ error: 'File not found' }, 404);
     }
     
     // Get the first matching file
-    const actualKey = objects.objects[0].key;
+    const actualKey = listResult.objects[0].key;
+    console.log('[SYNTHETIC DATA DOWNLOAD] Found file with key:', actualKey);
+    
+    // Retrieve the actual file
     const object = await c.env.FILE_STORAGE.get(actualKey);
     
     if (!object) {
+      console.log('[SYNTHETIC DATA DOWNLOAD] Failed to retrieve file data for key:', actualKey);
       return c.json({ error: 'File data not found' }, 404);
     }
     
     // Extract filename from the key
     const filename = actualKey.split('/').pop() || 'synthetic-data.csv';
+    console.log('[SYNTHETIC DATA DOWNLOAD] Serving file:', filename, 'Size:', object.size);
     
     // Return file with appropriate headers
     return new Response(object.body, {
       headers: {
         'Content-Type': 'text/csv',
         'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Length': object.size?.toString() || '0'
+        'Content-Length': object.size?.toString() || '0',
+        'Cache-Control': 'no-cache'
       }
     });
   } catch (error) {
-    console.error('Synthetic data download error:', error);
+    console.error('[SYNTHETIC DATA DOWNLOAD] Error:', error);
     return c.json({ error: 'Download failed' }, 500);
   }
 });

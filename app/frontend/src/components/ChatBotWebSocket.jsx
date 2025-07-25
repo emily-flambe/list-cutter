@@ -21,6 +21,7 @@ import {
 } from '@mui/icons-material';
 import { useAgentChat } from '../hooks/useAgentChat';
 import cuttyAvatar from '../assets/cutty_logo.png';
+import api from '../api';
 
 const ChatBotWebSocket = () => {
   const [open, setOpen] = useState(false);
@@ -36,6 +37,120 @@ const ChatBotWebSocket = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Format timestamp safely
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return new Date().toLocaleTimeString();
+    
+    try {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        return new Date().toLocaleTimeString();
+      }
+      return date.toLocaleTimeString();
+    } catch (error) {
+      return new Date().toLocaleTimeString();
+    }
+  };
+
+  // Handle file downloads with authentication
+  const handleDownload = async (url, filename) => {
+    try {
+      const response = await api.get(url, {
+        responseType: 'blob'
+      });
+      
+      // Create a blob URL and trigger download
+      const blob = new Blob([response.data]);
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Failed to download file. Please try again.');
+    }
+  };
+
+  // Parse markdown links and plain URLs into clickable components
+  const renderMessageContent = (content) => {
+    // Combined regex to match either markdown links [text](url) or plain URLs
+    const combinedRegex = /(\[([^\]]+)\]\(([^)]+)\))|(\/api\/v1\/[^\s]+)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = combinedRegex.exec(content)) !== null) {
+      // Add text before the link
+      if (match.index > lastIndex) {
+        parts.push(content.substring(lastIndex, match.index));
+      }
+
+      if (match[1]) {
+        // Markdown link format [text](url)
+        const linkText = match[2];
+        const linkUrl = match[3];
+        
+        // Check if it's a download link
+        if (linkUrl.includes('/api/v1/synthetic-data/download/')) {
+          parts.push(
+            <a
+              key={match.index}
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                handleDownload(linkUrl, linkText);
+              }}
+              style={{ color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}
+            >
+              {linkText}
+            </a>
+          );
+        } else {
+          parts.push(
+            <a
+              key={match.index}
+              href={linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'inherit', textDecoration: 'underline' }}
+            >
+              {linkText}
+            </a>
+          );
+        }
+      } else {
+        // Plain URL format
+        const url = match[0];
+        parts.push(
+          <a
+            key={match.index}
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              handleDownload(url, 'download');
+            }}
+            style={{ color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}
+          >
+            Download File
+          </a>
+        );
+      }
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add any remaining text
+    if (lastIndex < content.length) {
+      parts.push(content.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? <>{parts}</> : content;
   };
 
   useEffect(() => {
@@ -75,31 +190,35 @@ const ChatBotWebSocket = () => {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        maxWidth="sm"
-        fullWidth
         PaperProps={{
-          sx: { height: '80vh', display: 'flex', flexDirection: 'column' }
+          sx: { 
+            position: 'fixed',
+            bottom: 80,
+            right: 16,
+            m: 0,
+            width: 380,
+            height: 500,
+            display: 'flex', 
+            flexDirection: 'column'
+          }
         }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Avatar src={cuttyAvatar} alt="Cutty" sx={{ width: 40, height: 40 }} />
-          <Box flex={1}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box display="flex" alignItems="center" gap={2}>
             <Typography variant="h6">Chat with Cutty</Typography>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Chip
-                label={isConnected ? 'Connected' : 'Connecting...'}
-                size="small"
-                color={isConnected ? 'success' : 'default'}
-                variant={isConnected ? 'filled' : 'outlined'}
-              />
-              {import.meta.env.DEV && (
-                <Typography variant="caption" color="text.secondary">
-                  Session: {sessionId.slice(-8)}
-                </Typography>
-              )}
-            </Box>
+            <Chip
+              label={isConnected ? 'Connected' : 'Connecting...'}
+              size="small"
+              color={isConnected ? 'success' : 'default'}
+              variant={isConnected ? 'filled' : 'outlined'}
+            />
+            {import.meta.env.DEV && (
+              <Typography variant="caption" color="text.secondary">
+                Session: {sessionId.slice(-8)}
+              </Typography>
+            )}
           </Box>
-          <IconButton onClick={() => setOpen(false)} edge="end">
+          <IconButton onClick={() => setOpen(false)} edge="end" size="small">
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -109,17 +228,20 @@ const ChatBotWebSocket = () => {
         <DialogContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
           <Box sx={{ flex: 1, overflowY: 'auto', mb: 2 }}>
             {messages.length === 0 && (
-              <Paper sx={{ p: 3, textAlign: 'center', bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="h6" gutterBottom>
-                  Welcome to Cutty Chat! 🦑
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
-                  I can help you understand the Cutty app and answer questions about:
-                </Typography>
-                <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
-                  <Chip label="Supported states for data generation" size="small" />
-                  <Chip label="How to use app features" size="small" />
-                  <Chip label="List generation and management" size="small" />
+              <Paper sx={{ p: 2, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                  <Avatar 
+                    src={cuttyAvatar} 
+                    sx={{ width: 36, height: 36, flexShrink: 0 }} 
+                  />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                      Hi! I'm Cutty, your best friend!
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" paragraph sx={{ mb: 1 }}>
+                      Ask me to help you generate synthetic data! It's all I can do right now. I'm a growing boy! (cuttlefish)
+                    </Typography>
+                  </Box>
                 </Box>
               </Paper>
             )}
@@ -150,8 +272,12 @@ const ChatBotWebSocket = () => {
                     borderColor: 'divider'
                   }}
                 >
-                  <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                    {message.content}
+                  <Typography 
+                    variant="body1" 
+                    component="div"
+                    sx={{ whiteSpace: 'pre-wrap' }}
+                  >
+                    {renderMessageContent(message.content)}
                   </Typography>
                   <Typography
                     variant="caption"
@@ -162,7 +288,7 @@ const ChatBotWebSocket = () => {
                       color: message.role === 'user' ? 'inherit' : 'text.secondary'
                     }}
                   >
-                    {new Date(message.timestamp).toLocaleTimeString()}
+                    {formatTimestamp(message.timestamp)}
                   </Typography>
                 </Paper>
               </Box>
