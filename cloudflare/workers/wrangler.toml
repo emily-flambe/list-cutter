@@ -22,7 +22,6 @@ minify = true
 [assets]
 directory = "../../app/frontend/dist"
 binding = "ASSETS"
-bucket = "./assets"
 
 # Enable Wrangler logs (v3.88.0+)
 [observability.logs]
@@ -139,6 +138,13 @@ preview_id = "4c1a53aaab2846a3b11ee39416e6b1dd"
 binding = "AUTH_KV"
 id = "c490355daf9b4b84b484303d08c42eb2"
 preview_id = "c490355daf9b4b84b484303d08c42eb2"
+
+# TEMP_FILE_KEYS namespace for handling R2 eventual consistency
+# This namespace is REQUIRED for synthetic data downloads to work properly
+[[kv_namespaces]]
+binding = "TEMP_FILE_KEYS"
+id = "607ebf3e08bb4d1abe4252aa2b968e38"
+preview_id = "607ebf3e08bb4d1abe4252aa2b968e38"
 
 # Analytics Engine binding - Required for monitoring
 [[analytics_engine_datasets]]

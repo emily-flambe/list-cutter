@@ -56,6 +56,9 @@ export interface CloudflareEnv {
   CUTTY_SECURITY_METRICS: KVNamespace;
   CUTTY_QUOTA_TRACKING: KVNamespace;
   
+  // Temporary file tracking for R2 eventual consistency
+  TEMP_FILE_KEYS?: KVNamespace;
+  
   // Performance Optimization Bindings - Issue #69
   CACHE_KV?: KVNamespace; // Multi-layer caching for performance optimization (optional - not yet created)
   
