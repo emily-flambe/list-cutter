@@ -29,15 +29,12 @@ export const useAgentChat = () => {
     const agentUrl = import.meta.env.VITE_AGENT_URL || 'https://cutty-agent.emilycogsdill.com';
     const wsProtocol = agentUrl.startsWith('https') ? 'wss' : 'ws';
     const agentHost = agentUrl.replace(/^https?:\/\//, '');
-    const wsUrl = `${wsProtocol}://${agentHost}/agents/chat/default?sessionId=${sessionId}`;
+    const currentHost = window.location.origin;
+    const wsUrl = `${wsProtocol}://${agentHost}/agents/chat/default?sessionId=${sessionId}&origin=${encodeURIComponent(currentHost)}`;
 
-    console.log('Connecting to agent:', wsUrl);
-    console.log('✅ CUTTY-AGENT FIX APPLIED: Direct WebSocket connection to agent service');
-    console.log('🔍 Session ID:', sessionId);
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
-      console.log('Connected to Cutty Agent');
       setIsConnected(true);
       reconnectAttemptsRef.current = 0; // Reset attempts on successful connection
       loadMessageHistory();
@@ -80,15 +77,12 @@ export const useAgentChat = () => {
     try {
       // Always use proxy through worker for API calls
       const url = `/api/v1/agent/chat/${sessionId}/messages`;
-      console.log('📋 Loading message history for session:', sessionId);
       
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setMessages(data.messages || data || []);
-        console.log('✅ Message history loaded:', data.messages?.length || 0, 'messages');
       } else {
-        console.error('❌ Failed to load message history:', response.status);
       }
     } catch (error) {
       console.error('Failed to load history:', error);
@@ -102,28 +96,23 @@ export const useAgentChat = () => {
   const messageDebounceMs = 100; // Prevent duplicate messages within 100ms
 
   const handleAgentMessage = (data) => {
-    console.log('📥 Received from agent:', JSON.stringify(data, null, 2));
     
     // Skip completely empty messages
     if (!data || Object.keys(data).length === 0) {
-      console.log('🚫 Skipping completely empty message');
       return;
     }
     
     // Handle Cloudflare Agents SDK response format
     if (data.type === 'cf_agent_use_chat_response' && data.body) {
-      console.log('🌊 Processing streaming response');
       isStreamingRef.current = true;
       parseStreamingResponse(data.body, data.done);
     } 
     // Handle action messages from agent
     else if (data.type === 'action') {
-      console.log('⚡ Processing action message');
       handleAgentAction(data.action, data.data);
     }
     // Skip if we're in streaming mode and this isn't a streaming message
     else if (isStreamingRef.current && !data.type?.includes('chat_response')) {
-      console.log('🚫 Skipping non-streaming message during stream');
       return;
     }
     // Fallback for other message formats - but check if content exists
@@ -135,12 +124,10 @@ export const useAgentChat = () => {
         // Check for duplicate messages sent too quickly
         const now = Date.now();
         if (now - lastMessageTimeRef.current < messageDebounceMs) {
-          console.log('⏭️ Skipping duplicate message (too fast)');
-          return;
+            return;
         }
         lastMessageTimeRef.current = now;
         
-        console.log('📝 Adding non-streaming message:', content);
         const message = {
           id: now,
           role: 'assistant',
@@ -151,10 +138,8 @@ export const useAgentChat = () => {
         setMessages(prev => [...prev, message]);
         setIsLoading(false);
       } else {
-        console.log('⚠️ Skipping empty fallback message');
       }
     } else {
-      console.log('⚠️ Unknown message format, skipping');
     }
   };
 
@@ -165,7 +150,6 @@ export const useAgentChat = () => {
       try {
         const text = JSON.parse(body.slice(2).trim());
         currentResponseRef.current += text;
-        console.log('🔤 Text delta received:', text, '| Total length:', currentResponseRef.current.length);
         
         // Only update or create message if we have content
         if (currentResponseRef.current.trim().length > 0) {
@@ -204,14 +188,12 @@ export const useAgentChat = () => {
       }
     } else if (body.startsWith('e:')) {
       // Completion data - message is complete
-      console.log('✅ Stream complete, cleaning up empty messages');
       // Remove any empty assistant messages on completion
       setMessages(prev => {
         const filtered = prev.filter(msg => 
           msg.role !== 'assistant' || (msg.content && msg.content.trim().length > 0)
         );
         if (filtered.length < prev.length) {
-          console.log('🧹 Removed', prev.length - filtered.length, 'empty message(s)');
         }
         return filtered;
       });
@@ -240,8 +222,6 @@ export const useAgentChat = () => {
     });
     window.dispatchEvent(event);
     
-    // Log for debugging
-    console.log('Agent action:', action, data);
   };
 
   const sendMessage = useCallback((content) => {
@@ -273,12 +253,6 @@ export const useAgentChat = () => {
     );
     
     // Add debugging to track message history
-    console.log('📊 Message history before filtering:', messages.map(m => ({
-      role: m.role,
-      content: m.content,
-      contentLength: m.content?.length || 0
-    })));
-    console.log('✅ Valid messages after filtering:', validMessages.length);
 
     // Create message in Cloudflare Agents SDK format
     const agentMessage = {
@@ -294,14 +268,14 @@ export const useAgentChat = () => {
             createdAt: new Date().toISOString(),
             metadata: {
               user: user?.email,
-              page: window.location.pathname
+              page: window.location.pathname,
+              origin: window.location.origin
             }
           })
         })
       }
     };
 
-    console.log('📤 Sending message to agent:', agentMessage);
     wsRef.current.send(JSON.stringify(agentMessage));
   }, [user, messages]);
 

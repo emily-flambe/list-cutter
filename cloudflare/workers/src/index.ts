@@ -27,7 +27,7 @@ type HonoVariables = {
 const app = new OpenAPIHono<{ Bindings: CloudflareEnv; Variables: HonoVariables }>();
 
 // Content Security Policy - single source of truth
-const CSP_POLICY = `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: https://www.google-analytics.com; connect-src 'self' http://localhost:8788 https://*.emily-cogsdill.workers.dev wss://*.emily-cogsdill.workers.dev https://ai.emilycogsdill.com https://cutty-agent.emilycogsdill.com wss://cutty-agent.emilycogsdill.com https://cloudflareinsights.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://stats.g.doubleclick.net`;
+const CSP_POLICY = `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: https://www.google-analytics.com; connect-src 'self' http://localhost:8788 https://*.emily-cogsdill.workers.dev wss://*.emily-cogsdill.workers.dev https://ai.emilycogsdill.com https://cutty-agent.emilycogsdill.com wss://cutty-agent.emilycogsdill.com https://cutty.emilycogsdill.com https://cutty-dev.emilycogsdill.com https://cloudflareinsights.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://stats.g.doubleclick.net`;
 
 // Basic initialization middleware
 app.use('*', async (c, next): Promise<void> => {
@@ -66,7 +66,9 @@ app.use('*', cors({
     const allowedOrigins = [
       'https://cutty.emilycogsdill.com', 
       'https://835ef64d-cutty.emily-cogsdill.workers.dev', 
-      'https://cutty.emily-cogsdill.workers.dev'
+      'https://cutty.emily-cogsdill.workers.dev',
+      'https://cutty-agent.emilycogsdill.com',
+      'https://cutty-agent.emily-cogsdill.workers.dev'
     ];
     return allowedOrigins.includes(origin || '') ? origin : false;
   },
