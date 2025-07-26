@@ -61,28 +61,42 @@ const ManageFiles = () => {
     }
   }, [error]);
 
-  useEffect(() => {
-    const fetchFiles = async () => {
-      try {
-        const response = await api.get('/api/v1/files', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setFiles(response.data.files || []);
-        setError("");
-      } catch (err) {
-        console.error("Error fetching files:", err);
-        setError("Failed to load your files. Please try again.");
-        setFiles([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchFiles = async () => {
+    try {
+      const response = await api.get('/api/v1/files', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setFiles(response.data.files || []);
+      setError("");
+    } catch (err) {
+      console.error("Error fetching files:", err);
+      setError("Failed to load your files. Please try again.");
+      setFiles([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (token) {
       fetchFiles();
     } else {
       setLoading(false);
     }
+  }, [token]);
+
+  // Listen for file refresh events
+  useEffect(() => {
+    const handleFileRefresh = () => {
+      if (token) {
+        fetchFiles();
+      }
+    };
+
+    window.addEventListener('refresh-files', handleFileRefresh);
+    return () => {
+      window.removeEventListener('refresh-files', handleFileRefresh);
+    };
   }, [token]);
 
   const formatFileSize = (bytes) => {
@@ -212,6 +226,18 @@ const ManageFiles = () => {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+      
+      // Notify that a new file was created
+      const fileCreatedEvent = new CustomEvent('agent-action', {
+        detail: {
+          action: 'FILE_CREATED',
+          data: {
+            filename: selectedFile.name,
+            source: 'upload'
+          }
+        }
+      });
+      window.dispatchEvent(fileCreatedEvent);
       
       // Refresh the file list
       const filesResponse = await api.get('/api/v1/files', {

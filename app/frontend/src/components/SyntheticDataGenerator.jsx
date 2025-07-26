@@ -164,6 +164,18 @@ const SyntheticDataGenerator = () => {
       if (response.data.file && response.data.file.downloadUrl) {
         setDownloadUrl(response.data.file.downloadUrl);
         setSuccessMessage(`Successfully generated ${response.data.metadata.recordCount} synthetic records${response.data.metadata.state ? ` for ${response.data.metadata.state}` : ''}`);
+        
+        // Notify that a new file was created
+        const fileCreatedEvent = new CustomEvent('agent-action', {
+          detail: {
+            action: 'FILE_CREATED',
+            data: {
+              filename: response.data.file.filename || 'synthetic-data.csv',
+              source: 'synthetic-data'
+            }
+          }
+        });
+        window.dispatchEvent(fileCreatedEvent);
       } else {
         setSuccessMessage('Synthetic data generated successfully');
       }

@@ -35,6 +35,10 @@ const AgentActionHandler = () => {
         case 'GENERATE_DATA':
           handleGenerateData(data);
           break;
+
+        case 'FILE_CREATED':
+          handleFileCreated(data);
+          break;
           
         default:
           console.warn('Unknown agent action:', action);
@@ -72,6 +76,21 @@ const AgentActionHandler = () => {
         } 
       });
       showSnackbar('Preparing to generate synthetic data...', 'info');
+    };
+
+    const handleFileCreated = (data) => {
+      // Refresh the file list in ManageFiles component
+      const refreshEvent = new CustomEvent('refresh-files', {
+        detail: data,
+        bubbles: true
+      });
+      window.dispatchEvent(refreshEvent);
+      
+      const { filename } = data;
+      showSnackbar(
+        filename ? `New file created: ${filename}` : 'New file created successfully', 
+        'success'
+      );
     };
 
     // Add event listener
