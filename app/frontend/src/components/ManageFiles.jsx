@@ -379,29 +379,17 @@ const ManageFiles = () => {
       )}
 
       {/* Upload Section */}
-      <Paper sx={{ p: 4, mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" gutterBottom>
           Upload New File
         </Typography>
-        <Box sx={{ 
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-          gap: 2,
-          maxWidth: '500px',
-          mb: selectedFile ? 2 : 0
-        }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
           <Button
-            variant="contained"
+            variant="outlined"
             component="label"
             startIcon={<UploadFileIcon />}
             disabled={uploading}
-            size="large"
-            sx={{ 
-              py: 2,
-              fontSize: '1rem',
-              fontWeight: 600,
-              textTransform: 'none'
-            }}
+            sx={{ minWidth: '140px' }}
           >
             Choose File
             <input
@@ -413,21 +401,20 @@ const ManageFiles = () => {
             />
           </Button>
           
+          {selectedFile && (
+            <Typography variant="body2" sx={{ flex: 1 }}>
+              Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+            </Typography>
+          )}
+          
           <Button
             variant="contained"
-            color="success"
             onClick={handleUpload}
             disabled={!selectedFile || uploading}
             startIcon={uploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
-            size="large"
-            sx={{ 
-              py: 2,
-              fontSize: '1rem',
-              fontWeight: 600,
-              textTransform: 'none'
-            }}
+            sx={{ minWidth: '120px' }}
           >
-            {uploading ? 'Uploading...' : 'Upload File'}
+            {uploading ? 'Uploading...' : 'Upload'}
           </Button>
         </Box>
         
