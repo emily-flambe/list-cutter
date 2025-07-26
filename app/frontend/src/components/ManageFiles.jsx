@@ -291,7 +291,7 @@ const ManageFiles = () => {
               width: '280px',
               height: 'auto',
               flexShrink: 0,
-              transform: 'rotate(180deg)',
+              transform: 'scaleX(-1)',
               filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff0000)',
               '@keyframes redGlow': {
                 '0%': {
