@@ -85,17 +85,16 @@ const ManageFiles = () => {
     }
   }, [token]);
 
-  // Listen for file refresh events
+  // Set up global refresh function for other components to use
   useEffect(() => {
-    const handleFileRefresh = () => {
+    window.refreshFileList = () => {
       if (token) {
         fetchFiles();
       }
     };
 
-    window.addEventListener('refresh-files', handleFileRefresh);
     return () => {
-      window.removeEventListener('refresh-files', handleFileRefresh);
+      delete window.refreshFileList;
     };
   }, [token]);
 
@@ -227,23 +226,8 @@ const ManageFiles = () => {
         fileInputRef.current.value = "";
       }
       
-      // Notify that a new file was created
-      const fileCreatedEvent = new CustomEvent('agent-action', {
-        detail: {
-          action: 'FILE_CREATED',
-          data: {
-            filename: selectedFile.name,
-            source: 'upload'
-          }
-        }
-      });
-      window.dispatchEvent(fileCreatedEvent);
-      
       // Refresh the file list
-      const filesResponse = await api.get('/api/v1/files', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setFiles(filesResponse.data.files || []);
+      fetchFiles();
     } catch (error) {
       console.error("Upload error:", error);
       setError(error.response?.data?.error || "Failed to upload file. Please try again.");
