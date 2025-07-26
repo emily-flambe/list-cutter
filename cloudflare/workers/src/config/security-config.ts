@@ -67,6 +67,7 @@ export interface SecurityPolicy {
     piiDetectionEnabled: boolean;
     dataRetentionDays: number;
     enableAuditLogging: boolean;
+    enableDataLineageTracking: boolean;
   };
   
   // Monitoring & Alerting
@@ -407,6 +408,7 @@ export class SecurityConfigManager {
         piiDetectionEnabled: true,
         dataRetentionDays: 90,
         enableAuditLogging: true,
+        enableDataLineageTracking: true
       },
       
       monitoring: {

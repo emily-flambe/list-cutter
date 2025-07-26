@@ -243,90 +243,111 @@ const ManageFiles = () => {
         alignItems: 'center', 
         justifyContent: 'center',
         minHeight: '80vh',
-        textAlign: 'center',
-        p: 3
+        p: 3,
+        position: 'relative'
       }}>
-        {/* Large Cutty - Flipped and Red Glowing */}
-        <Box
-          component="img"
-          src={cuttyLogo}
-          alt="Angry Cutty"
-          sx={{
-            width: '400px',
-            height: 'auto',
-            transform: 'scaleX(-1)', // Flip horizontally
-            filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff0000)',
-            mb: 4,
-            '@keyframes redGlow': {
-              '0%': {
-                filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff0000)'
+        {/* Top Row: Text on left, Large Cutty on right */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          maxWidth: '900px',
+          mb: 10,
+          gap: 6
+        }}>
+          {/* Red Glowing Text */}
+          <Typography 
+            variant="h2" 
+            sx={{ 
+              color: '#ff0000',
+              fontFamily: 'Creepster, cursive',
+              fontWeight: 'bold',
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+              lineHeight: 1.2,
+              textAlign: 'right',
+              flex: 1,
+              '@keyframes textGlow': {
+                '0%': {
+                  textShadow: '0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000'
+                },
+                '100%': {
+                  textShadow: '0 0 20px #ff0000, 0 0 30px #ff0000, 0 0 40px #ff0000'
+                }
               },
-              '100%': {
-                filter: 'hue-rotate(0deg) saturate(2) brightness(1.5) drop-shadow(0 0 30px #ff0000) drop-shadow(0 0 60px #ff0000)'
-              }
-            },
-            animation: 'redGlow 2s ease-in-out infinite alternate'
-          }}
-        />
-        
-        {/* Red Glowing Text */}
-        <Typography 
-          variant="h2" 
-          sx={{ 
-            color: '#ff0000',
-            fontFamily: 'var(--cutty-threatening-font)',
-            fontWeight: 'bold',
-            fontSize: '3rem',
-            mb: 4,
-            '@keyframes textGlow': {
-              '0%': {
-                textShadow: '0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000'
+              animation: 'textGlow 2s ease-in-out infinite alternate',
+              textShadow: '0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000'
+            }}
+          >
+            YOU ARE NOT LOGGED IN.
+          </Typography>
+          
+          {/* Large Cutty - on the right */}
+          <Box
+            component="img"
+            src={cuttyLogo}
+            alt="Angry Cutty"
+            sx={{
+              width: '280px',
+              height: 'auto',
+              flexShrink: 0,
+              transform: 'rotate(180deg)',
+              filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff0000)',
+              '@keyframes redGlow': {
+                '0%': {
+                  filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff0000)'
+                },
+                '100%': {
+                  filter: 'hue-rotate(0deg) saturate(2) brightness(1.5) drop-shadow(0 0 30px #ff0000) drop-shadow(0 0 60px #ff0000)'
+                }
               },
-              '100%': {
-                textShadow: '0 0 20px #ff0000, 0 0 30px #ff0000, 0 0 40px #ff0000'
-              }
-            },
-            animation: 'textGlow 2s ease-in-out infinite alternate',
-            textShadow: '0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000'
-          }}
-        >
-          YOU ARE NOT LOGGED IN.
-        </Typography>
+              animation: 'redGlow 2s ease-in-out infinite alternate'
+            }}
+          />
+        </Box>
 
-        {/* Smaller Cutty with Login Message */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {/* Bottom Row: Smaller Cutty and Login Options */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          gap: 2
+        }}>
+          {/* Smaller Cutty */}
           <Box
             component="img"
             src={cuttyLogo}
             alt="Cutty"
             sx={{
-              width: '100px',
-              height: 'auto',
-              mb: 2
+              width: '60px',
+              height: 'auto'
             }}
           />
-          <Typography variant="h6" sx={{ color: 'var(--primary-text)', mb: 2 }}>
-            log in or sign up here!
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              component={Link} 
-              to="/login"
-              sx={{ minWidth: '120px' }}
-            >
-              Login
-            </Button>
-            <Button 
-              variant="outlined" 
-              color="primary" 
-              component={Link} 
-              to="/register"
-              sx={{ minWidth: '120px' }}
-            >
-              Sign Up
-            </Button>
+          
+          {/* Login message and buttons */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Typography variant="body1" sx={{ color: 'var(--primary-text)', mb: 2, fontSize: '1.1rem' }}>
+              log in or sign up here!
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                component={Link} 
+                to="/login"
+                sx={{ minWidth: '120px' }}
+              >
+                Login
+              </Button>
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                component={Link} 
+                to="/register"
+                sx={{ minWidth: '120px' }}
+              >
+                Sign Up
+              </Button>
+            </Box>
           </Box>
         </Box>
       </Box>
