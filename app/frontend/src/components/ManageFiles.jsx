@@ -408,7 +408,7 @@ const ManageFiles = () => {
               ref={fileInputRef}
               type="file"
               hidden
-              accept=".csv,.txt,.tsv,text/csv,text/plain,application/vnd.ms-excel"
+              accept=".csv,.txt,.tsv,text/csv,text/plain,application/vnd-ms-excel"
               onChange={handleFileSelect}
             />
           </Button>
