@@ -105,10 +105,10 @@ const CompactLayout = ({ children }) => {
     { text: 'About', path: '/', icon: <HomeIcon /> },
     ...(token ? [] : [{ text: 'CSV Cutter', path: '/csv_cutter', icon: <ContentCutIcon /> }]),
     ...(token ? [{ text: 'CSV Cutter PLUS', path: '/csv_cutter_plus', icon: <ContentCutIcon /> }] : []),
+    { text: 'Files', path: '/manage_files', icon: <FolderIcon /> },
     { text: 'FAQ', path: '/faq', icon: <HelpIcon /> },
     ...(token ? [
       { text: 'Upload Files', path: '/file_upload', icon: <UploadFileIcon /> },
-      { text: 'Manage Files', path: '/manage_files', icon: <FolderIcon /> },
       { text: 'Load Person Records', path: '/load_person_records', icon: <PersonIcon /> },
     ] : []),
     ...(token ? [{ text: 'Logout', path: '/logout', icon: <LogoutIcon /> }] : [{ text: 'Login', path: '/login', icon: <LoginIcon /> }]),

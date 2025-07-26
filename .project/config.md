@@ -15,6 +15,10 @@ See: .project/contexts/coding-standards.md
 <!-- Framework versions and package requirements -->
 See: .project/contexts/dependencies.md
 
+## UI/UX Patterns
+<!-- User interface patterns and design decisions -->
+See: .project/contexts/ui-ux-patterns.md
+
 ## Debugging & Troubleshooting
 <!-- Hard-earned tribal knowledge and debugging procedures -->
 See: .project/contexts/debugging-lessons.md

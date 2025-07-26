@@ -73,7 +73,7 @@ const Layout = ({ children }) => {
     ...(token ? [] : [{ text: 'CSV Cutter', icon: <ContentCutIcon />, path: '/csv_cutter' }]),
     ...(token ? [{ text: 'CSV Cutter PLUS', icon: <ContentCutIcon />, path: '/csv_cutter_plus' }] : []),
     // Show Files for everyone, but behavior differs based on auth
-    { text: token ? (openFiles ? 'Files (-)' : 'Files (+)') : 'Files', icon: <ListIcon />, isGroup: token, path: token ? undefined : '/manage_files' },
+    { text: token ? (openFiles ? 'Files (-)' : 'Files (+)') : 'Files', icon: <FolderIcon />, isGroup: token, path: token ? undefined : '/manage_files' },
     ...(token ? [{ text: openPeople ? 'People (-)' : 'People (+)', icon: <ListIcon />, isGroup: true }] : []),
     ...(token ? [{ text: 'FAQ', icon: <HelpIcon />, path: '/faq' }] : []),
     { text: 'About', icon: <HomeIcon />, path: '/' },

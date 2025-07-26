@@ -118,10 +118,15 @@
 - `DELETE /:id/items/:itemId` - Delete item
 
 ### File Operations (`/api/v1/files/*`)
-- `POST /upload` - Upload file to R2
-- `GET /:id` - Download file
-- `DELETE /:id` - Delete file
-- `POST /process` - Process CSV file
+- `GET /` - List user's files with metadata
+- `POST /upload` - Upload file to R2 (CSV/TXT/TSV, 50MB limit)
+- `GET /:id` - Download file with authentication
+- `DELETE /:id` - Delete file with confirmation
+- `POST /process` - Process CSV file for list operations
+
+**UI Behavior:**
+- **Authenticated**: Full file management interface with upload, list, download, delete
+- **Unauthenticated**: Dramatic visual warning (red glowing Cutty) with auth prompts
 
 ### Monitoring (`/api/monitoring/*`)
 - `GET /health` - System health check

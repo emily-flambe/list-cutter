@@ -317,27 +317,25 @@ const SidebarLayout = ({ children }) => {
         </ListItem>
 
 
-        {/* Files - Direct link only visible when logged in */}
-        {token && (
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              to="/manage_files"
-              selected={location.pathname === '/manage_files'}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: 'var(--accent)',
-                  '&:hover': { backgroundColor: 'var(--dark-accent)' },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                <FolderIcon />
-              </ListItemIcon>
-              <ListItemText primary="Files" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-            </ListItemButton>
-          </ListItem>
-        )}
+        {/* Files - Visible to all users */}
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/manage_files"
+            selected={location.pathname === '/manage_files'}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: 'var(--accent)',
+                '&:hover': { backgroundColor: 'var(--dark-accent)' },
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
+              <FolderIcon />
+            </ListItemIcon>
+            <ListItemText primary="Files" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
+          </ListItemButton>
+        </ListItem>
 
         <ListItem disablePadding>
           <ListItemButton
