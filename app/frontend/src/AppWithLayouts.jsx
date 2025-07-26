@@ -20,7 +20,6 @@ import CSVCutter from './components/CSVCutter';
 import CSVCutterPlus from './components/CSVCutterPlus';
 import FileUpload from './components/FileUpload';
 import ManageFiles from './components/ManageFiles';
-import FileLineage from './components/FileLineage';
 import LoadPersonRecords from './components/LoadPersonRecords';
 import FAQ from './components/FAQ';
 import SyntheticDataGenerator from './components/SyntheticDataGenerator';
@@ -78,7 +77,6 @@ function AppWithLayouts() {
             <Route path="/csv_cutter_plus" element={<CSVCutterPlus />} />
             <Route path="/file_upload" element={<FileUpload />} />
             <Route path="/manage_files" element={<ManageFiles />} />
-            <Route path="/file_lineage" element={<FileLineage />} />
             <Route path="/load_person_records" element={<LoadPersonRecords />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/design-tester" element={<DesignTester />} />

@@ -73,9 +73,11 @@ Modular documentation:
 - `architecture.md` - System design and tech stack
 - `coding-standards.md` - Code style and conventions
 - `dependencies.md` - Package versions and requirements
+- `ui-ux-patterns.md` - Interface patterns and authentication-based behaviors
 
 ### API Documentation
 - `api-docs/synthetic-data.md` - Synthetic data generator API endpoints
+- `api-docs/files-api.md` - File upload, management, and processing API
 
 ## Best Practices
 

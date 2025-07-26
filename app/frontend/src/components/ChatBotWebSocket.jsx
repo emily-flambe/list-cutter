@@ -94,7 +94,13 @@ const ChatBotWebSocket = () => {
       if (match[1]) {
         // Markdown link format [text](url)
         const linkText = match[2];
-        const linkUrl = match[3];
+        let linkUrl = match[3];
+        
+        // Strip absolute URLs to relative paths for API endpoints
+        if (linkUrl.includes('/api/v1/')) {
+          // Remove any domain prefix (e.g., https://cutty.emilycogsdill.com)
+          linkUrl = linkUrl.replace(/^https?:\/\/[^\/]+/, '');
+        }
         
         // Check if it's a download link
         if (linkUrl.includes('/api/v1/synthetic-data/download/')) {
