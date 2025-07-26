@@ -27,7 +27,6 @@ import {
   ContentCut as ContentCutIcon,
   Person as PersonIcon,
   Menu as MenuIcon,
-  AccountTree as AccountTreeIcon,
   ExpandLess,
   ExpandMore,
   ChevronLeft as ChevronLeftIcon,
@@ -52,7 +51,6 @@ const SidebarLayout = ({ children }) => {
   const { token, user, setUser } = useContext(AuthContext);
   const [loadingUser, setLoadingUser] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [filesOpen, setFilesOpen] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(
     localStorage.getItem('appearanceOpen') === 'true'
   );
@@ -319,24 +317,27 @@ const SidebarLayout = ({ children }) => {
         </ListItem>
 
 
-        {/* TODO: Future logged-in-only features (Files, Load Person Records, etc.) can be added here with token && (...) wrapper */}
-        {/* 
-        Example for future logged-in-only features:
+        {/* Files - Direct link only visible when logged in */}
         {token && (
-          <>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => setFilesOpen(!filesOpen)}>
-                <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-                  <FolderIcon />
-                </ListItemIcon>
-                <ListItemText primary="Files" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-                {filesOpen ? <ExpandLess sx={{ color: 'var(--primary-text)' }} /> : <ExpandMore sx={{ color: 'var(--primary-text)' }} />}
-              </ListItemButton>
-            </ListItem>
-            ... etc
-          </>
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link}
+              to="/manage_files"
+              selected={location.pathname === '/manage_files'}
+              sx={{
+                '&.Mui-selected': {
+                  backgroundColor: 'var(--accent)',
+                  '&:hover': { backgroundColor: 'var(--dark-accent)' },
+                },
+              }}
+            >
+              <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
+                <FolderIcon />
+              </ListItemIcon>
+              <ListItemText primary="Files" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
+            </ListItemButton>
+          </ListItem>
         )}
-        */}
 
         <ListItem disablePadding>
           <ListItemButton
