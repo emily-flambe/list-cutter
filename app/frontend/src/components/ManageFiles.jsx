@@ -372,7 +372,7 @@ const ManageFiles = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+      <Typography variant="h4" component="h1" sx={{ mb: 4 }}>
         Manage Files
       </Typography>
       
@@ -390,30 +390,23 @@ const ManageFiles = () => {
 
       {/* Upload Controls */}
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 1, flexWrap: 'wrap' }}>
-          <Box>
-            <Button
-              variant="outlined"
-              component="label"
-              startIcon={<UploadFileIcon />}
-              disabled={uploading}
-              sx={{ minWidth: '140px' }}
-            >
-              Upload
-              <input
-                ref={fileInputRef}
-                type="file"
-                hidden
-                accept=".csv,.txt,.tsv,text/csv,text/plain,application/vnd-ms-excel"
-                onChange={handleFileSelect}
-              />
-            </Button>
-            {selectedFile && (
-              <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'text.secondary', mt: 1 }}>
-                {selectedFile.name}
-              </Typography>
-            )}
-          </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, flexWrap: 'wrap' }}>
+          <Button
+            variant="outlined"
+            component="label"
+            startIcon={<UploadFileIcon />}
+            disabled={uploading}
+            sx={{ minWidth: '140px' }}
+          >
+            Upload
+            <input
+              ref={fileInputRef}
+              type="file"
+              hidden
+              accept=".csv,.txt,.tsv,text/csv,text/plain,application/vnd-ms-excel"
+              onChange={handleFileSelect}
+            />
+          </Button>
           
           <Button
             variant="contained"
@@ -425,6 +418,12 @@ const ManageFiles = () => {
             {uploading ? 'Uploading...' : 'DO IT'}
           </Button>
         </Box>
+        
+        {selectedFile && (
+          <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+            {selectedFile.name}
+          </Typography>
+        )}
       </Box>
       
       {uploading && (
