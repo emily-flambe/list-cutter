@@ -379,16 +379,27 @@ const ManageFiles = () => {
       )}
 
       {/* Upload Section */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
+      <Paper sx={{ p: 4, mb: 3 }}>
+        <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
           Upload New File
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' }, 
+          gap: 3, 
+          mb: selectedFile ? 2 : 0
+        }}>
           <Button
             variant="outlined"
             component="label"
             startIcon={<UploadFileIcon />}
             disabled={uploading}
+            sx={{ 
+              minWidth: { xs: '100%', sm: '160px' },
+              py: 1.5,
+              fontSize: '0.95rem'
+            }}
           >
             Choose File
             <input
@@ -400,21 +411,34 @@ const ManageFiles = () => {
             />
           </Button>
           
-          {selectedFile && (
-            <Typography variant="body2" sx={{ flex: 1 }}>
-              Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
-            </Typography>
-          )}
-          
           <Button
             variant="contained"
             onClick={handleUpload}
             disabled={!selectedFile || uploading}
             startIcon={uploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
+            sx={{ 
+              minWidth: { xs: '100%', sm: '140px' },
+              py: 1.5,
+              fontSize: '0.95rem'
+            }}
           >
             {uploading ? 'Uploading...' : 'Upload'}
           </Button>
         </Box>
+        
+        {selectedFile && (
+          <Box sx={{ 
+            p: 2, 
+            backgroundColor: 'action.hover', 
+            borderRadius: 1,
+            border: '1px solid',
+            borderColor: 'divider'
+          }}>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Selected:</strong> {selectedFile.name} ({formatFileSize(selectedFile.size)})
+            </Typography>
+          </Box>
+        )}
         
         {uploading && (
           <Box sx={{ mt: 2 }}>
@@ -460,7 +484,7 @@ const ManageFiles = () => {
                     <Chip 
                       label={file.source === 'synthetic-data' ? 'Synthetic Data' : 'Upload'} 
                       size="small" 
-                      color={file.source === 'synthetic-data' ? 'primary' : 'default'}
+                      color={file.source === 'synthetic-data' ? 'primary' : 'secondary'}
                       sx={{ fontSize: '0.65rem', height: '20px' }}
                     />
                   </TableCell>
