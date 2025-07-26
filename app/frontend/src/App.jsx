@@ -4,7 +4,6 @@ import Layout from './components/Layout';
 import Home from './components/Home';
 import CSVCutter from './components/CSVCutter';
 import CSVCutterPlus from './components/CSVCutterPlus';
-import FileLineage from './components/FileLineage';
 import FileUpload from './components/FileUpload';
 import Register from './components/Register';
 import LoadPersonRecords from './components/LoadPersonRecords';
@@ -51,7 +50,6 @@ function App() {
             <Route path="/csv_cutter" element={<CSVCutter />} />
             <Route path="/csv_cutter_plus" element={<CSVCutterPlus />} />
             <Route path="/faq" element={<FAQ />} />
-            <Route path="/file_lineage" element={<FileLineage />} />
             <Route path="/file_upload" element={<FileUpload />} />
             <Route path="/load_person_records" element={<LoadPersonRecords />} />
             <Route path="/login" element={<Login />} />

@@ -2,7 +2,7 @@ import React from 'react';
 import underConstructionImage from '../assets/under_construction.png';
 import Typography from '@mui/material/Typography';
 
-const ManageFiles = () => {
+const UnderConstruction = () => {
   return (
     <div style={{ textAlign: 'center', marginTop: '50px' }}>
       <Typography variant="h1">Coming Soon!</Typography>
@@ -16,4 +16,4 @@ const ManageFiles = () => {
   );
 };
 
-export default ManageFiles; 
+export default UnderConstruction; 
