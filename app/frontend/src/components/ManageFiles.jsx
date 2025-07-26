@@ -29,6 +29,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DescriptionIcon from '@mui/icons-material/Description';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import { Link } from 'react-router-dom';
+import cuttyLogo from '../assets/cutty_logo.png';
 
 const ManageFiles = () => {
   const { token } = useContext(AuthContext);
@@ -80,7 +82,6 @@ const ManageFiles = () => {
       fetchFiles();
     } else {
       setLoading(false);
-      setError("You must be logged in to view your files.");
     }
   }, [token]);
 
@@ -229,6 +230,105 @@ const ManageFiles = () => {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Show special logged-out state
+  if (!token) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        minHeight: '80vh',
+        textAlign: 'center',
+        p: 3
+      }}>
+        {/* Large Cutty - Flipped and Red Glowing */}
+        <Box
+          component="img"
+          src={cuttyLogo}
+          alt="Angry Cutty"
+          sx={{
+            width: '400px',
+            height: 'auto',
+            transform: 'scaleX(-1)', // Flip horizontally
+            filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff0000)',
+            mb: 4,
+            '@keyframes redGlow': {
+              '0%': {
+                filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff0000)'
+              },
+              '100%': {
+                filter: 'hue-rotate(0deg) saturate(2) brightness(1.5) drop-shadow(0 0 30px #ff0000) drop-shadow(0 0 60px #ff0000)'
+              }
+            },
+            animation: 'redGlow 2s ease-in-out infinite alternate'
+          }}
+        />
+        
+        {/* Red Glowing Text */}
+        <Typography 
+          variant="h2" 
+          sx={{ 
+            color: '#ff0000',
+            fontFamily: 'var(--cutty-threatening-font)',
+            fontWeight: 'bold',
+            fontSize: '3rem',
+            mb: 4,
+            '@keyframes textGlow': {
+              '0%': {
+                textShadow: '0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000'
+              },
+              '100%': {
+                textShadow: '0 0 20px #ff0000, 0 0 30px #ff0000, 0 0 40px #ff0000'
+              }
+            },
+            animation: 'textGlow 2s ease-in-out infinite alternate',
+            textShadow: '0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000'
+          }}
+        >
+          YOU ARE NOT LOGGED IN.
+        </Typography>
+
+        {/* Smaller Cutty with Login Message */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <Box
+            component="img"
+            src={cuttyLogo}
+            alt="Cutty"
+            sx={{
+              width: '100px',
+              height: 'auto',
+              mb: 2
+            }}
+          />
+          <Typography variant="h6" sx={{ color: 'var(--primary-text)', mb: 2 }}>
+            log in or sign up here!
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              component={Link} 
+              to="/login"
+              sx={{ minWidth: '120px' }}
+            >
+              Login
+            </Button>
+            <Button 
+              variant="outlined" 
+              color="primary" 
+              component={Link} 
+              to="/register"
+              sx={{ minWidth: '120px' }}
+            >
+              Sign Up
+            </Button>
+          </Box>
+        </Box>
       </Box>
     );
   }
