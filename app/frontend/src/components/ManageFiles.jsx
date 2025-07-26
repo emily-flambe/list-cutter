@@ -489,18 +489,8 @@ const ManageFiles = () => {
                     <Chip 
                       label={file.source === 'synthetic-data' ? 'Synthetic Data' : 'Upload'} 
                       size="small" 
-                      color={file.source === 'synthetic-data' ? 'primary' : undefined}
-                      sx={{ 
-                        fontSize: '0.65rem', 
-                        height: '20px',
-                        ...(file.source !== 'synthetic-data' && {
-                          backgroundColor: '#8B7CA6',
-                          color: 'white',
-                          '&:hover': {
-                            backgroundColor: '#7A6B94'
-                          }
-                        })
-                      }}
+                      color={file.source === 'synthetic-data' ? 'primary' : 'secondary'}
+                      sx={{ fontSize: '0.65rem', height: '20px' }}
                     />
                   </TableCell>
                   <TableCell align="center">
