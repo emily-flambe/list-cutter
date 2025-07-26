@@ -242,19 +242,21 @@ const ManageFiles = () => {
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center',
-        minHeight: '80vh',
-        p: 3,
+        maxHeight: '100vh',
+        overflow: 'hidden',
+        p: 2,
         position: 'relative'
       }}>
         {/* Top Row: Text on left, Large Cutty on right */}
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
           width: '100%',
           maxWidth: '900px',
-          mb: 10,
-          gap: 6
+          mb: -6,
+          gap: 3,
+          pl: 2
         }}>
           {/* Red Glowing Text */}
           <Typography 
@@ -265,7 +267,7 @@ const ManageFiles = () => {
               fontWeight: 'bold',
               fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
               lineHeight: 1.2,
-              textAlign: 'right',
+              textAlign: 'left',
               flex: 1,
               '@keyframes textGlow': {
                 '0%': {
@@ -282,23 +284,23 @@ const ManageFiles = () => {
             YOU ARE NOT LOGGED IN.
           </Typography>
           
-          {/* Large Cutty - on the right */}
+          {/* REALLY BIG Cutty - on the right */}
           <Box
             component="img"
             src={cuttyLogo}
             alt="Angry Cutty"
             sx={{
-              width: '280px',
+              width: { xs: '380px', sm: '450px', md: '500px', lg: '520px' },
               height: 'auto',
               flexShrink: 0,
               transform: 'scaleX(-1)',
-              filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff0000)',
+              filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 30px #ff0000) drop-shadow(0 0 60px #ff0000)',
               '@keyframes redGlow': {
                 '0%': {
-                  filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff0000)'
+                  filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 30px #ff0000) drop-shadow(0 0 60px #ff0000)'
                 },
                 '100%': {
-                  filter: 'hue-rotate(0deg) saturate(2) brightness(1.5) drop-shadow(0 0 30px #ff0000) drop-shadow(0 0 60px #ff0000)'
+                  filter: 'hue-rotate(0deg) saturate(2) brightness(1.5) drop-shadow(0 0 50px #ff0000) drop-shadow(0 0 100px #ff0000)'
                 }
               },
               animation: 'redGlow 2s ease-in-out infinite alternate'
@@ -310,7 +312,11 @@ const ManageFiles = () => {
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center',
-          gap: 2
+          gap: 2,
+          justifyContent: 'flex-start',
+          width: '100%',
+          maxWidth: '900px',
+          pl: 2
         }}>
           {/* Smaller Cutty */}
           <Box
