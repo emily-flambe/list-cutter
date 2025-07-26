@@ -378,66 +378,47 @@ const ManageFiles = () => {
         </Alert>
       )}
 
-      {/* Upload Section */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Upload New File
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-          <Button
-            variant="outlined"
-            component="label"
-            startIcon={<UploadFileIcon />}
-            disabled={uploading}
-            sx={{ minWidth: '140px' }}
-          >
-            Choose File
-            <input
-              ref={fileInputRef}
-              type="file"
-              hidden
-              accept=".csv,.txt,.tsv,text/csv,text/plain,application/vnd-ms-excel"
-              onChange={handleFileSelect}
-            />
-          </Button>
-          
-          {selectedFile && (
-            <Typography variant="body2" sx={{ flex: 1 }}>
-              Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
-            </Typography>
-          )}
-          
-          <Button
-            variant="contained"
-            onClick={handleUpload}
-            disabled={!selectedFile || uploading}
-            startIcon={uploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
-            sx={{ minWidth: '120px' }}
-          >
-            {uploading ? 'Uploading...' : 'Upload'}
-          </Button>
-        </Box>
+      {/* Upload Controls */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        <Button
+          variant="outlined"
+          component="label"
+          startIcon={<UploadFileIcon />}
+          disabled={uploading}
+          sx={{ minWidth: '140px' }}
+        >
+          Upload
+          <input
+            ref={fileInputRef}
+            type="file"
+            hidden
+            accept=".csv,.txt,.tsv,text/csv,text/plain,application/vnd-ms-excel"
+            onChange={handleFileSelect}
+          />
+        </Button>
         
         {selectedFile && (
-          <Box sx={{ 
-            p: 2, 
-            backgroundColor: 'action.hover', 
-            borderRadius: 1,
-            border: '1px solid',
-            borderColor: 'divider'
-          }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Selected:</strong> {selectedFile.name} ({formatFileSize(selectedFile.size)})
-            </Typography>
-          </Box>
+          <Typography variant="body2" sx={{ flex: 1 }}>
+            Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+          </Typography>
         )}
         
-        {uploading && (
-          <Box sx={{ mt: 2 }}>
-            <LinearProgress />
-          </Box>
-        )}
-      </Paper>
+        <Button
+          variant="contained"
+          onClick={handleUpload}
+          disabled={!selectedFile || uploading}
+          startIcon={uploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
+          sx={{ minWidth: '140px' }}
+        >
+          {uploading ? 'Uploading...' : 'Begin Upload'}
+        </Button>
+      </Box>
+      
+      {uploading && (
+        <Box sx={{ mb: 3 }}>
+          <LinearProgress />
+        </Box>
+      )}
 
       {files.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
