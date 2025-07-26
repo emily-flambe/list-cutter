@@ -164,6 +164,11 @@ const SyntheticDataGenerator = () => {
       if (response.data.file && response.data.file.downloadUrl) {
         setDownloadUrl(response.data.file.downloadUrl);
         setSuccessMessage(`Successfully generated ${response.data.metadata.recordCount} synthetic records${response.data.metadata.state ? ` for ${response.data.metadata.state}` : ''}`);
+        
+        // Refresh file list if user is on manage files page
+        if (window.refreshFileList) {
+          window.refreshFileList();
+        }
       } else {
         setSuccessMessage('Synthetic data generated successfully');
       }

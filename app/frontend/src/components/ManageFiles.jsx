@@ -61,28 +61,41 @@ const ManageFiles = () => {
     }
   }, [error]);
 
-  useEffect(() => {
-    const fetchFiles = async () => {
-      try {
-        const response = await api.get('/api/v1/files', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setFiles(response.data.files || []);
-        setError("");
-      } catch (err) {
-        console.error("Error fetching files:", err);
-        setError("Failed to load your files. Please try again.");
-        setFiles([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchFiles = async () => {
+    try {
+      const response = await api.get('/api/v1/files', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setFiles(response.data.files || []);
+      setError("");
+    } catch (err) {
+      console.error("Error fetching files:", err);
+      setError("Failed to load your files. Please try again.");
+      setFiles([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (token) {
       fetchFiles();
     } else {
       setLoading(false);
     }
+  }, [token]);
+
+  // Set up global refresh function for other components to use
+  useEffect(() => {
+    window.refreshFileList = () => {
+      if (token) {
+        fetchFiles();
+      }
+    };
+
+    return () => {
+      delete window.refreshFileList;
+    };
   }, [token]);
 
   const formatFileSize = (bytes) => {
@@ -214,10 +227,7 @@ const ManageFiles = () => {
       }
       
       // Refresh the file list
-      const filesResponse = await api.get('/api/v1/files', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setFiles(filesResponse.data.files || []);
+      fetchFiles();
     } catch (error) {
       console.error("Upload error:", error);
       setError(error.response?.data?.error || "Failed to upload file. Please try again.");
@@ -378,74 +388,50 @@ const ManageFiles = () => {
         </Alert>
       )}
 
-      {/* Upload Section */}
-      <Paper sx={{ p: 4, mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-          Upload New File
-        </Typography>
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' }, 
-          gap: 3, 
-          mb: selectedFile ? 2 : 0
-        }}>
-          <Button
-            variant="outlined"
-            component="label"
-            startIcon={<UploadFileIcon />}
-            disabled={uploading}
-            sx={{ 
-              minWidth: { xs: '100%', sm: '160px' },
-              py: 1.5,
-              fontSize: '0.95rem'
-            }}
-          >
-            Choose File
-            <input
-              ref={fileInputRef}
-              type="file"
-              hidden
-              accept=".csv,.txt,.tsv,text/csv,text/plain,application/vnd.ms-excel"
-              onChange={handleFileSelect}
-            />
-          </Button>
+      {/* Upload Controls */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 1, flexWrap: 'wrap' }}>
+          <Box>
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<UploadFileIcon />}
+              disabled={uploading}
+              sx={{ minWidth: '140px' }}
+            >
+              Upload
+              <input
+                ref={fileInputRef}
+                type="file"
+                hidden
+                accept=".csv,.txt,.tsv,text/csv,text/plain,application/vnd-ms-excel"
+                onChange={handleFileSelect}
+              />
+            </Button>
+            {selectedFile && (
+              <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'text.secondary', mt: 1 }}>
+                {selectedFile.name}
+              </Typography>
+            )}
+          </Box>
           
           <Button
             variant="contained"
             onClick={handleUpload}
             disabled={!selectedFile || uploading}
             startIcon={uploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
-            sx={{ 
-              minWidth: { xs: '100%', sm: '140px' },
-              py: 1.5,
-              fontSize: '0.95rem'
-            }}
+            sx={{ minWidth: '140px' }}
           >
-            {uploading ? 'Uploading...' : 'Upload'}
+            {uploading ? 'Uploading...' : 'DO IT'}
           </Button>
         </Box>
-        
-        {selectedFile && (
-          <Box sx={{ 
-            p: 2, 
-            backgroundColor: 'action.hover', 
-            borderRadius: 1,
-            border: '1px solid',
-            borderColor: 'divider'
-          }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Selected:</strong> {selectedFile.name} ({formatFileSize(selectedFile.size)})
-            </Typography>
-          </Box>
-        )}
-        
-        {uploading && (
-          <Box sx={{ mt: 2 }}>
-            <LinearProgress />
-          </Box>
-        )}
-      </Paper>
+      </Box>
+      
+      {uploading && (
+        <Box sx={{ mb: 3 }}>
+          <LinearProgress />
+        </Box>
+      )}
 
       {files.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
