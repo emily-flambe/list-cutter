@@ -1,16 +1,51 @@
 /**
- * Synthetic Data Generation Routes
+ * Synthetic Data Generation Routes - OpenAPI
  * 
  * Provides endpoints for generating synthetic voter data for testing purposes
+ * Now with OpenAPI documentation and validation
  */
 
-import { Hono } from 'hono';
-import type { Env, SyntheticDataRequest, SyntheticDataResponse } from '../types';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import type { Env } from '../types';
 import { validateToken } from '../services/auth/jwt';
 import { SyntheticDataGenerator } from '../services/synthetic-data-generator';
 import { LocationDataService } from '../services/location-data-service';
 
-const syntheticData = new Hono<{ Bindings: Env }>();
+// Zod schemas for OpenAPI
+const SyntheticDataRequestSchema = z.object({
+  count: z.number().int().min(1).max(1000).describe('Number of records to generate (1-1000)'),
+  state: z.string().optional().describe('Single state code (e.g., "CA")'),
+  states: z.array(z.string()).optional().describe('Array of state codes')
+});
+
+const SyntheticDataResponseSchema = z.object({
+  success: z.boolean(),
+  file: z.object({
+    id: z.string(),
+    name: z.string(),
+    size: z.number(),
+    type: z.string(),
+    downloadUrl: z.string().optional()
+  }),
+  metadata: z.object({
+    recordCount: z.number(),
+    generatedAt: z.string(),
+    state: z.string().optional(),
+    states: z.array(z.string()).optional()
+  })
+});
+
+const SupportedStatesResponseSchema = z.object({
+  success: z.boolean(),
+  states: z.array(z.string())
+});
+
+const ErrorResponseSchema = z.object({
+  error: z.string(),
+  details: z.array(z.string()).optional()
+});
+
+const syntheticData = new OpenAPIHono<{ Bindings: Env }>();
 
 // Optional authentication middleware - extract user ID if present
 syntheticData.use('*', async (c, next) => {
@@ -29,8 +64,33 @@ syntheticData.use('*', async (c, next) => {
   await next();
 });
 
-// Get supported states endpoint
-syntheticData.get('/supported-states', async (c) => {
+// OpenAPI route for supported states
+const supportedStatesRoute = createRoute({
+  method: 'get',
+  path: '/supported-states',
+  summary: 'Get supported states for synthetic data generation',
+  description: 'Returns a list of US state codes that can be used for generating location-specific synthetic data',
+  responses: {
+    200: {
+      description: 'List of supported states',
+      content: {
+        'application/json': {
+          schema: SupportedStatesResponseSchema
+        }
+      }
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema
+        }
+      }
+    }
+  }
+});
+
+syntheticData.openapi(supportedStatesRoute, async (c) => {
   try {
     const locationService = LocationDataService.getInstance();
     const states = await locationService.getSupportedStates();
@@ -48,42 +108,56 @@ syntheticData.get('/supported-states', async (c) => {
   }
 });
 
-// Generate synthetic data endpoint
-syntheticData.post('/generate', async (c) => {
+// OpenAPI route for generating synthetic data
+const generateDataRoute = createRoute({
+  method: 'post',
+  path: '/generate',
+  summary: 'Generate synthetic voter data',
+  description: 'Creates synthetic voter data in CSV format. Supports filtering by state(s) and allows both authenticated and anonymous access.',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: SyntheticDataRequestSchema
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      description: 'Synthetic data generated successfully',
+      content: {
+        'application/json': {
+          schema: SyntheticDataResponseSchema
+        }
+      }
+    },
+    400: {
+      description: 'Invalid request parameters',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema
+        }
+      }
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema
+        }
+      }
+    }
+  }
+});
+
+syntheticData.openapi(generateDataRoute, async (c) => {
   try {
     const userId = c.get('userId') || 'anonymous';
     console.log('[SYNTHETIC DATA GENERATE] User ID:', userId);
-    const requestData: SyntheticDataRequest = await c.req.json();
+    const requestData = c.req.valid('json');
 
-    // Input validation
-    if (!requestData.count || typeof requestData.count !== 'number') {
-      return c.json({ 
-        error: 'Invalid input', 
-        details: ['count is required and must be a number'] 
-      }, 400);
-    }
-
-    if (requestData.count < 1 || requestData.count > 1000) {
-      return c.json({ 
-        error: 'Invalid input', 
-        details: ['count must be between 1 and 1000'] 
-      }, 400);
-    }
-
-    // Validate state/states if provided
-    if (requestData.state && typeof requestData.state !== 'string') {
-      return c.json({ 
-        error: 'Invalid input', 
-        details: ['state must be a string'] 
-      }, 400);
-    }
-    
-    if (requestData.states && (!Array.isArray(requestData.states) || !requestData.states.every(s => typeof s === 'string'))) {
-      return c.json({ 
-        error: 'Invalid input', 
-        details: ['states must be an array of strings'] 
-      }, 400);
-    }
+    // Zod validation handles input validation automatically
 
     // Generate synthetic data - prioritize states array over single state
     const stateFilter = requestData.states || requestData.state;
@@ -202,7 +276,7 @@ syntheticData.post('/generate', async (c) => {
       console.error('[SYNTHETIC DATA GENERATE] Failed to verify file:', verifyError);
     }
 
-    const response: SyntheticDataResponse = {
+    const response = {
       success: true,
       file: {
         id: fileId,

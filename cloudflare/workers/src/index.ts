@@ -14,7 +14,7 @@ import './types/hono-context';
 import filesRoutes from './routes/files';
 import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin';
-import syntheticDataRoutes from './routes/synthetic-data-openapi';
+import syntheticDataRoutes from './routes/synthetic-data';
 import agentRoutes from './routes/agent';
 
 // Import security middleware
