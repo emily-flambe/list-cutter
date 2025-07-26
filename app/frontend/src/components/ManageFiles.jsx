@@ -384,21 +384,23 @@ const ManageFiles = () => {
           Upload New File
         </Typography>
         <Box sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' }, 
-          gap: 3, 
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+          gap: 2,
+          maxWidth: '500px',
           mb: selectedFile ? 2 : 0
         }}>
           <Button
-            variant="outlined"
+            variant="contained"
             component="label"
             startIcon={<UploadFileIcon />}
             disabled={uploading}
+            size="large"
             sx={{ 
-              minWidth: { xs: '100%', sm: '160px' },
-              py: 1.5,
-              fontSize: '0.95rem'
+              py: 2,
+              fontSize: '1rem',
+              fontWeight: 600,
+              textTransform: 'none'
             }}
           >
             Choose File
@@ -413,16 +415,19 @@ const ManageFiles = () => {
           
           <Button
             variant="contained"
+            color="success"
             onClick={handleUpload}
             disabled={!selectedFile || uploading}
             startIcon={uploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
+            size="large"
             sx={{ 
-              minWidth: { xs: '100%', sm: '140px' },
-              py: 1.5,
-              fontSize: '0.95rem'
+              py: 2,
+              fontSize: '1rem',
+              fontWeight: 600,
+              textTransform: 'none'
             }}
           >
-            {uploading ? 'Uploading...' : 'Upload'}
+            {uploading ? 'Uploading...' : 'Upload File'}
           </Button>
         </Box>
         
