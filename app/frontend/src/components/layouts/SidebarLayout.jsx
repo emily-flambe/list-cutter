@@ -312,7 +312,7 @@ const SidebarLayout = ({ children }) => {
             <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
               <DataObjectIcon />
             </ListItemIcon>
-            <ListItemText primary="Generate Fake Data (PREVIEW)" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
+            <ListItemText primary="Generate Fake Data" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
           </ListItemButton>
         </ListItem>
 

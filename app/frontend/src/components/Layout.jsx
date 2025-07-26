@@ -19,7 +19,6 @@ import HelpIcon from '@mui/icons-material/Help';
 import FolderIcon from '@mui/icons-material/Folder';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
 import ListIcon from '@mui/icons-material/List';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import PersonIcon from '@mui/icons-material/Person';
 import DataArrayIcon from '@mui/icons-material/DataArray';
 import { Link, useLocation } from 'react-router-dom';
@@ -91,8 +90,6 @@ const Layout = ({ children }) => {
           return "It looks like you are trying to cut a list! Would you like some help with that?";
         case '/csv_cutter_plus':
           return "It looks like you are trying to cut a list! Would you like some help with that?";
-        case '/file_lineage':
-          return "Wow, is this a FAMILY TREE for FILES? (the answer is yes)";
         case '/file_upload':
           return "Think twice before giving your files to a stranger!";
         case '/manage_files':
@@ -204,16 +201,6 @@ const Layout = ({ children }) => {
                             >
                               <ListItemIcon><FolderIcon /></ListItemIcon>
                               <ListItemText primary="Manage" />
-                            </ListItemButton>
-                          </ListItem>
-                          <ListItem key="file_lineage" disablePadding>
-                            <ListItemButton 
-                              component={Link} 
-                              to="/file_lineage" 
-                              sx={{ paddingLeft: 4 }}
-                            >
-                              <ListItemIcon><AccountTreeIcon /></ListItemIcon>
-                              <ListItemText primary="Lineage" />
                             </ListItemButton>
                           </ListItem>
                         </List>

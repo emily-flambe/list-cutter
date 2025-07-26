@@ -1,5 +1,5 @@
 // frontend/src/components/ManageFiles.jsx
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
 // Optimized direct imports for better tree-shaking and build performance
@@ -23,10 +23,12 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
+import LinearProgress from '@mui/material/LinearProgress';
 import DownloadIcon from '@mui/icons-material/Download';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DescriptionIcon from '@mui/icons-material/Description';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 const ManageFiles = () => {
   const { token } = useContext(AuthContext);
@@ -38,6 +40,9 @@ const ManageFiles = () => {
   const [fileToDelete, setFileToDelete] = useState(null);
   const [downloadingFileId, setDownloadingFileId] = useState(null);
   const [deletingFileId, setDeletingFileId] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -158,6 +163,68 @@ const ManageFiles = () => {
     setFileToDelete(null);
   };
 
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
+      const fileExtension = file.name.toLowerCase().split('.').pop();
+      const validExtensions = ['csv', 'txt', 'tsv'];
+      
+      if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
+        setError("Please select a CSV file (.csv, .txt, or .tsv)");
+        return;
+      }
+      
+      // Validate file size (50MB limit)
+      if (file.size > 50 * 1024 * 1024) {
+        setError("File size must be less than 50MB");
+        return;
+      }
+      
+      setSelectedFile(file);
+      setError("");
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      setError("Please select a file first");
+      return;
+    }
+
+    setUploading(true);
+    setError("");
+    
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    try {
+      const response = await api.post('/api/v1/files/upload', formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      setSuccessMessage(`Successfully uploaded ${selectedFile.name}`);
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      
+      // Refresh the file list
+      const filesResponse = await api.get('/api/v1/files', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setFiles(filesResponse.data.files || []);
+    } catch (error) {
+      console.error("Upload error:", error);
+      setError(error.response?.data?.error || "Failed to upload file. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -184,6 +251,51 @@ const ManageFiles = () => {
         </Alert>
       )}
 
+      {/* Upload Section */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Upload New File
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Button
+            variant="outlined"
+            component="label"
+            startIcon={<UploadFileIcon />}
+            disabled={uploading}
+          >
+            Choose File
+            <input
+              ref={fileInputRef}
+              type="file"
+              hidden
+              accept=".csv,.txt,.tsv,text/csv,text/plain,application/vnd.ms-excel"
+              onChange={handleFileSelect}
+            />
+          </Button>
+          
+          {selectedFile && (
+            <Typography variant="body2" sx={{ flex: 1 }}>
+              Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+            </Typography>
+          )}
+          
+          <Button
+            variant="contained"
+            onClick={handleUpload}
+            disabled={!selectedFile || uploading}
+            startIcon={uploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
+          >
+            {uploading ? 'Uploading...' : 'Upload'}
+          </Button>
+        </Box>
+        
+        {uploading && (
+          <Box sx={{ mt: 2 }}>
+            <LinearProgress />
+          </Box>
+        )}
+      </Paper>
+
       {files.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
           <CloudUploadIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
@@ -191,7 +303,7 @@ const ManageFiles = () => {
             No files yet
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Your CSV files will appear here once you create them.
+            Upload a CSV file above or generate synthetic data to get started.
           </Typography>
         </Paper>
       ) : (
@@ -199,11 +311,11 @@ const ManageFiles = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>File Name</TableCell>
-                <TableCell align="right">Size</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell>Source</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell sx={{ fontSize: '0.75rem', fontWeight: 'bold' }}>File Name</TableCell>
+                <TableCell align="right" sx={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Size</TableCell>
+                <TableCell sx={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Created</TableCell>
+                <TableCell sx={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Source</TableCell>
+                <TableCell align="center" sx={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -212,16 +324,17 @@ const ManageFiles = () => {
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <DescriptionIcon fontSize="small" color="action" />
-                      <Typography>{file.filename}</Typography>
+                      <Typography sx={{ fontSize: '0.75rem' }}>{file.filename}</Typography>
                     </Box>
                   </TableCell>
-                  <TableCell align="right">{formatFileSize(file.size)}</TableCell>
-                  <TableCell>{formatDate(file.createdAt)}</TableCell>
+                  <TableCell align="right" sx={{ fontSize: '0.75rem' }}>{formatFileSize(file.size)}</TableCell>
+                  <TableCell sx={{ fontSize: '0.75rem' }}>{formatDate(file.createdAt)}</TableCell>
                   <TableCell>
                     <Chip 
                       label={file.source === 'synthetic-data' ? 'Synthetic Data' : 'Upload'} 
                       size="small" 
                       color={file.source === 'synthetic-data' ? 'primary' : 'default'}
+                      sx={{ fontSize: '0.65rem', height: '20px' }}
                     />
                   </TableCell>
                   <TableCell align="center">

@@ -29,7 +29,6 @@ import {
   ContentCut as ContentCutIcon,
   Person as PersonIcon,
   Menu as MenuIcon,
-  AccountTree as AccountTreeIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
@@ -82,8 +81,6 @@ const CompactLayout = ({ children }) => {
           return "It looks like you are trying to cut a list! Would you like some help with that?";
         case '/csv_cutter_plus':
           return "It looks like you are trying to cut a list! Would you like some help with that?";
-        case '/file_lineage':
-          return "Wow, is this a FAMILY TREE for FILES? (the answer is yes)";
         case '/file_upload':
           return "Think twice before giving your files to a stranger!";
         case '/manage_files':
@@ -112,7 +109,6 @@ const CompactLayout = ({ children }) => {
     ...(token ? [
       { text: 'Upload Files', path: '/file_upload', icon: <UploadFileIcon /> },
       { text: 'Manage Files', path: '/manage_files', icon: <FolderIcon /> },
-      { text: 'File Lineage', path: '/file_lineage', icon: <AccountTreeIcon /> },
       { text: 'Load Person Records', path: '/load_person_records', icon: <PersonIcon /> },
     ] : []),
     ...(token ? [{ text: 'Logout', path: '/logout', icon: <LogoutIcon /> }] : [{ text: 'Login', path: '/login', icon: <LoginIcon /> }]),
