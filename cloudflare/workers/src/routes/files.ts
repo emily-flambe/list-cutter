@@ -97,9 +97,9 @@ files.post('/upload', async (c) => {
 
     // Save file metadata to database
     await c.env.DB.prepare(
-      `INSERT INTO files (id, user_id, filename, file_key, size_bytes, mime_type) 
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).bind(fileId, userId, file.name, fileKey, file.size, file.type).run();
+      `INSERT INTO files (id, user_id, filename, original_filename, r2_key, file_size, mime_type, upload_status, tags) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(fileId, userId, file.name, file.name, fileKey, file.size, file.type, 'completed', JSON.stringify(['upload'])).run();
 
     return c.json({
       success: true,
@@ -141,7 +141,7 @@ files.get('/:fileId', async (c) => {
     }
 
     // Get file from R2
-    const object = await c.env.FILE_STORAGE.get(fileRecord.r2_key || fileRecord.file_key);
+    const object = await c.env.FILE_STORAGE.get(fileRecord.r2_key);
     
     if (!object) {
       return c.json({ error: 'File data not found' }, 404);
@@ -152,7 +152,7 @@ files.get('/:fileId', async (c) => {
       headers: {
         'Content-Type': fileRecord.mime_type || 'text/csv',
         'Content-Disposition': `attachment; filename="${fileRecord.original_filename || fileRecord.filename}"`,
-        'Content-Length': (fileRecord.file_size || fileRecord.size_bytes).toString()
+        'Content-Length': fileRecord.file_size.toString()
       }
     });
   } catch (error) {
@@ -177,7 +177,7 @@ files.delete('/:fileId', async (c) => {
     }
 
     // Delete from R2
-    await c.env.FILE_STORAGE.delete(fileRecord.file_key);
+    await c.env.FILE_STORAGE.delete(fileRecord.r2_key);
 
     // Delete from database
     await c.env.DB.prepare(
@@ -194,39 +194,93 @@ files.delete('/:fileId', async (c) => {
   }
 });
 
-// List files endpoint
+// List files endpoint - Enhanced for file management
 files.get('/', async (c) => {
   try {
     const userId = c.get('userId');
     const limit = parseInt(c.req.query('limit') || '50');
     const offset = parseInt(c.req.query('offset') || '0');
+    const fileType = c.req.query('type'); // Optional filter for file type
+
+    // Build query with optional CSV filter
+    let query = `
+      SELECT 
+        id, 
+        filename, 
+        original_filename,
+        file_size, 
+        mime_type, 
+        created_at,
+        upload_status,
+        tags,
+        r2_key
+      FROM files 
+      WHERE user_id = ?
+    `;
+    
+    const params: any[] = [userId];
+    
+    // Add CSV filter for MVP (requirement 4.1)
+    if (fileType === 'csv' || !fileType) {
+      query += ` AND mime_type IN ('text/csv', 'application/vnd.ms-excel', 'text/plain')`;
+    }
+    
+    query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
 
     // Get files from database
-    const files = await c.env.DB.prepare(
-      `SELECT id, filename, size_bytes, mime_type, created_at 
-       FROM files 
-       WHERE user_id = ? 
-       ORDER BY created_at DESC 
-       LIMIT ? OFFSET ?`
-    ).bind(userId, limit, offset).all();
+    const files = await c.env.DB.prepare(query).bind(...params).all();
 
-    // Get total count
-    const countResult = await c.env.DB.prepare(
-      'SELECT COUNT(*) as total FROM files WHERE user_id = ?'
-    ).bind(userId).first();
+    // Get total count with same filters
+    let countQuery = `SELECT COUNT(*) as total FROM files WHERE user_id = ?`;
+    const countParams: any[] = [userId];
+    
+    if (fileType === 'csv' || !fileType) {
+      countQuery += ` AND mime_type IN ('text/csv', 'application/vnd.ms-excel', 'text/plain')`;
+    }
+    
+    const countResult = await c.env.DB.prepare(countQuery).bind(...countParams).first();
+
+    // Transform results to include enhanced metadata
+    const enhancedFiles = files.results.map(file => {
+      // Parse tags to determine source
+      let source = 'upload'; // default
+      try {
+        const tags = file.tags ? JSON.parse(file.tags) : [];
+        if (tags.includes('synthetic-data')) {
+          source = 'synthetic-data';
+        }
+      } catch (e) {
+        // If tags parsing fails, use default
+      }
+
+      return {
+        id: file.id,
+        filename: file.original_filename || file.filename,
+        size: file.file_size,
+        mimeType: file.mime_type,
+        createdAt: file.created_at,
+        source: source,
+        status: file.upload_status || 'completed'
+      };
+    });
 
     return c.json({
       success: true,
-      files: files.results,
+      files: enhancedFiles,
       pagination: {
-        total: countResult.total,
+        total: countResult?.total || 0,
         limit,
         offset
       }
     });
   } catch (error) {
     console.error('List files error:', error);
-    return c.json({ error: 'Failed to list files' }, 500);
+    return c.json({ 
+      error: 'Failed to list files',
+      message: 'Unable to retrieve your files. Please try again.',
+      code: 'FILE_LIST_ERROR'
+    }, 500);
   }
 });
 
@@ -247,7 +301,7 @@ files.post('/:fileId/process', async (c) => {
     }
 
     // Get file from R2
-    const object = await c.env.FILE_STORAGE.get(fileRecord.file_key);
+    const object = await c.env.FILE_STORAGE.get(fileRecord.r2_key);
     if (!object) {
       return c.json({ error: 'File data not found' }, 404);
     }
