@@ -48,6 +48,8 @@
     "wrangler": "^4.24.3"
   },
   "dependencies": {
+    "@hono/swagger-ui": "^0.5.2",
+    "@hono/zod-openapi": "^1.0.2",
     "@vitest/coverage-v8": "2.0.5",
     "drizzle-orm": "^0.38.4",
     "hono": "^4.6.16",

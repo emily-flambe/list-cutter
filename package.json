@@ -25,9 +25,5 @@
   "workspaces": [
     "cloudflare/workers",
     "app/frontend"
-  ],
-  "dependencies": {
-    "@hono/swagger-ui": "^0.5.2",
-    "@hono/zod-openapi": "^1.0.2"
-  }
+  ]
 }
