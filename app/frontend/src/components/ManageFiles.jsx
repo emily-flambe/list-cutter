@@ -420,7 +420,7 @@ const ManageFiles = () => {
         </Box>
         
         {selectedFile && (
-          <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+          <Typography variant="body2" sx={{ fontSize: '0.8rem', color: 'text.secondary', textAlign: 'left' }}>
             {selectedFile.name}
           </Typography>
         )}
