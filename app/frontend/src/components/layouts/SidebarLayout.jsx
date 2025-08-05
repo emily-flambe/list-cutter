@@ -374,7 +374,7 @@ const SidebarLayout = ({ children }) => {
                 <AutoAwesomeIcon />
               </ListItemIcon>
               <ListItemText 
-                primary="Appearance" 
+                primary="Style" 
                 sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} 
               />
               {appearanceOpen ? <ExpandLess sx={{ color: 'var(--primary-text)' }} /> : <ExpandMore sx={{ color: 'var(--primary-text)' }} />}
