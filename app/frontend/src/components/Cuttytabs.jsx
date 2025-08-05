@@ -5,7 +5,7 @@
  * Features segment builder, live counts, and Google Ads activation.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   Box,
   Card,
@@ -41,7 +41,10 @@ import {
   Group as GroupIcon,
   Schedule as ScheduleIcon
 } from '@mui/icons-material';
+import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import { api } from '../api';
+import cuttyLogo from '../assets/cutty_logo.png';
 
 const OPERATORS = [
   { value: 'equals', label: 'Equals' },
@@ -59,6 +62,7 @@ const OPERATORS = [
 ];
 
 const Cuttytabs = () => {
+  const { token } = useContext(AuthContext);
   const [segments, setSegments] = useState([]);
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -285,6 +289,121 @@ const Cuttytabs = () => {
       default: return 'default';
     }
   };
+
+  // Show scary warning for unauthenticated users
+  if (!token) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        maxHeight: '100vh',
+        overflow: 'hidden',
+        p: 2,
+        position: 'relative'
+      }}>
+        {/* Top Row: Text on left, Large Cutty on right */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          width: '100%',
+          maxWidth: '900px',
+          mb: -6,
+          gap: 3,
+          pl: 2
+        }}>
+          {/* Red Glowing Text */}
+          <Typography 
+            variant="h2" 
+            sx={{ 
+              color: '#ff0000',
+              fontFamily: 'Creepster, cursive',
+              fontWeight: 'bold',
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+              lineHeight: 1.2,
+              textAlign: 'left',
+              flex: 1,
+              '@keyframes textGlow': {
+                '0%': {
+                  textShadow: '0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000'
+                },
+                '100%': {
+                  textShadow: '0 0 20px #ff0000, 0 0 30px #ff0000, 0 0 40px #ff0000'
+                }
+              },
+              animation: 'textGlow 2s ease-in-out infinite alternate',
+              textShadow: '0 0 10px #ff0000, 0 0 20px #ff0000, 0 0 30px #ff0000'
+            }}
+          >
+            ANALYSIS REQUIRES LOGIN.
+          </Typography>
+          
+          {/* REALLY BIG Cutty - on the right */}
+          <Box sx={{ 
+            position: 'relative',
+            '@keyframes redGlow': {
+              '0%': {
+                filter: 'drop-shadow(0 0 20px #ff0000) drop-shadow(0 0 40px #ff0000)',
+                transform: 'scale(1)'
+              },
+              '100%': {
+                filter: 'drop-shadow(0 0 40px #ff0000) drop-shadow(0 0 60px #ff0000)',
+                transform: 'scale(1.05)'
+              }
+            },
+            animation: 'redGlow 3s ease-in-out infinite alternate'
+          }}>
+            <img 
+              src={cuttyLogo} 
+              alt="Angry Cutty" 
+              style={{ 
+                width: '300px', 
+                height: '300px', 
+                filter: 'brightness(1.2) contrast(1.3) hue-rotate(0deg)'
+              }} 
+            />
+          </Box>
+        </Box>
+
+        {/* Action Buttons */}
+        <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            component={Link} 
+            to="/login"
+            sx={{ minWidth: '120px' }}
+          >
+            Login
+          </Button>
+          <Button 
+            variant="outlined" 
+            color="secondary" 
+            component={Link} 
+            to="/register"
+            sx={{ minWidth: '120px' }}
+          >
+            Register
+          </Button>
+        </Box>
+
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            mt: 3, 
+            textAlign: 'center',
+            color: 'text.secondary',
+            maxWidth: '600px'
+          }}
+        >
+          Dynamic data segmentation and analysis tools require authentication.
+          Login to create segments, track audience changes, and sync with Google Ads.
+        </Typography>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (
