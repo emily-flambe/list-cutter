@@ -13,6 +13,7 @@ import ManageFiles from './components/ManageFiles';
 import FAQ from './components/FAQ';
 import DesignTester from './components/DesignTester';
 import SyntheticDataGenerator from './components/SyntheticDataGenerator';
+import Cuttytabs from './components/Cuttytabs';
 import './index.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
@@ -58,6 +59,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/design-tester" element={<DesignTester />} />
             <Route path="/synthetic-data" element={<SyntheticDataGenerator />} />
+            <Route path="/cuttytabs" element={<Cuttytabs />} />
           </Routes>
         </Layout>
       </BrowserRouter>

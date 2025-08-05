@@ -21,6 +21,7 @@ import ContentCutIcon from '@mui/icons-material/ContentCut';
 import ListIcon from '@mui/icons-material/List';
 import PersonIcon from '@mui/icons-material/Person';
 import DataArrayIcon from '@mui/icons-material/DataArray';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext, useEffect, useState } from 'react';
@@ -103,6 +104,8 @@ const Layout = ({ children }) => {
           return "Have we met?";
         case '/synthetic-data':
           return "Creating FAKE people? That's MY job!";
+        case '/cuttytabs':
+          return "Segmenting data like a true cuttlefish! Dynamic and efficient!";
         case '/faq':
           return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.15rem' } };
         case '/logout':
@@ -228,6 +231,16 @@ const Layout = ({ children }) => {
                             >
                               <ListItemIcon><DataArrayIcon /></ListItemIcon>
                               <ListItemText primary="Generate Fake Data" />
+                            </ListItemButton>
+                          </ListItem>
+                          <ListItem key="cuttytabs" disablePadding>
+                            <ListItemButton 
+                              component={Link} 
+                              to="/cuttytabs" 
+                              sx={{ paddingLeft: 4 }}
+                            >
+                              <ListItemIcon><TrendingUpIcon /></ListItemIcon>
+                              <ListItemText primary="Cuttytabs" />
                             </ListItemButton>
                           </ListItem>
                         </List>
