@@ -6,6 +6,7 @@
  */
 
 import type { Env } from '../types';
+import { processGoogleAdsActivations } from './google-ads-activator';
 
 export interface SegmentQuery {
   conditions: Array<{
@@ -223,7 +224,7 @@ export async function processSegments(env: Env): Promise<ProcessingStats> {
 
 /**
  * Process activation queue - sends segment data to external platforms
- * Handles Google Ads Customer Match uploads in batches
+ * Handles Google Ads Customer Match uploads securely
  */
 export async function processActivationQueue(env: Env): Promise<ProcessingStats> {
   const startTime = Date.now();
@@ -238,75 +239,14 @@ export async function processActivationQueue(env: Env): Promise<ProcessingStats>
   };
 
   try {
-    // Get pending activations (limit to avoid timeout)
-    const pendingActivations = await env.DB.prepare(`
-      SELECT * FROM activation_queue 
-      WHERE status = 'pending' 
-      ORDER BY created_at ASC
-      LIMIT 10
-    `).all();
+    // Process Google Ads activations using secure service
+    const googleAdsStats = await processGoogleAdsActivations(env);
+    
+    stats.segmentsProcessed = googleAdsStats.successful;
+    stats.recordsEvaluated = googleAdsStats.processed;
+    stats.errors = googleAdsStats.errors;
 
-    console.log(`Found ${pendingActivations.results.length} pending activations`);
-
-    for (const activation of pendingActivations.results) {
-      try {
-        // Mark as processing
-        await env.DB.prepare(`
-          UPDATE activation_queue 
-          SET status = 'processing', processed_at = datetime('now')
-          WHERE id = ?
-        `).bind(activation.id).run();
-
-        const recordIds = JSON.parse(activation.record_ids);
-        stats.recordsEvaluated += recordIds.length;
-
-        // Get segment info
-        const segment = await env.DB.prepare(`
-          SELECT * FROM segments WHERE id = ?
-        `).bind(activation.segment_id).first();
-
-        if (!segment) {
-          throw new Error(`Segment ${activation.segment_id} not found`);
-        }
-
-        // Get record data for activation
-        const records = await env.DB.prepare(`
-          SELECT data FROM csv_data 
-          WHERE id IN (${recordIds.map(() => '?').join(',')})
-        `).bind(...recordIds).all();
-
-        // Here we would actually send to Google Ads API
-        // For now, we'll simulate the activation
-        console.log(`Activating ${records.results.length} records for segment ${segment.name} to ${activation.platform}`);
-        
-        // Simulate API call success
-        const simulateSuccess = Math.random() > 0.1; // 90% success rate
-        
-        if (simulateSuccess) {
-          await env.DB.prepare(`
-            UPDATE activation_queue 
-            SET status = 'completed'
-            WHERE id = ?
-          `).bind(activation.id).run();
-          
-          stats.segmentsProcessed++;
-        } else {
-          throw new Error('Simulated API failure');
-        }
-
-      } catch (activationError) {
-        const errorMsg = `Activation failed for queue item ${activation.id}: ${activationError}`;
-        console.error(errorMsg);
-        stats.errors.push(errorMsg);
-
-        // Mark as failed with error message
-        await env.DB.prepare(`
-          UPDATE activation_queue 
-          SET status = 'failed', error_message = ?
-          WHERE id = ?
-        `).bind(errorMsg, activation.id).run();
-      }
-    }
+    console.log('Activation processing delegated to Google Ads service:', googleAdsStats);
 
   } catch (error) {
     const errorMsg = `Critical error in processActivationQueue: ${error}`;
@@ -315,14 +255,6 @@ export async function processActivationQueue(env: Env): Promise<ProcessingStats>
   }
 
   stats.processingTimeMs = Date.now() - startTime;
-  
-  console.log('Activation processing complete:', {
-    activationsProcessed: stats.segmentsProcessed,
-    recordsProcessed: stats.recordsEvaluated,
-    processingTimeMs: stats.processingTimeMs,
-    errorsCount: stats.errors.length
-  });
-
   return stats;
 }
 
