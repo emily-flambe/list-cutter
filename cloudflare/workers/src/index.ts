@@ -16,6 +16,7 @@ import adminRoutes from './routes/admin';
 import syntheticDataRoutes from './routes/synthetic-data';
 import agentRoutes from './routes/agent';
 import segmentsRoutes from './routes/segments';
+import realtimeRoutes from './routes/realtime';
 
 // Import security middleware
 import { rateLimitMiddleware } from './services/security';
@@ -192,6 +193,7 @@ v1.route('/admin', adminRoutes); // Admin routes at /api/v1/admin/*
 v1.route('/synthetic-data', syntheticDataRoutes); // Synthetic data generation at /api/v1/synthetic-data/*
 v1.route('/agent', agentRoutes); // Agent WebSocket proxy at /api/v1/agent/*
 v1.route('/segments', segmentsRoutes); // Cuttytabs segmentation at /api/v1/segments/*
+v1.route('/realtime', realtimeRoutes); // Real-time updates via SSE at /api/v1/realtime/*
 
 // Frontend serving logic for non-API routes
 app.get('*', async (c, next): Promise<Response> => {
