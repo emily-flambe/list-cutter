@@ -101,13 +101,59 @@ files.post('/upload', async (c) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(fileId, userId, file.name, file.name, fileKey, file.size, file.type, 'completed', JSON.stringify(['upload'])).run();
 
+    // If it's a CSV file, also parse and store the data for segmentation
+    let rowCount = 0;
+    if (file.type === 'text/csv' || file.type === 'application/vnd.ms-excel' || file.name.toLowerCase().endsWith('.csv')) {
+      try {
+        // Read and parse CSV content
+        const content = await file.text();
+        const rows = content.trim().split('\n');
+        
+        if (rows.length > 1) { // Skip empty files
+          const headers = rows[0].split(',').map(h => h.trim().replace(/"/g, ''));
+          
+          // Batch insert CSV rows into D1 for segmentation
+          const BATCH_SIZE = 1000;
+          for (let i = 1; i < rows.length; i += BATCH_SIZE) {
+            const batch = rows.slice(i, Math.min(i + BATCH_SIZE, rows.length));
+            const insertValues: string[] = [];
+            
+            for (const row of batch) {
+              const values = row.split(',').map(v => v.trim().replace(/"/g, ''));
+              const data: any = {};
+              
+              // Create object from headers and values
+              headers.forEach((header, index) => {
+                data[header] = values[index] || '';
+              });
+              
+              const rowId = crypto.randomUUID();
+              insertValues.push(`('${rowId}', '${fileId}', '${JSON.stringify(data).replace(/'/g, "''")}')`);
+              rowCount++;
+            }
+            
+            if (insertValues.length > 0) {
+              await c.env.DB.prepare(`
+                INSERT INTO csv_data (id, file_id, data)
+                VALUES ${insertValues.join(', ')}
+              `).run();
+            }
+          }
+        }
+      } catch (parseError) {
+        console.warn('CSV parsing failed, file stored without segmentation data:', parseError);
+        // Continue - file is still successfully uploaded even if CSV parsing fails
+      }
+    }
+
     return c.json({
       success: true,
       file: {
         id: fileId,
         name: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
+        rowCount: rowCount > 0 ? rowCount : undefined
       }
     });
   } catch (error) {
