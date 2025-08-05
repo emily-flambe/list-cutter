@@ -22,6 +22,7 @@ import ListIcon from '@mui/icons-material/List';
 import PersonIcon from '@mui/icons-material/Person';
 import DataArrayIcon from '@mui/icons-material/DataArray';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext, useEffect, useState } from 'react';
@@ -39,6 +40,7 @@ const Layout = ({ children }) => {
   const [loadingUser, setLoadingUser] = useState(true); // Add loading state
   const [openFiles, setOpenFiles] = useState(false); // Add state for toggling Files group
   const [openPeople, setOpenPeople] = useState(false); // Add state for toggling People group
+  const [openAnalysis, setOpenAnalysis] = useState(false); // Add state for toggling Analysis group
 
   useEffect(() => {
     // Initialize theme on app startup
@@ -75,6 +77,7 @@ const Layout = ({ children }) => {
     ...(token ? [{ text: 'CSV Cutter PLUS', icon: <ContentCutIcon />, path: '/csv_cutter_plus' }] : []),
     // Show Files for everyone, but behavior differs based on auth
     { text: token ? (openFiles ? 'Files (-)' : 'Files (+)') : 'Files', icon: <FolderIcon />, isGroup: token, path: token ? undefined : '/manage_files' },
+    ...(token ? [{ text: openAnalysis ? 'Analysis (-)' : 'Analysis (+)', icon: <AnalyticsIcon />, isGroup: true }] : []),
     ...(token ? [{ text: openPeople ? 'People (-)' : 'People (+)', icon: <ListIcon />, isGroup: true }] : []),
     ...(token ? [{ text: 'FAQ', icon: <HelpIcon />, path: '/faq' }] : []),
     { text: 'About', icon: <HomeIcon />, path: '/' },
@@ -176,6 +179,8 @@ const Layout = ({ children }) => {
                       onClick={() => {
                         if (item.text.includes('Files')) {
                           setOpenFiles(!openFiles);
+                        } else if (item.text.includes('Analysis')) {
+                          setOpenAnalysis(!openAnalysis);
                         } else if (item.text.includes('People')) {
                           setOpenPeople(!openPeople);
                         }
@@ -210,6 +215,22 @@ const Layout = ({ children }) => {
                         </List>
                       </Collapse>
                     )}
+                    {item.text.includes('Analysis') && (
+                      <Collapse in={openAnalysis} timeout="auto" unmountOnExit>
+                        <List component="div" disablePadding>
+                          <ListItem key="cuttytabs" disablePadding>
+                            <ListItemButton 
+                              component={Link} 
+                              to="/cuttytabs" 
+                              sx={{ paddingLeft: 4 }}
+                            >
+                              <ListItemIcon><TrendingUpIcon /></ListItemIcon>
+                              <ListItemText primary="Cuttytabs" />
+                            </ListItemButton>
+                          </ListItem>
+                        </List>
+                      </Collapse>
+                    )}
                     {item.text.includes('People') && (
                       <Collapse in={openPeople} timeout="auto" unmountOnExit>
                         <List component="div" disablePadding>
@@ -231,16 +252,6 @@ const Layout = ({ children }) => {
                             >
                               <ListItemIcon><DataArrayIcon /></ListItemIcon>
                               <ListItemText primary="Generate Fake Data" />
-                            </ListItemButton>
-                          </ListItem>
-                          <ListItem key="cuttytabs" disablePadding>
-                            <ListItemButton 
-                              component={Link} 
-                              to="/cuttytabs" 
-                              sx={{ paddingLeft: 4 }}
-                            >
-                              <ListItemIcon><TrendingUpIcon /></ListItemIcon>
-                              <ListItemText primary="Cuttytabs" />
                             </ListItemButton>
                           </ListItem>
                         </List>
