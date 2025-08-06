@@ -7,12 +7,16 @@
  * - File deletion
  * - File listing
  * - CSV processing
+ * - CSV field extraction for analysis
+ * - Crosstab analysis generation
+ * - Crosstab export with file saving
  */
 
 import { Hono } from 'hono';
-import type { Env } from '../types';
+import type { Env, CrosstabRequest, FieldsResponse, CrosstabResponse, CrosstabExportRequest, CrosstabExportResponse } from '../types';
 import { validateFile } from '../services/security/file-validator';
 import { validateToken } from '../services/auth/jwt';
+import { CrosstabProcessor } from '../services/crosstab-processor';
 
 const files = new Hono<{ Bindings: Env }>();
 
@@ -387,6 +391,243 @@ files.post('/:fileId/process', async (c) => {
   } catch (error) {
     console.error('Process error:', error);
     return c.json({ error: 'Processing failed' }, 500);
+  }
+});
+
+// Extract CSV fields endpoint for analysis
+files.get('/:fileId/fields', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const fileId = c.req.param('fileId');
+
+    // Get file metadata
+    const fileRecord = await c.env.DB.prepare(
+      'SELECT * FROM files WHERE id = ? AND user_id = ?'
+    ).bind(fileId, userId).first();
+
+    if (!fileRecord) {
+      return c.json({ error: 'File not found' }, 404);
+    }
+
+    // Verify it's a CSV file
+    const isCSV = fileRecord.mime_type === 'text/csv' || 
+                  fileRecord.mime_type === 'application/vnd.ms-excel' || 
+                  fileRecord.filename.toLowerCase().endsWith('.csv');
+
+    if (!isCSV) {
+      return c.json({ error: 'File is not a CSV file' }, 400);
+    }
+
+    // Get file from R2
+    const object = await c.env.FILE_STORAGE.get(fileRecord.r2_key);
+    if (!object) {
+      return c.json({ error: 'File data not found' }, 404);
+    }
+
+    // Read and parse CSV content
+    const content = await object.text();
+    const { fields, rowCount } = CrosstabProcessor.extractFields(content);
+
+    const response: FieldsResponse = {
+      success: true,
+      fields,
+      rowCount,
+      fileInfo: {
+        id: fileRecord.id,
+        filename: fileRecord.original_filename || fileRecord.filename,
+        size: fileRecord.file_size
+      }
+    };
+
+    return c.json(response);
+  } catch (error) {
+    console.error('Fields extraction error:', error);
+    return c.json({ 
+      error: 'Failed to extract fields', 
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Generate crosstab analysis endpoint
+files.post('/:fileId/analyze/crosstab', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const fileId = c.req.param('fileId');
+    const { rowVariable, columnVariable, includePercentages }: CrosstabRequest = await c.req.json();
+
+    // Validate input
+    if (!rowVariable || !columnVariable) {
+      return c.json({ error: 'Both rowVariable and columnVariable are required' }, 400);
+    }
+
+    if (rowVariable === columnVariable) {
+      return c.json({ error: 'Row and column variables must be different' }, 400);
+    }
+
+    // Get file metadata
+    const fileRecord = await c.env.DB.prepare(
+      'SELECT * FROM files WHERE id = ? AND user_id = ?'
+    ).bind(fileId, userId).first();
+
+    if (!fileRecord) {
+      return c.json({ error: 'File not found' }, 404);
+    }
+
+    // Verify it's a CSV file
+    const isCSV = fileRecord.mime_type === 'text/csv' || 
+                  fileRecord.mime_type === 'application/vnd.ms-excel' || 
+                  fileRecord.filename.toLowerCase().endsWith('.csv');
+
+    if (!isCSV) {
+      return c.json({ error: 'File is not a CSV file' }, 400);
+    }
+
+    // Get file from R2
+    const object = await c.env.FILE_STORAGE.get(fileRecord.r2_key);
+    if (!object) {
+      return c.json({ error: 'File data not found' }, 404);
+    }
+
+    // Read and analyze CSV content
+    const content = await object.text();
+    const crosstabData = await CrosstabProcessor.generateCrosstab(content, rowVariable, columnVariable);
+
+    const response: CrosstabResponse = {
+      success: true,
+      data: crosstabData,
+      metadata: {
+        processedRows: crosstabData.grandTotal,
+        uniqueRowValues: Object.keys(crosstabData.rowTotals).length,
+        uniqueColumnValues: Object.keys(crosstabData.columnTotals).length
+      }
+    };
+
+    return c.json(response);
+  } catch (error) {
+    console.error('Crosstab analysis error:', error);
+    return c.json({ 
+      error: 'Failed to generate crosstab analysis', 
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Export crosstab analysis as CSV
+files.post('/:fileId/export/crosstab', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const fileId = c.req.param('fileId');
+    const { rowVariable, columnVariable, filename: customFilename }: CrosstabExportRequest = await c.req.json();
+
+    // Validate input
+    if (!rowVariable || !columnVariable) {
+      return c.json({ error: 'Both rowVariable and columnVariable are required' }, 400);
+    }
+
+    if (rowVariable === columnVariable) {
+      return c.json({ error: 'Row and column variables must be different' }, 400);
+    }
+
+    // Get original file metadata
+    const fileRecord = await c.env.DB.prepare(
+      'SELECT * FROM files WHERE id = ? AND user_id = ?'
+    ).bind(fileId, userId).first();
+
+    if (!fileRecord) {
+      return c.json({ error: 'File not found' }, 404);
+    }
+
+    // Verify it's a CSV file
+    const isCSV = fileRecord.mime_type === 'text/csv' || 
+                  fileRecord.mime_type === 'application/vnd.ms-excel' || 
+                  fileRecord.filename.toLowerCase().endsWith('.csv');
+
+    if (!isCSV) {
+      return c.json({ error: 'File is not a CSV file' }, 400);
+    }
+
+    // Get file from R2
+    const object = await c.env.FILE_STORAGE.get(fileRecord.r2_key);
+    if (!object) {
+      return c.json({ error: 'File data not found' }, 404);
+    }
+
+    // Generate crosstab analysis
+    const content = await object.text();
+    const crosstabData = await CrosstabProcessor.generateCrosstab(content, rowVariable, columnVariable);
+
+    // Generate CSV export content
+    const exportCSV = CrosstabProcessor.generateExportCSV(crosstabData);
+
+    // Generate filename
+    const timestamp = new Date().toISOString().split('T')[0];
+    const originalName = fileRecord.original_filename || fileRecord.filename;
+    const baseName = originalName.replace(/\.[^/.]+$/, ''); // Remove extension
+    const exportFilename = customFilename || `crosstab_${baseName}_${rowVariable}_${columnVariable}_${timestamp}.csv`;
+
+    // Generate new file ID and key
+    const exportFileId = crypto.randomUUID();
+    const exportFileKey = `files/${userId}/${exportFileId}/${exportFilename}`;
+
+    // Calculate file size
+    const exportFileSize = new Blob([exportCSV]).size;
+
+    // Upload exported CSV to R2
+    await c.env.FILE_STORAGE.put(exportFileKey, exportCSV, {
+      httpMetadata: {
+        contentType: 'text/csv',
+        contentDisposition: `attachment; filename="${exportFilename}"`
+      },
+      customMetadata: {
+        userId,
+        originalName: exportFilename,
+        size: exportFileSize.toString(),
+        uploadedAt: new Date().toISOString(),
+        source: 'analysis-crosstab',
+        originalFileId: fileId,
+        analysisType: 'crosstab',
+        rowVariable,
+        columnVariable
+      }
+    });
+
+    // Create tags for the exported file
+    const tags = [
+      'analysis-crosstab',
+      'export',
+      `original-file:${fileId}`,
+      `analysis:${rowVariable}x${columnVariable}`
+    ];
+
+    // Save export file metadata to database
+    await c.env.DB.prepare(
+      `INSERT INTO files (id, user_id, filename, original_filename, r2_key, file_size, mime_type, upload_status, tags) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(exportFileId, userId, exportFilename, exportFilename, exportFileKey, exportFileSize, 'text/csv', 'completed', JSON.stringify(tags)).run();
+
+    // Generate temporary download URL (valid for 1 hour)
+    const downloadUrl = await c.env.FILE_STORAGE.head(exportFileKey);
+    
+    const response: CrosstabExportResponse = {
+      success: true,
+      downloadUrl: `/api/v1/files/${exportFileId}`, // Use our download endpoint
+      savedFile: {
+        id: exportFileId,
+        filename: exportFilename,
+        size: exportFileSize,
+        createdAt: new Date().toISOString()
+      },
+      message: `Crosstab analysis exported successfully. File saved as "${exportFilename}" in your file list.`
+    };
+
+    return c.json(response);
+  } catch (error) {
+    console.error('Crosstab export error:', error);
+    return c.json({ 
+      error: 'Failed to export crosstab analysis', 
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
   }
 });
 
