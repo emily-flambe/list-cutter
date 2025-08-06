@@ -460,7 +460,7 @@ const Cuttytabs = () => {
     if (selectedFile === 'reference-squirrel') {
       return 'NYC Central Park Squirrel Census (Reference Data)';
     } else if (selectedFile === 'demo-squirrel-data') {
-      return 'NYC Squirrel Census (Demo Data)';
+      return 'NYC Squirrel Census';
     } else {
       return files.find(f => f.id === selectedFile)?.filename || '';
     }
@@ -515,14 +515,14 @@ const Cuttytabs = () => {
                 // Anonymous user - show only demo data
                 squirrelDataAvailable ? (
                   <FormControl fullWidth sx={{ mt: 2 }}>
-                    <InputLabel>Demo Data</InputLabel>
+                    <InputLabel>Dataset</InputLabel>
                     <Select
                       value={selectedFile}
-                      label="Demo Data"
+                      label="Dataset"
                       onChange={(e) => handleFileSelect(e.target.value)}
                     >
                       <MenuItem value="demo-squirrel-data">
-                        🐿️ NYC Squirrel Census Demo Data
+                        🐿️ NYC Squirrel Census
                       </MenuItem>
                     </Select>
                   </FormControl>

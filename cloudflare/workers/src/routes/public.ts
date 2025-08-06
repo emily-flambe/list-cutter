@@ -80,7 +80,7 @@ publicRoutes.get('/squirrel/fields', async (c) => {
       rowCount,
       fileInfo: {
         id: 'demo-squirrel-data',
-        filename: 'NYC Squirrel Census Demo Data',
+        filename: 'NYC Squirrel Census',
         size: fileSize
       }
     };
