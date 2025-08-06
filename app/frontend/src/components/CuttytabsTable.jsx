@@ -139,9 +139,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
         <Typography variant="caption" color="text.secondary">
           Total Records: {typeof grandTotal === 'number' ? grandTotal.toLocaleString() : '0'}
         </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Non-zero Cells: {nonZeroCells.toLocaleString()} / {totalCells.toLocaleString()} ({sparsity.toFixed(1)}% dense)
-        </Typography>
         {isLarge && (
           <Typography variant="caption" color="primary.main" sx={{ fontWeight: 'bold' }}>
             🐰 Performance Mode Active
