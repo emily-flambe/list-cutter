@@ -28,8 +28,8 @@ const Analysis = () => {
                 </Box>
                 
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flexGrow: 1 }}>
-                  Advanced crosstab analysis tool for exploring relationships between categorical variables. 
-                  Create pivot tables and cross-tabulations with statistical insights.
+                  Create cross-tabulation tables to analyze relationships between two categorical variables. 
+                  Features interactive field selection, frequency counts with totals, and CSV export functionality.
                 </Typography>
                 
                 <Button
