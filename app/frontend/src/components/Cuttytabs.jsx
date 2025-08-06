@@ -481,15 +481,8 @@ const Cuttytabs = () => {
             🐿️ <strong>Demo Mode:</strong> Try our analysis features with real NYC Squirrel Census data! 
             No login required - explore crosstab analysis to see relationships between different variables.
           </Alert>
-          <Typography variant="body1" color="text.secondary">
-            Create cross-tabulation tables to analyze relationships between two categorical variables.
-          </Typography>
         </Box>
-      ) : (
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-          Create cross-tabulation tables to analyze relationships between two categorical variables in your CSV files.
-        </Typography>
-      )}
+      ) : null}
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
