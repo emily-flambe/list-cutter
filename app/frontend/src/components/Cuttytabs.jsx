@@ -478,8 +478,7 @@ const Cuttytabs = () => {
       {isAnonymous ? (
         <Box sx={{ mb: 3 }}>
           <Alert severity="info" sx={{ mb: 2 }}>
-            🐿️ <strong>Demo Mode:</strong> Try our analysis features with real <a href="https://www.thesquirrelcensus.com/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>NYC Squirrel Census data</a>! 
-            No login required - explore crosstab analysis to see relationships between different variables.
+            🐿️ <strong>Demo Mode:</strong> Try out this feature FOR FREE(!!!) using REAL data from the <a href="https://www.thesquirrelcensus.com/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>NYC Squirrel Census</a>!
           </Alert>
         </Box>
       ) : null}
