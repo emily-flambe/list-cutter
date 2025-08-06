@@ -478,7 +478,7 @@ const Cuttytabs = () => {
       {isAnonymous ? (
         <Box sx={{ mb: 3 }}>
           <Alert severity="info" sx={{ mb: 2 }}>
-            🐿️ <strong>Demo Mode:</strong> Try out this feature using REAL data from the <a href="https://www.thesquirrelcensus.com/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>NYC Squirrel Census</a>!
+            🐿️ <strong>Demo Mode:</strong> Try out this feature using REAL (probably?) data from the <a href="https://www.thesquirrelcensus.com/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>NYC Squirrel Census</a>!
           </Alert>
         </Box>
       ) : null}
