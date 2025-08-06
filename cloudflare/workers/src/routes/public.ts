@@ -22,7 +22,7 @@ publicRoutes.get('/squirrel/data', async (c) => {
     console.log('Public squirrel data request from anonymous user');
 
     // Get squirrel data from R2
-    const object = await c.env.FILE_STORAGE.get('reference-data/squirrel-data-full.csv');
+    const object = await c.env.FILE_STORAGE.get('squirrel-data-full.csv');
     
     if (!object) {
       return c.json({ 
@@ -55,7 +55,7 @@ publicRoutes.get('/squirrel/fields', async (c) => {
     console.log('Public squirrel fields extraction request from anonymous user');
 
     // Get squirrel data from R2
-    const object = await c.env.FILE_STORAGE.get('reference-data/squirrel-data-full.csv');
+    const object = await c.env.FILE_STORAGE.get('squirrel-data-full.csv');
     
     if (!object) {
       return c.json({ 
@@ -131,7 +131,7 @@ publicRoutes.post('/squirrel/analyze/crosstab', async (c) => {
 
     // Get squirrel data from R2 with performance monitoring
     const r2StartTime = Date.now();
-    const object = await c.env.FILE_STORAGE.get('reference-data/squirrel-data-full.csv');
+    const object = await c.env.FILE_STORAGE.get('squirrel-data-full.csv');
     const r2Time = Date.now() - r2StartTime;
     
     if (!object) {

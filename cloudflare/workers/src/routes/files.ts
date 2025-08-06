@@ -270,6 +270,177 @@ files.delete('/:fileId', async (c) => {
   }
 });
 
+// Get reference squirrel data for logged-in users
+files.get('/reference/squirrel', async (c) => {
+  try {
+    const userId = c.get('userId');
+    
+    // Only allow authenticated users to access reference data
+    if (!userId) {
+      return c.json({ error: 'Authentication required for reference data' }, 401);
+    }
+
+    // Get squirrel data from R2
+    const object = await c.env.FILE_STORAGE.get('squirrel-data-full.csv');
+    
+    if (!object) {
+      return c.json({ error: 'Reference squirrel data not found' }, 404);
+    }
+
+    // Return file with appropriate headers
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': 'attachment; filename="squirrel-data-full.csv"',
+        'Cache-Control': 'public, max-age=3600' // Cache for 1 hour since reference data doesn't change often
+      }
+    });
+  } catch (error) {
+    console.error('Reference squirrel data fetch error:', error);
+    return c.json({ error: 'Failed to fetch reference data' }, 500);
+  }
+});
+
+// Get reference squirrel data fields for analysis
+files.get('/reference/squirrel/fields', async (c) => {
+  try {
+    const userId = c.get('userId');
+    
+    // Only allow authenticated users to access reference data
+    if (!userId) {
+      return c.json({ error: 'Authentication required for reference data' }, 401);
+    }
+
+    // Get squirrel data from R2
+    const object = await c.env.FILE_STORAGE.get('squirrel-data-full.csv');
+    
+    if (!object) {
+      return c.json({ error: 'Reference squirrel data not found' }, 404);
+    }
+
+    // Read content
+    const content = await object.text();
+    const fileSize = content.length;
+
+    // Validate processing limits
+    CrosstabProcessor.validateProcessingLimits(content, 'field extraction');
+
+    // Extract fields
+    const { fields, rowCount } = CrosstabProcessor.extractFields(content);
+
+    const response: FieldsResponse = {
+      success: true,
+      fields,
+      rowCount,
+      fileInfo: {
+        id: 'reference-squirrel',
+        filename: 'squirrel-data-full.csv',
+        size: fileSize
+      }
+    };
+
+    return c.json(response);
+  } catch (error) {
+    console.error('Reference squirrel fields extraction error:', error);
+    return c.json({ 
+      error: 'Failed to extract fields from reference data', 
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
+// Crosstab analysis for reference squirrel data
+files.post('/reference/squirrel/analyze/crosstab', async (c) => {
+  const startTime = Date.now();
+  let fileSize = 0;
+  let analysisMetrics: any = {};
+  
+  try {
+    const userId = c.get('userId');
+    const { rowVariable, columnVariable, includePercentages }: CrosstabRequest = await c.req.json();
+
+    // Only allow authenticated users to access reference data
+    if (!userId) {
+      return c.json({ error: 'Authentication required for reference data' }, 401);
+    }
+
+    // Validate input - fail fast!
+    if (!rowVariable || !columnVariable) {
+      return c.json({ error: 'Both rowVariable and columnVariable are required' }, 400);
+    }
+
+    if (rowVariable === columnVariable) {
+      return c.json({ error: 'Row and column variables must be different' }, 400);
+    }
+
+    // Get squirrel data from R2 with performance monitoring
+    const r2StartTime = Date.now();
+    const object = await c.env.FILE_STORAGE.get('squirrel-data-full.csv');
+    const r2Time = Date.now() - r2StartTime;
+    
+    if (!object) {
+      return c.json({ error: 'Reference squirrel data not found' }, 404);
+    }
+
+    // Read content efficiently
+    const readStartTime = Date.now();
+    const content = await object.text();
+    const readTime = Date.now() - readStartTime;
+    fileSize = content.length;
+
+    // Validate processing limits
+    CrosstabProcessor.validateProcessingLimits(content, 'crosstab analysis');
+
+    // Generate crosstab with performance tracking
+    const analysisStartTime = Date.now();
+    const crosstabData = await CrosstabProcessor.generateCrosstab(content, rowVariable, columnVariable);
+    const analysisTime = Date.now() - analysisStartTime;
+
+    // Calculate comprehensive performance metrics
+    const totalTime = Date.now() - startTime;
+    const processingMetrics = CrosstabProcessor.getPerformanceMetrics('crosstab_analysis', startTime, fileSize);
+    
+    analysisMetrics = {
+      r2_retrieval_ms: r2Time,
+      file_read_ms: readTime,
+      analysis_processing_ms: analysisTime,
+      total_time_ms: totalTime,
+      throughput_mbps: processingMetrics.throughputMBps,
+      file_size_mb: processingMetrics.dataSizeMB,
+      rows_processed: crosstabData.grandTotal,
+      matrix_size: `${Object.keys(crosstabData.rowTotals).length}x${Object.keys(crosstabData.columnTotals).length}`
+    };
+    
+    console.log(`Reference squirrel crosstab analysis performance: R2:${r2Time}ms, Read:${readTime}ms, Analysis:${analysisTime}ms, Total:${totalTime}ms, Throughput:${processingMetrics.throughputMBps.toFixed(2)}MB/s, Matrix:${analysisMetrics.matrix_size}`);
+
+    const response: CrosstabResponse = {
+      success: true,
+      data: crosstabData,
+      metadata: {
+        processedRows: crosstabData.grandTotal,
+        uniqueRowValues: Object.keys(crosstabData.rowTotals).length,
+        uniqueColumnValues: Object.keys(crosstabData.columnTotals).length,
+        performance: analysisMetrics
+      }
+    };
+
+    return c.json(response);
+  } catch (error) {
+    const totalTime = Date.now() - startTime;
+    console.error(`Reference squirrel crosstab analysis failed after ${totalTime}ms:`, error);
+    
+    return c.json({ 
+      error: 'Failed to generate crosstab analysis for reference data', 
+      message: error instanceof Error ? error.message : 'Unknown error',
+      performance: {
+        ...analysisMetrics,
+        total_time_ms: totalTime,
+        error_occurred: true
+      }
+    }, 500);
+  }
+});
+
 // List files endpoint - Enhanced for file management
 files.get('/', async (c) => {
   try {
