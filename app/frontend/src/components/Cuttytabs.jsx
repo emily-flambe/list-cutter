@@ -469,7 +469,10 @@ const Cuttytabs = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Cuttytabs - Crosstab Analysis
+        Cuttytabs
+      </Typography>
+      <Typography variant="h6" component="h2" color="text.secondary" sx={{ mb: 3 }}>
+        the best crosstabber tool ever
       </Typography>
       
       {isAnonymous ? (
