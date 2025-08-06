@@ -90,15 +90,24 @@ const Cuttytabs = () => {
 
     setFieldsLoading(true);
     try {
-      // Use the secure analysis endpoint for field retrieval
-      const response = await api.get(`/api/v1/analysis/fields/${fileId}`);
+      // 🐰 RUBY'S OPTIMIZATION: Use the optimized backend endpoint for field extraction
+      const startTime = Date.now();
+      const response = await api.get(`/api/v1/files/${fileId}/fields`);
+      const processingTime = Date.now() - startTime;
+      
       setFields(response.data.fields || []);
+      
+      // 🐰 RUBY'S PERFORMANCE FEEDBACK: Log fast field extraction
+      console.log(`🐰 Fields extracted in ${processingTime}ms for ${response.data.rowCount} rows`);
+      
     } catch (err) {
-      console.error('Error fetching fields:', err);
+      console.error('🐰 Error fetching fields:', err);
       if (err.response?.status === 404) {
         setError('File not found or access denied.');
       } else if (err.response?.status === 401) {
         setError('Authentication required. Please log in again.');
+      } else if (err.response?.data?.message?.includes('too large')) {
+        setError(`File too large for analysis: ${err.response.data.message}`);
       } else {
         setError('Failed to load file fields. Please try again.');
       }
@@ -129,7 +138,7 @@ const Cuttytabs = () => {
     }
   };
 
-  // Generate crosstab using secure analysis endpoint
+  // 🐰 RUBY OPTIMIZED: Generate crosstab with performance monitoring and user feedback
   const handleGenerateCrosstab = async () => {
     if (!selectedFile || !rowVariable || !columnVariable) {
       setError('Please select a file and both variables.');
@@ -141,25 +150,46 @@ const Cuttytabs = () => {
       return;
     }
 
+    const startTime = Date.now();
     setLoading(true);
     setError('');
     setCrosstabData(null);
 
     try {
-      const response = await api.post('/api/v1/analysis/crosstab', {
-        fileId: selectedFile,
+      // 🐰 RUBY'S OPTIMIZATION: Use the optimized backend endpoint
+      const response = await api.post(`/api/v1/files/${selectedFile}/analyze/crosstab`, {
         rowVariable,
         columnVariable,
-        includePercentages: true,
-        includeStatistics: true
+        includePercentages: true
       });
 
-      setCrosstabData(response.data.analysis);
-      setSuccessMessage('Crosstab generated successfully with enhanced security!');
-    } catch (err) {
-      console.error('Error generating crosstab:', err);
+      const processingTime = Date.now() - startTime;
+      const performanceData = response.data.metadata?.performance;
       
-      // Handle specific error cases
+      setCrosstabData(response.data.data);
+      
+      // 🐰 RUBY'S PERFORMANCE FEEDBACK: Show users how fast it was!
+      let performanceMessage = `Crosstab generated in ${processingTime}ms! 🐰⚡`;
+      if (performanceData) {
+        const throughput = performanceData.throughput_mbps;
+        const matrixSize = performanceData.matrix_size;
+        if (throughput && matrixSize) {
+          performanceMessage = `Lightning fast analysis complete! ${matrixSize} matrix processed at ${throughput.toFixed(1)}MB/s in ${processingTime}ms 🐰⚡`;
+        }
+      }
+      
+      setSuccessMessage(performanceMessage);
+      
+      // Log performance metrics for optimization
+      if (performanceData) {
+        console.log('🐰 Crosstab performance metrics:', performanceData);
+      }
+      
+    } catch (err) {
+      const processingTime = Date.now() - startTime;
+      console.error(`🐰 Error generating crosstab after ${processingTime}ms:`, err);
+      
+      // Handle specific error cases with performance context
       if (err.response?.status === 400) {
         setError(err.response.data?.message || 'Invalid analysis parameters.');
       } else if (err.response?.status === 401) {
@@ -168,8 +198,10 @@ const Cuttytabs = () => {
         setError('File not found or access denied.');
       } else if (err.response?.status === 429) {
         setError('Too many analysis requests. Please wait before trying again.');
+      } else if (err.response?.data?.message?.includes('too large') || err.response?.data?.message?.includes('timeout')) {
+        setError(`Performance limit reached: ${err.response.data.message} Try using a smaller file or fewer unique values.`);
       } else {
-        setError('Failed to generate crosstab. Please try again.');
+        setError(`Failed to generate crosstab after ${processingTime}ms. Please try again.`);
       }
     } finally {
       setLoading(false);
