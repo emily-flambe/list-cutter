@@ -17,6 +17,7 @@ import syntheticDataRoutes from './routes/synthetic-data';
 import agentRoutes from './routes/agent';
 import segmentsRoutes from './routes/segments';
 import realtimeRoutes from './routes/realtime';
+import publicRoutes from './routes/public';
 
 // Import security middleware
 import { rateLimitMiddleware } from './services/security';
@@ -195,6 +196,7 @@ v1.route('/synthetic-data', syntheticDataRoutes); // Synthetic data generation a
 v1.route('/agent', agentRoutes); // Agent WebSocket proxy at /api/v1/agent/*
 v1.route('/segments', segmentsRoutes); // Cuttytabs segmentation at /api/v1/segments/*
 v1.route('/realtime', realtimeRoutes); // Real-time updates via SSE at /api/v1/realtime/*
+v1.route('/public', publicRoutes); // Public demo routes at /api/v1/public/* (no authentication required)
 // Analysis endpoints are integrated through files route at /api/v1/files/:fileId/analyze/* and /api/v1/files/:fileId/fields
 
 // Frontend serving logic for non-API routes
