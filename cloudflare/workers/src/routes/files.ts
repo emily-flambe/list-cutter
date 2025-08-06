@@ -281,7 +281,7 @@ files.get('/reference/squirrel', async (c) => {
     }
 
     // Get squirrel data from R2
-    const object = await c.env.FILE_STORAGE.get('squirrel-data-full.csv');
+    const object = await c.env.FILE_STORAGE.get('demo/squirrel-data.csv');
     
     if (!object) {
       return c.json({ error: 'Reference squirrel data not found' }, 404);
@@ -291,7 +291,7 @@ files.get('/reference/squirrel', async (c) => {
     return new Response(object.body, {
       headers: {
         'Content-Type': 'text/csv',
-        'Content-Disposition': 'attachment; filename="squirrel-data-full.csv"',
+        'Content-Disposition': 'attachment; filename="demo/squirrel-data.csv"',
         'Cache-Control': 'public, max-age=3600' // Cache for 1 hour since reference data doesn't change often
       }
     });
@@ -312,7 +312,7 @@ files.get('/reference/squirrel/fields', async (c) => {
     }
 
     // Get squirrel data from R2
-    const object = await c.env.FILE_STORAGE.get('squirrel-data-full.csv');
+    const object = await c.env.FILE_STORAGE.get('demo/squirrel-data.csv');
     
     if (!object) {
       return c.json({ error: 'Reference squirrel data not found' }, 404);
@@ -334,7 +334,7 @@ files.get('/reference/squirrel/fields', async (c) => {
       rowCount,
       fileInfo: {
         id: 'reference-squirrel',
-        filename: 'squirrel-data-full.csv',
+        filename: 'demo/squirrel-data.csv',
         size: fileSize
       }
     };
@@ -375,7 +375,7 @@ files.post('/reference/squirrel/analyze/crosstab', async (c) => {
 
     // Get squirrel data from R2 with performance monitoring
     const r2StartTime = Date.now();
-    const object = await c.env.FILE_STORAGE.get('squirrel-data-full.csv');
+    const object = await c.env.FILE_STORAGE.get('demo/squirrel-data.csv');
     const r2Time = Date.now() - r2StartTime;
     
     if (!object) {
