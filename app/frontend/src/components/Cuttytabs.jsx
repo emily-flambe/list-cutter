@@ -90,11 +90,18 @@ const Cuttytabs = () => {
 
     setFieldsLoading(true);
     try {
-      const response = await api.get(`/api/v1/files/${fileId}/fields`);
+      // Use the secure analysis endpoint for field retrieval
+      const response = await api.get(`/api/v1/analysis/fields/${fileId}`);
       setFields(response.data.fields || []);
     } catch (err) {
       console.error('Error fetching fields:', err);
-      setError('Failed to load file fields. Please try again.');
+      if (err.response?.status === 404) {
+        setError('File not found or access denied.');
+      } else if (err.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else {
+        setError('Failed to load file fields. Please try again.');
+      }
       setFields([]);
     } finally {
       setFieldsLoading(false);
@@ -105,8 +112,9 @@ const Cuttytabs = () => {
   const handleRowVariableChange = (value) => {
     setRowVariable(value);
     if (value === columnVariable && value !== '') {
-      setWarning('Warning: You have selected the same field for both variables. This will create a symmetric crosstab.');
+      setError('Row and column variables must be different. Please select different fields.');
     } else {
+      setError('');
       setWarning('');
     }
   };
@@ -114,16 +122,22 @@ const Cuttytabs = () => {
   const handleColumnVariableChange = (value) => {
     setColumnVariable(value);
     if (value === rowVariable && value !== '') {
-      setWarning('Warning: You have selected the same field for both variables. This will create a symmetric crosstab.');
+      setError('Row and column variables must be different. Please select different fields.');
     } else {
+      setError('');
       setWarning('');
     }
   };
 
-  // Generate crosstab
+  // Generate crosstab using secure analysis endpoint
   const handleGenerateCrosstab = async () => {
     if (!selectedFile || !rowVariable || !columnVariable) {
       setError('Please select a file and both variables.');
+      return;
+    }
+
+    if (rowVariable === columnVariable) {
+      setError('Row and column variables must be different. Please select different fields.');
       return;
     }
 
@@ -132,16 +146,31 @@ const Cuttytabs = () => {
     setCrosstabData(null);
 
     try {
-      const response = await api.post(`/api/v1/files/${selectedFile}/analyze/crosstab`, {
+      const response = await api.post('/api/v1/analysis/crosstab', {
+        fileId: selectedFile,
         rowVariable,
-        columnVariable
+        columnVariable,
+        includePercentages: true,
+        includeStatistics: true
       });
 
-      setCrosstabData(response.data.data);
-      setSuccessMessage('Crosstab generated successfully!');
+      setCrosstabData(response.data.analysis);
+      setSuccessMessage('Crosstab generated successfully with enhanced security!');
     } catch (err) {
       console.error('Error generating crosstab:', err);
-      setError(err.response?.data?.message || 'Failed to generate crosstab. Please try again.');
+      
+      // Handle specific error cases
+      if (err.response?.status === 400) {
+        setError(err.response.data?.message || 'Invalid analysis parameters.');
+      } else if (err.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else if (err.response?.status === 404) {
+        setError('File not found or access denied.');
+      } else if (err.response?.status === 429) {
+        setError('Too many analysis requests. Please wait before trying again.');
+      } else {
+        setError('Failed to generate crosstab. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -175,9 +204,13 @@ const Cuttytabs = () => {
 
       setSuccessMessage('Crosstab exported successfully and saved to your files!');
       
-      // Refresh global file list if available
-      if (window.refreshFileList) {
-        window.refreshFileList();
+      // Refresh global file list if available (safe check)
+      if (typeof window !== 'undefined' && typeof window.refreshFileList === 'function') {
+        try {
+          window.refreshFileList();
+        } catch (refreshError) {
+          console.warn('Failed to refresh file list:', refreshError);
+        }
       }
     } catch (err) {
       console.error('Error exporting crosstab:', err);
@@ -330,7 +363,7 @@ const Cuttytabs = () => {
                 <Button
                   variant="outlined"
                   onClick={handleExport}
-                  disabled={exporting}
+                  disabled={exporting || !crosstabData}
                   startIcon={exporting ? <CircularProgress size={16} /> : null}
                 >
                   {exporting ? 'Exporting...' : 'Export CSV'}

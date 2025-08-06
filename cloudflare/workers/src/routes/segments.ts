@@ -30,47 +30,123 @@ segments.use('*', async (c, next) => {
   }
 });
 
-// Build SQL WHERE clause from segment query
-function buildWhereClause(query: any): string {
+// Build SQL WHERE clause from segment query with parameterized queries for security
+interface QueryCondition {
+  field: string;
+  operator: string;
+  value: any;
+}
+
+interface SegmentQuery {
+  conditions: QueryCondition[];
+  logic?: 'AND' | 'OR';
+}
+
+interface QueryBuilder {
+  whereClause: string;
+  parameters: any[];
+}
+
+function buildSecureWhereClause(query: SegmentQuery): QueryBuilder {
   if (!query.conditions || !Array.isArray(query.conditions)) {
-    throw new Error('Invalid query format');
+    throw new Error('Invalid query format: conditions must be an array');
   }
 
-  const conditions = query.conditions.map((cond: any) => {
-    const jsonPath = `json_extract(data, '$.${cond.field}')`;
+  if (query.conditions.length === 0) {
+    throw new Error('Invalid query format: at least one condition required');
+  }
+
+  if (query.conditions.length > 10) {
+    throw new Error('Security limit: maximum 10 conditions allowed per query');
+  }
+
+  const parameters: any[] = [];
+  const conditions: string[] = [];
+
+  for (const cond of query.conditions) {
+    // Validate field name - only allow alphanumeric and underscores
+    if (!cond.field || typeof cond.field !== 'string') {
+      throw new Error('Invalid field name: field must be a non-empty string');
+    }
+    
+    if (!/^[a-zA-Z0-9_]{1,50}$/.test(cond.field)) {
+      throw new Error(`Invalid field name '${cond.field}': only alphanumeric characters and underscores allowed, max 50 chars`);
+    }
+
+    // Sanitize the JSON path - use parameterized field name
+    const jsonPath = `json_extract(data, '$.' || ?)`;
     
     switch (cond.operator) {
       case 'equals':
-        return `${jsonPath} = '${cond.value}'`;
+        conditions.push(`${jsonPath} = ?`);
+        parameters.push(cond.field, String(cond.value));
+        break;
       case 'not_equals':
-        return `${jsonPath} != '${cond.value}'`;
+        conditions.push(`${jsonPath} != ?`);
+        parameters.push(cond.field, String(cond.value));
+        break;
       case 'contains':
-        return `${jsonPath} LIKE '%${cond.value}%'`;
+        conditions.push(`${jsonPath} LIKE ?`);
+        parameters.push(cond.field, `%${String(cond.value)}%`);
+        break;
       case 'not_contains':
-        return `${jsonPath} NOT LIKE '%${cond.value}%'`;
+        conditions.push(`${jsonPath} NOT LIKE ?`);
+        parameters.push(cond.field, `%${String(cond.value)}%`);
+        break;
       case 'greater_than':
-        return `CAST(${jsonPath} AS REAL) > ${Number(cond.value)}`;
+        if (isNaN(Number(cond.value))) {
+          throw new Error('Invalid value for numeric comparison: must be a number');
+        }
+        conditions.push(`CAST(${jsonPath} AS REAL) > ?`);
+        parameters.push(cond.field, Number(cond.value));
+        break;
       case 'less_than':
-        return `CAST(${jsonPath} AS REAL) < ${Number(cond.value)}`;
+        if (isNaN(Number(cond.value))) {
+          throw new Error('Invalid value for numeric comparison: must be a number');
+        }
+        conditions.push(`CAST(${jsonPath} AS REAL) < ?`);
+        parameters.push(cond.field, Number(cond.value));
+        break;
       case 'greater_equal':
-        return `CAST(${jsonPath} AS REAL) >= ${Number(cond.value)}`;
+        if (isNaN(Number(cond.value))) {
+          throw new Error('Invalid value for numeric comparison: must be a number');
+        }
+        conditions.push(`CAST(${jsonPath} AS REAL) >= ?`);
+        parameters.push(cond.field, Number(cond.value));
+        break;
       case 'less_equal':
-        return `CAST(${jsonPath} AS REAL) <= ${Number(cond.value)}`;
+        if (isNaN(Number(cond.value))) {
+          throw new Error('Invalid value for numeric comparison: must be a number');
+        }
+        conditions.push(`CAST(${jsonPath} AS REAL) <= ?`);
+        parameters.push(cond.field, Number(cond.value));
+        break;
       case 'is_empty':
-        return `(${jsonPath} IS NULL OR ${jsonPath} = '')`;
+        conditions.push(`(${jsonPath} IS NULL OR ${jsonPath} = '')`);
+        parameters.push(cond.field);
+        break;
       case 'is_not_empty':
-        return `(${jsonPath} IS NOT NULL AND ${jsonPath} != '')`;
+        conditions.push(`(${jsonPath} IS NOT NULL AND ${jsonPath} != '')`);
+        parameters.push(cond.field);
+        break;
       case 'starts_with':
-        return `${jsonPath} LIKE '${cond.value}%'`;
+        conditions.push(`${jsonPath} LIKE ?`);
+        parameters.push(cond.field, `${String(cond.value)}%`);
+        break;
       case 'ends_with':
-        return `${jsonPath} LIKE '%${cond.value}'`;
+        conditions.push(`${jsonPath} LIKE ?`);
+        parameters.push(cond.field, `%${String(cond.value)}`);
+        break;
       default:
         throw new Error(`Unknown operator: ${cond.operator}`);
     }
-  });
+  }
 
   const logic = query.logic === 'OR' ? 'OR' : 'AND';
-  return conditions.join(` ${logic} `);
+  return {
+    whereClause: conditions.join(` ${logic} `),
+    parameters
+  };
 }
 
 // Preview segment without saving - get count and sample rows
@@ -92,20 +168,23 @@ segments.post('/preview', async (c) => {
       return c.json({ error: 'File not found' }, 404);
     }
 
-    const whereClause = buildWhereClause(query);
+    const { whereClause, parameters } = buildSecureWhereClause(query);
     
-    // Get total count
+    // Get total count with parameterized query
     const countResult = await c.env.DB.prepare(`
       SELECT COUNT(*) as count FROM csv_data 
       WHERE file_id = ? AND ${whereClause}
-    `).bind(fileId).first();
+    `).bind(fileId, ...parameters).first();
 
-    // Get sample rows
+    // Validate and sanitize limit parameter
+    const sanitizedLimit = Math.min(Math.max(1, parseInt(String(limit)) || 10), 100);
+    
+    // Get sample rows with parameterized query
     const sampleRows = await c.env.DB.prepare(`
       SELECT id, data FROM csv_data 
       WHERE file_id = ? AND ${whereClause}
       LIMIT ?
-    `).bind(fileId, limit).all();
+    `).bind(fileId, ...parameters, sanitizedLimit).all();
 
     return c.json({
       success: true,
@@ -117,9 +196,25 @@ segments.post('/preview', async (c) => {
     });
   } catch (error) {
     console.error('Preview error:', error);
+    
+    // Return safe error messages without exposing internal details
+    if (error instanceof Error && (
+      error.message.includes('Invalid query format') ||
+      error.message.includes('Invalid field name') ||
+      error.message.includes('Security limit') ||
+      error.message.includes('Unknown operator') ||
+      error.message.includes('Invalid value for numeric')
+    )) {
+      return c.json({ 
+        error: 'Invalid query parameters', 
+        message: error.message 
+      }, 400);
+    }
+    
+    // Log detailed error but return generic message
     return c.json({ 
-      error: 'Preview failed', 
-      message: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Preview operation failed', 
+      message: 'An error occurred while processing the query'
     }, 500);
   }
 });
@@ -156,12 +251,12 @@ segments.post('/', async (c) => {
       !!googleAdsEnabled, googleAdsCustomerId || null, googleAdsListId || null
     ).run();
 
-    // Get initial member count
-    const whereClause = buildWhereClause(query);
+    // Get initial member count with secure query
+    const { whereClause, parameters } = buildSecureWhereClause(query);
     const countResult = await c.env.DB.prepare(`
       SELECT COUNT(*) as count FROM csv_data 
       WHERE file_id = ? AND ${whereClause}
-    `).bind(fileId).first();
+    `).bind(fileId, ...parameters).first();
 
     // Update member count
     await c.env.DB.prepare(`
@@ -183,9 +278,25 @@ segments.post('/', async (c) => {
     });
   } catch (error) {
     console.error('Create segment error:', error);
+    
+    // Return safe error messages for validation errors
+    if (error instanceof Error && (
+      error.message.includes('Invalid query format') ||
+      error.message.includes('Invalid field name') ||
+      error.message.includes('Security limit') ||
+      error.message.includes('Unknown operator') ||
+      error.message.includes('Invalid value for numeric')
+    )) {
+      return c.json({ 
+        error: 'Invalid segment parameters', 
+        message: error.message 
+      }, 400);
+    }
+    
+    // Log detailed error but return generic message
     return c.json({ 
       error: 'Failed to create segment',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: 'An error occurred while creating the segment'
     }, 500);
   }
 });
@@ -309,11 +420,11 @@ segments.put('/:segmentId', async (c) => {
 
     // Recalculate member count if query changed
     if (query) {
-      const whereClause = buildWhereClause(query);
+      const { whereClause, parameters } = buildSecureWhereClause(query);
       const countResult = await c.env.DB.prepare(`
         SELECT COUNT(*) as count FROM csv_data 
         WHERE file_id = ? AND ${whereClause}
-      `).bind(existingSegment.file_id).first();
+      `).bind(existingSegment.file_id, ...parameters).first();
 
       await c.env.DB.prepare(`
         UPDATE segments SET member_count = ? WHERE id = ?
@@ -323,9 +434,25 @@ segments.put('/:segmentId', async (c) => {
     return c.json({ success: true, message: 'Segment updated' });
   } catch (error) {
     console.error('Update segment error:', error);
+    
+    // Return safe error messages for validation errors
+    if (error instanceof Error && (
+      error.message.includes('Invalid query format') ||
+      error.message.includes('Invalid field name') ||
+      error.message.includes('Security limit') ||
+      error.message.includes('Unknown operator') ||
+      error.message.includes('Invalid value for numeric')
+    )) {
+      return c.json({ 
+        error: 'Invalid segment parameters', 
+        message: error.message 
+      }, 400);
+    }
+    
+    // Log detailed error but return generic message
     return c.json({ 
       error: 'Failed to update segment',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: 'An error occurred while updating the segment'
     }, 500);
   }
 });

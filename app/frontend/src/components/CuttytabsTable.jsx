@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -10,26 +10,74 @@ import {
   Typography,
   Box,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Alert,
+  Chip
 } from '@mui/material';
 
 const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  if (!data || !data.crosstab) {
+  // Comprehensive validation for edge cases
+  if (!data) {
     return (
       <Typography color="text.secondary">
-        No crosstab data available
+        No analysis data provided
+      </Typography>
+    );
+  }
+
+  if (!data.crosstab || typeof data.crosstab !== 'object') {
+    return (
+      <Typography color="text.secondary">
+        Invalid crosstab data format
       </Typography>
     );
   }
 
   const { crosstab, rowTotals, columnTotals, grandTotal } = data;
   
+  // Validate data structure
+  if (!rowTotals || !columnTotals) {
+    return (
+      <Typography color="text.secondary">
+        Missing totals data in crosstab
+      </Typography>
+    );
+  }
+
+  if (typeof grandTotal !== 'number' || grandTotal < 0) {
+    return (
+      <Typography color="text.secondary">
+        Invalid grand total in crosstab data
+      </Typography>
+    );
+  }
+  
   // Get sorted row and column keys for consistent display
   const rowKeys = Object.keys(crosstab).sort();
   const columnKeys = Object.keys(columnTotals).sort();
+  
+  // Handle empty results
+  if (rowKeys.length === 0 || columnKeys.length === 0) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Typography color="text.secondary" variant="h6">
+          No data found for the selected variables
+        </Typography>
+        <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
+          Try selecting different variables or check your data file.
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Warn about large tables that might be slow to render
+  const totalCells = rowKeys.length * columnKeys.length;
+  if (totalCells > 10000) {
+    console.warn(`Large crosstab table: ${rowKeys.length} rows × ${columnKeys.length} cols = ${totalCells} cells`);
+  }
 
   return (
     <Box sx={{ width: '100%', overflow: 'hidden' }}>
@@ -124,17 +172,20 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                 
                 {/* Data cells */}
                 {columnKeys.map((colKey) => {
-                  const value = crosstab[rowKey]?.[colKey] || 0;
+                  const value = crosstab[rowKey]?.[colKey];
+                  const displayValue = typeof value === 'number' ? value : 0;
+                  const isZero = displayValue === 0;
+                  
                   return (
                     <TableCell 
                       key={colKey}
                       align="center"
                       sx={{
-                        backgroundColor: value === 0 ? 'grey.50' : 'background.default',
-                        color: value === 0 ? 'text.disabled' : 'text.primary'
+                        backgroundColor: isZero ? 'grey.50' : 'background.default',
+                        color: isZero ? 'text.disabled' : 'text.primary'
                       }}
                     >
-                      {value}
+                      {displayValue.toLocaleString()}
                     </TableCell>
                   );
                 })}
@@ -148,7 +199,7 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                     color: 'primary.contrastText'
                   }}
                 >
-                  {rowTotals[rowKey] || 0}
+                  {typeof rowTotals[rowKey] === 'number' ? rowTotals[rowKey].toLocaleString() : '0'}
                 </TableCell>
               </TableRow>
             ))}
@@ -179,7 +230,7 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                     color: 'primary.contrastText'
                   }}
                 >
-                  {columnTotals[colKey] || 0}
+                  {typeof columnTotals[colKey] === 'number' ? columnTotals[colKey].toLocaleString() : '0'}
                 </TableCell>
               ))}
               
@@ -193,7 +244,7 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   fontSize: '1rem'
                 }}
               >
-                {grandTotal}
+                {typeof grandTotal === 'number' ? grandTotal.toLocaleString() : '0'}
               </TableCell>
             </TableRow>
           </TableBody>
