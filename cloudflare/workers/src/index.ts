@@ -183,6 +183,7 @@ app.use('/api/v1/auth/*', async (c, next) => {
   })(c, next);
 });
 
+
 // API version prefix
 const v1 = app.basePath('/api/v1');
 
@@ -194,6 +195,7 @@ v1.route('/synthetic-data', syntheticDataRoutes); // Synthetic data generation a
 v1.route('/agent', agentRoutes); // Agent WebSocket proxy at /api/v1/agent/*
 v1.route('/segments', segmentsRoutes); // Cuttytabs segmentation at /api/v1/segments/*
 v1.route('/realtime', realtimeRoutes); // Real-time updates via SSE at /api/v1/realtime/*
+// Analysis endpoints are available via files route: /api/v1/files/:fileId/fields, /api/v1/files/:fileId/analyze/crosstab, /api/v1/files/:fileId/export/crosstab
 
 // Frontend serving logic for non-API routes
 app.get('*', async (c, next): Promise<Response> => {
