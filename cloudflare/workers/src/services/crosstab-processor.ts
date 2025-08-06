@@ -32,27 +32,73 @@ export class CrosstabProcessor {
     
     try {
       if (!csvContent || csvContent.length === 0) {
+        console.log(`🐰 Field extraction: Empty content`);
         return { fields: [], rowCount: 0 };
       }
 
-      // Fast file size check - reject oversized files immediately
+      // Debug: Show file characteristics  
       const fileSizeMB = csvContent.length / (1024 * 1024);
+      const hasBOM = csvContent.charCodeAt(0) === 0xFEFF;
+      const firstChar = csvContent.charCodeAt(0);
+      console.log(`🐰 Field extraction: File size ${fileSizeMB.toFixed(2)}MB, BOM: ${hasBOM}, First char: ${firstChar} (${csvContent.charAt(0)})`);
+
+      // Fast file size check - reject oversized files immediately
       if (fileSizeMB > PERFORMANCE_CONFIG.MAX_FILE_SIZE_MB) {
         throw new Error(`File too large (${fileSizeMB.toFixed(1)}MB). Maximum supported: ${PERFORMANCE_CONFIG.MAX_FILE_SIZE_MB}MB`);
       }
 
-      // Find first newline for header without splitting entire content
-      const firstNewlineIndex = csvContent.indexOf('\n');
-      if (firstNewlineIndex === -1) {
+      // Remove BOM if present
+      let cleanContent = hasBOM ? csvContent.substring(1) : csvContent;
+      
+      // Normalize line endings (CRLF -> LF) and trim leading whitespace
+      cleanContent = cleanContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trimStart();
+      
+      // Skip any empty lines at the beginning
+      let contentStartIndex = 0;
+      while (contentStartIndex < cleanContent.length && 
+             (cleanContent.charAt(contentStartIndex) === '\n' || 
+              cleanContent.charAt(contentStartIndex) === '\r')) {
+        contentStartIndex++;
+      }
+      
+      if (contentStartIndex >= cleanContent.length) {
+        console.log(`🐰 Field extraction: No content after skipping empty lines`);
         return { fields: [], rowCount: 0 };
+      }
+      
+      cleanContent = cleanContent.substring(contentStartIndex);
+
+      // Find first newline for header without splitting entire content
+      const firstNewlineIndex = cleanContent.indexOf('\n');
+      if (firstNewlineIndex === -1) {
+        // Single line file - might still have a header
+        const headerLine = cleanContent.trim();
+        if (headerLine.length === 0) {
+          console.log(`🐰 Field extraction: Single line file is empty`);
+          return { fields: [], rowCount: 0 };
+        }
+        const fields = this.parseCSVLine(headerLine);
+        console.log(`🐰 Field extraction: Single line file with ${fields.length} fields: ${fields.slice(0, 3).join(', ')}...`);
+        return {
+          fields: fields.map(field => field.trim()),
+          rowCount: 1
+        };
       }
 
       // Parse only the header row - lightning fast!
-      const headerLine = csvContent.substring(0, firstNewlineIndex);
+      const headerLine = cleanContent.substring(0, firstNewlineIndex).trim();
+      console.log(`🐰 Field extraction: Header line (${headerLine.length} chars): "${headerLine.substring(0, 100)}..."`);
+      
+      if (headerLine.length === 0) {
+        console.log(`🐰 Field extraction: Header line is empty`);
+        return { fields: [], rowCount: 0 };
+      }
+      
       const fields = this.parseCSVLine(headerLine);
+      console.log(`🐰 Field extraction: Parsed ${fields.length} fields: [${fields.slice(0, 5).map(f => `"${f.substring(0, 20)}"`).join(', ')}]`);
       
       // Quick row count using regex (much faster than split for large files)
-      const rowCount = (csvContent.match(/\n/g) || []).length;
+      const rowCount = (cleanContent.match(/\n/g) || []).length;
       
       const processingTime = Date.now() - startTime;
       console.log(`🐰 Field extraction completed in ${processingTime}ms for ${rowCount} rows`);
@@ -90,14 +136,33 @@ export class CrosstabProcessor {
         throw new Error(`File too large (${fileSizeMB.toFixed(1)}MB). Maximum supported: ${PERFORMANCE_CONFIG.MAX_FILE_SIZE_MB}MB`);
       }
 
+      // Apply same CSV cleaning as field extraction
+      const hasBOM = csvContent.charCodeAt(0) === 0xFEFF;
+      let cleanContent = hasBOM ? csvContent.substring(1) : csvContent;
+      cleanContent = cleanContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trimStart();
+      
+      // Skip empty lines at the beginning
+      let contentStartIndex = 0;
+      while (contentStartIndex < cleanContent.length && 
+             (cleanContent.charAt(contentStartIndex) === '\n' || 
+              cleanContent.charAt(contentStartIndex) === '\r')) {
+        contentStartIndex++;
+      }
+      
+      if (contentStartIndex >= cleanContent.length) {
+        throw new Error('CSV file is empty after cleaning');
+      }
+      
+      cleanContent = cleanContent.substring(contentStartIndex);
+
       // Find header row efficiently
-      const firstNewlineIndex = csvContent.indexOf('\n');
+      const firstNewlineIndex = cleanContent.indexOf('\n');
       if (firstNewlineIndex === -1) {
         throw new Error('CSV must contain at least a header row and one data row');
       }
 
       // Parse header to get field positions
-      const headerLine = csvContent.substring(0, firstNewlineIndex);
+      const headerLine = cleanContent.substring(0, firstNewlineIndex).trim();
       const headers = this.parseCSVLine(headerLine);
       const rowVariableIndex = headers.findIndex(h => h.trim() === rowVariable);
       const columnVariableIndex = headers.findIndex(h => h.trim() === columnVariable);
@@ -121,19 +186,19 @@ export class CrosstabProcessor {
       let rowIndex = firstNewlineIndex + 1;
       
       // Batch processing for memory efficiency
-      while (rowIndex < csvContent.length && processedRows < PERFORMANCE_CONFIG.MAX_ROWS_PROCESSED) {
+      while (rowIndex < cleanContent.length && processedRows < PERFORMANCE_CONFIG.MAX_ROWS_PROCESSED) {
         // Check timeout periodically to prevent Workers CPU limit
         if (processedRows % 10000 === 0 && Date.now() - startTime > PERFORMANCE_CONFIG.MAX_PROCESSING_TIME_MS) {
           throw new Error(`Processing timeout after ${processedRows} rows. Consider using smaller files.`);
         }
 
         // Find next line efficiently
-        const nextNewlineIndex = csvContent.indexOf('\n', rowIndex);
-        const lineEnd = nextNewlineIndex === -1 ? csvContent.length : nextNewlineIndex;
+        const nextNewlineIndex = cleanContent.indexOf('\n', rowIndex);
+        const lineEnd = nextNewlineIndex === -1 ? cleanContent.length : nextNewlineIndex;
         
         if (rowIndex >= lineEnd) break;
         
-        const line = csvContent.substring(rowIndex, lineEnd).trim();
+        const line = cleanContent.substring(rowIndex, lineEnd).trim();
         rowIndex = lineEnd + 1;
         
         if (!line) continue; // Skip empty lines

@@ -128,30 +128,24 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
 
   return (
     <Box sx={{ width: '100%', overflow: 'hidden' }}>
-      {/* 🐰 RUBY'S PERFORMANCE INDICATORS */}
-      <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
-        <Chip 
-          label={`${rowKeys.length} × ${columnKeys.length}`} 
-          size="small" 
-          color={isVeryLarge ? 'error' : isLarge ? 'warning' : 'success'}
-        />
-        <Chip 
-          label={`${nonZeroCells.toLocaleString()} non-zero`} 
-          size="small" 
-          variant="outlined"
-        />
-        <Chip 
-          label={`${sparsity.toFixed(1)}% dense`} 
-          size="small" 
-          color={isSparse ? 'warning' : 'info'}
-          variant="outlined"
-        />
+      {/* 🐰 RUBY'S PERFORMANCE INDICATORS - Moved above table */}
+      <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
+        <Typography variant="caption" color="text.secondary">
+          Rows: {rowKeys.length.toLocaleString()}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Columns: {columnKeys.length.toLocaleString()}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Total Records: {typeof grandTotal === 'number' ? grandTotal.toLocaleString() : '0'}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          Non-zero Cells: {nonZeroCells.toLocaleString()} / {totalCells.toLocaleString()} ({sparsity.toFixed(1)}% dense)
+        </Typography>
         {isLarge && (
-          <Chip 
-            label="⚡ Optimized Rendering" 
-            size="small" 
-            color="primary"
-          />
+          <Typography variant="caption" color="primary.main" sx={{ fontWeight: 'bold' }}>
+            🐰 Performance Mode Active
+          </Typography>
         )}
       </Box>
       
@@ -197,21 +191,23 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
               <TableCell 
                 sx={{ 
                   fontWeight: 'bold',
-                  backgroundColor: 'grey.100',
+                  backgroundColor: 'grey.300',
+                  color: '#000000 !important',
                   minWidth: isMobile ? '80px' : '120px',
                   position: 'sticky',
                   left: 0,
                   zIndex: 3,
-                  borderRight: '2px solid',
+                  borderRight: '2px solid #1976d2',
+                  borderBottom: '2px solid #1976d2',
                   borderColor: 'divider'
                 }}
               >
-                <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
-                  {rowVariable}
+                <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#000000 !important', fontSize: '0.65rem' }}>
+                  Cols →: {columnVariable}
                 </Typography>
                 <br />
-                <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
-                  / {columnVariable}
+                <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#000000 !important', fontSize: '0.65rem' }}>
+                  Rows ↓: {rowVariable}
                 </Typography>
               </TableCell>
               
@@ -222,8 +218,10 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   align="center"
                   sx={{ 
                     fontWeight: 'bold',
-                    backgroundColor: 'grey.100',
-                    minWidth: isMobile ? '60px' : '80px'
+                    backgroundColor: 'grey.200',
+                    color: '#000000 !important',
+                    minWidth: isMobile ? '60px' : '80px',
+                    borderBottom: '2px solid #1976d2'
                   }}
                 >
                   {colKey}
@@ -254,11 +252,12 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   scope="row"
                   sx={{ 
                     fontWeight: 'bold',
-                    backgroundColor: 'grey.50',
+                    backgroundColor: 'grey.200',
+                    color: '#000000 !important',
                     position: 'sticky',
                     left: 0,
                     zIndex: 2,
-                    borderRight: '2px solid',
+                    borderRight: '2px solid #1976d2',
                     borderColor: 'divider'
                   }}
                 >
@@ -278,13 +277,14 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                       key={colKey}
                       align="center"
                       sx={{
-                        backgroundColor: isZero ? 'grey.50' : 'background.default',
-                        color: isZero ? 'text.disabled' : 'text.primary',
+                        backgroundColor: '#ffffff !important',
+                        color: isZero ? '#666666' : '#000000',
+                        fontWeight: isZero ? 'normal' : 'medium',
                         // 🐰 RUBY OPTIMIZATION: Minimal styling for large tables to reduce render cost
                         ...(isLarge && {
                           borderRight: 'none',
                           '&:hover': {
-                            backgroundColor: displayValue > 0 ? 'action.hover' : 'grey.50'
+                            backgroundColor: '#f5f5f5 !important'
                           }
                         })
                       }}
@@ -364,26 +364,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
         </Table>
       </TableContainer>
       
-      {/* 🐰 RUBY OPTIMIZED: Enhanced summary with pre-calculated performance metrics */}
-      <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
-        <Typography variant="caption" color="text.secondary">
-          Rows: {rowKeys.length.toLocaleString()}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Columns: {columnKeys.length.toLocaleString()}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Total Records: {typeof grandTotal === 'number' ? grandTotal.toLocaleString() : '0'}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Non-zero Cells: {nonZeroCells.toLocaleString()} / {totalCells.toLocaleString()} ({sparsity.toFixed(1)}% dense)
-        </Typography>
-        {isLarge && (
-          <Typography variant="caption" color="primary.main" sx={{ fontWeight: 'bold' }}>
-            🐰 Performance Mode Active
-          </Typography>
-        )}
-      </Box>
     </Box>
   );
 };

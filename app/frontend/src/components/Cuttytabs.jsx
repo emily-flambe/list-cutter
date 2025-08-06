@@ -102,15 +102,28 @@ const Cuttytabs = () => {
       
     } catch (err) {
       console.error('🐰 Error fetching fields:', err);
+      
+      // Show detailed error information for debugging CSV issues
+      let errorMessage = 'Failed to load file fields.';
+      
       if (err.response?.status === 404) {
-        setError('File not found or access denied.');
+        errorMessage = 'File not found or access denied.';
       } else if (err.response?.status === 401) {
-        setError('Authentication required. Please log in again.');
+        errorMessage = 'Authentication required. Please log in again.';
+      } else if (err.response?.status === 400) {
+        // Show detailed CSV parsing errors
+        const backendMessage = err.response?.data?.message || err.response?.data?.error || '';
+        errorMessage = `CSV parsing error: ${backendMessage}`;
       } else if (err.response?.data?.message?.includes('too large')) {
-        setError(`File too large for analysis: ${err.response.data.message}`);
-      } else {
-        setError('Failed to load file fields. Please try again.');
+        errorMessage = `File too large for analysis: ${err.response.data.message}`;
+      } else if (err.response?.data?.message) {
+        // Show any other backend error message
+        errorMessage = `Error: ${err.response.data.message}`;
+      } else if (err.message) {
+        errorMessage = `Error: ${err.message}`;
       }
+      
+      setError(errorMessage + ' Please try again or use a different CSV file.');
       setFields([]);
     } finally {
       setFieldsLoading(false);
