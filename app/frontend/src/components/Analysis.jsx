@@ -2,12 +2,10 @@ import React from 'react';
 import { Box, Typography, Card, CardContent, Button, Grid } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { Analytics as AnalyticsIcon, TableChart as TableChartIcon } from '@mui/icons-material';
-import AuthRequired from './AuthRequired';
 
 const Analysis = () => {
   return (
-    <AuthRequired>
-      <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3 }}>
         <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
           Analysis Tools
         </Typography>
@@ -73,7 +71,6 @@ const Analysis = () => {
           </Grid>
         </Grid>
       </Box>
-    </AuthRequired>
   );
 };
 
