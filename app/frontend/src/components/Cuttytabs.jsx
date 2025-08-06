@@ -23,6 +23,7 @@ const Cuttytabs = () => {
   const { token } = useContext(AuthContext);
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState('');
+  const [squirrelDataAvailable, setSquirrelDataAvailable] = useState(false);
   const [fields, setFields] = useState([]);
   const [rowVariable, setRowVariable] = useState('');
   const [columnVariable, setColumnVariable] = useState('');
@@ -33,6 +34,8 @@ const Cuttytabs = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [warning, setWarning] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(!token);
+  const [demoMode, setDemoMode] = useState(false);
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -56,25 +59,74 @@ const Cuttytabs = () => {
     }
   }, [warning]);
 
-  // Fetch user's files on component mount
+  // Update authentication state when token changes
   useEffect(() => {
-    const fetchFiles = async () => {
-      if (!token) return;
-      
-      try {
-        const response = await api.get('/api/v1/files');
-        const csvFiles = response.data.files.filter(file => 
-          file.filename.toLowerCase().endsWith('.csv')
-        );
-        setFiles(csvFiles || []);
-      } catch (err) {
-        console.error('Error fetching files:', err);
-        setError('Failed to load your files. Please try again.');
+    setIsAnonymous(!token);
+  }, [token]);
+
+  // Initialize data based on authentication state
+  useEffect(() => {
+    const initializeData = async () => {
+      if (token) {
+        // Authenticated user - load their files and check squirrel data
+        await fetchUserFiles();
+      } else {
+        // Anonymous user - check public squirrel data availability
+        await checkPublicSquirrelData();
       }
     };
 
-    fetchFiles();
+    initializeData();
   }, [token]);
+
+  // Fetch user's files (authenticated users only)
+  const fetchUserFiles = async () => {
+    try {
+      const response = await api.get('/api/v1/files');
+      const csvFiles = response.data.files.filter(file => 
+        file.filename.toLowerCase().endsWith('.csv')
+      );
+      setFiles(csvFiles || []);
+      
+      // Check if squirrel reference data is available for logged-in users
+      try {
+        await api.get('/api/v1/files/reference/squirrel/fields');
+        setSquirrelDataAvailable(true);
+        
+        // Auto-select squirrel data for logged-in users if no files
+        if (csvFiles.length === 0) {
+          handleFileSelect('reference-squirrel');
+        }
+      } catch (squirrelErr) {
+        console.log('Squirrel reference data not available for authenticated users:', squirrelErr);
+        setSquirrelDataAvailable(false);
+      }
+      
+    } catch (err) {
+      console.error('Error fetching user files:', err);
+      setError('Failed to load your files. Please try again.');
+    }
+  };
+
+  // Check public squirrel data availability (anonymous users)
+  const checkPublicSquirrelData = async () => {
+    try {
+      // Use public endpoint to check squirrel data availability
+      await api.get('/api/v1/public/squirrel/fields');
+      setSquirrelDataAvailable(true);
+      setDemoMode(true);
+      
+      // Auto-select squirrel data for anonymous users
+      handleFileSelect('demo-squirrel-data');
+      
+      // Show demo welcome message
+      setSuccessMessage('Welcome to Cuttytabs demo! Explore analysis features with NYC Squirrel Census data.');
+    } catch (squirrelErr) {
+      console.log('Public squirrel data not available:', squirrelErr);
+      setSquirrelDataAvailable(false);
+      setError('Demo data is temporarily unavailable. Please try again later or create an account to upload your own files.');
+    }
+  };
 
   // Fetch fields when a file is selected
   const handleFileSelect = async (fileId) => {
@@ -90,40 +142,71 @@ const Cuttytabs = () => {
 
     setFieldsLoading(true);
     try {
-      // 🐰 RUBY'S OPTIMIZATION: Use the optimized backend endpoint for field extraction
       const startTime = Date.now();
-      const response = await api.get(`/api/v1/files/${fileId}/fields`);
-      const processingTime = Date.now() - startTime;
+      let response;
       
+      // Determine which endpoint to use based on authentication state and file type
+      if (isAnonymous) {
+        // Anonymous user - use public endpoints
+        if (fileId === 'demo-squirrel-data') {
+          response = await api.get('/api/v1/public/squirrel/fields');
+        } else {
+          throw new Error('Unauthorized access to user files');
+        }
+      } else {
+        // Authenticated user - use authenticated endpoints
+        if (fileId === 'reference-squirrel') {
+          response = await api.get('/api/v1/files/reference/squirrel/fields');
+        } else {
+          response = await api.get(`/api/v1/files/${fileId}/fields`);
+        }
+      }
+      
+      const processingTime = Date.now() - startTime;
       setFields(response.data.fields || []);
       
-      // 🐰 RUBY'S PERFORMANCE FEEDBACK: Log fast field extraction
-      console.log(`🐰 Fields extracted in ${processingTime}ms for ${response.data.rowCount} rows`);
+      // Performance feedback and messaging
+      const isSquirrelData = fileId === 'reference-squirrel' || fileId === 'demo-squirrel-data';
+      const dataType = isSquirrelData ? 'squirrel census data' : 'user file';
+      console.log(`🐰 Fields extracted from ${dataType} in ${processingTime}ms for ${response.data.rowCount} rows`);
+      
+      // Show appropriate success message
+      if (isSquirrelData) {
+        const message = isAnonymous 
+          ? 'NYC Squirrel Census demo data loaded! Try analyzing relationships between different variables.'
+          : 'NYC Central Park Squirrel Census data loaded! Ready for crosstab analysis.';
+        setSuccessMessage(message);
+      }
       
     } catch (err) {
       console.error('🐰 Error fetching fields:', err);
       
-      // Show detailed error information for debugging CSV issues
       let errorMessage = 'Failed to load file fields.';
       
       if (err.response?.status === 404) {
-        errorMessage = 'File not found or access denied.';
+        errorMessage = isAnonymous
+          ? 'Demo data not found. Please try again later.'
+          : (fileId === 'reference-squirrel' ? 'Reference squirrel data not found.' : 'File not found or access denied.');
       } else if (err.response?.status === 401) {
-        errorMessage = 'Authentication required. Please log in again.';
+        errorMessage = isAnonymous
+          ? 'Demo data access temporarily restricted. Please try again later.'
+          : 'Authentication required. Please log in again.';
       } else if (err.response?.status === 400) {
-        // Show detailed CSV parsing errors
         const backendMessage = err.response?.data?.message || err.response?.data?.error || '';
         errorMessage = `CSV parsing error: ${backendMessage}`;
       } else if (err.response?.data?.message?.includes('too large')) {
         errorMessage = `File too large for analysis: ${err.response.data.message}`;
       } else if (err.response?.data?.message) {
-        // Show any other backend error message
         errorMessage = `Error: ${err.response.data.message}`;
       } else if (err.message) {
         errorMessage = `Error: ${err.message}`;
       }
       
-      setError(errorMessage + ' Please try again or use a different CSV file.');
+      const suffix = isAnonymous 
+        ? ' Please try again later or create an account to upload your own files.'
+        : ' Please try again or use a different CSV file.';
+      
+      setError(errorMessage + suffix);
       setFields([]);
     } finally {
       setFieldsLoading(false);
@@ -169,31 +252,59 @@ const Cuttytabs = () => {
     setCrosstabData(null);
 
     try {
-      // 🐰 RUBY'S OPTIMIZATION: Use the optimized backend endpoint
-      const response = await api.post(`/api/v1/files/${selectedFile}/analyze/crosstab`, {
-        rowVariable,
-        columnVariable,
-        includePercentages: true
-      });
+      let response;
+      
+      // Choose endpoint based on authentication state and file type
+      if (isAnonymous) {
+        // Anonymous user - use public endpoints
+        if (selectedFile === 'demo-squirrel-data') {
+          response = await api.post('/api/v1/public/squirrel/analyze/crosstab', {
+            rowVariable,
+            columnVariable,
+            includePercentages: true
+          });
+        } else {
+          throw new Error('Unauthorized access to user files');
+        }
+      } else {
+        // Authenticated user - use authenticated endpoints
+        if (selectedFile === 'reference-squirrel') {
+          response = await api.post('/api/v1/files/reference/squirrel/analyze/crosstab', {
+            rowVariable,
+            columnVariable,
+            includePercentages: true
+          });
+        } else {
+          response = await api.post(`/api/v1/files/${selectedFile}/analyze/crosstab`, {
+            rowVariable,
+            columnVariable,
+            includePercentages: true
+          });
+        }
+      }
 
       const processingTime = Date.now() - startTime;
       const performanceData = response.data.metadata?.performance;
+      const isDemoMode = response.data.metadata?.demoMode;
       
       setCrosstabData(response.data.data);
       
-      // 🐰 RUBY'S PERFORMANCE FEEDBACK: Show users how fast it was!
+      // Performance feedback with demo messaging
       let performanceMessage = `Crosstab generated in ${processingTime}ms! 🐰⚡`;
       if (performanceData) {
         const throughput = performanceData.throughput_mbps;
         const matrixSize = performanceData.matrix_size;
         if (throughput && matrixSize) {
-          performanceMessage = `Lightning fast analysis complete! ${matrixSize} matrix processed at ${throughput.toFixed(1)}MB/s in ${processingTime}ms 🐰⚡`;
+          const speedText = `${matrixSize} matrix processed at ${throughput.toFixed(1)}MB/s in ${processingTime}ms`;
+          performanceMessage = isDemoMode || isAnonymous
+            ? `Demo analysis complete! ${speedText} 🐰⚡ Create an account to analyze your own data!`
+            : `Lightning fast analysis complete! ${speedText} 🐰⚡`;
         }
       }
       
       setSuccessMessage(performanceMessage);
       
-      // Log performance metrics for optimization
+      // Log performance metrics
       if (performanceData) {
         console.log('🐰 Crosstab performance metrics:', performanceData);
       }
@@ -202,19 +313,27 @@ const Cuttytabs = () => {
       const processingTime = Date.now() - startTime;
       console.error(`🐰 Error generating crosstab after ${processingTime}ms:`, err);
       
-      // Handle specific error cases with performance context
+      // Handle errors with appropriate messaging for demo vs authenticated users
       if (err.response?.status === 400) {
-        setError(err.response.data?.message || 'Invalid analysis parameters.');
+        const message = err.response.data?.message || 'Invalid analysis parameters.';
+        setError(isAnonymous ? `Demo analysis error: ${message}` : message);
       } else if (err.response?.status === 401) {
-        setError('Authentication required. Please log in again.');
+        setError(isAnonymous 
+          ? 'Demo access temporarily restricted. Please try again later or create an account.'
+          : 'Authentication required. Please log in again.');
       } else if (err.response?.status === 404) {
-        setError('File not found or access denied.');
+        setError(isAnonymous
+          ? 'Demo data not found. Please try again later.'
+          : 'File not found or access denied.');
       } else if (err.response?.status === 429) {
         setError('Too many analysis requests. Please wait before trying again.');
       } else if (err.response?.data?.message?.includes('too large') || err.response?.data?.message?.includes('timeout')) {
-        setError(`Performance limit reached: ${err.response.data.message} Try using a smaller file or fewer unique values.`);
+        setError(`Performance limit reached: ${err.response.data.message} Try using fewer unique values.`);
       } else {
-        setError(`Failed to generate crosstab after ${processingTime}ms. Please try again.`);
+        const suffix = isAnonymous 
+          ? ' Please try again later or create an account to upload your own files.'
+          : ' Please try again.';
+        setError(`Failed to generate crosstab after ${processingTime}ms.${suffix}`);
       }
     } finally {
       setLoading(false);
@@ -229,43 +348,123 @@ const Cuttytabs = () => {
     setError('');
 
     try {
-      const response = await api.post(`/api/v1/files/${selectedFile}/export/crosstab`, {
-        rowVariable,
-        columnVariable
-      }, {
-        responseType: 'blob'
-      });
-
-      // Create download link
-      const blob = new Blob([response.data], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `crosstab_${rowVariable}_${columnVariable}_${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      setSuccessMessage('Crosstab exported successfully and saved to your files!');
+      // For anonymous users or reference/demo data, export directly from crosstab data
+      const isSquirrelData = selectedFile === 'reference-squirrel' || selectedFile === 'demo-squirrel-data';
       
-      // Refresh global file list if available (safe check)
-      if (typeof window !== 'undefined' && typeof window.refreshFileList === 'function') {
-        try {
-          window.refreshFileList();
-        } catch (refreshError) {
-          console.warn('Failed to refresh file list:', refreshError);
+      if (isAnonymous || isSquirrelData) {
+        // Generate CSV export directly from the crosstab data
+        const csvContent = generateCSVFromCrosstabData(crosstabData, rowVariable, columnVariable);
+        
+        // Create filename
+        const timestamp = new Date().toISOString().split('T')[0];
+        const prefix = isAnonymous ? 'demo-squirrel-crosstab' : 'squirrel-crosstab';
+        const filename = `${prefix}_${rowVariable}_${columnVariable}_${timestamp}.csv`;
+        
+        // Create download link
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+
+        const message = isAnonymous 
+          ? 'Demo crosstab exported successfully! Create an account to save exports to your file library.'
+          : 'Squirrel data crosstab exported successfully!';
+        setSuccessMessage(message);
+        
+      } else {
+        // Authenticated user with their own files - use backend export endpoint
+        const response = await api.post(`/api/v1/files/${selectedFile}/export/crosstab`, {
+          rowVariable,
+          columnVariable
+        });
+
+        if (!response.data.success || !response.data.downloadUrl) {
+          throw new Error('Export failed: No download URL received');
+        }
+
+        // Download the actual CSV file using the downloadUrl
+        const downloadResponse = await api.get(response.data.downloadUrl, {
+          responseType: 'blob'
+        });
+
+        // Create download link for the CSV file
+        const blob = new Blob([downloadResponse.data], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = response.data.savedFile.filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+
+        setSuccessMessage(response.data.message || 'Crosstab exported successfully and saved to your files!');
+        
+        // Refresh global file list if available
+        if (typeof window !== 'undefined' && typeof window.refreshFileList === 'function') {
+          try {
+            window.refreshFileList();
+          } catch (refreshError) {
+            console.warn('Failed to refresh file list:', refreshError);
+          }
         }
       }
     } catch (err) {
       console.error('Error exporting crosstab:', err);
-      setError(err.response?.data?.message || 'Failed to export crosstab. Please try again.');
+      const message = err.response?.data?.message || 'Failed to export crosstab. Please try again.';
+      const suffix = isAnonymous ? ' Create an account for full export functionality.' : '';
+      setError(message + suffix);
     } finally {
       setExporting(false);
     }
   };
 
-  const selectedFileName = files.find(f => f.id === selectedFile)?.filename || '';
+  // Helper function to generate CSV from crosstab data
+  const generateCSVFromCrosstabData = (data, rowVar, colVar) => {
+    const rows = [];
+    const columnKeys = Object.keys(data.columnTotals).sort();
+    
+    // Header row
+    const header = [rowVar, ...columnKeys, 'Total'];
+    rows.push(header.join(','));
+    
+    // Data rows
+    const rowKeys = Object.keys(data.rowTotals).sort();
+    rowKeys.forEach(rowKey => {
+      const row = [rowKey];
+      columnKeys.forEach(colKey => {
+        const count = data.matrix[rowKey]?.[colKey] || 0;
+        row.push(count.toString());
+      });
+      row.push(data.rowTotals[rowKey].toString());
+      rows.push(row.join(','));
+    });
+    
+    // Total row
+    const totalRow = ['Total'];
+    columnKeys.forEach(colKey => {
+      totalRow.push(data.columnTotals[colKey].toString());
+    });
+    totalRow.push(data.grandTotal.toString());
+    rows.push(totalRow.join(','));
+    
+    return rows.join('\n');
+  };
+
+  const selectedFileName = () => {
+    if (selectedFile === 'reference-squirrel') {
+      return 'NYC Central Park Squirrel Census (Reference Data)';
+    } else if (selectedFile === 'demo-squirrel-data') {
+      return 'NYC Squirrel Census (Demo Data)';
+    } else {
+      return files.find(f => f.id === selectedFile)?.filename || '';
+    }
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -273,9 +472,21 @@ const Cuttytabs = () => {
         Cuttytabs - Crosstab Analysis
       </Typography>
       
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Create cross-tabulation tables to analyze relationships between two categorical variables in your CSV files.
-      </Typography>
+      {isAnonymous ? (
+        <Box sx={{ mb: 3 }}>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            🐿️ <strong>Demo Mode:</strong> Try our analysis features with real NYC Squirrel Census data! 
+            No login required - explore crosstab analysis to see relationships between different variables.
+          </Alert>
+          <Typography variant="body1" color="text.secondary">
+            Create cross-tabulation tables to analyze relationships between two categorical variables.
+          </Typography>
+        </Box>
+      ) : (
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          Create cross-tabulation tables to analyze relationships between two categorical variables in your CSV files.
+        </Typography>
+      )}
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -304,25 +515,53 @@ const Cuttytabs = () => {
                 Step 1: Select File
               </Typography>
               
-              {files.length === 0 ? (
-                <Alert severity="info">
-                  No CSV files found. Please upload CSV files in the Files section first.
-                </Alert>
-              ) : (
-                <FormControl fullWidth sx={{ mt: 2 }}>
-                  <InputLabel>Select CSV File</InputLabel>
-                  <Select
-                    value={selectedFile}
-                    label="Select CSV File"
-                    onChange={(e) => handleFileSelect(e.target.value)}
-                  >
-                    {files.map((file) => (
-                      <MenuItem key={file.id} value={file.id}>
-                        {file.filename}
+              {isAnonymous ? (
+                // Anonymous user - show only demo data
+                squirrelDataAvailable ? (
+                  <FormControl fullWidth sx={{ mt: 2 }}>
+                    <InputLabel>Demo Data</InputLabel>
+                    <Select
+                      value={selectedFile}
+                      label="Demo Data"
+                      onChange={(e) => handleFileSelect(e.target.value)}
+                    >
+                      <MenuItem value="demo-squirrel-data">
+                        🐿️ NYC Squirrel Census Demo Data
                       </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                    </Select>
+                  </FormControl>
+                ) : (
+                  <Alert severity="warning">
+                    Demo data is temporarily unavailable. Please try again later or create an account to upload your own CSV files.
+                  </Alert>
+                )
+              ) : (
+                // Authenticated user - show their files and reference data
+                files.length === 0 && !squirrelDataAvailable ? (
+                  <Alert severity="info">
+                    No CSV files found. Please upload CSV files in the Files section first.
+                  </Alert>
+                ) : (
+                  <FormControl fullWidth sx={{ mt: 2 }}>
+                    <InputLabel>Select CSV File</InputLabel>
+                    <Select
+                      value={selectedFile}
+                      label="Select CSV File"
+                      onChange={(e) => handleFileSelect(e.target.value)}
+                    >
+                      {squirrelDataAvailable && (
+                        <MenuItem key="reference-squirrel" value="reference-squirrel">
+                          🐿️ NYC Central Park Squirrel Census (Reference Data)
+                        </MenuItem>
+                      )}
+                      {files.map((file) => (
+                        <MenuItem key={file.id} value={file.id}>
+                          {file.filename}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )
               )}
             </CardContent>
           </Card>
@@ -416,7 +655,12 @@ const Cuttytabs = () => {
               </Box>
               
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                File: {selectedFileName} | Total records processed: {crosstabData.grandTotal}
+                File: {selectedFileName()} | Total records processed: {crosstabData.grandTotal}
+                {demoMode && (
+                  <Typography component="span" color="primary" sx={{ ml: 1 }}>
+                    (Demo Mode)
+                  </Typography>
+                )}
               </Typography>
               
               <Divider sx={{ mb: 2 }} />
