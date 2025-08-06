@@ -472,7 +472,7 @@ const Cuttytabs = () => {
         Cuttytabs
       </Typography>
       <Typography variant="h6" component="h2" color="text.secondary" sx={{ mb: 3 }}>
-        the best crosstabber tool ever
+        the best crosstabber tool EVER
       </Typography>
       
       {isAnonymous ? (
