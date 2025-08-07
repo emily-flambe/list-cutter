@@ -15,9 +15,15 @@ import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin';
 import syntheticDataRoutes from './routes/synthetic-data';
 import agentRoutes from './routes/agent';
+import segmentsRoutes from './routes/segments';
+import realtimeRoutes from './routes/realtime';
+import publicRoutes from './routes/public';
 
 // Import security middleware
 import { rateLimitMiddleware } from './services/security';
+
+// Import Cuttytabs processing
+import { runIncrementalProcessing } from './services/segment-processor';
 
 type HonoVariables = {
   userId?: string;
@@ -178,6 +184,7 @@ app.use('/api/v1/auth/*', async (c, next) => {
   })(c, next);
 });
 
+
 // API version prefix
 const v1 = app.basePath('/api/v1');
 
@@ -187,6 +194,10 @@ v1.route('/auth', authRoutes); // Authentication routes at /api/v1/auth/*
 v1.route('/admin', adminRoutes); // Admin routes at /api/v1/admin/*
 v1.route('/synthetic-data', syntheticDataRoutes); // Synthetic data generation at /api/v1/synthetic-data/*
 v1.route('/agent', agentRoutes); // Agent WebSocket proxy at /api/v1/agent/*
+v1.route('/segments', segmentsRoutes); // Cuttytabs segmentation at /api/v1/segments/*
+v1.route('/realtime', realtimeRoutes); // Real-time updates via SSE at /api/v1/realtime/*
+v1.route('/public', publicRoutes); // Public demo routes at /api/v1/public/* (no authentication required)
+// Analysis endpoints are integrated through files route at /api/v1/files/:fileId/analyze/* and /api/v1/files/:fileId/fields
 
 // Frontend serving logic for non-API routes
 app.get('*', async (c, next): Promise<Response> => {
@@ -301,7 +312,25 @@ app.onError((err, c): Response => {
 });
 
 // Export the Hono app as default
-export default app;
+export default {
+  fetch: app.fetch,
+  
+  // Cron job handler for Cuttytabs incremental processing
+  async scheduled(event: ScheduledEvent, env: CloudflareEnv, ctx: ExecutionContext): Promise<void> {
+    console.log('Cron trigger fired:', event.cron, 'at', new Date().toISOString());
+    
+    // Run incremental processing in the background
+    ctx.waitUntil(
+      runIncrementalProcessing(env)
+        .then(stats => {
+          console.log('Cron processing completed successfully:', stats);
+        })
+        .catch(error => {
+          console.error('Cron processing failed:', error);
+        })
+    );
+  }
+};
 
 // Export Durable Objects
 // CuttyAgent export removed - using external agent via WebSocket proxy

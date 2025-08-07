@@ -1,4 +1,3 @@
-// frontend/src/context/AuthContext.jsx
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../api';
 
@@ -18,7 +17,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = (newToken, username, refreshToken) => {
     localStorage.setItem('authToken', newToken);
-    localStorage.setItem('refreshToken', refreshToken); // Store refresh token
+    localStorage.setItem('refreshToken', refreshToken);
     setToken(newToken);
     fetchUserData(newToken);
   };
@@ -36,7 +35,6 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       if (error.response && error.response.status === 401) {
         console.error('Failed to fetch user data:', error);
-        console.log('Attempting to refresh token...');
         await refreshToken();
         try {
           const response = await api.get('/api/v1/auth/user');
@@ -58,12 +56,10 @@ export const AuthProvider = ({ children }) => {
       const refreshTokenValue = localStorage.getItem('refreshToken');
       
       if (!refreshTokenValue) {
-        console.log('No refresh token found, logging out');
         logout();
         return;
       }
 
-      console.log('Sending request to refresh token at:', `/api/v1/auth/refresh`);
       
       const response = await api.post(
         `/api/v1/auth/refresh`,
@@ -71,7 +67,6 @@ export const AuthProvider = ({ children }) => {
         { headers: { 'Content-Type': 'application/json' } }
       );
 
-      console.log('Token refresh successful');
 
       const newAccessToken = response.data.access_token;
       const newRefreshToken = response.data.refresh_token;
@@ -86,9 +81,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Failed to refresh token:', error);
       
-      // If token refresh fails, clear all tokens and log out
       if (error.response && (error.response.status === 401 || error.response.status === 400)) {
-        console.log('Invalid refresh token, clearing all tokens and logging out');
         clearAllTokens();
       }
       
@@ -99,21 +92,17 @@ export const AuthProvider = ({ children }) => {
   const clearAllTokens = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('refreshToken');
-    localStorage.removeItem('token'); // Legacy token key
-    console.log('All authentication tokens cleared');
+    localStorage.removeItem('token');
   };
 
-  // Validate token on app initialization
   const validateToken = async () => {
     const storedToken = localStorage.getItem('authToken');
     if (storedToken) {
       try {
-        // Try to fetch user data to validate token
         const response = await api.get('/api/v1/auth/user');
         setUser(response.data.user || response.data);
       } catch (error) {
         if (error.response && (error.response.status === 401 || error.response.status === 400)) {
-          console.log('Stored token is invalid, clearing tokens');
           clearAllTokens();
           setToken(null);
           setUser(null);
@@ -124,13 +113,12 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      fetchUserData(token); // Fetch user data on token change
+      fetchUserData(token);
     } else {
-      setUser(null); // Reset user if no token
+      setUser(null);
     }
   }, [token]);
 
-  // Validate token on app startup
   useEffect(() => {
     validateToken();
   }, []);

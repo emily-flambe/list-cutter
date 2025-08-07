@@ -58,14 +58,6 @@ export async function authenticateUser(env: Env, username: string, password: str
  */
 export async function createUser(env: Env, userData: UserRegistration): Promise<User> {
   try {
-    // Add detailed D1 database debugging
-    console.log('🔍 createUser - D1 Database debugging:', {
-      has_db_binding: !!env.DB,
-      db_binding_constructor: env.DB?.constructor?.name,
-      environment: env.ENVIRONMENT || 'development',
-      username_attempting: userData.username,
-      timestamp: new Date().toISOString()
-    });
 
     // Validate passwords match
     if (userData.password !== userData.password2) {
@@ -78,8 +70,6 @@ export async function createUser(env: Env, userData: UserRegistration): Promise<
     }
 
 
-    // Log before attempting database query
-    console.log('🔍 About to query D1 database for existing user...');
     
     // Check if username already exists
     const existingUser = await env.DB.prepare(`

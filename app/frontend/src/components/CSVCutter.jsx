@@ -35,10 +35,6 @@ const CSVCutter = () => {
   const fileInputRef = useRef(null);
   const token = useContext(AuthContext);
 
-  useEffect(() => {
-    console.log("Updated File Info:", fileInfo);
-    console.log("Token:", token);
-  }, [fileInfo]);
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -190,7 +186,6 @@ const CSVCutter = () => {
     // Append metadata as a JSON string
     formData.append("metadata", JSON.stringify(metadata));
 
-    console.log(formData);
     try {
         await api.post(`/api/v1/files/save`, formData, {
             headers: { "Content-Type": "multipart/form-data" },

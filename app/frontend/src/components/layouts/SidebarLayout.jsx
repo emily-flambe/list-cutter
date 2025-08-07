@@ -32,6 +32,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   AutoAwesome as AutoAwesomeIcon,
   DataObject as DataObjectIcon,
+  Analytics as AnalyticsIcon,
   // Anchor as AnchorIcon,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
@@ -102,6 +103,10 @@ const SidebarLayout = ({ children }) => {
           return "Have we met?";
         case '/synthetic-data':
           return "LET'S SPILL SOME INK.";
+        case '/analysis':
+          return "Time to analyze! What patterns will we discover?";
+        case '/analysis/cuttytabs':
+          return "Time for a swim swim!";
         case '/faq':
           return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.15rem' } };
         case '/logout':
@@ -337,6 +342,26 @@ const SidebarLayout = ({ children }) => {
           </ListItemButton>
         </ListItem>
 
+        {/* Analysis - Visible to all users */}
+        <ListItem disablePadding>
+          <ListItemButton
+            component={Link}
+            to="/analysis"
+            selected={location.pathname === '/analysis' || location.pathname.startsWith('/analysis/')}
+            sx={{
+              '&.Mui-selected': {
+                backgroundColor: 'var(--accent)',
+                '&:hover': { backgroundColor: 'var(--dark-accent)' },
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
+              <AnalyticsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Analysis" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
+          </ListItemButton>
+        </ListItem>
+
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
@@ -374,7 +399,7 @@ const SidebarLayout = ({ children }) => {
                 <AutoAwesomeIcon />
               </ListItemIcon>
               <ListItemText 
-                primary="Appearance" 
+                primary="Style" 
                 sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} 
               />
               {appearanceOpen ? <ExpandLess sx={{ color: 'var(--primary-text)' }} /> : <ExpandMore sx={{ color: 'var(--primary-text)' }} />}

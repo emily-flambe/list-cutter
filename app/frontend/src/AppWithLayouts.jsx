@@ -23,6 +23,8 @@ import ManageFiles from './components/ManageFiles';
 import LoadPersonRecords from './components/LoadPersonRecords';
 import FAQ from './components/FAQ';
 import SyntheticDataGenerator from './components/SyntheticDataGenerator';
+import Analysis from './components/Analysis';
+import Cuttytabs from './components/Cuttytabs';
 
 // Design Testing Component
 import DesignTester from './components/DesignTester';
@@ -81,6 +83,8 @@ function AppWithLayouts() {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/design-tester" element={<DesignTester />} />
             <Route path="/synthetic-data" element={<SyntheticDataGenerator />} />
+            <Route path="/analysis" element={<Analysis />} />
+            <Route path="/analysis/cuttytabs" element={<Cuttytabs />} />
           </Routes>
         </SidebarLayout>
       </Router>
