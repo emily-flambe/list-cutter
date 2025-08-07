@@ -80,8 +80,9 @@ analysis.get('/fields/:fileId', async (c) => {
       return c.json({ error: 'File data not found in storage' }, 404);
     }
 
-    // Read and parse CSV content with error handling
-    const content = await object.text();
+    // Read and parse CSV content with error handling, normalize Unicode immediately
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
     
     // Handle empty files
     if (!content || content.trim().length === 0) {
@@ -146,26 +147,27 @@ analysis.post('/crosstab', async (c) => {
       CrosstabRequest & { fileId: string } = await c.req.json();
 
     // Validate input parameters
-    if (!fileId || !rowVariable || !columnVariable) {
+    if (!fileId || !rowVariable) {
       return c.json({ 
         error: 'Missing required parameters',
-        message: 'fileId, rowVariable, and columnVariable are all required'
+        message: 'fileId and rowVariable are required'
       }, 400);
     }
 
-    if (rowVariable === columnVariable) {
+    // Allow empty columnVariable for single-row counts
+    if (columnVariable && rowVariable === columnVariable) {
       return c.json({ 
         error: 'Invalid variable selection',
         message: 'Row and column variables must be different'
       }, 400);
     }
 
-    // Validate field names (prevent injection)
-    const fieldNameRegex = /^[a-zA-Z0-9_\s\-\.]{1,100}$/;
-    if (!fieldNameRegex.test(rowVariable) || !fieldNameRegex.test(columnVariable)) {
+    // Validate field names (allow most printable characters)
+    const fieldNameRegex = /^[^\r\n"]{1,200}$/;
+    if (!fieldNameRegex.test(rowVariable) || (columnVariable && !fieldNameRegex.test(columnVariable))) {
       return c.json({ 
         error: 'Invalid field names',
-        message: 'Field names can only contain letters, numbers, spaces, underscores, hyphens, and dots'
+        message: 'Field names cannot contain newlines or quotes, and must be 1-200 characters'
       }, 400);
     }
 
@@ -210,8 +212,9 @@ analysis.post('/crosstab', async (c) => {
       return c.json({ error: 'File data not found in storage' }, 404);
     }
 
-    // Read and analyze CSV content
-    const content = await object.text();
+    // Read and analyze CSV content, normalize Unicode immediately
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
     
     // Handle empty files
     if (!content || content.trim().length === 0) {

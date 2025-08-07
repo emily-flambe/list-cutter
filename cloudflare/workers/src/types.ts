@@ -183,7 +183,7 @@ export interface SyntheticDataResponse {
 // Cuttytabs Analysis Types
 export interface CrosstabRequest {
   rowVariable: string;
-  columnVariable: string;
+  columnVariable?: string;
   includePercentages?: boolean;
 }
 
@@ -219,7 +219,7 @@ export interface FieldsResponse {
 
 export interface CrosstabExportRequest {
   rowVariable: string;
-  columnVariable: string;
+  columnVariable?: string;
   filename?: string;
 }
 

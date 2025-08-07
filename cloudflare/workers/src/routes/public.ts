@@ -64,8 +64,19 @@ publicRoutes.get('/squirrel/fields', async (c) => {
       }, 404);
     }
 
-    // Read content
-    const content = await object.text();
+    // Read content and normalize Unicode characters immediately  
+    const rawContent = await object.text();
+    
+    // Debug: Check for problematic characters in raw content
+    if (rawContent.includes('───') || rawContent.includes('���')) {
+      console.log('🚨 Found problematic characters in squirrel data:', {
+        hasBoxDrawing: rawContent.includes('───'),
+        hasReplacementChars: rawContent.includes('���'),
+        sampleContent: rawContent.substring(0, 500)
+      });
+    }
+    
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
     const fileSize = content.length;
 
     // Validate processing limits for security
@@ -106,26 +117,27 @@ publicRoutes.post('/squirrel/analyze/crosstab', async (c) => {
     const { rowVariable, columnVariable, includePercentages }: CrosstabRequest = await c.req.json();
 
     // Validate input - fail fast for anonymous users
-    if (!rowVariable || !columnVariable) {
+    if (!rowVariable) {
       return c.json({ 
-        error: 'Both rowVariable and columnVariable are required',
-        message: 'Please select both row and column variables for the crosstab analysis'
+        error: 'rowVariable is required',
+        message: 'Please select a row variable for the analysis'
       }, 400);
     }
 
-    if (rowVariable === columnVariable) {
+    // Allow empty columnVariable for single-row counts
+    if (columnVariable && rowVariable === columnVariable) {
       return c.json({ 
         error: 'Row and column variables must be different',
         message: 'Please select different variables for rows and columns'
       }, 400);
     }
 
-    // Validate field names for security (same validation as authenticated routes)
-    const fieldNameRegex = /^[a-zA-Z0-9_\s\-\.]{1,100}$/;
-    if (!fieldNameRegex.test(rowVariable) || !fieldNameRegex.test(columnVariable)) {
+    // Validate field names (allow most printable characters)
+    const fieldNameRegex = /^[^\r\n"]{1,200}$/;
+    if (!fieldNameRegex.test(rowVariable) || (columnVariable && !fieldNameRegex.test(columnVariable))) {
       return c.json({ 
         error: 'Invalid field names',
-        message: 'Field names can only contain letters, numbers, spaces, underscores, hyphens, and dots'
+        message: 'Field names cannot contain newlines or quotes, and must be 1-200 characters'
       }, 400);
     }
 
@@ -141,9 +153,10 @@ publicRoutes.post('/squirrel/analyze/crosstab', async (c) => {
       }, 404);
     }
 
-    // Read content efficiently
+    // Read content efficiently and normalize Unicode characters immediately  
     const readStartTime = Date.now();
-    const content = await object.text();
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
     const readTime = Date.now() - readStartTime;
     fileSize = content.length;
 

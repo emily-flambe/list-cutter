@@ -318,8 +318,9 @@ files.get('/reference/squirrel/fields', async (c) => {
       return c.json({ error: 'Reference squirrel data not found' }, 404);
     }
 
-    // Read content
-    const content = await object.text();
+    // Read content and normalize Unicode characters immediately
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
     const fileSize = content.length;
 
     // Validate processing limits
@@ -365,11 +366,12 @@ files.post('/reference/squirrel/analyze/crosstab', async (c) => {
     }
 
     // Validate input - fail fast!
-    if (!rowVariable || !columnVariable) {
-      return c.json({ error: 'Both rowVariable and columnVariable are required' }, 400);
+    if (!rowVariable) {
+      return c.json({ error: 'rowVariable is required' }, 400);
     }
 
-    if (rowVariable === columnVariable) {
+    // Allow empty columnVariable for single-row counts
+    if (columnVariable && rowVariable === columnVariable) {
       return c.json({ error: 'Row and column variables must be different' }, 400);
     }
 
@@ -382,9 +384,10 @@ files.post('/reference/squirrel/analyze/crosstab', async (c) => {
       return c.json({ error: 'Reference squirrel data not found' }, 404);
     }
 
-    // Read content efficiently
+    // Read content efficiently and normalize Unicode characters immediately
     const readStartTime = Date.now();
-    const content = await object.text();
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
     const readTime = Date.now() - readStartTime;
     fileSize = content.length;
 
@@ -629,9 +632,10 @@ files.get('/:fileId/fields', async (c) => {
       return c.json({ error: 'File data not found' }, 404);
     }
 
-    // Read content with streaming efficiency
+    // Read content with streaming efficiency and normalize Unicode characters immediately
     const readStartTime = Date.now();
-    const content = await object.text();
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
     const readTime = Date.now() - readStartTime;
     fileSize = content.length;
 
@@ -683,11 +687,12 @@ files.post('/:fileId/analyze/crosstab', async (c) => {
     const { rowVariable, columnVariable, includePercentages }: CrosstabRequest = await c.req.json();
 
     // Validate input - fail fast!
-    if (!rowVariable || !columnVariable) {
-      return c.json({ error: 'Both rowVariable and columnVariable are required' }, 400);
+    if (!rowVariable) {
+      return c.json({ error: 'rowVariable is required' }, 400);
     }
 
-    if (rowVariable === columnVariable) {
+    // Allow empty columnVariable for single-row counts
+    if (columnVariable && rowVariable === columnVariable) {
       return c.json({ error: 'Row and column variables must be different' }, 400);
     }
 
@@ -720,9 +725,10 @@ files.post('/:fileId/analyze/crosstab', async (c) => {
       return c.json({ error: 'File data not found' }, 404);
     }
 
-    // Read content efficiently
+    // Read content efficiently and normalize Unicode characters immediately
     const readStartTime = Date.now();
-    const content = await object.text();
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
     const readTime = Date.now() - readStartTime;
     fileSize = content.length;
 
@@ -792,11 +798,12 @@ files.post('/:fileId/export/crosstab', async (c) => {
     const { rowVariable, columnVariable, filename: customFilename }: CrosstabExportRequest = await c.req.json();
 
     // Validate input - fail fast!
-    if (!rowVariable || !columnVariable) {
-      return c.json({ error: 'Both rowVariable and columnVariable are required' }, 400);
+    if (!rowVariable) {
+      return c.json({ error: 'rowVariable is required' }, 400);
     }
 
-    if (rowVariable === columnVariable) {
+    // Allow empty columnVariable for single-row counts
+    if (columnVariable && rowVariable === columnVariable) {
       return c.json({ error: 'Row and column variables must be different' }, 400);
     }
 
@@ -829,9 +836,10 @@ files.post('/:fileId/export/crosstab', async (c) => {
       return c.json({ error: 'File data not found' }, 404);
     }
 
-    // Read content efficiently
+    // Read content efficiently and normalize Unicode characters immediately
     const readStartTime = Date.now();
-    const content = await object.text();
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
     const readTime = Date.now() - readStartTime;
     fileSize = content.length;
 
