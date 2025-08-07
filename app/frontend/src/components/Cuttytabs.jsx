@@ -243,7 +243,6 @@ const Cuttytabs = () => {
       return;
     }
 
-    const startTime = Date.now();
     setLoading(true);
     setError('');
     setCrosstabData(null);
@@ -280,34 +279,12 @@ const Cuttytabs = () => {
         }
       }
 
-      const processingTime = Date.now() - startTime;
-      const performanceData = response.data.metadata?.performance;
-      const isDemoMode = response.data.metadata?.demoMode;
-      
       setCrosstabData(response.data.data);
       
-      // Performance feedback with demo messaging
-      let performanceMessage = `Crosstab generated in ${processingTime}ms! 🐰⚡`;
-      if (performanceData) {
-        const throughput = performanceData.throughput_mbps;
-        const matrixSize = performanceData.matrix_size;
-        if (throughput && matrixSize) {
-          const speedText = `${matrixSize} matrix processed at ${throughput.toFixed(1)}MB/s in ${processingTime}ms`;
-          performanceMessage = isDemoMode || isAnonymous
-            ? `Demo analysis complete! ${speedText} 🐰⚡ Create an account to analyze your own data!`
-            : `Lightning fast analysis complete! ${speedText} 🐰⚡`;
-        }
-      }
       
-      setSuccessMessage(performanceMessage);
-      
-      // Log performance metrics
-      if (performanceData) {
-      }
       
     } catch (err) {
-      const processingTime = Date.now() - startTime;
-      console.error(`🐰 Error generating crosstab after ${processingTime}ms:`, err);
+      console.error('Error generating crosstab:', err);
       
       // Handle errors with appropriate messaging for demo vs authenticated users
       if (err.response?.status === 400) {
@@ -329,7 +306,7 @@ const Cuttytabs = () => {
         const suffix = isAnonymous 
           ? ' Please try again later or create an account to upload your own files.'
           : ' Please try again.';
-        setError(`Failed to generate crosstab after ${processingTime}ms.${suffix}`);
+        setError(`Failed to generate crosstab.${suffix}`);
       }
     } finally {
       setLoading(false);
