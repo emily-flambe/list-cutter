@@ -15,15 +15,12 @@ import {
   Chip
 } from '@mui/material';
 
-// 🐰 RUBY OPTIMIZED: High-performance crosstab table with memoization and efficient rendering
 const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const tableRef = useRef(null);
   
-  // 🐰 RUBY'S OPTIMIZATION: Memoize expensive calculations and performance metrics
   const optimizedData = useMemo(() => {
-    console.time('🐰 CuttytabsTable optimization');
     
     // Comprehensive validation for edge cases
     if (!data) {
@@ -54,7 +51,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
       return { error: 'empty', rowKeys, columnKeys };
     }
 
-    // 🐰 RUBY'S PERFORMANCE ANALYSIS
     const totalCells = rowKeys.length * columnKeys.length;
     const nonZeroCells = rowKeys.reduce((count, rowKey) => 
       count + columnKeys.filter(colKey => 
@@ -63,16 +59,9 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
     );
     const sparsity = (nonZeroCells / totalCells) * 100;
     
-    // Performance thresholds
-    const isLarge = totalCells > 5000; // More than 5k cells
-    const isVeryLarge = totalCells > 20000; // More than 20k cells
-    const isSparse = sparsity < 15; // Less than 15% non-zero
-    
-    if (totalCells > 2000) {
-      console.log(`🐰 Crosstab performance: ${rowKeys.length}×${columnKeys.length} = ${totalCells} cells, ${sparsity.toFixed(1)}% dense`);
-    }
-    
-    console.timeEnd('🐰 CuttytabsTable optimization');
+    const isLarge = totalCells > 5000;
+    const isVeryLarge = totalCells > 20000;
+    const isSparse = sparsity < 15;
     
     return {
       crosstab,
@@ -129,7 +118,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
 
   return (
     <Box sx={{ width: '100%', overflow: 'hidden' }}>
-      {/* 🐰 RUBY'S PERFORMANCE INDICATORS - Moved above table */}
       <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
         <Typography variant="caption" color="text.secondary">
           Rows: {rowKeys.length.toLocaleString()}
@@ -140,18 +128,11 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
         <Typography variant="caption" color="text.secondary">
           Total Records: {typeof grandTotal === 'number' ? grandTotal.toLocaleString() : '0'}
         </Typography>
-        {isLarge && (
-          <Typography variant="caption" color="primary.main" sx={{ fontWeight: 'bold' }}>
-            🐰 Performance Mode Active
-          </Typography>
-        )}
       </Box>
       
-      {/* Performance warning for very large tables */}
       {isVeryLarge && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Large crosstab detected ({totalCells.toLocaleString()} cells). 
-          Ruby's optimizations are active for smooth performance! 🐰⚡
+          Large crosstab detected ({totalCells.toLocaleString()} cells).
         </Alert>
       )}
       
@@ -160,19 +141,16 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
         component={Paper} 
         variant="outlined"
         sx={{ 
-          // 🐰 RUBY OPTIMIZATION: Adaptive max height based on table size
           maxHeight: isVeryLarge ? 400 : isLarge ? 500 : 600,
           overflow: 'auto',
           border: '1px solid',
           borderColor: 'divider',
-          // 🐰 RUBY OPTIMIZATION: Reduced padding for large tables + simple borders for spreadsheet look
           '& .MuiTableCell-root': {
             fontSize: isMobile ? '0.7rem' : isLarge ? '0.8rem' : '0.875rem',
             padding: isMobile ? '6px 3px' : isLarge ? '8px 6px' : '12px 8px',
             lineHeight: isLarge ? 1.2 : 1.43,
             border: '1px solid #000000 !important',
           },
-          // Enable GPU acceleration for smooth scrolling
           transform: 'translateZ(0)',
           willChange: 'scroll-position'
         }}
@@ -181,7 +159,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
           stickyHeader 
           size={isMobile ? 'small' : isLarge ? 'small' : 'medium'}
           sx={{
-            // 🐰 RUBY OPTIMIZATION: Improve rendering performance
             tableLayout: isLarge ? 'fixed' : 'auto',
             borderCollapse: 'collapse !important',
             borderSpacing: 0,
@@ -189,7 +166,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
         >
           <TableHead>
             <TableRow>
-              {/* Top-left corner cell with variable names */}
               <TableCell 
                 sx={{ 
                   fontWeight: 'bold',
@@ -210,7 +186,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                 </Typography>
               </TableCell>
               
-              {/* Column headers */}
               {columnKeys.map((colKey) => (
                 <TableCell 
                   key={colKey}
@@ -226,7 +201,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                 </TableCell>
               ))}
               
-              {/* Total column header */}
               <TableCell 
                 align="center"
                 sx={{ 
@@ -241,10 +215,8 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {/* Data rows */}
             {rowKeys.map((rowKey) => (
               <TableRow key={rowKey} hover>
-                {/* Row header */}
                 <TableCell 
                   component="th" 
                   scope="row"
@@ -260,12 +232,10 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   {rowKey}
                 </TableCell>
                 
-                {/* 🐰 RUBY OPTIMIZED: Data cells with performance enhancements */}
                 {columnKeys.map((colKey) => {
                   const value = crosstab[rowKey]?.[colKey];
                   const displayValue = typeof value === 'number' ? value : 0;
                   const isZero = displayValue === 0;
-                  // 🐰 RUBY OPTIMIZATION: Only format large numbers, avoid expensive operations for zeros
                   const formattedValue = isLarge && displayValue > 999 ? displayValue.toLocaleString() : displayValue;
                   
                   return (
@@ -276,7 +246,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                         backgroundColor: '#ffffff !important',
                         color: isZero ? '#666666' : '#000000',
                         fontWeight: isZero ? 'normal' : 'medium',
-                        // 🐰 RUBY OPTIMIZATION: Minimal styling for large tables to reduce render cost
                         ...(isLarge && {
                           borderRight: 'none',
                           '&:hover': {
@@ -290,7 +259,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   );
                 })}
                 
-                {/* Row total */}
                 <TableCell 
                   align="center"
                   sx={{ 
@@ -299,7 +267,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                     color: 'primary.contrastText'
                   }}
                 >
-                  {/* 🐰 RUBY OPTIMIZATION: Efficient number formatting for large values */}
                   {isLarge && typeof rowTotals[rowKey] === 'number' && rowTotals[rowKey] > 999 
                     ? rowTotals[rowKey].toLocaleString() 
                     : (typeof rowTotals[rowKey] === 'number' ? rowTotals[rowKey] : '0')}
@@ -307,7 +274,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
               </TableRow>
             ))}
             
-            {/* Column totals row */}
             <TableRow sx={{ backgroundColor: 'primary.light' }}>
               <TableCell 
                 sx={{ 
@@ -331,14 +297,12 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                     color: 'primary.contrastText'
                   }}
                 >
-                  {/* 🐰 RUBY OPTIMIZATION: Efficient column total formatting */}
                   {isLarge && typeof columnTotals[colKey] === 'number' && columnTotals[colKey] > 999 
                     ? columnTotals[colKey].toLocaleString() 
                     : (typeof columnTotals[colKey] === 'number' ? columnTotals[colKey] : '0')}
                 </TableCell>
               ))}
               
-              {/* Grand total */}
               <TableCell 
                 align="center"
                 sx={{ 
@@ -348,7 +312,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   fontSize: '1rem'
                 }}
               >
-                {/* 🐰 RUBY OPTIMIZATION: Efficient grand total formatting */}
                 {isLarge && typeof grandTotal === 'number' && grandTotal > 999 
                   ? grandTotal.toLocaleString() 
                   : (typeof grandTotal === 'number' ? grandTotal : '0')}
