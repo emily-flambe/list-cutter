@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import {
   Table,
   TableBody,
@@ -19,6 +19,7 @@ import {
 const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const tableRef = useRef(null);
   
   // 🐰 RUBY'S OPTIMIZATION: Memoize expensive calculations and performance metrics
   const optimizedData = useMemo(() => {
@@ -88,7 +89,27 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
       isSparse
     };
   }, [data]);
-  
+
+  // Minimal DOM intervention to fix persistent border issue
+  useEffect(() => {
+    const removeBorders = () => {
+      if (tableRef.current) {
+        const cells = tableRef.current.querySelectorAll('td, th');
+        cells.forEach(cell => {
+          cell.style.borderBottom = 'none';
+          cell.style.borderTop = 'none';
+        });
+      }
+    };
+
+    // Initial removal
+    removeBorders();
+    
+    // One follow-up to catch whatever's adding borders back
+    const timer = setTimeout(removeBorders, 5000);
+    
+    return () => clearTimeout(timer);
+  }, [data]);
   // Handle errors from memoized calculation
   if (optimizedData.error) {
     if (optimizedData.error === 'empty') {
@@ -155,6 +176,7 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
       )}
       
       <TableContainer 
+        ref={tableRef}
         component={Paper} 
         variant="outlined"
         sx={{ 
@@ -168,6 +190,11 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
             fontSize: isMobile ? '0.7rem' : isLarge ? '0.8rem' : '0.875rem',
             padding: isMobile ? '6px 3px' : isLarge ? '8px 6px' : '12px 8px',
             lineHeight: isLarge ? 1.2 : 1.43,
+          },
+          // Target ALL possible table elements to remove borders
+          '& td, & th': {
+            borderBottom: 'none !important',
+            borderTop: 'none !important',
           },
           // Enable GPU acceleration for smooth scrolling
           transform: 'translateZ(0)',

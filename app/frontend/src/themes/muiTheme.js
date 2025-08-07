@@ -85,6 +85,16 @@ export const createDynamicTheme = () => {
           },
         },
       },
+      // Simple fix for table border inconsistencies
+      MuiTable: {
+        styleOverrides: {
+          root: {
+            '& .MuiTableCell-root': {
+              borderBottom: 'none',
+            }
+          }
+        }
+      },
     },
   });
 };
