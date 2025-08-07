@@ -130,36 +130,28 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
         </Typography>
       </Box>
       
-      {isVeryLarge && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Large crosstab detected ({totalCells.toLocaleString()} cells).
-        </Alert>
-      )}
       
       <TableContainer 
         ref={tableRef}
         component={Paper} 
         variant="outlined"
         sx={{ 
-          maxHeight: isVeryLarge ? 400 : isLarge ? 500 : 600,
+          maxHeight: 600,
           overflow: 'auto',
           border: '1px solid',
           borderColor: 'divider',
           '& .MuiTableCell-root': {
-            fontSize: isMobile ? '0.7rem' : isLarge ? '0.8rem' : '0.875rem',
-            padding: isMobile ? '6px 3px' : isLarge ? '8px 6px' : '12px 8px',
-            lineHeight: isLarge ? 1.2 : 1.43,
+            fontSize: isMobile ? '0.7rem' : '0.875rem',
+            padding: isMobile ? '6px 4px' : '12px 8px',
+            lineHeight: 1.43,
             border: '1px solid #000000 !important',
           },
-          transform: 'translateZ(0)',
-          willChange: 'scroll-position'
         }}
       >
         <Table 
           stickyHeader 
-          size={isMobile ? 'small' : isLarge ? 'small' : 'medium'}
+          size="medium"
           sx={{
-            tableLayout: isLarge ? 'fixed' : 'auto',
             borderCollapse: 'collapse !important',
             borderSpacing: 0,
           }}
@@ -171,7 +163,7 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   fontWeight: 'bold',
                   backgroundColor: 'grey.400',
                   color: '#000000 !important',
-                  minWidth: isMobile ? '80px' : '120px',
+                  minWidth: '120px',
                   position: 'sticky',
                   left: 0,
                   zIndex: 3,
@@ -194,7 +186,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                     fontWeight: 'bold',
                     backgroundColor: 'grey.300',
                     color: '#000000 !important',
-                    minWidth: isMobile ? '60px' : '80px',
                   }}
                 >
                   {colKey}
@@ -207,7 +198,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   fontWeight: 'bold',
                   backgroundColor: 'primary.light',
                   color: 'primary.contrastText',
-                  minWidth: isMobile ? '60px' : '80px'
                 }}
               >
                 Total
@@ -246,12 +236,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                         backgroundColor: '#ffffff !important',
                         color: isZero ? '#666666' : '#000000',
                         fontWeight: isZero ? 'normal' : 'medium',
-                        ...(isLarge && {
-                          borderRight: 'none',
-                          '&:hover': {
-                            backgroundColor: '#f5f5f5 !important'
-                          }
-                        })
                       }}
                     >
                       {formattedValue}
