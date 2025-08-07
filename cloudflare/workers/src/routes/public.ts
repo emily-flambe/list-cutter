@@ -16,18 +16,50 @@ import { CrosstabProcessor } from '../services/crosstab-processor';
 
 const publicRoutes = new Hono<{ Bindings: CloudflareEnv }>();
 
-// Public squirrel data download endpoint - no authentication required
-publicRoutes.get('/squirrel/data', async (c) => {
-  try {
-    console.log('Public squirrel data request from anonymous user');
+// Available demo datasets
+const DEMO_DATASETS: Record<string, {
+  filename: string;
+  displayName: string;
+  downloadName: string;
+  description: string;
+}> = {
+  'squirrel': {
+    filename: 'demo/squirrel-data.csv',
+    displayName: 'NYC Squirrel Census',
+    downloadName: 'nyc-squirrel-census-demo.csv',
+    description: 'NYC Squirrel Census 2018 data'
+  },
+  'npors2025': {
+    filename: 'demo/NPORS_2025.csv',
+    displayName: '2025 National Public Opinion Reference Survey',
+    downloadName: 'npors-2025-demo.csv',
+    description: '2025 National Public Opinion Reference Survey data'
+  }
+};
 
-    // Get squirrel data from R2
-    const object = await c.env.FILE_STORAGE.get('demo/squirrel-data.csv');
+// Public demo data download endpoint - no authentication required
+publicRoutes.get('/demo/:dataset/data', async (c) => {
+  try {
+    const datasetKey = c.req.param('dataset');
+    const dataset = DEMO_DATASETS[datasetKey];
+    
+    if (!dataset) {
+      return c.json({ 
+        error: 'Dataset not found',
+        message: 'Requested demo dataset is not available',
+        availableDatasets: Object.keys(DEMO_DATASETS)
+      }, 404);
+    }
+
+    console.log(`Public ${dataset.displayName} data request from anonymous user`);
+
+    // Get data from R2
+    const object = await c.env.FILE_STORAGE.get(dataset.filename);
     
     if (!object) {
       return c.json({ 
         error: 'Demo data not found',
-        message: 'NYC Squirrel Census data is temporarily unavailable' 
+        message: `${dataset.displayName} data is temporarily unavailable` 
       }, 404);
     }
 
@@ -35,32 +67,50 @@ publicRoutes.get('/squirrel/data', async (c) => {
     return new Response(object.body, {
       headers: {
         'Content-Type': 'text/csv',
-        'Content-Disposition': 'attachment; filename="nyc-squirrel-census-demo.csv"',
+        'Content-Disposition': `attachment; filename="${dataset.downloadName}"`,
         'Cache-Control': 'public, max-age=3600', // Cache for 1 hour since reference data doesn't change
-        'X-Demo-Data': 'true'
+        'X-Demo-Data': 'true',
+        'X-Dataset': datasetKey
       }
     });
   } catch (error) {
-    console.error('Public squirrel data fetch error:', error);
+    console.error('Public demo data fetch error:', error);
     return c.json({ 
       error: 'Failed to fetch demo data',
-      message: 'Unable to retrieve NYC Squirrel Census data for demo'
+      message: 'Unable to retrieve demo data'
     }, 500);
   }
 });
 
-// Public squirrel data fields extraction - no authentication required
-publicRoutes.get('/squirrel/fields', async (c) => {
-  try {
-    console.log('Public squirrel fields extraction request from anonymous user');
+// Legacy endpoint for backward compatibility
+publicRoutes.get('/squirrel/data', async (c) => {
+  // Redirect to new endpoint structure
+  return c.redirect('/api/v1/public/demo/squirrel/data', 301);
+});
 
-    // Get squirrel data from R2
-    const object = await c.env.FILE_STORAGE.get('demo/squirrel-data.csv');
+// Public demo data fields extraction - no authentication required
+publicRoutes.get('/demo/:dataset/fields', async (c) => {
+  try {
+    const datasetKey = c.req.param('dataset');
+    const dataset = DEMO_DATASETS[datasetKey];
+    
+    if (!dataset) {
+      return c.json({ 
+        error: 'Dataset not found',
+        message: 'Requested demo dataset is not available',
+        availableDatasets: Object.keys(DEMO_DATASETS)
+      }, 404);
+    }
+
+    console.log(`Public ${dataset.displayName} fields extraction request from anonymous user`);
+
+    // Get data from R2
+    const object = await c.env.FILE_STORAGE.get(dataset.filename);
     
     if (!object) {
       return c.json({ 
         error: 'Demo data not found',
-        message: 'NYC Squirrel Census data is temporarily unavailable'
+        message: `${dataset.displayName} data is temporarily unavailable`
       }, 404);
     }
 
@@ -69,7 +119,7 @@ publicRoutes.get('/squirrel/fields', async (c) => {
     
     // Debug: Check for problematic characters in raw content
     if (rawContent.includes('───') || rawContent.includes('���')) {
-      console.log('🚨 Found problematic characters in squirrel data:', {
+      console.log(`🚨 Found problematic characters in ${dataset.displayName} data:`, {
         hasBoxDrawing: rawContent.includes('───'),
         hasReplacementChars: rawContent.includes('���'),
         sampleContent: rawContent.substring(0, 500)
@@ -90,30 +140,47 @@ publicRoutes.get('/squirrel/fields', async (c) => {
       fields,
       rowCount,
       fileInfo: {
-        id: 'demo-squirrel-data',
-        filename: 'NYC Squirrel Census',
+        id: `demo-${datasetKey}-data`,
+        filename: dataset.displayName,
         size: fileSize
       }
     };
 
     return c.json(response);
   } catch (error) {
-    console.error('Public squirrel fields extraction error:', error);
+    console.error('Public demo fields extraction error:', error);
     return c.json({ 
       error: 'Failed to extract fields from demo data', 
-      message: error instanceof Error ? error.message : 'Unable to analyze NYC Squirrel Census data'
+      message: error instanceof Error ? error.message : 'Unable to analyze demo data'
     }, 500);
   }
 });
 
-// Public squirrel crosstab analysis - no authentication required
-publicRoutes.post('/squirrel/analyze/crosstab', async (c) => {
+// Legacy endpoint for backward compatibility
+publicRoutes.get('/squirrel/fields', async (c) => {
+  // Redirect to new endpoint structure
+  return c.redirect('/api/v1/public/demo/squirrel/fields', 301);
+});
+
+// Public demo crosstab analysis - no authentication required
+publicRoutes.post('/demo/:dataset/analyze/crosstab', async (c) => {
   const startTime = Date.now();
   let fileSize = 0;
   let analysisMetrics: any = {};
   
   try {
-    console.log('Public squirrel crosstab analysis request from anonymous user');
+    const datasetKey = c.req.param('dataset');
+    const dataset = DEMO_DATASETS[datasetKey];
+    
+    if (!dataset) {
+      return c.json({ 
+        error: 'Dataset not found',
+        message: 'Requested demo dataset is not available',
+        availableDatasets: Object.keys(DEMO_DATASETS)
+      }, 404);
+    }
+
+    console.log(`Public ${dataset.displayName} crosstab analysis request from anonymous user`);
     const { rowVariable, columnVariable, includePercentages }: CrosstabRequest = await c.req.json();
 
     // Validate input - fail fast for anonymous users
@@ -141,15 +208,15 @@ publicRoutes.post('/squirrel/analyze/crosstab', async (c) => {
       }, 400);
     }
 
-    // Get squirrel data from R2 with performance monitoring
+    // Get data from R2 with performance monitoring
     const r2StartTime = Date.now();
-    const object = await c.env.FILE_STORAGE.get('demo/squirrel-data.csv');
+    const object = await c.env.FILE_STORAGE.get(dataset.filename);
     const r2Time = Date.now() - r2StartTime;
     
     if (!object) {
       return c.json({ 
         error: 'Demo data not found',
-        message: 'NYC Squirrel Census data is temporarily unavailable'
+        message: `${dataset.displayName} data is temporarily unavailable`
       }, 404);
     }
 
@@ -181,10 +248,11 @@ publicRoutes.post('/squirrel/analyze/crosstab', async (c) => {
       file_size_mb: processingMetrics.dataSizeMB,
       rows_processed: crosstabData.grandTotal,
       matrix_size: `${Object.keys(crosstabData.rowTotals).length}x${Object.keys(crosstabData.columnTotals).length}`,
-      demo_mode: true
+      demo_mode: true,
+      dataset: datasetKey
     };
     
-    console.log(`Public squirrel crosstab analysis performance: R2:${r2Time}ms, Read:${readTime}ms, Analysis:${analysisTime}ms, Total:${totalTime}ms, Throughput:${processingMetrics.throughputMBps.toFixed(2)}MB/s, Matrix:${analysisMetrics.matrix_size}`);
+    console.log(`Public ${dataset.displayName} crosstab analysis performance: R2:${r2Time}ms, Read:${readTime}ms, Analysis:${analysisTime}ms, Total:${totalTime}ms, Throughput:${processingMetrics.throughputMBps.toFixed(2)}MB/s, Matrix:${analysisMetrics.matrix_size}`);
 
     const response: CrosstabResponse = {
       success: true,
@@ -195,28 +263,31 @@ publicRoutes.post('/squirrel/analyze/crosstab', async (c) => {
         uniqueColumnValues: Object.keys(crosstabData.columnTotals).length,
         performance: analysisMetrics,
         demoMode: true,
-        dataSource: 'NYC Squirrel Census 2018'
+        dataSource: dataset.description,
+        dataset: datasetKey
       }
     };
 
     return c.json(response);
   } catch (error) {
     const totalTime = Date.now() - startTime;
-    console.error(`Public squirrel crosstab analysis failed after ${totalTime}ms:`, error);
+    console.error(`Public demo crosstab analysis failed after ${totalTime}ms:`, error);
     
     // Handle specific error types with user-friendly messages for demo users
     if (error instanceof Error) {
       if (error.message.includes('not found in CSV headers')) {
+        const datasetKey = c.req.param('dataset');
+        const dataset = DEMO_DATASETS[datasetKey];
         return c.json({ 
           error: 'Field not found in demo data',
-          message: `The field "${error.message.includes(rowVariable) ? rowVariable : columnVariable}" was not found in the NYC Squirrel Census data. Please select from the available fields.`
+          message: `The field "${error.message.includes('rowVariable') ? 'row variable' : 'column variable'}" was not found in the ${dataset?.displayName || 'demo'} data. Please select from the available fields.`
         }, 400);
       }
     }
     
     return c.json({ 
       error: 'Failed to generate demo analysis', 
-      message: error instanceof Error ? error.message : 'Unable to analyze NYC Squirrel Census data',
+      message: error instanceof Error ? error.message : 'Unable to analyze demo data',
       performance: {
         ...analysisMetrics,
         total_time_ms: totalTime,
@@ -227,25 +298,106 @@ publicRoutes.post('/squirrel/analyze/crosstab', async (c) => {
   }
 });
 
-// Demo information endpoint
-publicRoutes.get('/squirrel/info', async (c) => {
+// Legacy endpoint for backward compatibility
+publicRoutes.post('/squirrel/analyze/crosstab', async (c) => {
+  // Forward request to new endpoint structure
+  const body = await c.req.json();
+  const baseUrl = new URL(c.req.url).origin;
+  const newUrl = `${baseUrl}/api/v1/public/demo/squirrel/analyze/crosstab`;
+  
+  const response = await fetch(newUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  
+  return new Response(response.body, { 
+    status: response.status, 
+    headers: response.headers 
+  });
+});
+
+// List available demo datasets
+publicRoutes.get('/demo/datasets', async (c) => {
+  const datasets = Object.entries(DEMO_DATASETS).map(([key, dataset]) => ({
+    id: key,
+    name: dataset.displayName,
+    description: dataset.description,
+    filename: dataset.downloadName
+  }));
+
   return c.json({
     success: true,
-    demo: {
+    datasets,
+    message: 'Available demo datasets for analysis. No login required.'
+  });
+});
+
+// Demo dataset information endpoint
+publicRoutes.get('/demo/:dataset/info', async (c) => {
+  const datasetKey = c.req.param('dataset');
+  const dataset = DEMO_DATASETS[datasetKey];
+  
+  if (!dataset) {
+    return c.json({ 
+      error: 'Dataset not found',
+      message: 'Requested demo dataset is not available',
+      availableDatasets: Object.keys(DEMO_DATASETS)
+    }, 404);
+  }
+
+  // Dataset-specific information
+  const datasetInfo = {
+    squirrel: {
       name: 'NYC Squirrel Census 2018',
       description: 'The Squirrel Census is a multimedia science, design, and storytelling project focusing on the Eastern gray squirrel, found throughout Central Park.',
       source: 'NYC Parks & Recreation and Squirrel Census volunteers',
       fields: 'Location coordinates, squirrel behaviors, physical characteristics, and interaction data',
       recordCount: 'Approximately 3,000+ squirrel sightings',
-      usage: 'Perfect for learning crosstab analysis - try comparing Age vs Primary Fur Color, or Location vs Activities!'
+      usage: 'Perfect for learning crosstab analysis - try comparing Age vs Primary Fur Color, or Location vs Activities!',
+      suggestedAnalyses: [
+        { row: 'Age', column: 'Primary Fur Color', description: 'Compare age distribution across fur colors' },
+        { row: 'Location', column: 'Activities', description: 'See what activities happen in different locations' },
+        { row: 'Date', column: 'Approaches', description: 'Track seasonal behavior patterns' }
+      ]
     },
-    message: 'Try our analysis features with real NYC data! No login required.',
-    suggestedAnalyses: [
-      { row: 'Age', column: 'Primary Fur Color', description: 'Compare age distribution across fur colors' },
-      { row: 'Location', column: 'Activities', description: 'See what activities happen in different locations' },
-      { row: 'Date', column: 'Approaches', description: 'Track seasonal behavior patterns' }
-    ]
+    npors2025: {
+      name: '2025 National Public Opinion Reference Survey',
+      description: 'National Public Opinion Reference Survey providing insights into American public opinion across various political and social topics.',
+      source: 'National public opinion polling organization',
+      fields: 'Demographics, political preferences, policy opinions, social attitudes, and voting behavior data',
+      recordCount: 'Representative sample of U.S. adult population',
+      usage: 'Perfect for analyzing public opinion patterns across demographics and political preferences!',
+      suggestedAnalyses: [
+        { row: 'Political_Party', column: 'Age_Group', description: 'Compare political affiliation across age groups' },
+        { row: 'Education_Level', column: 'Policy_Opinion', description: 'See how education correlates with policy views' },
+        { row: 'Region', column: 'Voting_Intention', description: 'Track voting patterns by geographic region' }
+      ]
+    }
+  };
+
+  const info = datasetInfo[datasetKey] || {
+    name: dataset.displayName,
+    description: dataset.description,
+    source: 'Demo dataset',
+    fields: 'Various data fields for analysis',
+    recordCount: 'Sample data records',
+    usage: 'Perfect for learning crosstab analysis!',
+    suggestedAnalyses: []
+  };
+
+  return c.json({
+    success: true,
+    demo: info,
+    message: 'Try our analysis features with real data! No login required.',
+    dataset: datasetKey
   });
+});
+
+// Legacy endpoint for backward compatibility
+publicRoutes.get('/squirrel/info', async (c) => {
+  // Redirect to new endpoint structure
+  return c.redirect('/api/v1/public/demo/squirrel/info', 301);
 });
 
 export default publicRoutes;
