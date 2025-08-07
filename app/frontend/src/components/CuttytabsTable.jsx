@@ -90,26 +90,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
     };
   }, [data]);
 
-  // Minimal DOM intervention to fix persistent border issue
-  useEffect(() => {
-    const removeBorders = () => {
-      if (tableRef.current) {
-        const cells = tableRef.current.querySelectorAll('td, th');
-        cells.forEach(cell => {
-          cell.style.borderBottom = 'none';
-          cell.style.borderTop = 'none';
-        });
-      }
-    };
-
-    // Initial removal
-    removeBorders();
-    
-    // One follow-up to catch whatever's adding borders back
-    const timer = setTimeout(removeBorders, 5000);
-    
-    return () => clearTimeout(timer);
-  }, [data]);
   // Handle errors from memoized calculation
   if (optimizedData.error) {
     if (optimizedData.error === 'empty') {
@@ -185,16 +165,12 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
           overflow: 'auto',
           border: '1px solid',
           borderColor: 'divider',
-          // 🐰 RUBY OPTIMIZATION: Reduced padding for large tables
+          // 🐰 RUBY OPTIMIZATION: Reduced padding for large tables + simple borders for spreadsheet look
           '& .MuiTableCell-root': {
             fontSize: isMobile ? '0.7rem' : isLarge ? '0.8rem' : '0.875rem',
             padding: isMobile ? '6px 3px' : isLarge ? '8px 6px' : '12px 8px',
             lineHeight: isLarge ? 1.2 : 1.43,
-          },
-          // Target ALL possible table elements to remove borders
-          '& td, & th': {
-            borderBottom: 'none !important',
-            borderTop: 'none !important',
+            border: '1px solid #000000 !important',
           },
           // Enable GPU acceleration for smooth scrolling
           transform: 'translateZ(0)',
@@ -207,6 +183,8 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
           sx={{
             // 🐰 RUBY OPTIMIZATION: Improve rendering performance
             tableLayout: isLarge ? 'fixed' : 'auto',
+            borderCollapse: 'collapse !important',
+            borderSpacing: 0,
           }}
         >
           <TableHead>
@@ -215,15 +193,12 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
               <TableCell 
                 sx={{ 
                   fontWeight: 'bold',
-                  backgroundColor: 'grey.300',
+                  backgroundColor: 'grey.400',
                   color: '#000000 !important',
                   minWidth: isMobile ? '80px' : '120px',
                   position: 'sticky',
                   left: 0,
                   zIndex: 3,
-                  borderRight: '2px solid #1976d2',
-                  borderBottom: '2px solid #1976d2',
-                  borderColor: 'divider'
                 }}
               >
                 <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#000000 !important', fontSize: '0.65rem' }}>
@@ -242,10 +217,9 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   align="center"
                   sx={{ 
                     fontWeight: 'bold',
-                    backgroundColor: 'grey.200',
+                    backgroundColor: 'grey.300',
                     color: '#000000 !important',
                     minWidth: isMobile ? '60px' : '80px',
-                    borderBottom: '2px solid #1976d2'
                   }}
                 >
                   {colKey}
@@ -276,13 +250,11 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   scope="row"
                   sx={{ 
                     fontWeight: 'bold',
-                    backgroundColor: 'grey.200',
+                    backgroundColor: 'grey.300',
                     color: '#000000 !important',
                     position: 'sticky',
                     left: 0,
                     zIndex: 2,
-                    borderRight: '2px solid #1976d2',
-                    borderColor: 'divider'
                   }}
                 >
                   {rowKey}
@@ -344,8 +316,6 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   position: 'sticky',
                   left: 0,
                   zIndex: 2,
-                  borderRight: '2px solid',
-                  borderColor: 'divider',
                   backgroundColor: 'primary.light'
                 }}
               >
