@@ -314,13 +314,17 @@ export class CrosstabProcessor {
         const allColumnValues = Array.from(columnTotalsMap.keys());
       }
 
+      // Calculate percentages for the crosstab data
+      const percentages = this.calculatePercentages(crosstab, rowTotals, columnTotals, grandTotal);
+
       return {
         crosstab,
         rowTotals,
         columnTotals,
         grandTotal,
         rowVariable,
-        columnVariable: isSingleRowMode ? 'Frequency' : columnVariable!
+        columnVariable: isSingleRowMode ? 'Frequency' : columnVariable!,
+        ...percentages
       };
     } catch (error) {
       const processingTime = Date.now() - startTime;
@@ -467,6 +471,53 @@ export class CrosstabProcessor {
     
     // Only use regex if needed - replace double quotes efficiently
     return '"' + str.replace(/"/g, '""') + '"';
+  }
+
+  /**
+   * Calculate percentage matrices for crosstab data
+   * @param crosstab - The crosstab matrix
+   * @param rowTotals - Row totals
+   * @param columnTotals - Column totals  
+   * @param grandTotal - Grand total
+   * @returns Object containing rowPercentages, columnPercentages, and totalPercentages
+   */
+  static calculatePercentages(
+    crosstab: Record<string, Record<string, number>>,
+    rowTotals: Record<string, number>,
+    columnTotals: Record<string, number>,
+    grandTotal: number
+  ): {
+    rowPercentages: Record<string, Record<string, number>>;
+    columnPercentages: Record<string, Record<string, number>>;
+    totalPercentages: Record<string, Record<string, number>>;
+  } {
+    const rowPercentages: Record<string, Record<string, number>> = {};
+    const columnPercentages: Record<string, Record<string, number>> = {};
+    const totalPercentages: Record<string, Record<string, number>> = {};
+    
+    for (const rowKey in crosstab) {
+      rowPercentages[rowKey] = {};
+      columnPercentages[rowKey] = {};
+      totalPercentages[rowKey] = {};
+      
+      for (const colKey in crosstab[rowKey]) {
+        const count = crosstab[rowKey][colKey];
+        
+        // Row %: count / row_total * 100 (handle division by zero)
+        rowPercentages[rowKey][colKey] = rowTotals[rowKey] > 0 ? 
+          (count / rowTotals[rowKey]) * 100 : 0;
+        
+        // Column %: count / column_total * 100 (handle division by zero)
+        columnPercentages[rowKey][colKey] = columnTotals[colKey] > 0 ? 
+          (count / columnTotals[colKey]) * 100 : 0;
+        
+        // Total %: count / grand_total * 100 (handle division by zero)
+        totalPercentages[rowKey][colKey] = grandTotal > 0 ? 
+          (count / grandTotal) * 100 : 0;
+      }
+    }
+    
+    return { rowPercentages, columnPercentages, totalPercentages };
   }
 
   /**
