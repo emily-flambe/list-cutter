@@ -223,7 +223,20 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
   const getRowTotalDisplay = (rowKey) => {
     const total = rowTotals[rowKey] || 0;
     const formattedTotal = isLarge && total > 999 ? total.toLocaleString() : total;
-    const rowPct = ((total / grandTotal) * 100) || 0;
+    
+    let rowPct;
+    switch (displayMode) {
+      case 'row':
+        rowPct = 100.0; // When showing row percentages, each row totals 100%
+        break;
+      case 'column':
+        rowPct = ((total / grandTotal) * 100) || 0; // Show percentage of grand total
+        break;
+      case 'total':
+      default:
+        rowPct = ((total / grandTotal) * 100) || 0; // Show percentage of grand total
+        break;
+    }
     
     return (
       <Box component="div">
@@ -239,7 +252,20 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
   const getColumnTotalDisplay = (colKey) => {
     const total = columnTotals[colKey] || 0;
     const formattedTotal = isLarge && total > 999 ? total.toLocaleString() : total;
-    const colPct = ((total / grandTotal) * 100) || 0;
+    
+    let colPct;
+    switch (displayMode) {
+      case 'column':
+        colPct = 100.0; // When showing column percentages, each column totals 100%
+        break;
+      case 'row':
+        colPct = ((total / grandTotal) * 100) || 0; // Show percentage of grand total
+        break;
+      case 'total':
+      default:
+        colPct = ((total / grandTotal) * 100) || 0; // Show percentage of grand total
+        break;
+    }
     
     return (
       <Box component="div">
@@ -393,8 +419,8 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   align="center"
                   sx={{ 
                     fontWeight: 'bold',
-                    backgroundColor: getSubtotalBackground(((rowTotals[rowKey] || 0) / (grandTotal || 1)) * 100),
-                    color: 'primary.contrastText'
+                    backgroundColor: displayMode === 'row' ? '#0a2e5c' : getSubtotalBackground(((rowTotals[rowKey] || 0) / (grandTotal || 1)) * 100),
+                    color: displayMode === 'row' ? '#ffffff' : 'primary.contrastText'
                   }}
                 >
                   {getRowTotalDisplay(rowKey)}
@@ -422,8 +448,8 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   align="center"
                   sx={{ 
                     fontWeight: 'bold',
-                    backgroundColor: getSubtotalBackground(((columnTotals[colKey] || 0) / (grandTotal || 1)) * 100),
-                    color: 'primary.contrastText'
+                    backgroundColor: displayMode === 'column' ? '#0a2e5c' : getSubtotalBackground(((columnTotals[colKey] || 0) / (grandTotal || 1)) * 100),
+                    color: displayMode === 'column' ? '#ffffff' : 'primary.contrastText'
                   }}
                 >
                   {getColumnTotalDisplay(colKey)}
