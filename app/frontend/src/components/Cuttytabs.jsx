@@ -98,7 +98,6 @@ const Cuttytabs = () => {
           handleFileSelect('reference-squirrel');
         }
       } catch (squirrelErr) {
-        console.log('Squirrel reference data not available for authenticated users:', squirrelErr);
         setSquirrelDataAvailable(false);
       }
       
@@ -122,7 +121,6 @@ const Cuttytabs = () => {
       // Show demo welcome message
       setSuccessMessage('Welcome to Cuttytabs demo! Explore analysis features with NYC Squirrel Census data.');
     } catch (squirrelErr) {
-      console.log('Public squirrel data not available:', squirrelErr);
       setSquirrelDataAvailable(false);
       setError('Demo data is temporarily unavailable. Please try again later or create an account to upload your own files.');
     }
@@ -168,7 +166,6 @@ const Cuttytabs = () => {
       // Performance feedback and messaging
       const isSquirrelData = fileId === 'reference-squirrel' || fileId === 'demo-squirrel-data';
       const dataType = isSquirrelData ? 'squirrel census data' : 'user file';
-      console.log(`🐰 Fields extracted from ${dataType} in ${processingTime}ms for ${response.data.rowCount} rows`);
       
       // Show appropriate success message
       if (isSquirrelData) {
@@ -236,12 +233,12 @@ const Cuttytabs = () => {
 
   // 🐰 RUBY OPTIMIZED: Generate crosstab with performance monitoring and user feedback
   const handleGenerateCrosstab = async () => {
-    if (!selectedFile || !rowVariable || !columnVariable) {
-      setError('Please select a file and both variables.');
+    if (!selectedFile || !rowVariable) {
+      setError('Please select a file and row variable.');
       return;
     }
 
-    if (rowVariable === columnVariable) {
+    if (rowVariable === columnVariable && columnVariable !== '') {
       setError('Row and column variables must be different. Please select different fields.');
       return;
     }
@@ -306,7 +303,6 @@ const Cuttytabs = () => {
       
       // Log performance metrics
       if (performanceData) {
-        console.log('🐰 Crosstab performance metrics:', performanceData);
       }
       
     } catch (err) {
@@ -424,21 +420,31 @@ const Cuttytabs = () => {
     }
   };
 
+  // Helper function to escape CSV cells with special characters
+  const escapeCSVCell = (cell) => {
+    const str = String(cell);
+    // If contains comma, newline, or quote, wrap in quotes and escape internal quotes
+    if (str.includes(',') || str.includes('\n') || str.includes('\r') || str.includes('"')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
   // Helper function to generate CSV from crosstab data
   const generateCSVFromCrosstabData = (data, rowVar, colVar) => {
     const rows = [];
     const columnKeys = Object.keys(data.columnTotals).sort();
     
-    // Header row
-    const header = [rowVar, ...columnKeys, 'Total'];
+    // Header row with proper escaping
+    const header = [escapeCSVCell(rowVar), ...columnKeys.map(escapeCSVCell), 'Total'];
     rows.push(header.join(','));
     
     // Data rows
     const rowKeys = Object.keys(data.rowTotals).sort();
     rowKeys.forEach(rowKey => {
-      const row = [rowKey];
+      const row = [escapeCSVCell(rowKey)];
       columnKeys.forEach(colKey => {
-        const count = data.matrix[rowKey]?.[colKey] || 0;
+        const count = data.crosstab[rowKey]?.[colKey] || 0;
         row.push(count.toString());
       });
       row.push(data.rowTotals[rowKey].toString());
@@ -478,7 +484,7 @@ const Cuttytabs = () => {
       {isAnonymous ? (
         <Box sx={{ mb: 3 }}>
           <Alert severity="info" sx={{ mb: 2 }}>
-            🐿️ <strong>Demo Mode:</strong> Try out this feature using REAL data from the <a href="https://www.thesquirrelcensus.com/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>NYC Squirrel Census</a>!
+            🐿️ <strong>Demo Mode:</strong> Try out this feature using REAL data from the <a href="https://www.thesquirrelcensus.com/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>NYC Squirrel Census</a>!<br /><a href="/login" style={{color: 'inherit', textDecoration: 'underline'}}>Login</a> or <a href="/register" style={{color: 'inherit', textDecoration: 'underline'}}>create an account</a> to load your own data for PREMIUM crosstabs.
           </Alert>
         </Box>
       ) : null}
@@ -602,6 +608,9 @@ const Cuttytabs = () => {
                       label="Column Variable"
                       onChange={(e) => handleColumnVariableChange(e.target.value)}
                     >
+                      <MenuItem value="">
+                        <em>None (Frequency counts only)</em>
+                      </MenuItem>
                       {fields.map((field) => (
                         <MenuItem key={field} value={field}>
                           {field}
@@ -622,7 +631,7 @@ const Cuttytabs = () => {
               variant="contained"
               size="large"
               onClick={handleGenerateCrosstab}
-              disabled={!selectedFile || !rowVariable || !columnVariable || loading}
+              disabled={!selectedFile || !rowVariable || loading}
               startIcon={loading ? <CircularProgress size={20} /> : null}
               sx={{ minWidth: 200 }}
             >
@@ -637,7 +646,7 @@ const Cuttytabs = () => {
             <Paper sx={{ p: 3, mt: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">
-                  Crosstab Results: {rowVariable} × {columnVariable}
+                  {columnVariable ? `Crosstab Results: ${rowVariable} × ${columnVariable}` : `Frequency Counts: ${rowVariable}`}
                 </Typography>
                 <Button
                   variant="outlined"

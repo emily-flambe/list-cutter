@@ -219,15 +219,6 @@ export const GoogleOAuthCallback = ({ onSuccess, onError }) => {
         const userId = urlParams.get('user_id');
         const error = urlParams.get('error');
         
-        // Debug logging
-        console.log('[OAuth Debug] URL:', window.location.href);
-        console.log('[OAuth Debug] Params:', {
-          isSuccess,
-          hasToken: !!token,
-          hasUserId: !!userId,
-          hasRefreshToken: !!refreshToken,
-          error
-        });
 
         if (error) {
           throw new Error(decodeURIComponent(error));
@@ -241,15 +232,12 @@ export const GoogleOAuthCallback = ({ onSuccess, onError }) => {
             localStorage.removeItem(key);
             sessionStorage.removeItem(key);
           });
-          console.log('[OAuth] Cleared old authentication tokens');
           
           // Store the new OAuth tokens
           localStorage.setItem('token', token);
           if (refreshToken) {
             localStorage.setItem('refreshToken', refreshToken);
-            console.log('[OAuth] Set new authentication and refresh tokens');
           } else {
-            console.log('[OAuth] Set new authentication token (no refresh token received)');
           }
           
           // Fetch user details and update auth context

@@ -60,7 +60,6 @@ export const useAgentChat = () => {
       // Auto-reconnect after 3 seconds with max attempts
       if (!reconnectTimeoutRef.current && reconnectAttemptsRef.current < maxReconnectAttempts) {
         reconnectAttemptsRef.current++;
-        console.log(`Reconnecting... Attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts}`);
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnectTimeoutRef.current = null;
           connect();

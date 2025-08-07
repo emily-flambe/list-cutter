@@ -229,7 +229,6 @@ async function uploadToCustomerMatchList(
         try {
           const newToken = await refreshAccessToken(credentials.refreshToken, env);
           // Retry with new token (simplified - in production, implement proper retry logic)
-          console.log('Token refreshed, should retry request');
           result.errors.push('Authentication expired, token refreshed');
         } catch (refreshError) {
           throw new Error(`Authentication failed and token refresh failed: ${refreshError}`);
@@ -244,7 +243,6 @@ async function uploadToCustomerMatchList(
     result.uploadedCount = hashedRecords.length;
     result.apiResponseId = responseData.resourceName;
 
-    console.log(`Successfully uploaded ${hashedRecords.length} records to Google Ads Customer Match list ${userListId}`);
 
   } catch (error) {
     result.success = false;
@@ -330,11 +328,6 @@ export async function processGoogleAdsActivations(env: Env): Promise<{
         };
 
         // Simulate activation (replace with actual API call in production)
-        console.log(`Simulating Google Ads activation for segment "${activation.segment_name}"`);
-        console.log(`- Customer ID: ${activation.google_ads_customer_id}`);
-        console.log(`- List ID: ${activation.google_ads_list_id}`);
-        console.log(`- Records to upload: ${validRecords.length}`);
-        console.log(`- Records skipped: ${skippedCount}`);
 
         // Mark as completed (simulate success)
         await env.DB.prepare(`
@@ -366,7 +359,6 @@ export async function processGoogleAdsActivations(env: Env): Promise<{
     stats.errors.push(errorMsg);
   }
 
-  console.log('Google Ads activation processing complete:', stats);
   return stats;
 }
 
@@ -379,7 +371,6 @@ export async function testGoogleAdsConnection(env: Env): Promise<boolean> {
     // In production, this would test actual API connectivity
     // For MVP, we'll just verify environment variables are set
     const hasCredentials = !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
-    console.log('Google Ads connection test:', { hasCredentials });
     return hasCredentials;
   } catch (error) {
     console.error('Google Ads connection test failed:', error);
