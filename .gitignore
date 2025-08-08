@@ -198,9 +198,19 @@ cloudflare/workers/local.sqlite-wal
 # Claude Code project-specific configuration
 # .claude/
 
-# Screenshots
+# Screenshots and screencasts
 screenshots/debug/
+screenshot_*.png
+screencast_*.webp
 tmp/
+
+# Demo and test data files (store in R2 instead)
+*_demo.csv
+*_Demo.csv
+check_upload.csv
+verify_upload.csv
+remote_check.csv
+create_demo_*.py
 
 # Project Configuration
 .project/.env
