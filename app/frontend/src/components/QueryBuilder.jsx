@@ -187,10 +187,10 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
         console.log(`🐱 Performance strategy: ${performanceResponse.data.strategy} for ${performanceResponse.data.estimatedRows} rows`);
       }
 
-      const modeMessage = demoMode 
-        ? 'Demo mode! Try CUT with 2025 National Public Opinion Reference Survey data. ' 
-        : 'File loaded! ';
-      setSuccessMessage(`${modeMessage}${columnsResponse.data.columns?.length || 0} columns detected. ${performanceResponse.data?.strategy === 'realtime' ? 'Real-time filtering enabled.' : performanceResponse.data?.strategy === 'debounced' ? 'Smart debounced filtering enabled.' : 'Manual filtering mode (large file).'}`);
+      // Only show success message for non-demo mode (check both demoMode state and demo file ID)
+      if (!demoMode && actualFileId !== 'demo-npors2025') {
+        setSuccessMessage(`File loaded! ${columnsResponse.data.columns?.length || 0} columns detected. ${performanceResponse.data?.strategy === 'realtime' ? 'Real-time filtering enabled.' : performanceResponse.data?.strategy === 'debounced' ? 'Smart debounced filtering enabled.' : 'Manual filtering mode (large file).'}`);
+      }
       
     } catch (err) {
       console.error('🐱 File initialization failed:', err);
@@ -470,7 +470,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
           )}
 
           {/* Filter Panel */}
-          <Grid item xs={12} lg={4}>
+          <Grid item xs={12}>
             <FilterPanel
               columns={columns}
               filters={filters}
@@ -481,7 +481,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
           </Grid>
 
           {/* Results Panel */}
-          <Grid item xs={12} lg={8}>
+          <Grid item xs={12}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

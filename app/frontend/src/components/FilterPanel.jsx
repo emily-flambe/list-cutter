@@ -146,6 +146,17 @@ const FilterPanel = ({
               <Box sx={{ mb: 2 }}>
                 {filters.map((filter) => (
                   <Box key={filter.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Tooltip title="Remove filter">
+                      <IconButton 
+                        onClick={() => removeFilter(filter.id)}
+                        color="error"
+                        size="small"
+                        sx={{ fontSize: '0.75rem' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    
                     <FormControl sx={{ minWidth: 200 }}>
                       <InputLabel>Select Column</InputLabel>
                       <Select
@@ -160,22 +171,6 @@ const FilterPanel = ({
                         ))}
                       </Select>
                     </FormControl>
-                    
-                    {filter.selectedColumn && (
-                      <Typography variant="body2" color="success.main">
-                        ✓ Column selected: {filter.selectedColumn}
-                      </Typography>
-                    )}
-                    
-                    <Tooltip title="Remove filter">
-                      <IconButton 
-                        onClick={() => removeFilter(filter.id)}
-                        color="error"
-                        size="small"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
                   </Box>
                 ))}
               </Box>
