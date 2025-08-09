@@ -300,6 +300,77 @@ export interface FilterConfiguration {
   updatedAt: string;
 }
 
+// CUT Phase 2: Enhanced Filter Types
+export enum FilterType {
+  // Text filters
+  CONTAINS = 'contains',
+  EQUALS = 'equals', 
+  STARTS_WITH = 'starts_with',
+  ENDS_WITH = 'ends_with',
+  REGEX = 'regex',
+  IN_LIST = 'in_list',
+  NOT_EQUALS = 'not_equals',
+  
+  // Number filters
+  GREATER_THAN = 'greater_than',
+  LESS_THAN = 'less_than',
+  BETWEEN = 'between',
+  NOT_NULL = 'not_null',
+  IS_NULL = 'is_null',
+  
+  // Date filters
+  DATE_RANGE = 'date_range',
+  BEFORE = 'before',
+  AFTER = 'after',
+  LAST_N_DAYS = 'last_n_days',
+  THIS_MONTH = 'this_month',
+  THIS_YEAR = 'this_year',
+  
+  // Boolean filters
+  IS_TRUE = 'is_true',
+  IS_FALSE = 'is_false'
+}
+
+export interface FilterOperator {
+  type: FilterType;
+  columnName: string;
+  value: any;
+  negated?: boolean;
+}
+
+export interface FilterGroup {
+  operator: 'AND' | 'OR';
+  filters: (FilterOperator | FilterGroup)[];
+}
+
+export interface QueryRequest {
+  fileId: string;
+  filters: FilterOperator[];
+  logicalOperator?: 'AND' | 'OR';
+  limit?: number;
+  offset?: number;
+}
+
+export interface QueryResult {
+  success: boolean;
+  data: {
+    rows: Record<string, any>[];
+    totalRows: number;
+    filteredRows: number;
+    columns: string[];
+  };
+  metadata: {
+    processingTimeMs: number;
+    filtersApplied: number;
+    performance: {
+      file_read_ms: number;
+      filtering_ms: number;
+      total_time_ms: number;
+      throughput_mbps: number;
+    };
+  };
+}
+
 export interface FilterRequest {
   columnName: string;
   filterType: string;

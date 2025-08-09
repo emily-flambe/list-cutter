@@ -15,6 +15,7 @@ import DesignTester from './components/DesignTester';
 import SyntheticDataGenerator from './components/SyntheticDataGenerator';
 import Analysis from './components/Analysis';
 import Cuttytabs from './components/Cuttytabs';
+import QueryBuilder from './components/QueryBuilder';
 import './index.css';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
@@ -63,6 +64,7 @@ function App() {
             <Route path="/analysis" element={<Analysis />} />
             <Route path="/analysis/cuttytabs" element={<Cuttytabs />} />
             <Route path="/cuttytabs" element={<Cuttytabs />} />
+            <Route path="/cut/:fileId" element={<QueryBuilder />} />
           </Routes>
         </Layout>
       </BrowserRouter>
