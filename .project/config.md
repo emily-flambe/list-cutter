@@ -59,6 +59,11 @@ wrangler deploy --config wrangler.prod.toml
 - Include comprehensive error handling
 - Use safe type conversions: `Number(value) || 0`
 
+### 🚨 MANDATORY VERIFICATION & QUALITY RULES 🚨
+- **SCREENSHOT VERIFICATION**: Always take screenshots of the app before declaring something is working
+- **NO UI EMOJIS**: Never add emojis to the UI unless specifically requested by the user
+- **CRITICAL SELF-REVIEW**: Always review your own work critically before declaring yourself done
+
 ### 🚨 CRITICAL: Git Worktree Management 🚨
 - **MANDATORY**: New worktrees MUST ONLY be created in the `worktrees/` folder
 - **NEVER** create worktrees anywhere else in the project structure

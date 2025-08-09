@@ -442,19 +442,14 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                     📄 File Information
                   </Typography>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} md={4}>
+                    <Grid item xs={12} md={6}>
                       <Typography variant="body2" color="text.secondary">
                         Filename: <strong>{fileInfo.filename}</strong>
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} md={4}>
+                    <Grid item xs={12} md={6}>
                       <Typography variant="body2" color="text.secondary">
                         Columns: <strong>{columns.length}</strong>
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Estimated Rows: <strong>{performance?.estimatedRows?.toLocaleString() || 'Unknown'}</strong>
                       </Typography>
                     </Grid>
                   </Grid>

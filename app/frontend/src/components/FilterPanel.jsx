@@ -41,24 +41,38 @@ import InfoIcon from '@mui/icons-material/Info';
  * 
  * Performance Targets: <100ms filter UI response time
  */
-const FilterPanel = ({ fileId, onFiltersChange }) => {
+const FilterPanel = ({ 
+  columns: columnsFromParent, 
+  filters: filtersFromParent = [], 
+  onFiltersChange,
+  updateStrategy,
+  isFiltering
+}) => {
   const { token } = useContext(AuthContext);
   
-  // Component state
-  const [columns, setColumns] = useState([]);
+  // Component state - use columns from parent if provided
+  const [columns, setColumns] = useState(columnsFromParent || []);
   const [filterSuggestions, setFilterSuggestions] = useState({});
   const [fileInfo, setFileInfo] = useState(null);
-  const [filters, setFilters] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState(filtersFromParent || []);
+  const [loading, setLoading] = useState(!columnsFromParent || !Array.isArray(columnsFromParent) || columnsFromParent.length === 0);
   const [error, setError] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
 
-  // Fetch column metadata on component mount
+  // Update local state when parent columns change
   useEffect(() => {
-    if (fileId && token) {
-      fetchColumnMetadata();
+    if (columnsFromParent && Array.isArray(columnsFromParent) && columnsFromParent.length > 0) {
+      setColumns(columnsFromParent);
+      setLoading(false);
     }
-  }, [fileId, token]);
+  }, [columnsFromParent]);
+
+  // Update local filters when parent filters change
+  useEffect(() => {
+    if (Array.isArray(filtersFromParent)) {
+      setFilters(filtersFromParent);
+    }
+  }, [filtersFromParent]);
 
   /**
    * RUBY OPTIMIZED: Fast column metadata fetching using new API endpoint
@@ -68,18 +82,33 @@ const FilterPanel = ({ fileId, onFiltersChange }) => {
       setLoading(true);
       setError('');
       
-      const response = await api.get(`/files/${fileId}/columns`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      let apiUrl;
+      let headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Handle demo mode for anonymous users
+      if (fileId === 'demo-squirrel' && !token) {
+        apiUrl = '/api/v1/public/demo/squirrel/columns';
+      } else if (fileId === 'reference-squirrel' && token) {
+        apiUrl = '/api/v1/files/reference/squirrel/columns';
+        headers['Authorization'] = `Bearer ${token}`;
+      } else {
+        apiUrl = `/api/v1/files/${fileId}/columns`;
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
         }
-      });
+      }
+      
+      const response = await api.get(apiUrl, { headers });
 
       if (response.data.success) {
         setColumns(response.data.columns);
-        setFilterSuggestions(response.data.filterSuggestions);
+        setFilterSuggestions(response.data.filterSuggestions || {});
         setFileInfo(response.data.fileInfo);
-        console.log(`🐰 Column analysis completed: ${response.data.columns.length} columns, ${response.data.metadata.rowsAnalyzed} rows analyzed in ${response.data.metadata.processingTimeMs}ms`);
+        
+        const isDemoMode = fileId === 'demo-squirrel' && !token;
+        console.log(`🐰 Column analysis completed: ${response.data.columns.length} columns ${isDemoMode ? '(demo mode)' : ''}`);
       } else {
         setError('Failed to analyze file columns');
       }
@@ -103,6 +132,7 @@ const FilterPanel = ({ fileId, onFiltersChange }) => {
     };
     const updatedFilters = [...filters, newFilter];
     setFilters(updatedFilters);
+    notifyFiltersChange(updatedFilters);
   };
 
   /**
