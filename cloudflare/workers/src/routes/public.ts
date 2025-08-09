@@ -13,6 +13,8 @@ import { Hono } from 'hono';
 import type { CrosstabRequest, FieldsResponse, CrosstabResponse } from '../types';
 import type { CloudflareEnv } from '../types/env';
 import { CrosstabProcessor } from '../services/crosstab-processor';
+import { DataTypeDetector } from '../services/data-type-detector';
+import { FilterProcessor } from '../services/filter-processor';
 
 const publicRoutes = new Hono<{ Bindings: CloudflareEnv }>();
 
@@ -398,6 +400,143 @@ publicRoutes.get('/demo/:dataset/info', async (c) => {
 publicRoutes.get('/squirrel/info', async (c) => {
   // Redirect to new endpoint structure
   return c.redirect('/api/v1/public/demo/squirrel/info', 301);
+});
+
+// Additional endpoints for QueryBuilder (CUT) compatibility
+// Map "columns" to "fields" for API consistency
+publicRoutes.get('/demo/:dataset/columns', async (c) => {
+  try {
+    const datasetKey = c.req.param('dataset');
+    const dataset = DEMO_DATASETS[datasetKey];
+    
+    if (!dataset) {
+      return c.json({ 
+        error: 'Dataset not found',
+        availableDatasets: Object.keys(DEMO_DATASETS)
+      }, 404);
+    }
+
+    // Get data from R2 (reuse the same logic as fields endpoint)
+    const object = await c.env.FILE_STORAGE.get(dataset.filename);
+    
+    if (!object) {
+      return c.json({ 
+        error: 'Demo data not found',
+        message: `${dataset.displayName} data is temporarily unavailable`
+      }, 404);
+    }
+
+    // Read content and normalize Unicode characters immediately  
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
+    const fileSize = content.length;
+
+    // Validate processing limits for security
+    CrosstabProcessor.validateProcessingLimits(content, 'public column extraction');
+
+    // Use DataTypeDetector to analyze column types and metadata
+    const analysis = await DataTypeDetector.analyzeColumnTypes(content);
+
+    // Generate filter suggestions based on detected types
+    const filterSuggestions = DataTypeDetector.getFilterSuggestions(analysis.columns);
+
+    // Transform response for QueryBuilder compatibility
+    const response = {
+      success: true,
+      columns: analysis.columns, // QueryBuilder expects enriched column metadata
+      rowCount: analysis.fileInfo.totalRows,
+      filterSuggestions,
+      fileInfo: {
+        id: `demo-${datasetKey}`,
+        filename: dataset.displayName,
+        size: fileSize,
+        totalColumns: analysis.fileInfo.totalColumns,
+        totalRows: analysis.fileInfo.totalRows
+      }
+    };
+
+    return c.json(response);
+  } catch (error) {
+    console.error('Demo columns extraction error:', error);
+    return c.json({ 
+      error: 'Failed to extract columns from demo data', 
+      message: error instanceof Error ? error.message : 'Unable to analyze demo data'
+    }, 500);
+  }
+});
+
+// Performance strategy endpoint for QueryBuilder
+publicRoutes.get('/demo/:dataset/performance', async (c) => {
+  const datasetKey = c.req.param('dataset');
+  const dataset = DEMO_DATASETS[datasetKey];
+  
+  if (!dataset) {
+    return c.json({ 
+      error: 'Dataset not found',
+      availableDatasets: Object.keys(DEMO_DATASETS)
+    }, 404);
+  }
+
+  // Return appropriate performance strategy based on demo data size
+  return c.json({
+    strategy: 'realtime',
+    estimatedRows: 3000,
+    fileSizeMB: 0.5,
+    updateInterval: 100,
+    description: `Demo mode performance strategy for ${dataset.displayName}`
+  });
+});
+
+// Query endpoint for QueryBuilder filtering
+publicRoutes.post('/demo/:dataset/query', async (c) => {
+  try {
+    const datasetKey = c.req.param('dataset');
+    const dataset = DEMO_DATASETS[datasetKey];
+    
+    if (!dataset) {
+      return c.json({ 
+        error: 'Dataset not found',
+        availableDatasets: Object.keys(DEMO_DATASETS)
+      }, 404);
+    }
+
+    const { filters = [], includePreview = true, previewLimit = 100 } = await c.req.json();
+    
+    console.log(`🐱 Demo query for ${dataset.displayName} with ${filters.length} filters`);
+
+    // Get the CSV data from R2
+    const object = await c.env.FILE_STORAGE.get(dataset.filename);
+    
+    if (!object) {
+      return c.json({ 
+        error: 'Demo data not found',
+        message: `${dataset.displayName} data is temporarily unavailable`
+      }, 404);
+    }
+
+    // Process the CSV content
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
+    
+    // Apply filters using FilterProcessor
+    const filteredResult = await FilterProcessor.applyFilters(
+      content,
+      filters,
+      includePreview,
+      previewLimit
+    );
+    
+    return c.json({
+      success: true,
+      data: filteredResult
+    });
+  } catch (error) {
+    console.error('Demo query error:', error);
+    return c.json({ 
+      error: 'Query execution failed', 
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
 });
 
 export default publicRoutes;

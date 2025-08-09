@@ -133,6 +133,12 @@ export function UserList({ users, onSelect }: Props) {
 // ❌ BAD: Complex state management, custom hooks, abstractions
 ```
 
+### 🚫 UI EMOJI PROHIBITION 🚫
+- **NEVER ADD EMOJIS TO UI**: Do not add emojis to user interface elements unless specifically requested
+- **TEXT CONTENT ONLY**: Keep UI text clean and professional
+- **EXCEPTIONS**: Only add emojis when explicitly asked by the user
+- **APPLIES TO**: Button text, labels, headings, messages, placeholders, etc.
+
 ## API Development - BRUTALLY SIMPLE
 
 ### 🛣️ SIMPLE ROUTES 🛣️
@@ -341,6 +347,17 @@ const cleanName = input.name.replace(/[<>&"]/g, '');
 - **FIX THE ROOT CAUSE** - Always identify and fix the actual problem
 - **EXCEPTIONS ONLY ON REQUEST** - Only comment out or mock if explicitly requested
 - **UNDERSTAND BEFORE FIXING** - Debug to understand why it's failing first
+
+## Quality Assurance - CRITICAL SELF-REVIEW
+
+### 🔍 MANDATORY SELF-REVIEW PROCESS 🔍
+- **ALWAYS REVIEW YOUR WORK** - Critically examine every change before declaring completion
+- **TEST THOROUGHLY** - Verify functionality works as expected
+- **CHECK FOR REGRESSIONS** - Ensure existing features still work
+- **VALIDATE EDGE CASES** - Consider boundary conditions and error states
+- **SCREENSHOT VERIFICATION** - Take screenshots to confirm UI changes work properly
+- **CODE QUALITY CHECK** - Review for simplicity, readability, and adherence to standards
+- **NEVER RUSH TO COMPLETE** - Take time to verify quality before marking tasks done
 
 ## Documentation - MINIMAL AND USEFUL
 

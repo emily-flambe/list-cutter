@@ -29,6 +29,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DescriptionIcon from '@mui/icons-material/Description';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import SearchIcon from '@mui/icons-material/Search';
 import { Link } from 'react-router-dom';
 import cuttyLogo from '../assets/cutty_logo.png';
 
@@ -475,6 +476,15 @@ const ManageFiles = () => {
                   </TableCell>
                   <TableCell align="center">
                     <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                      <Tooltip title="CUT IT! - Smart CSV Filtering">
+                        <IconButton
+                          color="secondary"
+                          component={Link}
+                          to={`/cut/${file.id}`}
+                        >
+                          <SearchIcon />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Download">
                         <IconButton
                           color="primary"
