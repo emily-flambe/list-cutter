@@ -13,10 +13,11 @@
  */
 
 import { Hono } from 'hono';
-import type { Env, CrosstabRequest, FieldsResponse, CrosstabResponse, CrosstabExportRequest, CrosstabExportResponse } from '../types';
+import type { Env, CrosstabRequest, FieldsResponse, CrosstabResponse, CrosstabExportRequest, CrosstabExportResponse, ColumnsAnalysisResponse } from '../types';
 import { validateFile } from '../services/security/file-validator';
 import { validateToken } from '../services/auth/jwt';
 import { CrosstabProcessor } from '../services/crosstab-processor';
+import { DataTypeDetector } from '../services/data-type-detector';
 
 const files = new Hono<{ Bindings: Env }>();
 
@@ -669,6 +670,106 @@ files.get('/:fileId/fields', async (c) => {
     
     return c.json({ 
       error: 'Failed to extract fields', 
+      message: error instanceof Error ? error.message : 'Unknown error',
+      processingTimeMs: totalTime
+    }, 500);
+  }
+});
+
+// 🐰 RUBY OPTIMIZED: Lightning-fast column type detection with intelligent data analysis
+files.get('/:fileId/columns', async (c) => {
+  const startTime = Date.now();
+  let fileSize = 0;
+  
+  try {
+    const userId = c.get('userId');
+    const fileId = c.req.param('fileId');
+
+    // Get file metadata with timing
+    const dbStartTime = Date.now();
+    const fileRecord = await c.env.DB.prepare(
+      'SELECT * FROM files WHERE id = ? AND user_id = ?'
+    ).bind(fileId, userId).first();
+    const dbTime = Date.now() - dbStartTime;
+
+    if (!fileRecord) {
+      return c.json({ error: 'File not found' }, 404);
+    }
+
+    // Verify it's a CSV file
+    const isCSV = fileRecord.mime_type === 'text/csv' || 
+                  fileRecord.mime_type === 'application/vnd.ms-excel' || 
+                  fileRecord.filename.toLowerCase().endsWith('.csv');
+
+    if (!isCSV) {
+      return c.json({ error: 'File is not a CSV file' }, 400);
+    }
+
+    // Get file from R2 with performance monitoring
+    const r2StartTime = Date.now();
+    const object = await c.env.FILE_STORAGE.get(fileRecord.r2_key);
+    const r2Time = Date.now() - r2StartTime;
+    
+    if (!object) {
+      return c.json({ error: 'File data not found' }, 404);
+    }
+
+    // Read content with streaming efficiency and normalize Unicode characters immediately
+    const readStartTime = Date.now();
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
+    const readTime = Date.now() - readStartTime;
+    fileSize = content.length;
+
+    // RUBY'S OPTIMIZATION: Validate limits before processing
+    CrosstabProcessor.validateProcessingLimits(content, 'column type detection');
+
+    // Analyze column types with performance tracking
+    const analysisStartTime = Date.now();
+    const typeAnalysis = await DataTypeDetector.analyzeColumnTypes(content);
+    const analysisTime = Date.now() - analysisStartTime;
+    
+    // Get filter suggestions based on detected types
+    const filterSuggestions = DataTypeDetector.getFilterSuggestions(typeAnalysis.columns);
+    
+    // Calculate performance metrics
+    const totalTime = Date.now() - startTime;
+    const metrics = CrosstabProcessor.getPerformanceMetrics('column_analysis', startTime, fileSize);
+    
+    console.log(`🐰 Column analysis performance: DB:${dbTime}ms, R2:${r2Time}ms, Read:${readTime}ms, Analysis:${analysisTime}ms, Total:${totalTime}ms, Throughput:${metrics.throughputMBps.toFixed(2)}MB/s`);
+
+    const response: ColumnsAnalysisResponse = {
+      success: true,
+      columns: typeAnalysis.columns,
+      filterSuggestions,
+      fileInfo: {
+        id: fileRecord.id,
+        filename: fileRecord.original_filename || fileRecord.filename,
+        size: fileRecord.file_size,
+        totalRows: typeAnalysis.fileInfo.totalRows,
+        totalColumns: typeAnalysis.fileInfo.totalColumns
+      },
+      metadata: {
+        rowsAnalyzed: typeAnalysis.rowsAnalyzed,
+        processingTimeMs: totalTime,
+        performance: {
+          database_query_ms: dbTime,
+          r2_retrieval_ms: r2Time,
+          file_read_ms: readTime,
+          analysis_processing_ms: analysisTime,
+          total_time_ms: totalTime,
+          throughput_mbps: metrics.throughputMBps
+        }
+      }
+    };
+
+    return c.json(response);
+  } catch (error) {
+    const totalTime = Date.now() - startTime;
+    console.error(`🐰 Column analysis failed after ${totalTime}ms:`, error);
+    
+    return c.json({ 
+      error: 'Failed to analyze column types', 
       message: error instanceof Error ? error.message : 'Unknown error',
       processingTimeMs: totalTime
     }, 500);

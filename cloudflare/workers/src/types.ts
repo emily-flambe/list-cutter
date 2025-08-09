@@ -251,5 +251,65 @@ export interface ExportedCrosstabMetadata {
   columnCount: number;
 }
 
+// CUT Phase 1 Foundation Types
+export interface ColumnMetadata {
+  name: string;
+  dataType: 'integer' | 'decimal' | 'date' | 'boolean' | 'categorical' | 'text';
+  confidence: number;
+  sampleValues: string[];
+  uniqueValueCount: number;
+  nullCount: number;
+  totalSamples: number;
+}
+
+export interface ColumnsAnalysisResponse {
+  success: boolean;
+  columns: ColumnMetadata[];
+  filterSuggestions: Record<string, string[]>;
+  fileInfo: {
+    id: string;
+    filename: string;
+    size: number;
+    totalRows: number;
+    totalColumns: number;
+  };
+  metadata: {
+    rowsAnalyzed: number;
+    processingTimeMs: number;
+    performance: {
+      database_query_ms: number;
+      r2_retrieval_ms: number;
+      file_read_ms: number;
+      analysis_processing_ms: number;
+      total_time_ms: number;
+      throughput_mbps: number;
+    };
+  };
+}
+
+export interface FilterConfiguration {
+  id: string;
+  fileId: string;
+  userId: string;
+  columnName: string;
+  dataType: string;
+  filterType: string;
+  filterValue: string; // JSON-encoded parameters
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FilterRequest {
+  columnName: string;
+  filterType: string;
+  value: any; // Will be JSON encoded
+}
+
+export interface CutFilterRequest {
+  fileId: string;
+  filters: FilterRequest[];
+}
+
 export { CloudflareEnv } from './types/env';
 export { APIPermission, PERMISSION_DESCRIPTIONS, PERMISSION_PRESETS } from './types/permissions';
