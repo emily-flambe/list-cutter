@@ -101,12 +101,14 @@ const SidebarLayout = ({ children }) => {
           return "Act like you've been here before!";
         case '/login':
           return "Have we met?";
-        case '/synthetic-data':
+        case '/do-stuff':
+          return "Pick your tool, any tool! Let's get stuff done!";
+        case '/do-stuff/synthetic-data':
           return "LET'S SPILL SOME INK.";
-        case '/analysis':
-          return "Time to analyze! What patterns will we discover?";
-        case '/analysis/cuttytabs':
+        case '/do-stuff/cuttytabs':
           return "Time for a swim swim!";
+        case '/do-stuff/cut':
+          return "Time to slice and dice your data with precision!";
         case '/faq':
           return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.15rem' } };
         case '/logout':
@@ -301,12 +303,12 @@ const SidebarLayout = ({ children }) => {
           </ListItemButton>
         </ListItem>
 
-        {/* Generate Fake Data - Available for all users */}
+        {/* Do Stuff Portal - Available to all users */}
         <ListItem disablePadding>
           <ListItemButton
             component={Link}
-            to="/synthetic-data"
-            selected={location.pathname === '/synthetic-data'}
+            to="/do-stuff"
+            selected={location.pathname === '/do-stuff' || location.pathname.startsWith('/do-stuff/')}
             sx={{
               '&.Mui-selected': {
                 backgroundColor: 'var(--accent)',
@@ -315,50 +317,9 @@ const SidebarLayout = ({ children }) => {
             }}
           >
             <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-              <DataObjectIcon />
+              <AutoAwesomeIcon />
             </ListItemIcon>
-            <ListItemText primary="Generate Fake Data" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-          </ListItemButton>
-        </ListItem>
-
-
-        {/* Files - Visible to all users */}
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/manage_files"
-            selected={location.pathname === '/manage_files'}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: 'var(--accent)',
-                '&:hover': { backgroundColor: 'var(--dark-accent)' },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText primary="Files" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
-          </ListItemButton>
-        </ListItem>
-
-        {/* Analysis - Visible to all users */}
-        <ListItem disablePadding>
-          <ListItemButton
-            component={Link}
-            to="/analysis"
-            selected={location.pathname === '/analysis' || location.pathname.startsWith('/analysis/')}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: 'var(--accent)',
-                '&:hover': { backgroundColor: 'var(--dark-accent)' },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ color: 'var(--primary-text)' }}>
-              <AnalyticsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Analysis" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
+            <ListItemText primary="Do Stuff" sx={{ '& .MuiTypography-root': { color: 'var(--primary-text)', fontSize: '0.9rem' } }} />
           </ListItemButton>
         </ListItem>
 
