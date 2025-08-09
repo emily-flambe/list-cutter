@@ -194,6 +194,10 @@ export interface CrosstabData {
   grandTotal: number;
   rowVariable: string;
   columnVariable: string;
+  // Phase 1: Percentage calculations
+  rowPercentages: Record<string, Record<string, number>>;
+  columnPercentages: Record<string, Record<string, number>>;
+  totalPercentages: Record<string, Record<string, number>>;
 }
 
 export interface CrosstabResponse {

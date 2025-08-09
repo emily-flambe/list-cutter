@@ -24,6 +24,7 @@ const Cuttytabs = () => {
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState('');
   const [squirrelDataAvailable, setSquirrelDataAvailable] = useState(false);
+  const [demoDatasets, setDemoDatasets] = useState([]);
   const [fields, setFields] = useState([]);
   const [rowVariable, setRowVariable] = useState('');
   const [columnVariable, setColumnVariable] = useState('');
@@ -71,8 +72,8 @@ const Cuttytabs = () => {
         // Authenticated user - load their files and check squirrel data
         await fetchUserFiles();
       } else {
-        // Anonymous user - check public squirrel data availability
-        await checkPublicSquirrelData();
+        // Anonymous user - check public demo data availability
+        await checkPublicDemoData();
       }
     };
 
@@ -107,20 +108,28 @@ const Cuttytabs = () => {
     }
   };
 
-  // Check public squirrel data availability (anonymous users)
-  const checkPublicSquirrelData = async () => {
+  // Check public demo datasets availability (anonymous users)
+  const checkPublicDemoData = async () => {
     try {
-      // Use public endpoint to check squirrel data availability
-      await api.get('/api/v1/public/squirrel/fields');
-      setSquirrelDataAvailable(true);
-      setDemoMode(true);
+      // Get list of available demo datasets
+      const response = await api.get('/api/v1/public/demo/datasets');
+      const datasets = response.data.datasets || [];
+      setDemoDatasets(datasets);
       
-      // Auto-select squirrel data for anonymous users
-      handleFileSelect('demo-squirrel-data');
-      
-      // Show demo welcome message
-      setSuccessMessage('Welcome to Cuttytabs demo! Explore analysis features with NYC Squirrel Census data.');
-    } catch (squirrelErr) {
+      if (datasets.length > 0) {
+        setDemoMode(true);
+        
+        // Auto-select first dataset (squirrel by default)
+        const defaultDataset = datasets.find(d => d.id === 'squirrel') || datasets[0];
+        handleFileSelect(`demo-${defaultDataset.id}-data`);
+        
+        // Show demo welcome message
+        const datasetNames = datasets.map(d => d.name).join(' and ');
+        setSuccessMessage(`Welcome to Cuttytabs demo! Explore analysis features with ${datasetNames}.`);
+      } else {
+        setError('Demo data is temporarily unavailable. Please try again later or create an account to upload your own files.');
+      }
+    } catch (demoErr) {
       setSquirrelDataAvailable(false);
       setError('Demo data is temporarily unavailable. Please try again later or create an account to upload your own files.');
     }
@@ -146,8 +155,9 @@ const Cuttytabs = () => {
       // Determine which endpoint to use based on authentication state and file type
       if (isAnonymous) {
         // Anonymous user - use public endpoints
-        if (fileId === 'demo-squirrel-data') {
-          response = await api.get('/api/v1/public/squirrel/fields');
+        if (fileId.startsWith('demo-') && fileId.endsWith('-data')) {
+          const datasetId = fileId.replace('demo-', '').replace('-data', '');
+          response = await api.get(`/api/v1/public/demo/${datasetId}/fields`);
         } else {
           throw new Error('Unauthorized access to user files');
         }
@@ -164,14 +174,21 @@ const Cuttytabs = () => {
       setFields(response.data.fields || []);
       
       // Performance feedback and messaging
+      const isDemoData = fileId.startsWith('demo-') && fileId.endsWith('-data');
       const isSquirrelData = fileId === 'reference-squirrel' || fileId === 'demo-squirrel-data';
-      const dataType = isSquirrelData ? 'squirrel census data' : 'user file';
       
       // Show appropriate success message
-      if (isSquirrelData) {
-        const message = isAnonymous 
-          ? 'NYC Squirrel Census demo data loaded! Try analyzing relationships between different variables.'
-          : 'NYC Central Park Squirrel Census data loaded! Ready for crosstab analysis.';
+      if (isDemoData || isSquirrelData) {
+        let message = '';
+        if (isSquirrelData) {
+          message = isAnonymous 
+            ? 'NYC Squirrel Census demo data loaded! Try analyzing relationships between different variables.'
+            : 'NYC Central Park Squirrel Census data loaded! Ready for crosstab analysis.';
+        } else if (isDemoData) {
+          const datasetId = fileId.replace('demo-', '').replace('-data', '');
+          const dataset = demoDatasets.find(d => d.id === datasetId);
+          message = `${dataset?.name || 'Demo data'} loaded! Try analyzing relationships between different variables.`;
+        }
         setSuccessMessage(message);
       }
       
@@ -253,8 +270,9 @@ const Cuttytabs = () => {
       // Choose endpoint based on authentication state and file type
       if (isAnonymous) {
         // Anonymous user - use public endpoints
-        if (selectedFile === 'demo-squirrel-data') {
-          response = await api.post('/api/v1/public/squirrel/analyze/crosstab', {
+        if (selectedFile.startsWith('demo-') && selectedFile.endsWith('-data')) {
+          const datasetId = selectedFile.replace('demo-', '').replace('-data', '');
+          response = await api.post(`/api/v1/public/demo/${datasetId}/analyze/crosstab`, {
             rowVariable,
             columnVariable,
             includePercentages: true
@@ -322,15 +340,29 @@ const Cuttytabs = () => {
 
     try {
       // For anonymous users or reference/demo data, export directly from crosstab data
+      const isDemoData = selectedFile.startsWith('demo-') && selectedFile.endsWith('-data');
       const isSquirrelData = selectedFile === 'reference-squirrel' || selectedFile === 'demo-squirrel-data';
       
-      if (isAnonymous || isSquirrelData) {
+      if (isAnonymous || isSquirrelData || isDemoData) {
         // Generate CSV export directly from the crosstab data
         const csvContent = generateCSVFromCrosstabData(crosstabData, rowVariable, columnVariable);
         
         // Create filename
         const timestamp = new Date().toISOString().split('T')[0];
-        const prefix = isAnonymous ? 'demo-squirrel-crosstab' : 'squirrel-crosstab';
+        let prefix = 'crosstab';
+        
+        if (isAnonymous) {
+          if (isDemoData) {
+            const datasetId = selectedFile.replace('demo-', '').replace('-data', '');
+            const dataset = demoDatasets.find(d => d.id === datasetId);
+            prefix = `demo-${datasetId}-crosstab`;
+          } else {
+            prefix = 'demo-crosstab';
+          }
+        } else if (isSquirrelData) {
+          prefix = 'squirrel-crosstab';
+        }
+        
         const filename = `${prefix}_${rowVariable}_${columnVariable}_${timestamp}.csv`;
         
         // Create download link
@@ -346,7 +378,7 @@ const Cuttytabs = () => {
 
         const message = isAnonymous 
           ? 'Demo crosstab exported successfully! Create an account to save exports to your file library.'
-          : 'Squirrel data crosstab exported successfully!';
+          : 'Crosstab exported successfully!';
         setSuccessMessage(message);
         
       } else {
@@ -442,8 +474,10 @@ const Cuttytabs = () => {
   const selectedFileName = () => {
     if (selectedFile === 'reference-squirrel') {
       return 'NYC Central Park Squirrel Census (Reference Data)';
-    } else if (selectedFile === 'demo-squirrel-data') {
-      return 'NYC Squirrel Census';
+    } else if (selectedFile.startsWith('demo-') && selectedFile.endsWith('-data')) {
+      const datasetId = selectedFile.replace('demo-', '').replace('-data', '');
+      const dataset = demoDatasets.find(d => d.id === datasetId);
+      return dataset?.name || 'Demo Dataset';
     } else {
       return files.find(f => f.id === selectedFile)?.filename || '';
     }
@@ -461,7 +495,7 @@ const Cuttytabs = () => {
       {isAnonymous ? (
         <Box sx={{ mb: 3 }}>
           <Alert severity="info" sx={{ mb: 2 }}>
-            🐿️ <strong>Demo Mode:</strong> Try out this feature using REAL data from the <a href="https://www.thesquirrelcensus.com/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>NYC Squirrel Census</a>!<br /><a href="/login" style={{color: 'inherit', textDecoration: 'underline'}}>Login</a> or <a href="/register" style={{color: 'inherit', textDecoration: 'underline'}}>create an account</a> to load your own data for PREMIUM crosstabs.
+            📊 <strong>Demo Mode:</strong> Try out this feature using real datasets including the <a href="https://www.thesquirrelcensus.com/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>NYC Squirrel Census</a> and 2025 National Public Opinion Reference Survey data!<br /><a href="/login" style={{color: 'inherit', textDecoration: 'underline'}}>Login</a> or <a href="/register" style={{color: 'inherit', textDecoration: 'underline'}}>create an account</a> to load your own data for PREMIUM crosstabs.
           </Alert>
         </Box>
       ) : null}
@@ -494,8 +528,8 @@ const Cuttytabs = () => {
               </Typography>
               
               {isAnonymous ? (
-                // Anonymous user - show only demo data
-                squirrelDataAvailable ? (
+                // Anonymous user - show available demo datasets
+                demoDatasets.length > 0 ? (
                   <FormControl fullWidth sx={{ mt: 2 }}>
                     <InputLabel>Dataset</InputLabel>
                     <Select
@@ -503,9 +537,11 @@ const Cuttytabs = () => {
                       label="Dataset"
                       onChange={(e) => handleFileSelect(e.target.value)}
                     >
-                      <MenuItem value="demo-squirrel-data">
-                        🐿️ NYC Squirrel Census
-                      </MenuItem>
+                      {demoDatasets.map((dataset) => (
+                        <MenuItem key={dataset.id} value={`demo-${dataset.id}-data`}>
+                          {dataset.id === 'squirrel' ? '🐿️' : dataset.id === 'npors2025' ? '🗳️' : '📊'} {dataset.name}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 ) : (

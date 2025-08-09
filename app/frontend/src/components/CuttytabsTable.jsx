@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -12,13 +12,18 @@ import {
   useTheme,
   useMediaQuery,
   Alert,
-  Chip
+  Chip,
+  FormControl,
+  FormControlLabel,
+  Radio,
+  RadioGroup
 } from '@mui/material';
 
 const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const tableRef = useRef(null);
+  const [displayMode, setDisplayMode] = useState('total'); // 'row', 'column', 'total'
   
   const optimizedData = useMemo(() => {
     
@@ -116,6 +121,162 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
     isSparse
   } = optimizedData;
 
+  // Function to get cell display based on current display mode
+  const getCellDisplay = (rowKey, colKey) => {
+    const count = crosstab[rowKey]?.[colKey] || 0;
+    const formattedCount = isLarge && count > 999 ? count.toLocaleString() : count;
+    
+    // Get background to determine text color
+    const bgColor = getCellBackground(rowKey, colKey);
+    const isDark = bgColor === '#475569' || bgColor === '#64748b' || bgColor === '#94a3b8';
+    const percentageColor = isDark ? '#e2e8f0' : '#666'; // Light text only on dark backgrounds
+    
+    switch (displayMode) {
+      case 'row':
+        const rowPct = data.rowPercentages?.[rowKey]?.[colKey] || 0;
+        return (
+          <Box component="div">
+            <div>{formattedCount}</div>
+            <div style={{ fontSize: '0.75em', color: percentageColor, marginTop: '2px' }}>
+              {rowPct.toFixed(1)}%
+            </div>
+          </Box>
+        );
+      case 'column':
+        const colPct = data.columnPercentages?.[rowKey]?.[colKey] || 0;
+        return (
+          <Box component="div">
+            <div>{formattedCount}</div>
+            <div style={{ fontSize: '0.75em', color: percentageColor, marginTop: '2px' }}>
+              {colPct.toFixed(1)}%
+            </div>
+          </Box>
+        );
+      case 'total':
+        const totalPct = data.totalPercentages?.[rowKey]?.[colKey] || 0;
+        return (
+          <Box component="div">
+            <div>{formattedCount}</div>
+            <div style={{ fontSize: '0.75em', color: percentageColor, marginTop: '2px' }}>
+              {totalPct.toFixed(1)}%
+            </div>
+          </Box>
+        );
+      default:
+        // Default to total percentages if somehow no mode is set
+        const defaultTotalPct = data.totalPercentages?.[rowKey]?.[colKey] || 0;
+        return (
+          <Box component="div">
+            <div>{formattedCount}</div>
+            <div style={{ fontSize: '0.75em', color: percentageColor, marginTop: '2px' }}>
+              {defaultTotalPct.toFixed(1)}%
+            </div>
+          </Box>
+        );
+    }
+  };
+
+  // Function to get background color based on current display mode
+  const getCellBackground = (rowKey, colKey) => {
+    const count = crosstab[rowKey]?.[colKey] || 0;
+    if (count === 0) return '#f8f9fa';
+    
+    // Get the percentage based on current display mode
+    let percentage;
+    switch (displayMode) {
+      case 'row':
+        percentage = data.rowPercentages?.[rowKey]?.[colKey] || 0;
+        break;
+      case 'column':
+        percentage = data.columnPercentages?.[rowKey]?.[colKey] || 0;
+        break;
+      case 'total':
+        percentage = data.totalPercentages?.[rowKey]?.[colKey] || 0;
+        break;
+      default:
+        return '#ffffff'; // Fallback
+    }
+    
+    // More continuous gradient with more buckets
+    if (percentage >= 80) return '#475569'; // Darkest slate
+    if (percentage >= 60) return '#64748b'; // Dark slate
+    if (percentage >= 40) return '#94a3b8'; // Medium slate
+    if (percentage >= 25) return '#cbd5e1'; // Light slate
+    if (percentage >= 15) return '#e2e8f0'; // Very light slate
+    if (percentage >= 8) return '#f1f5f9'; // Barely visible slate
+    if (percentage >= 3) return '#f8fafc'; // Almost white
+    return '#ffffff'; // White for very small percentages
+  };
+
+  // Function to get background intensity for subtotals - Night theme gradient to primary.dark
+  const getSubtotalBackground = (percentage) => {
+    // Gradient from light blue to primary.dark (Night theme)
+    if (percentage >= 80) return '#0d47a1'; // primary.dark equivalent - matches grand total
+    if (percentage >= 50) return '#1565c0'; // Dark blue for medium-high (50%)
+    if (percentage >= 20) return '#1976d2'; // Medium blue for medium (19%)
+    if (percentage >= 10) return '#42a5f5'; // Light-medium blue for low-medium (12%)
+    if (percentage >= 5) return '#64b5f6'; // Light blue for low (6-7%)
+    return '#90caf9'; // Very light blue for very low (0.23%)
+  };
+
+  // Function to display row totals with percentages
+  const getRowTotalDisplay = (rowKey) => {
+    const total = rowTotals[rowKey] || 0;
+    const formattedTotal = isLarge && total > 999 ? total.toLocaleString() : total;
+    
+    let rowPct;
+    switch (displayMode) {
+      case 'row':
+        rowPct = 100.0; // When showing row percentages, each row totals 100%
+        break;
+      case 'column':
+        rowPct = ((total / grandTotal) * 100) || 0; // Show percentage of grand total
+        break;
+      case 'total':
+      default:
+        rowPct = ((total / grandTotal) * 100) || 0; // Show percentage of grand total
+        break;
+    }
+    
+    return (
+      <Box component="div">
+        <div>{formattedTotal}</div>
+        <div style={{ fontSize: '0.75em', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
+          {rowPct.toFixed(1)}%
+        </div>
+      </Box>
+    );
+  };
+
+  // Function to display column totals with percentages  
+  const getColumnTotalDisplay = (colKey) => {
+    const total = columnTotals[colKey] || 0;
+    const formattedTotal = isLarge && total > 999 ? total.toLocaleString() : total;
+    
+    let colPct;
+    switch (displayMode) {
+      case 'column':
+        colPct = 100.0; // When showing column percentages, each column totals 100%
+        break;
+      case 'row':
+        colPct = ((total / grandTotal) * 100) || 0; // Show percentage of grand total
+        break;
+      case 'total':
+      default:
+        colPct = ((total / grandTotal) * 100) || 0; // Show percentage of grand total
+        break;
+    }
+    
+    return (
+      <Box component="div">
+        <div>{formattedTotal}</div>
+        <div style={{ fontSize: '0.75em', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
+          {colPct.toFixed(1)}%
+        </div>
+      </Box>
+    );
+  };
+
   return (
     <Box sx={{ width: '100%', overflow: 'hidden' }}>
       <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
@@ -130,6 +291,16 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
         </Typography>
       </Box>
       
+      {/* Display Mode Toggle Controls */}
+      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+        <FormControl component="fieldset">
+          <RadioGroup row value={displayMode} onChange={(e) => setDisplayMode(e.target.value)}>
+            <FormControlLabel value="total" control={<Radio />} label="Total %" />
+            <FormControlLabel value="row" control={<Radio />} label="Row %" />
+            <FormControlLabel value="column" control={<Radio />} label="Column %" />
+          </RadioGroup>
+        </FormControl>
+      </Box>
       
       <TableContainer 
         ref={tableRef}
@@ -226,19 +397,20 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   const value = crosstab[rowKey]?.[colKey];
                   const displayValue = typeof value === 'number' ? value : 0;
                   const isZero = displayValue === 0;
-                  const formattedValue = isLarge && displayValue > 999 ? displayValue.toLocaleString() : displayValue;
+                  const cellContent = getCellDisplay(rowKey, colKey);
+                  const bgColor = getCellBackground(rowKey, colKey);
                   
                   return (
                     <TableCell 
                       key={colKey}
                       align="center"
                       sx={{
-                        backgroundColor: '#ffffff !important',
+                        backgroundColor: `${bgColor} !important`,
                         color: isZero ? '#666666' : '#000000',
                         fontWeight: isZero ? 'normal' : 'medium',
                       }}
                     >
-                      {formattedValue}
+                      {cellContent}
                     </TableCell>
                   );
                 })}
@@ -247,13 +419,11 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   align="center"
                   sx={{ 
                     fontWeight: 'bold',
-                    backgroundColor: 'primary.light',
-                    color: 'primary.contrastText'
+                    backgroundColor: displayMode === 'row' ? '#0a2e5c' : getSubtotalBackground(((rowTotals[rowKey] || 0) / (grandTotal || 1)) * 100),
+                    color: displayMode === 'row' ? '#ffffff' : 'primary.contrastText'
                   }}
                 >
-                  {isLarge && typeof rowTotals[rowKey] === 'number' && rowTotals[rowKey] > 999 
-                    ? rowTotals[rowKey].toLocaleString() 
-                    : (typeof rowTotals[rowKey] === 'number' ? rowTotals[rowKey] : '0')}
+                  {getRowTotalDisplay(rowKey)}
                 </TableCell>
               </TableRow>
             ))}
@@ -278,12 +448,11 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                   align="center"
                   sx={{ 
                     fontWeight: 'bold',
-                    color: 'primary.contrastText'
+                    backgroundColor: displayMode === 'column' ? '#0a2e5c' : getSubtotalBackground(((columnTotals[colKey] || 0) / (grandTotal || 1)) * 100),
+                    color: displayMode === 'column' ? '#ffffff' : 'primary.contrastText'
                   }}
                 >
-                  {isLarge && typeof columnTotals[colKey] === 'number' && columnTotals[colKey] > 999 
-                    ? columnTotals[colKey].toLocaleString() 
-                    : (typeof columnTotals[colKey] === 'number' ? columnTotals[colKey] : '0')}
+                  {getColumnTotalDisplay(colKey)}
                 </TableCell>
               ))}
               
@@ -291,14 +460,19 @@ const CuttytabsTable = ({ data, rowVariable, columnVariable }) => {
                 align="center"
                 sx={{ 
                   fontWeight: 'bold',
-                  backgroundColor: 'primary.dark',
-                  color: 'primary.contrastText',
+                  backgroundColor: '#0a2e5c', // Darkest point of the gradient - darker than 80%+
+                  color: '#ffffff', // White text for visibility on dark background
                   fontSize: '1rem'
                 }}
               >
-                {isLarge && typeof grandTotal === 'number' && grandTotal > 999 
-                  ? grandTotal.toLocaleString() 
-                  : (typeof grandTotal === 'number' ? grandTotal : '0')}
+                <Box component="div">
+                  <div>{isLarge && typeof grandTotal === 'number' && grandTotal > 999 
+                    ? grandTotal.toLocaleString() 
+                    : (typeof grandTotal === 'number' ? grandTotal : '0')}</div>
+                  <div style={{ fontSize: '0.75em', color: '#ffffff', marginTop: '2px' }}>
+                    100.0%
+                  </div>
+                </Box>
               </TableCell>
             </TableRow>
           </TableBody>
