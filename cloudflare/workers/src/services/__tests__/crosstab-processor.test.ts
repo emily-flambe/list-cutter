@@ -172,4 +172,191 @@ Female,No`;
       expect(result.totalPercentages['Male']['No']).toBe(0);
     });
   });
+
+  describe('regression prevention tests', () => {
+    describe('division by zero safety', () => {
+      it('should handle zero row totals without crashing', async () => {
+        // Create data where some row has zero total (edge case)
+        const zeroRowCSV = `Gender,Response
+Male,Yes
+Male,No`;
+        
+        const result = await CrosstabProcessor.generateCrosstab(zeroRowCSV, 'Gender', 'Response');
+        
+        // All percentage calculations should return 0 for non-existent Female row
+        expect(result.rowPercentages['Female']).toBeUndefined();
+        expect(result.columnPercentages['Female']).toBeUndefined();
+        expect(result.totalPercentages['Female']).toBeUndefined();
+        
+        // Existing data should still calculate correctly
+        expect(result.rowPercentages['Male']['Yes']).toBeCloseTo(50, 2);
+        expect(result.rowPercentages['Male']['No']).toBeCloseTo(50, 2);
+      });
+
+      it('should handle zero column totals without crashing', async () => {
+        const result = await CrosstabProcessor.generateCrosstab('Gender,Response\nMale,Yes\nFemale,Yes', 'Gender', 'Response');
+        
+        // No 'No' responses exist, so those calculations should be safe
+        expect(result.columnPercentages['Male']['No']).toBe(0);
+        expect(result.columnPercentages['Female']['No']).toBe(0);
+        
+        // Yes column should calculate correctly (100% distribution)
+        expect(result.columnPercentages['Male']['Yes']).toBeCloseTo(50, 2);
+        expect(result.columnPercentages['Female']['Yes']).toBeCloseTo(50, 2);
+      });
+
+      it('should handle zero grand total without crashing', async () => {
+        const emptyDataCSV = 'Gender,Response\n'; // Header only
+        
+        await expect(
+          CrosstabProcessor.generateCrosstab(emptyDataCSV, 'Gender', 'Response')
+        ).rejects.toThrow('CSV must contain at least a header row and one data row');
+      });
+    });
+
+    describe('data structure contract validation', () => {
+      it('must always return complete percentage matrices', async () => {
+        const result = await CrosstabProcessor.generateCrosstab(sampleCSV, 'Gender', 'Response');
+        
+        // Verify all three percentage matrices exist
+        expect(result.rowPercentages).toBeDefined();
+        expect(result.columnPercentages).toBeDefined();
+        expect(result.totalPercentages).toBeDefined();
+        
+        // Verify matrix completeness - every row/column combination must exist
+        const rowKeys = Object.keys(result.crosstab);
+        const colKeys = Object.keys(result.columnTotals);
+        
+        for (const rowKey of rowKeys) {
+          expect(result.rowPercentages[rowKey]).toBeDefined();
+          expect(result.columnPercentages[rowKey]).toBeDefined();
+          expect(result.totalPercentages[rowKey]).toBeDefined();
+          
+          for (const colKey of colKeys) {
+            expect(result.rowPercentages[rowKey][colKey]).toBeDefined();
+            expect(result.columnPercentages[rowKey][colKey]).toBeDefined();
+            expect(result.totalPercentages[rowKey][colKey]).toBeDefined();
+            
+            // All percentages must be numbers
+            expect(typeof result.rowPercentages[rowKey][colKey]).toBe('number');
+            expect(typeof result.columnPercentages[rowKey][colKey]).toBe('number');
+            expect(typeof result.totalPercentages[rowKey][colKey]).toBe('number');
+          }
+        }
+      });
+
+      it('must maintain row percentage mathematical consistency', async () => {
+        const result = await CrosstabProcessor.generateCrosstab(sampleCSV, 'Gender', 'Response');
+        
+        // Each row's percentages must sum to 100% (within floating point tolerance)
+        for (const rowKey of Object.keys(result.crosstab)) {
+          const rowPercentageSum = Object.values(result.rowPercentages[rowKey])
+            .reduce((sum, pct) => sum + pct, 0);
+          expect(rowPercentageSum).toBeCloseTo(100, 1);
+        }
+      });
+
+      it('must maintain column percentage mathematical consistency', async () => {
+        const result = await CrosstabProcessor.generateCrosstab(sampleCSV, 'Gender', 'Response');
+        
+        // Each column's percentages must sum to 100% (within floating point tolerance)
+        const colKeys = Object.keys(result.columnTotals);
+        for (const colKey of colKeys) {
+          const colPercentageSum = Object.keys(result.crosstab)
+            .reduce((sum, rowKey) => sum + result.columnPercentages[rowKey][colKey], 0);
+          expect(colPercentageSum).toBeCloseTo(100, 1);
+        }
+      });
+
+      it('must maintain total percentage mathematical consistency', async () => {
+        const result = await CrosstabProcessor.generateCrosstab(sampleCSV, 'Gender', 'Response');
+        
+        // All total percentages must sum to 100%
+        let totalPercentageSum = 0;
+        for (const rowKey of Object.keys(result.crosstab)) {
+          for (const colKey of Object.keys(result.columnTotals)) {
+            totalPercentageSum += result.totalPercentages[rowKey][colKey];
+          }
+        }
+        expect(totalPercentageSum).toBeCloseTo(100, 1);
+      });
+    });
+
+    describe('unicode normalization regression prevention', () => {
+      it('must handle em-dashes and en-dashes consistently', () => {
+        const testContent = 'Age Group,Count\n25—30,5\n30–35,3\n35—40,2';
+        const normalized = CrosstabProcessor.normalizeUnicodeCharacters(testContent);
+        
+        // All dashes should be converted to regular hyphens
+        expect(normalized).not.toContain('—');
+        expect(normalized).not.toContain('–');
+        expect(normalized).toContain('25-30');
+        expect(normalized).toContain('30-35');
+        expect(normalized).toContain('35-40');
+      });
+
+      it('must handle box-drawing characters that cause display issues', () => {
+        const testContent = 'Code,Value\n10───12,5\n15─20,3';
+        const normalized = CrosstabProcessor.normalizeUnicodeCharacters(testContent);
+        
+        // Box-drawing characters should be converted to hyphens
+        expect(normalized).not.toContain('─');
+        expect(normalized).toContain('10---12');  // Multiple box chars become multiple hyphens
+        expect(normalized).toContain('15-20');
+      });
+
+      it('must handle smart quotes without breaking CSV parsing', () => {
+        const testContent = 'Name,Description\n"John","He said "hello""\n"Jane","She said 'hi'"';
+        const normalized = CrosstabProcessor.normalizeUnicodeCharacters(testContent);
+        
+        // Smart quotes should be converted to regular quotes
+        expect(normalized).not.toContain('"');
+        expect(normalized).not.toContain('"');
+        expect(normalized).not.toContain(''');
+        expect(normalized).not.toContain(''');
+        expect(normalized).toContain('He said "hello"');
+        expect(normalized).toContain("She said 'hi'");
+      });
+    });
+
+    describe('performance limit enforcement', () => {
+      it('must reject oversized file content', () => {
+        // Create content that exceeds MAX_FILE_SIZE_MB (50MB)
+        const oversizedContent = 'A'.repeat(51 * 1024 * 1024); // 51MB
+        
+        expect(() => {
+          CrosstabProcessor.extractFields(oversizedContent);
+        }).toThrow(/File too large.*51\.0MB.*Maximum supported: 50MB/);
+      });
+
+      it('must validate processing limits before starting', () => {
+        // Create content that would exceed row limits
+        const manyRowsContent = 'A,B\n' + 'x,y\n'.repeat(100001); // 100,001 rows
+        
+        expect(() => {
+          CrosstabProcessor.validateProcessingLimits(manyRowsContent, 'test operation');
+        }).toThrow(/File has too many rows.*100001.*Maximum: 100000 rows/);
+      });
+    });
+
+    describe('matrix completeness guarantees', () => {
+      it('must create zero entries for all row/column combinations', async () => {
+        const sparseCSV = `Gender,Response
+Male,Yes
+Female,No`;
+        
+        const result = await CrosstabProcessor.generateCrosstab(sparseCSV, 'Gender', 'Response');
+        
+        // All combinations must exist, even with zero counts
+        expect(result.crosstab['Male']['Yes']).toBe(1);
+        expect(result.crosstab['Male']['No']).toBe(0);  // This should exist as 0
+        expect(result.crosstab['Female']['Yes']).toBe(0); // This should exist as 0
+        expect(result.crosstab['Female']['No']).toBe(1);
+        
+        // Percentages should also exist for all combinations
+        expect(result.rowPercentages['Male']['No']).toBe(0);
+        expect(result.rowPercentages['Female']['Yes']).toBe(0);
+      });
+    });
+  });
 });
