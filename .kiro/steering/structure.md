@@ -43,7 +43,6 @@ src/components/
 ├── SyntheticDataGenerator.jsx # Data generation feature
 ├── FileUpload.jsx             # File upload handling
 ├── ManageFiles.jsx            # File management interface
-├── StorageMonitoring/         # Storage analytics components
 ├── Layout.jsx                 # Main layout wrapper
 ├── Home.jsx                   # Landing page
 └── auth/                      # Authentication components

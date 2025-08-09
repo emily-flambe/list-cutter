@@ -79,7 +79,7 @@ const Register = () => {
         `/api/v1/auth/register`,
         formData
       );
-      console.log('✅ Registration successful:', response.data);
+      console.log('Registration successful:', response.data);
       setSuccessMessage(response.data.detail || response.data.message);
     } catch (error) {
       console.error("❌ REGISTRATION FAILED - DETAILED ERROR ANALYSIS:");

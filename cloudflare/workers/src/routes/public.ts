@@ -13,6 +13,8 @@ import { Hono } from 'hono';
 import type { CrosstabRequest, FieldsResponse, CrosstabResponse } from '../types';
 import type { CloudflareEnv } from '../types/env';
 import { CrosstabProcessor } from '../services/crosstab-processor';
+import { DataTypeDetector } from '../services/data-type-detector';
+import { FilterProcessor } from '../services/filter-processor';
 
 const publicRoutes = new Hono<{ Bindings: CloudflareEnv }>();
 
@@ -432,18 +434,24 @@ publicRoutes.get('/demo/:dataset/columns', async (c) => {
     // Validate processing limits for security
     CrosstabProcessor.validateProcessingLimits(content, 'public column extraction');
 
-    // Extract fields
-    const { fields, rowCount } = CrosstabProcessor.extractFields(content);
+    // Use DataTypeDetector to analyze column types and metadata
+    const analysis = await DataTypeDetector.analyzeColumnTypes(content);
 
-    // Transform response for QueryBuilder compatibility - map "fields" to "columns"
+    // Generate filter suggestions based on detected types
+    const filterSuggestions = DataTypeDetector.getFilterSuggestions(analysis.columns);
+
+    // Transform response for QueryBuilder compatibility
     const response = {
       success: true,
-      columns: fields, // QueryBuilder expects "columns" key
-      rowCount,
+      columns: analysis.columns, // QueryBuilder expects enriched column metadata
+      rowCount: analysis.fileInfo.totalRows,
+      filterSuggestions,
       fileInfo: {
         id: `demo-${datasetKey}`,
         filename: dataset.displayName,
-        size: fileSize
+        size: fileSize,
+        totalColumns: analysis.fileInfo.totalColumns,
+        totalRows: analysis.fileInfo.totalRows
       }
     };
 
@@ -492,18 +500,35 @@ publicRoutes.post('/demo/:dataset/query', async (c) => {
       }, 404);
     }
 
-    const { filters, includePreview, previewLimit } = await c.req.json();
+    const { filters = [], includePreview = true, previewLimit = 100 } = await c.req.json();
     
-    // For demo purposes, return a simple filtered result
-    // In a real implementation, this would apply the filters to the actual data
+    console.log(`🐱 Demo query for ${dataset.displayName} with ${filters.length} filters`);
+
+    // Get the CSV data from R2
+    const object = await c.env.FILE_STORAGE.get(dataset.filename);
+    
+    if (!object) {
+      return c.json({ 
+        error: 'Demo data not found',
+        message: `${dataset.displayName} data is temporarily unavailable`
+      }, 404);
+    }
+
+    // Process the CSV content
+    const rawContent = await object.text();
+    const content = CrosstabProcessor.normalizeUnicodeCharacters(rawContent);
+    
+    // Apply filters using FilterProcessor
+    const filteredResult = await FilterProcessor.applyFilters(
+      content,
+      filters,
+      includePreview,
+      previewLimit
+    );
+    
     return c.json({
       success: true,
-      data: {
-        filteredCount: Math.floor(Math.random() * 1000) + 100,
-        totalRows: 3023,
-        preview: [],
-        message: `Demo query executed with ${filters?.length || 0} filters`
-      }
+      data: filteredResult
     });
   } catch (error) {
     console.error('Demo query error:', error);

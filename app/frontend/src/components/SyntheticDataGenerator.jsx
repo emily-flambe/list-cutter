@@ -159,7 +159,7 @@ const SyntheticDataGenerator = () => {
 
       const response = await api.post('/api/v1/synthetic-data/generate', payload);
       
-      console.log('✅ Synthetic data generation successful:', response.data);
+      console.log('Synthetic data generation successful:', response.data);
       
       if (response.data.file && response.data.file.downloadUrl) {
         setDownloadUrl(response.data.file.downloadUrl);

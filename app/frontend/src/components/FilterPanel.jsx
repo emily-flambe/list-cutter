@@ -2,28 +2,27 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api';
 
-// Ruby's RADICAL SIMPLICITY: Optimized Material-UI imports for performance
+// Simple Material-UI imports
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
+import TextField from '@mui/material/TextField';
 import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
-import Grid from '@mui/material/Grid';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 
-// Icons for Ruby's clean interface design
+// Icons
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -31,15 +30,11 @@ import AddIcon from '@mui/icons-material/Add';
 import InfoIcon from '@mui/icons-material/Info';
 
 /**
- * FilterPanel - Ruby's Lightning-Fast Dynamic Filtering Component
- * 
- * Ruby's RADICAL SIMPLICITY Philosophy:
- * - Build on existing Material-UI patterns from the codebase
- * - Use intelligent data type detection for smart filter suggestions
- * - Simple, clean interface focused on user performance
- * - Reuse API patterns from existing components
- * 
- * Performance Targets: <100ms filter UI response time
+ * DEAD SIMPLE FilterPanel - Start over approach
+ * 1. Click "Add Filter" 
+ * 2. Show dropdown with all column names
+ * 3. User picks one
+ * That's it for now.
  */
 const FilterPanel = ({ 
   columns: columnsFromParent, 
@@ -50,269 +45,80 @@ const FilterPanel = ({
 }) => {
   const { token } = useContext(AuthContext);
   
-  // Component state - use columns from parent if provided
-  const [columns, setColumns] = useState(columnsFromParent || []);
-  const [filterSuggestions, setFilterSuggestions] = useState({});
-  const [fileInfo, setFileInfo] = useState(null);
-  const [filters, setFilters] = useState(filtersFromParent || []);
-  const [loading, setLoading] = useState(!columnsFromParent || !Array.isArray(columnsFromParent) || columnsFromParent.length === 0);
+  // Simple state
+  const [columns, setColumns] = useState([]);
+  const [filters, setFilters] = useState([]);
+  const [columnSearch, setColumnSearch] = useState('');
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [analyzing, setAnalyzing] = useState(false);
-
-  // Update local state when parent columns change
+  
+  // Update columns when parent provides them
   useEffect(() => {
+    console.log('🟢 FilterPanel got columns:', columnsFromParent?.length);
+    
     if (columnsFromParent && Array.isArray(columnsFromParent) && columnsFromParent.length > 0) {
+      console.log('🟢 Setting columns:', columnsFromParent.length);
       setColumns(columnsFromParent);
       setLoading(false);
+      setError('');
     }
   }, [columnsFromParent]);
-
-  // Update local filters when parent filters change
-  useEffect(() => {
-    if (Array.isArray(filtersFromParent)) {
-      setFilters(filtersFromParent);
-    }
-  }, [filtersFromParent]);
-
-  /**
-   * RUBY OPTIMIZED: Fast column metadata fetching using new API endpoint
-   */
-  const fetchColumnMetadata = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      let apiUrl;
-      let headers = {
-        'Content-Type': 'application/json'
-      };
-      
-      // Handle demo mode for anonymous users
-      if (fileId === 'demo-squirrel' && !token) {
-        apiUrl = '/api/v1/public/demo/squirrel/columns';
-      } else if (fileId === 'reference-squirrel' && token) {
-        apiUrl = '/api/v1/files/reference/squirrel/columns';
-        headers['Authorization'] = `Bearer ${token}`;
-      } else {
-        apiUrl = `/api/v1/files/${fileId}/columns`;
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-      }
-      
-      const response = await api.get(apiUrl, { headers });
-
-      if (response.data.success) {
-        setColumns(response.data.columns);
-        setFilterSuggestions(response.data.filterSuggestions || {});
-        setFileInfo(response.data.fileInfo);
-        
-        const isDemoMode = fileId === 'demo-squirrel' && !token;
-        console.log(`🐰 Column analysis completed: ${response.data.columns.length} columns ${isDemoMode ? '(demo mode)' : ''}`);
-      } else {
-        setError('Failed to analyze file columns');
-      }
-    } catch (err) {
-      console.error('Column analysis failed:', err);
-      setError(err.response?.data?.message || 'Failed to analyze file columns');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * Add a new filter to the list
-   */
-  const addFilter = () => {
+  
+  // Add a new filter - SIMPLE VERSION
+  const addFilter = (columnName = '') => {
+    console.log('🟢 Adding filter for column:', columnName);
     const newFilter = {
-      id: Date.now(), // Simple unique ID for UI
-      columnName: '',
-      filterType: '',
-      value: ''
+      id: Date.now(),
+      selectedColumn: columnName, // Pre-select the column if provided
     };
     const updatedFilters = [...filters, newFilter];
     setFilters(updatedFilters);
-    notifyFiltersChange(updatedFilters);
+    console.log('🟢 Filters now:', updatedFilters.length);
   };
-
-  /**
-   * Remove a filter from the list
-   */
+  
+  // Remove filter
   const removeFilter = (filterId) => {
     const updatedFilters = filters.filter(f => f.id !== filterId);
     setFilters(updatedFilters);
-    notifyFiltersChange(updatedFilters);
   };
-
-  /**
-   * Update a specific filter
-   */
-  const updateFilter = (filterId, field, value) => {
+  
+  // Update filter column selection
+  const updateFilterColumn = (filterId, columnName) => {
+    console.log('🟢 Updating filter', filterId, 'to column:', columnName);
     const updatedFilters = filters.map(filter => {
       if (filter.id === filterId) {
-        const updated = { ...filter, [field]: value };
-        
-        // Reset filter type if column changes
-        if (field === 'columnName') {
-          updated.filterType = '';
-          updated.value = '';
-        }
-        
-        return updated;
+        return { ...filter, selectedColumn: columnName };
       }
       return filter;
     });
-    
     setFilters(updatedFilters);
-    notifyFiltersChange(updatedFilters);
   };
-
-  /**
-   * Notify parent component of filter changes
-   */
-  const notifyFiltersChange = (currentFilters) => {
-    if (onFiltersChange) {
-      const validFilters = currentFilters.filter(f => 
-        f.columnName && f.filterType && f.value
-      );
-      onFiltersChange(validFilters);
-    }
-  };
-
-  /**
-   * Get available filter types for a column
-   */
-  const getFilterTypesForColumn = (columnName) => {
-    return filterSuggestions[columnName] || [];
-  };
-
-  /**
-   * Get column data type for UI hints
-   */
-  const getColumnDataType = (columnName) => {
-    const column = columns.find(c => c.name === columnName);
-    return column ? column.dataType : 'text';
-  };
-
-  /**
-   * Get sample values for column to help user
-   */
-  const getColumnSamples = (columnName) => {
-    const column = columns.find(c => c.name === columnName);
-    return column ? column.sampleValues.slice(0, 3) : [];
-  };
-
-  /**
-   * Render individual filter row
-   */
-  const renderFilter = (filter) => {
-    const filterTypes = getFilterTypesForColumn(filter.columnName);
-    const dataType = getColumnDataType(filter.columnName);
-    const samples = getColumnSamples(filter.columnName);
-
-    return (
-      <Grid container spacing={2} key={filter.id} alignItems="center" sx={{ mb: 2 }}>
-        <Grid item xs={3}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Column</InputLabel>
-            <Select
-              value={filter.columnName}
-              label="Column"
-              onChange={(e) => updateFilter(filter.id, 'columnName', e.target.value)}
-            >
-              {columns.map((column) => (
-                <MenuItem key={column.name} value={column.name}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <span>{column.name}</span>
-                    <Chip 
-                      label={column.dataType} 
-                      size="small" 
-                      variant="outlined"
-                      sx={{ fontSize: '0.7rem', height: '18px' }}
-                    />
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid item xs={3}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Filter Type</InputLabel>
-            <Select
-              value={filter.filterType}
-              label="Filter Type"
-              disabled={!filter.columnName}
-              onChange={(e) => updateFilter(filter.id, 'filterType', e.target.value)}
-            >
-              {filterTypes.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type.replace('_', ' ')}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid item xs={4}>
-          <TextField
-            fullWidth
-            size="small"
-            label="Value"
-            value={filter.value}
-            disabled={!filter.filterType}
-            onChange={(e) => updateFilter(filter.id, 'value', e.target.value)}
-            placeholder={samples.length > 0 ? `e.g. ${samples[0]}` : ''}
-            helperText={samples.length > 0 ? `Samples: ${samples.join(', ')}` : ''}
-          />
-        </Grid>
-
-        <Grid item xs={2}>
-          <Tooltip title="Remove filter">
-            <IconButton 
-              onClick={() => removeFilter(filter.id)}
-              color="error"
-              size="small"
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Grid>
-      </Grid>
-    );
-  };
-
-  // Loading state
+  
+  // Show loading state
   if (loading) {
     return (
       <Card>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <CircularProgress size={24} />
-            <Typography>Analyzing column types...</Typography>
+            <Typography>Loading columns...</Typography>
           </Box>
         </CardContent>
       </Card>
     );
   }
-
-  // Error state
+  
+  // Show error state
   if (error) {
     return (
       <Card>
         <CardContent>
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-          <Button onClick={fetchColumnMetadata} variant="outlined">
-            Retry Analysis
-          </Button>
+          <Alert severity="error">{error}</Alert>
         </CardContent>
       </Card>
     );
   }
-
+  
   return (
     <Card>
       <CardContent>
@@ -320,27 +126,10 @@ const FilterPanel = ({
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <FilterListIcon sx={{ mr: 1, color: 'primary.main' }} />
           <Typography variant="h6">
-            Smart Filters
+            Simple Filters
           </Typography>
-          <Tooltip title="AI-powered column type detection for intelligent filtering">
-            <IconButton size="small" sx={{ ml: 1 }}>
-              <InfoIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
         </Box>
-
-        {/* File info */}
-        {fileInfo && (
-          <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>{fileInfo.filename}</strong> • {fileInfo.totalColumns} columns • {fileInfo.totalRows.toLocaleString()} rows
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {columns.length} columns analyzed with data type detection
-            </Typography>
-          </Box>
-        )}
-
+        
         {/* Filters section */}
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -350,65 +139,144 @@ const FilterPanel = ({
           </AccordionSummary>
           <AccordionDetails>
             {filters.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                No filters applied. Add filters to narrow down your data.
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'left' }}>
+                Click the + next to columns below to configure filters for them.<br />Or you could not
               </Typography>
             ) : (
               <Box sx={{ mb: 2 }}>
-                {filters.map(renderFilter)}
+                {filters.map((filter) => (
+                  <Box key={filter.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <FormControl sx={{ minWidth: 200 }}>
+                      <InputLabel>Select Column</InputLabel>
+                      <Select
+                        value={filter.selectedColumn}
+                        label="Select Column"
+                        onChange={(e) => updateFilterColumn(filter.id, e.target.value)}
+                      >
+                        {columns.map((column) => (
+                          <MenuItem key={column.name} value={column.name}>
+                            {column.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    
+                    {filter.selectedColumn && (
+                      <Typography variant="body2" color="success.main">
+                        ✓ Column selected: {filter.selectedColumn}
+                      </Typography>
+                    )}
+                    
+                    <Tooltip title="Remove filter">
+                      <IconButton 
+                        onClick={() => removeFilter(filter.id)}
+                        color="error"
+                        size="small"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                ))}
               </Box>
             )}
 
-            <Button
-              startIcon={<AddIcon />}
-              onClick={addFilter}
-              variant="outlined"
-              size="small"
-            >
-              Add Filter
-            </Button>
           </AccordionDetails>
         </Accordion>
 
-        {/* Column info section */}
-        <Accordion>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1">
-              Column Information
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Grid container spacing={2}>
-              {columns.map((column) => (
-                <Grid item xs={12} md={6} key={column.name}>
-                  <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
-                        {column.name}
-                      </Typography>
-                      <Chip 
-                        label={column.dataType} 
-                        size="small" 
-                        color="primary"
-                        variant="outlined"
-                      />
-                    </Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Confidence: {(column.confidence * 100).toFixed(0)}% • 
-                      Unique values: {column.uniqueValueCount} • 
-                      Nulls: {column.nullCount}
+        {/* Column info section - Always expanded */}
+        <Box sx={{ mt: 2 }}>
+          <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+            {/* Search box */}
+            <TextField
+              size="small"
+              placeholder="Search columns..."
+              value={columnSearch}
+              onChange={(e) => setColumnSearch(e.target.value)}
+              sx={{ 
+                mb: 2, 
+                '& input': { textAlign: 'left' },
+                '& .MuiInputBase-input::placeholder': { textAlign: 'left' }
+              }}
+            />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {columns
+                .filter(column => column.name.toLowerCase().includes(columnSearch.toLowerCase()))
+                .map((column, index) => (
+                <Box 
+                  key={column.name}
+                  sx={{ 
+                    p: 1.5, 
+                    border: 1, 
+                    borderColor: 'divider', 
+                    borderRadius: 1,
+                    backgroundColor: index % 2 === 0 ? 'background.default' : 'background.paper',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 1
+                  }}
+                >
+                  {/* Add filter button */}
+                  <IconButton
+                    size="small"
+                    onClick={() => addFilter(column.name)}
+                    sx={{ 
+                      mt: -0.5,
+                      color: 'primary.main',
+                      '&:hover': { backgroundColor: 'primary.main', color: 'white' }
+                    }}
+                  >
+                    <AddIcon fontSize="small" />
+                  </IconButton>
+                  
+                  {/* Column details - narrower to make room for + button */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                    <Typography variant="body2" sx={{ flexGrow: 1, fontWeight: 500, textAlign: 'left' }}>
+                      {column.name}
                     </Typography>
-                    {column.sampleValues.length > 0 && (
-                      <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-                        Samples: {column.sampleValues.slice(0, 3).join(', ')}
+                    <Chip 
+                      label={column.dataType || 'text'} 
+                      size="small" 
+                      color="primary"
+                      variant="outlined"
+                      sx={{ ml: 1 }}
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Unique: <Box component="span" sx={{ fontWeight: 400, color: 'text.primary' }}>
+                        {column.uniqueValueCount || 'N/A'}
+                      </Box>
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Nulls: <Box component="span" sx={{ fontWeight: 400, color: 'text.primary' }}>
+                        {column.nullCount || 0}
+                      </Box>
+                    </Typography>
+                    {(column.sampleValues || []).length > 0 && (
+                      <Typography variant="caption" color="text.secondary" sx={{ 
+                        flex: 1, 
+                        fontWeight: 500,
+                        minWidth: '200px',
+                        textAlign: 'right'
+                      }}>
+                        Example Values: <Box component="span" sx={{ 
+                          fontWeight: 400, 
+                          fontStyle: 'italic',
+                          color: 'text.primary'
+                        }}>
+                          {(column.sampleValues || []).slice(0, 2).join(', ')}
+                        </Box>
                       </Typography>
                     )}
                   </Box>
-                </Grid>
+                </Box>
+                </Box>
               ))}
-            </Grid>
-          </AccordionDetails>
-        </Accordion>
+            </Box>
+          </Box>
+        </Box>
       </CardContent>
     </Card>
   );

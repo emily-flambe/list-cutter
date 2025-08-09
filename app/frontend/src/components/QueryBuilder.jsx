@@ -92,11 +92,11 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
 
   // Initialize when component mounts or fileId changes
   useEffect(() => {
-    // If no fileId and anonymous, use demo mode with squirrel data
+    // If no fileId and anonymous, use demo mode with NPORS 2025 data
     if (!fileId && !token) {
       setDemoMode(true);
-      setFileId('demo-squirrel');
-      initializeFile('demo-squirrel');
+      setFileId('demo-npors2025');
+      initializeFile('demo-npors2025');
     } else if (fileId) {
       initializeFile(fileId);
     }
@@ -139,12 +139,12 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       let columnsUrl, performanceUrl;
       
       // Handle demo mode for anonymous users
-      if (actualFileId === 'demo-squirrel' && isAnonymous) {
-        columnsUrl = '/api/v1/public/demo/squirrel/columns';
-        performanceUrl = '/api/v1/public/demo/squirrel/performance';
+      if (actualFileId === 'demo-npors2025' && isAnonymous) {
+        columnsUrl = '/api/v1/public/demo/npors2025/columns';
+        performanceUrl = '/api/v1/public/demo/npors2025/performance';
         setFileInfo({
-          filename: 'NYC Central Park Squirrel Census (Demo Data)',
-          id: 'demo-squirrel',
+          filename: '2025 National Public Opinion Reference Survey (Demo Data)',
+          id: 'demo-npors2025',
           size: 0
         });
       } else if (actualFileId === 'reference-squirrel' && token) {
@@ -167,7 +167,13 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
         throw new Error(columnsResponse.data.error || 'Failed to load column metadata');
       }
 
-      setColumns(columnsResponse.data.columns || []);
+      const receivedColumns = columnsResponse.data.columns || [];
+      if (!Array.isArray(receivedColumns)) {
+        console.warn('🐱 Invalid columns data received:', receivedColumns);
+        throw new Error('Invalid column data format received from server');
+      }
+
+      setColumns(receivedColumns);
       if (!demoMode) {
         setFileInfo(columnsResponse.data.fileInfo || {});
       }
@@ -182,7 +188,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       }
 
       const modeMessage = demoMode 
-        ? 'Demo mode! Try CUT with NYC Squirrel Census data. ' 
+        ? 'Demo mode! Try CUT with 2025 National Public Opinion Reference Survey data. ' 
         : 'File loaded! ';
       setSuccessMessage(`${modeMessage}${columnsResponse.data.columns?.length || 0} columns detected. ${performanceResponse.data?.strategy === 'realtime' ? 'Real-time filtering enabled.' : performanceResponse.data?.strategy === 'debounced' ? 'Smart debounced filtering enabled.' : 'Manual filtering mode (large file).'}`);
       
@@ -216,8 +222,8 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
 
       let queryUrl;
       // Handle demo mode for anonymous users
-      if (fileId === 'demo-squirrel' && isAnonymous) {
-        queryUrl = '/api/v1/public/demo/squirrel/query';
+      if (fileId === 'demo-npors2025' && isAnonymous) {
+        queryUrl = '/api/v1/public/demo/npors2025/query';
       } else if (fileId === 'reference-squirrel' && token) {
         queryUrl = '/api/v1/files/reference/squirrel/query';
       } else {
@@ -409,7 +415,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
 
       {isAnonymous && demoMode && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          📊 <strong>Demo Mode:</strong> Try CUT with the <a href="https://www.thesquirrelcensus.com/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>NYC Squirrel Census</a> dataset!<br />
+          <strong>Demo Mode:</strong> Try CUT with the 2025 National Public Opinion Reference Survey dataset!<br />
           <a href="/login" style={{color: 'inherit', textDecoration: 'underline'}}>Login</a> or <a href="/register" style={{color: 'inherit', textDecoration: 'underline'}}>create an account</a> to use CUT with your own CSV files.
         </Alert>
       )}
@@ -442,14 +448,19 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                     📄 File Information
                   </Typography>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12} md={4}>
                       <Typography variant="body2" color="text.secondary">
                         Filename: <strong>{fileInfo.filename}</strong>
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12} md={4}>
                       <Typography variant="body2" color="text.secondary">
                         Columns: <strong>{columns.length}</strong>
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="body2" color="text.secondary">
+                        Rows: <strong>{fileInfo.totalRows ? fileInfo.totalRows.toLocaleString() : 'Unknown'}</strong>
                       </Typography>
                     </Grid>
                   </Grid>
@@ -475,7 +486,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6">
-                    🎯 Filtered Results
+                    Filtered Results
                     {filteredData && (
                       <Typography component="span" color="text.secondary" sx={{ ml: 2, fontSize: '0.9em' }}>
                         {filteredData.filteredCount.toLocaleString()} of {filteredData.totalRows.toLocaleString()} rows
