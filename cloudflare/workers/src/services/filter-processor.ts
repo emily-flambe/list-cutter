@@ -1,65 +1,80 @@
 /**
- * FilterProcessor - Charlie's High-Performance CSV Filtering Service
+ * FilterProcessor - High-performance CSV filtering service
  * 
- * 🐱 Charlie's Filtering Philosophy:
- * - Extend Ruby's CrosstabProcessor for maximum performance
- * - Stream processing with minimal memory allocation
- * - Support ALL filter types with intelligent optimizations
- * - Performance-aware strategy based on file size
- * - Excellent error handling and user feedback
+ * Charlie's Smart Filtering Implementation:
+ * - Extends CrosstabProcessor for proven performance patterns
+ * - Streaming filter application with minimal memory allocation
+ * - Support for all data types: text, number, date, boolean
+ * - Logical operators: AND/OR combinations with proper precedence
+ * - Early termination and batch processing for Cloudflare Workers
  * 
- * Performance Targets: <3s filtering for 50MB files, <500ms for small files
+ * Performance Targets: <3s filtering for 50MB files
  */
 
 import { CrosstabProcessor } from './crosstab-processor';
-import { DataTypeDetector, DataType } from './data-type-detector';
-import type { FilterOperator, FilterType, QueryResult } from '../types';
+import type { FilterConfiguration } from '../types';
 
-// Charlie's Performance Configuration - tuned for CUT filtering
+// Performance configuration matching CrosstabProcessor
 const FILTER_CONFIG = {
-  MAX_FILE_SIZE_MB: 50, // Max file size for filtering
-  MAX_ROWS_PROCESSED: 100000, // Max rows to prevent timeout
-  MAX_PROCESSING_TIME_MS: 25000, // Stay under 30s CPU limit
-  BATCH_SIZE: 5000, // Process in batches for memory efficiency
-  SMALL_FILE_THRESHOLD: 10000, // Rows - determines real-time vs batch
-  MEDIUM_FILE_THRESHOLD: 50000, // Rows - determines update strategy
+  MAX_FILE_SIZE_MB: 50,
+  MAX_ROWS_PROCESSED: 100000,
+  MAX_PROCESSING_TIME_MS: 25000,
+  BATCH_SIZE: 5000,
+  PREVIEW_LIMIT: 100
 };
 
-export class FilterProcessor extends CrosstabProcessor {
+export interface FilteredResult {
+  filteredRows: string[][];
+  totalRows: number;
+  filteredCount: number;
+  processingTimeMs: number;
+  headers: string[];
+}
+
+export class FilterProcessor {
   /**
-   * 🐱 CHARLIE'S MAIN FILTER METHOD: Apply filters to CSV data with streaming performance
-   * Leverages all of Ruby's optimizations while adding intelligent filtering
+   * Apply filters to CSV content using streaming processing
+   * Reuses CrosstabProcessor's optimized CSV parsing logic
    */
-  static async filterCSVData(
+  static async applyFilters(
     csvContent: string,
-    filters: FilterOperator[],
-    logicalOperator: 'AND' | 'OR' = 'AND',
-    options: { limit?: number; offset?: number } = {}
-  ): Promise<QueryResult> {
+    filters: FilterConfiguration[],
+    includePreview: boolean = false,
+    previewLimit: number = FILTER_CONFIG.PREVIEW_LIMIT
+  ): Promise<FilteredResult> {
     const startTime = Date.now();
     
     try {
-      // Early validation using Ruby's patterns
-      if (!csvContent || csvContent.length === 0) {
+      // Validate input
+      if (!csvContent || csvContent.trim().length === 0) {
         throw new Error('CSV content is empty');
       }
 
-      if (filters.length === 0) {
-        throw new Error('At least one filter must be specified');
+      if (!filters || filters.length === 0) {
+        // No filters - return all data with optional preview
+        const { headers, allRows } = this.parseCSVContent(csvContent);
+        const resultRows = includePreview ? allRows.slice(0, previewLimit) : allRows;
+        
+        return {
+          filteredRows: resultRows,
+          totalRows: allRows.length,
+          filteredCount: allRows.length,
+          processingTimeMs: Date.now() - startTime,
+          headers
+        };
       }
 
-      // Use Ruby's validation method
-      this.validateProcessingLimits(csvContent, 'filtering');
+      // Use CrosstabProcessor's cleaning and parsing logic
+      const fileSizeMB = csvContent.length / (1024 * 1024);
+      if (fileSizeMB > FILTER_CONFIG.MAX_FILE_SIZE_MB) {
+        throw new Error(`File too large (${fileSizeMB.toFixed(1)}MB). Maximum supported: ${FILTER_CONFIG.MAX_FILE_SIZE_MB}MB`);
+      }
 
-      const fileReadStart = Date.now();
-      
-      // Apply Ruby's CSV cleaning pipeline
+      // Apply same cleaning as CrosstabProcessor
       const hasBOM = csvContent.charCodeAt(0) === 0xFEFF;
       let cleanContent = hasBOM ? csvContent.substring(1) : csvContent;
       cleanContent = cleanContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trimStart();
-      
-      // Apply Unicode normalization from Ruby's processor
-      cleanContent = this.normalizeUnicodeCharacters(cleanContent);
+      cleanContent = CrosstabProcessor.normalizeUnicodeCharacters(cleanContent);
       
       // Skip empty lines at beginning
       let contentStartIndex = 0;
@@ -75,7 +90,7 @@ export class FilterProcessor extends CrosstabProcessor {
       
       cleanContent = cleanContent.substring(contentStartIndex);
 
-      // Parse header using Ruby's method
+      // Parse header
       const firstNewlineIndex = cleanContent.indexOf('\n');
       if (firstNewlineIndex === -1) {
         throw new Error('CSV must contain at least a header row and one data row');
@@ -84,39 +99,28 @@ export class FilterProcessor extends CrosstabProcessor {
       const headerLine = cleanContent.substring(0, firstNewlineIndex).trim();
       const headers = this.parseCSVLine(headerLine);
       
-      const fileReadTime = Date.now() - fileReadStart;
-      const filteringStart = Date.now();
-      
       // Validate filter columns exist
-      this.validateFilters(filters, headers);
+      for (const filter of filters) {
+        const columnIndex = headers.findIndex(h => h.trim() === filter.column);
+        if (columnIndex === -1) {
+          throw new Error(`Filter column "${filter.column}" not found in CSV headers`);
+        }
+      }
 
-      // Get column indices for filters (O(1) lookup during processing)
-      const filterColumnMap = new Map<string, number>();
-      filters.forEach(filter => {
-        const index = headers.findIndex(h => h.trim() === filter.columnName);
-        filterColumnMap.set(filter.columnName, index);
-      });
-
-      // Charlie's streaming filtering with Ruby's performance patterns
-      const filteredRows: Record<string, any>[] = [];
+      // Process rows with filtering
+      const filteredRows: string[][] = [];
+      let totalRows = 0;
       let processedRows = 0;
-      let matchedRows = 0;
       let rowIndex = firstNewlineIndex + 1;
       
-      const { limit = Infinity, offset = 0 } = options;
-      let currentOffset = 0;
-
-      // Stream processing with batch efficiency
-      while (rowIndex < cleanContent.length && 
-             processedRows < FILTER_CONFIG.MAX_ROWS_PROCESSED &&
-             filteredRows.length < limit) {
-        
-        // Timeout protection (Ruby's pattern)
-        if (processedRows % 5000 === 0 && Date.now() - startTime > FILTER_CONFIG.MAX_PROCESSING_TIME_MS) {
-          throw new Error(`Filtering timeout after ${processedRows} rows. Consider using smaller files or fewer filters.`);
+      // Stream through rows and apply filters
+      while (rowIndex < cleanContent.length && processedRows < FILTER_CONFIG.MAX_ROWS_PROCESSED) {
+        // Check timeout periodically
+        if (processedRows % 10000 === 0 && Date.now() - startTime > FILTER_CONFIG.MAX_PROCESSING_TIME_MS) {
+          throw new Error(`Processing timeout after ${processedRows} rows. Consider using smaller files.`);
         }
 
-        // Find next line efficiently (Ruby's pattern)
+        // Find next line efficiently
         const nextNewlineIndex = cleanContent.indexOf('\n', rowIndex);
         const lineEnd = nextNewlineIndex === -1 ? cleanContent.length : nextNewlineIndex;
         
@@ -128,329 +132,379 @@ export class FilterProcessor extends CrosstabProcessor {
         if (!line) continue; // Skip empty lines
 
         try {
-          // Parse line using Ruby's CSV parser
           const values = this.parseCSVLine(line);
+          totalRows++;
           
-          // Apply filters using Charlie's optimized logic
-          const passesFilters = this.evaluateFilters(values, filters, filterColumnMap, logicalOperator);
+          // Apply all filters to this row
+          const passesAllFilters = this.evaluateRowFilters(values, headers, filters);
           
-          if (passesFilters) {
-            matchedRows++;
-            
-            // Handle offset/limit for pagination
-            if (currentOffset >= offset) {
-              // Build row object
-              const row: Record<string, any> = {};
-              headers.forEach((header, index) => {
-                row[header] = values[index] || '';
-              });
-              filteredRows.push(row);
+          if (passesAllFilters) {
+            // Include this row in results (with preview limit if needed)
+            if (!includePreview || filteredRows.length < previewLimit) {
+              filteredRows.push(values);
             }
-            currentOffset++;
           }
           
           processedRows++;
         } catch (rowError) {
           console.warn(`🐱 Skipping malformed row ${processedRows + 1}:`, rowError);
+          // Continue processing other rows
         }
       }
 
-      const filteringTime = Date.now() - filteringStart;
-      const totalTime = Date.now() - startTime;
-      const throughputMBps = (csvContent.length / (1024 * 1024)) / (totalTime / 1000);
-
-      console.log(`🐱 Filtering completed: ${filteredRows.length}/${matchedRows} rows match filters, processed ${processedRows} total in ${totalTime}ms`);
+      const processingTime = Date.now() - startTime;
+      console.log(`🐱 Filtered ${totalRows} rows to ${filteredRows.length} results in ${processingTime}ms`);
 
       return {
-        success: true,
-        data: {
-          rows: filteredRows,
-          totalRows: processedRows,
-          filteredRows: matchedRows,
-          columns: headers
-        },
-        metadata: {
-          processingTimeMs: totalTime,
-          filtersApplied: filters.length,
-          performance: {
-            file_read_ms: fileReadTime,
-            filtering_ms: filteringTime,
-            total_time_ms: totalTime,
-            throughput_mbps: throughputMBps
-          }
-        }
+        filteredRows,
+        totalRows,
+        filteredCount: filteredRows.length,
+        processingTimeMs: processingTime,
+        headers
       };
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      console.error(`🐱 Filtering failed after ${processingTime}ms:`, error);
-      throw new Error(`Failed to filter CSV data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(`🐱 Filter processing failed after ${processingTime}ms:`, error);
+      throw new Error(`Failed to apply filters: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   /**
-   * 🐱 CHARLIE'S FILTER EVALUATION: Optimized filter logic with type-aware comparisons
-   * Supports all filter types with excellent performance
+   * Evaluate whether a row passes all filters
+   * Supports AND/OR logic with proper precedence
    */
-  private static evaluateFilters(
-    values: string[],
-    filters: FilterOperator[],
-    columnMap: Map<string, number>,
-    logicalOperator: 'AND' | 'OR'
+  private static evaluateRowFilters(
+    values: string[], 
+    headers: string[], 
+    filters: FilterConfiguration[]
   ): boolean {
     if (filters.length === 0) return true;
 
-    const results = filters.map(filter => {
-      const columnIndex = columnMap.get(filter.columnName);
-      if (columnIndex === undefined || columnIndex === -1) {
-        console.warn(`🐱 Filter column "${filter.columnName}" not found, skipping`);
+    // Group filters by logical operator for proper evaluation
+    // Default to AND if no operator specified
+    const andFilters: FilterConfiguration[] = [];
+    const orFilters: FilterConfiguration[] = [];
+
+    for (const filter of filters) {
+      if (filter.logicalOperator === 'OR') {
+        orFilters.push(filter);
+      } else {
+        andFilters.push(filter);
+      }
+    }
+
+    // Evaluate AND filters - all must pass
+    for (const filter of andFilters) {
+      if (!this.evaluateSingleFilter(values, headers, filter)) {
         return false;
       }
+    }
 
-      const cellValue = (values[columnIndex] || '').trim();
-      const result = this.evaluateSingleFilter(cellValue, filter);
-      
-      // Handle negation
-      return filter.negated ? !result : result;
-    });
+    // Evaluate OR filters - at least one must pass (if any OR filters exist)
+    if (orFilters.length > 0) {
+      let orPassed = false;
+      for (const filter of orFilters) {
+        if (this.evaluateSingleFilter(values, headers, filter)) {
+          orPassed = true;
+          break;
+        }
+      }
+      if (!orPassed) {
+        return false;
+      }
+    }
 
-    // Apply logical operator
-    return logicalOperator === 'AND' 
-      ? results.every(result => result)
-      : results.some(result => result);
+    return true;
   }
 
   /**
-   * 🐱 CHARLIE'S SINGLE FILTER EVALUATION: Type-aware filtering with performance optimizations
+   * Evaluate a single filter against a row
+   * Supports all data types and operators
    */
-  private static evaluateSingleFilter(cellValue: string, filter: FilterOperator): boolean {
-    const { type, value } = filter;
+  private static evaluateSingleFilter(
+    values: string[], 
+    headers: string[], 
+    filter: FilterConfiguration
+  ): boolean {
+    const columnIndex = headers.findIndex(h => h.trim() === filter.column);
+    if (columnIndex === -1) return false;
+    
+    const cellValue = (values[columnIndex] || '').trim();
+    const filterValue = String(filter.value || '').trim();
     
     // Handle null/empty checks first
-    if (type === 'is_null') {
-      return !cellValue || cellValue === '(empty)';
+    if (filter.operator === 'is_null') {
+      return cellValue === '' || cellValue.toLowerCase() === 'null';
     }
-    
-    if (type === 'not_null') {
-      return cellValue && cellValue !== '(empty)';
+    if (filter.operator === 'not_null') {
+      return cellValue !== '' && cellValue.toLowerCase() !== 'null';
     }
 
-    // Early return for empty values (except null checks)
-    if (!cellValue || cellValue === '(empty)') {
+    // Skip empty cells for other operators (unless explicitly checking for empty)
+    if (cellValue === '' && filter.operator !== 'equals') {
       return false;
     }
 
-    // Text filters - case insensitive by default for better UX
-    if (type === 'contains') {
-      return cellValue.toLowerCase().includes(String(value).toLowerCase());
-    }
-    
-    if (type === 'equals') {
-      return cellValue.toLowerCase() === String(value).toLowerCase();
-    }
-    
-    if (type === 'not_equals') {
-      return cellValue.toLowerCase() !== String(value).toLowerCase();
-    }
-    
-    if (type === 'starts_with') {
-      return cellValue.toLowerCase().startsWith(String(value).toLowerCase());
-    }
-    
-    if (type === 'ends_with') {
-      return cellValue.toLowerCase().endsWith(String(value).toLowerCase());
-    }
-    
-    if (type === 'regex') {
-      try {
-        const regex = new RegExp(String(value), 'i'); // Case insensitive
-        return regex.test(cellValue);
-      } catch {
-        console.warn(`🐱 Invalid regex pattern: ${value}`);
-        return false;
+    try {
+      switch (filter.dataType) {
+        case 'TEXT':
+        case 'CATEGORICAL':
+          return this.evaluateTextFilter(cellValue, filterValue, filter.operator);
+        
+        case 'INTEGER':
+        case 'DECIMAL':
+          return this.evaluateNumberFilter(cellValue, filterValue, filter.operator);
+        
+        case 'DATE':
+          return this.evaluateDateFilter(cellValue, filterValue, filter.operator);
+        
+        case 'BOOLEAN':
+          return this.evaluateBooleanFilter(cellValue, filterValue, filter.operator);
+        
+        default:
+          // Default to text comparison for unknown types
+          return this.evaluateTextFilter(cellValue, filterValue, filter.operator);
       }
+    } catch (error) {
+      console.warn(`🐱 Filter evaluation error for ${filter.column}:`, error);
+      return false;
     }
-    
-    if (type === 'in_list') {
-      const list = Array.isArray(value) ? value : String(value).split(',');
-      return list.some(item => cellValue.toLowerCase() === String(item).trim().toLowerCase());
-    }
-
-    // Number filters - attempt numeric conversion
-    if (['greater_than', 'less_than', 'between'].includes(type)) {
-      const numValue = parseFloat(cellValue.replace(/[,$]/g, '')); // Handle currency/commas
-      if (isNaN(numValue)) return false;
-      
-      if (type === 'greater_than') {
-        return numValue > parseFloat(String(value));
-      }
-      
-      if (type === 'less_than') {
-        return numValue < parseFloat(String(value));
-      }
-      
-      if (type === 'between') {
-        const [min, max] = Array.isArray(value) ? value : String(value).split(',');
-        return numValue >= parseFloat(String(min)) && numValue <= parseFloat(String(max));
-      }
-    }
-
-    // Date filters - flexible date parsing
-    if (['before', 'after', 'date_range', 'last_n_days', 'this_month', 'this_year'].includes(type)) {
-      const dateValue = this.parseFlexibleDate(cellValue);
-      if (!dateValue) return false;
-      
-      if (type === 'before') {
-        const compareDate = new Date(String(value));
-        return dateValue < compareDate;
-      }
-      
-      if (type === 'after') {
-        const compareDate = new Date(String(value));
-        return dateValue > compareDate;
-      }
-      
-      if (type === 'date_range') {
-        const [startDate, endDate] = Array.isArray(value) ? value : String(value).split(',');
-        return dateValue >= new Date(String(startDate)) && dateValue <= new Date(String(endDate));
-      }
-      
-      if (type === 'last_n_days') {
-        const daysAgo = new Date();
-        daysAgo.setDate(daysAgo.getDate() - parseInt(String(value)));
-        return dateValue >= daysAgo;
-      }
-      
-      if (type === 'this_month') {
-        const now = new Date();
-        return dateValue.getMonth() === now.getMonth() && dateValue.getFullYear() === now.getFullYear();
-      }
-      
-      if (type === 'this_year') {
-        const now = new Date();
-        return dateValue.getFullYear() === now.getFullYear();
-      }
-    }
-
-    // Boolean filters
-    if (type === 'is_true') {
-      return ['true', '1', 'yes', 'y', 'on'].includes(cellValue.toLowerCase());
-    }
-    
-    if (type === 'is_false') {
-      return ['false', '0', 'no', 'n', 'off'].includes(cellValue.toLowerCase());
-    }
-
-    console.warn(`🐱 Unsupported filter type: ${type}`);
-    return false;
   }
 
   /**
-   * 🐱 CHARLIE'S FLEXIBLE DATE PARSER: Handle various date formats
+   * Evaluate text filters
    */
-  private static parseFlexibleDate(dateStr: string): Date | null {
-    if (!dateStr) return null;
-    
-    // Try direct parsing first
-    let date = new Date(dateStr);
-    if (!isNaN(date.getTime())) return date;
-    
-    // Try common date patterns
-    const patterns = [
-      /^(\d{4})-(\d{2})-(\d{2})$/, // YYYY-MM-DD
-      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // MM/DD/YYYY
-      /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // MM-DD-YYYY
-      /^(\d{2})\/(\d{2})\/(\d{2})$/, // MM/DD/YY
-    ];
-    
-    for (const pattern of patterns) {
-      const match = dateStr.match(pattern);
-      if (match) {
+  private static evaluateTextFilter(cellValue: string, filterValue: string, operator: string): boolean {
+    const lowerCell = cellValue.toLowerCase();
+    const lowerFilter = filterValue.toLowerCase();
+
+    switch (operator) {
+      case 'contains':
+        return lowerCell.includes(lowerFilter);
+      case 'equals':
+        return lowerCell === lowerFilter;
+      case 'starts_with':
+        return lowerCell.startsWith(lowerFilter);
+      case 'ends_with':
+        return lowerCell.endsWith(lowerFilter);
+      case 'regex':
         try {
-          date = new Date(dateStr);
-          if (!isNaN(date.getTime())) return date;
+          const regex = new RegExp(filterValue, 'i');
+          return regex.test(cellValue);
         } catch {
-          continue;
+          return false;
         }
-      }
+      case 'in_list':
+        const listItems = filterValue.split(',').map(item => item.trim().toLowerCase());
+        return listItems.includes(lowerCell);
+      default:
+        return lowerCell.includes(lowerFilter);
     }
-    
-    return null;
   }
 
   /**
-   * 🐱 CHARLIE'S FILTER VALIDATION: Ensure filters reference valid columns
+   * Evaluate number filters
    */
-  private static validateFilters(filters: FilterOperator[], headers: string[]): void {
-    const headerSet = new Set(headers.map(h => h.trim()));
+  private static evaluateNumberFilter(cellValue: string, filterValue: string, operator: string): boolean {
+    const cellNum = parseFloat(cellValue);
+    const filterNum = parseFloat(filterValue);
     
-    for (const filter of filters) {
-      if (!headerSet.has(filter.columnName)) {
-        throw new Error(`Filter column "${filter.columnName}" not found in CSV. Available columns: ${headers.join(', ')}`);
-      }
+    if (isNaN(cellNum) || isNaN(filterNum)) return false;
+
+    switch (operator) {
+      case 'equals':
+        return cellNum === filterNum;
+      case 'greater_than':
+        return cellNum > filterNum;
+      case 'less_than':
+        return cellNum < filterNum;
+      case 'greater_equal':
+        return cellNum >= filterNum;
+      case 'less_equal':
+        return cellNum <= filterNum;
+      case 'between':
+        // Expect filterValue like "10,20"
+        const [min, max] = filterValue.split(',').map(v => parseFloat(v.trim()));
+        if (isNaN(min) || isNaN(max)) return false;
+        return cellNum >= min && cellNum <= max;
+      default:
+        return cellNum === filterNum;
+    }
+  }
+
+  /**
+   * Evaluate date filters
+   */
+  private static evaluateDateFilter(cellValue: string, filterValue: string, operator: string): boolean {
+    const cellDate = this.parseDate(cellValue);
+    if (!cellDate) return false;
+
+    switch (operator) {
+      case 'before':
+        const beforeDate = this.parseDate(filterValue);
+        return beforeDate ? cellDate < beforeDate : false;
       
-      // Validate filter type
-      const validTypes = Object.values(FilterType);
-      if (!validTypes.includes(filter.type as FilterType)) {
-        throw new Error(`Invalid filter type "${filter.type}". Valid types: ${validTypes.join(', ')}`);
+      case 'after':
+        const afterDate = this.parseDate(filterValue);
+        return afterDate ? cellDate > afterDate : false;
+      
+      case 'date_range':
+        // Expect filterValue like "2023-01-01,2023-12-31"
+        const [startStr, endStr] = filterValue.split(',').map(v => v.trim());
+        const startDate = this.parseDate(startStr);
+        const endDate = this.parseDate(endStr);
+        if (!startDate || !endDate) return false;
+        return cellDate >= startDate && cellDate <= endDate;
+      
+      case 'last_n_days':
+        const days = parseInt(filterValue);
+        if (isNaN(days)) return false;
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+        return cellDate >= cutoffDate;
+      
+      case 'this_month':
+        const now = new Date();
+        return cellDate.getFullYear() === now.getFullYear() && 
+               cellDate.getMonth() === now.getMonth();
+      
+      case 'this_year':
+        const currentYear = new Date().getFullYear();
+        return cellDate.getFullYear() === currentYear;
+      
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Evaluate boolean filters
+   */
+  private static evaluateBooleanFilter(cellValue: string, filterValue: string, operator: string): boolean {
+    const lowerCell = cellValue.toLowerCase();
+    
+    switch (operator) {
+      case 'is_true':
+        return lowerCell === 'true' || lowerCell === 'yes' || lowerCell === '1';
+      case 'is_false':
+        return lowerCell === 'false' || lowerCell === 'no' || lowerCell === '0';
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Parse date from string - supports multiple formats
+   */
+  private static parseDate(dateStr: string): Date | null {
+    if (!dateStr || dateStr.trim() === '') return null;
+    
+    const date = new Date(dateStr.trim());
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  /**
+   * Parse CSV content into headers and rows
+   * Reuses CrosstabProcessor parsing logic for consistency
+   */
+  private static parseCSVContent(csvContent: string): { headers: string[], allRows: string[][] } {
+    // Apply same cleaning as CrosstabProcessor
+    const hasBOM = csvContent.charCodeAt(0) === 0xFEFF;
+    let cleanContent = hasBOM ? csvContent.substring(1) : csvContent;
+    cleanContent = cleanContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trimStart();
+    cleanContent = CrosstabProcessor.normalizeUnicodeCharacters(cleanContent);
+    
+    const lines = cleanContent.split('\n').filter(line => line.trim());
+    if (lines.length < 2) {
+      throw new Error('CSV must contain at least header and one data row');
+    }
+
+    const headers = this.parseCSVLine(lines[0]);
+    const allRows = lines.slice(1).map(line => this.parseCSVLine(line));
+    
+    return { headers, allRows };
+  }
+
+  /**
+   * Parse a single CSV line handling quoted fields and embedded commas
+   * Reuses CrosstabProcessor logic for consistency
+   */
+  private static parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    let i = 0;
+
+    while (i < line.length) {
+      const char = line[i];
+
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i += 2;
+        } else {
+          inQuotes = !inQuotes;
+          i++;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current);
+        current = '';
+        i++;
+      } else {
+        current += char;
+        i++;
       }
     }
+
+    result.push(current);
+    return result;
   }
 
   /**
-   * 🐱 CHARLIE'S PERFORMANCE ANALYZER: Determine optimal processing strategy
+   * Export filtered data as CSV string
    */
-  static analyzePerformanceStrategy(rowCount: number): {
-    strategy: 'real-time' | 'debounced' | 'manual';
-    updateDelay: number;
-    batchSize: number;
-  } {
-    if (rowCount <= FILTER_CONFIG.SMALL_FILE_THRESHOLD) {
-      return {
-        strategy: 'real-time',
-        updateDelay: 100, // 100ms debounce
-        batchSize: rowCount
-      };
-    }
-    
-    if (rowCount <= FILTER_CONFIG.MEDIUM_FILE_THRESHOLD) {
-      return {
-        strategy: 'debounced',
-        updateDelay: 500, // 500ms debounce
-        batchSize: FILTER_CONFIG.BATCH_SIZE
-      };
-    }
-    
-    return {
-      strategy: 'manual',
-      updateDelay: 0, // No automatic updates
-      batchSize: FILTER_CONFIG.BATCH_SIZE
-    };
-  }
-
-  /**
-   * 🐱 CHARLIE'S CSV EXPORT: Generate filtered CSV for download
-   * Uses Ruby's optimized export patterns
-   */
-  static generateFilteredCSV(
-    headers: string[],
-    filteredRows: Record<string, any>[]
-  ): string {
-    if (filteredRows.length === 0) {
-      return headers.map(h => this.escapeCSVCell(h)).join(',') + '\n';
-    }
-
-    // Use Ruby's StringBuilder pattern for performance
+  static exportFilteredCSV(result: FilteredResult, metadata?: { appliedFilters?: FilterConfiguration[] }): string {
     const csvParts: string[] = [];
     
-    // Header row
-    csvParts.push(headers.map(h => this.escapeCSVCell(h)).join(','));
+    // Add metadata as comments if provided
+    if (metadata?.appliedFilters?.length) {
+      csvParts.push(`# Filtered CSV Export - ${new Date().toISOString()}`);
+      csvParts.push(`# Applied Filters: ${metadata.appliedFilters.length}`);
+      csvParts.push(`# Total Rows: ${result.totalRows}, Filtered Rows: ${result.filteredCount}`);
+      csvParts.push('');
+    }
     
-    // Data rows - batch processing for efficiency
-    for (const row of filteredRows) {
-      const rowCells = headers.map(header => this.escapeCSVCell(row[header] || ''));
-      csvParts.push(rowCells.join(','));
+    // Header row
+    csvParts.push(result.headers.map(h => this.escapeCSVCell(h)).join(','));
+    
+    // Data rows
+    for (const row of result.filteredRows) {
+      csvParts.push(row.map(cell => this.escapeCSVCell(cell)).join(','));
     }
     
     return csvParts.join('\n');
+  }
+
+  /**
+   * Escape CSV cell for safe export
+   */
+  private static escapeCSVCell(cell: string): string {
+    const str = String(cell);
+    
+    // Fast check - if no special chars, return as-is
+    let needsEscaping = false;
+    for (let i = 0; i < str.length; i++) {
+      const char = str[i];
+      if (char === ',' || char === '"' || char === '\n' || char === '\r') {
+        needsEscaping = true;
+        break;
+      }
+    }
+    
+    if (!needsEscaping) {
+      return str;
+    }
+    
+    return '"' + str.replace(/"/g, '""') + '"';
   }
 }

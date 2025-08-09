@@ -1,567 +1,510 @@
-import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  Alert,
+  CircularProgress,
+  Grid,
+  Paper,
+  Divider,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  IconButton,
+  Tooltip
+} from '@mui/material';
+import {
+  FilterList as FilterIcon,
+  Download as ExportIcon,
+  Refresh as RefreshIcon,
+  Info as InfoIcon
+} from '@mui/icons-material';
 import { AuthContext } from '../context/AuthContext';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
-
-// 🐱 Charlie's Material-UI imports - optimized for CUT interface
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
-import LinearProgress from '@mui/material/LinearProgress';
-import Grid from '@mui/material/Grid';
-import Paper from '@mui/material/Paper';
-import Chip from '@mui/material/Chip';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TablePagination from '@mui/material/TablePagination';
-import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
-import Badge from '@mui/material/Badge';
-import Switch from '@mui/material/Switch';
-import FormControlLabel from '@mui/material/FormControlLabel';
-
-// 🐱 Charlie's icons for excellent UX
-import SearchIcon from '@mui/icons-material/Search';
-import GetAppIcon from '@mui/icons-material/GetApp';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import TimerIcon from '@mui/icons-material/Timer';
-import SpeedIcon from '@mui/icons-material/Speed';
-import InfoIcon from '@mui/icons-material/Info';
-import RefreshIcon from '@mui/icons-material/Refresh';
-
-// Import Ruby's FilterPanel
 import FilterPanel from './FilterPanel';
 
 /**
- * QueryBuilder - Charlie's Main CUT Interface Component
+ * QueryBuilder - Main CUT (Cutty Ultimate Tool) interface
  * 
- * 🐱 Charlie's CUT Philosophy:
- * - THE most useful filtering experience possible
+ * Charlie's Feature Implementation:
  * - Smart performance strategies based on file size
- * - Real-time filtering for small files, manual for large
- * - Excellent user feedback and progressive enhancement
- * - Integration with Ruby's FilterPanel and existing patterns
- * 
- * Performance Features:
- * - Real-time filtering for files <10k rows
- * - Debounced updates for files 10k-50k rows  
- * - Manual "Apply Filters" for files >50k rows
- * - Smart caching and optimization strategies
+ * - Real-time filtering for small files (<10k rows)
+ * - Debounced updates for medium files (10k-50k rows) 
+ * - Manual "Apply Filters" for large files (>50k rows)
+ * - Export filtered data as new CSV files
+ * - Integration with existing authentication and file management
  */
-const QueryBuilder = () => {
-  const { fileId } = useParams();
-  const navigate = useNavigate();
+const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   const { token } = useContext(AuthContext);
-  
-  // File info state
-  const [fileName, setFileName] = useState('');
-  
-  // Core state
-  const [performanceStrategy, setPerformanceStrategy] = useState(null);
+  const { fileId: routeFileId } = useParams();
+  const navigate = useNavigate();
+  const [fileId, setFileId] = useState(propFileId || routeFileId || '');
+  const [fileInfo, setFileInfo] = useState(null);
+  const [columns, setColumns] = useState([]);
   const [filters, setFilters] = useState([]);
-  const [queryResults, setQueryResults] = useState(null);
+  const [filteredData, setFilteredData] = useState(null);
+  const [performance, setPerformance] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [filtering, setFiltering] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   
-  // Query state
-  const [logicalOperator, setLogicalOperator] = useState('AND');
-  const [autoUpdate, setAutoUpdate] = useState(true);
-  const [filtersChanged, setFiltersChanged] = useState(false);
-  
-  // Pagination
+  // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   
-  // Export state
-  const [exporting, setExporting] = useState(false);
-  
-  // Debounce timer for medium files
+  // Performance strategy state
+  const [updateStrategy, setUpdateStrategy] = useState('manual');
+  const [autoUpdate, setAutoUpdate] = useState(false);
   const [debounceTimer, setDebounceTimer] = useState(null);
 
-  // Authentication check
+  // Clear messages after 5 seconds
   useEffect(() => {
-    if (!token) {
-      navigate('/login');
-      return;
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(''), 5000);
+      return () => clearTimeout(timer);
     }
-  }, [token, navigate]);
+  }, [successMessage]);
 
-  // Fetch performance analysis on mount
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Initialize when fileId is provided
   useEffect(() => {
     if (fileId && token) {
-      fetchPerformanceStrategy();
-      fetchFileInfo();
+      initializeFile();
     }
   }, [fileId, token]);
 
-  /**
-   * 🐱 CHARLIE'S FILE INFO FETCHER
-   */
-  const fetchFileInfo = async () => {
-    try {
-      const response = await api.get('/files', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        const file = response.data.files.find(f => f.id === fileId);
-        if (file) {
-          setFileName(file.filename);
-        } else {
-          setError('File not found');
-          navigate('/manage_files');
-        }
-      }
-    } catch (err) {
-      console.error('🐱 File info fetch failed:', err);
-      setError('Failed to load file information');
-    }
-  };
-
   // Auto-update logic based on performance strategy
   useEffect(() => {
-    if (filters.length > 0 && autoUpdate && performanceStrategy) {
-      handleAutoUpdate();
-    } else if (filters.length === 0) {
-      // Clear results when no filters
-      setQueryResults(null);
-      setFiltersChanged(false);
-    }
-  }, [filters, logicalOperator, autoUpdate, performanceStrategy]);
-
-  /**
-   * 🐱 CHARLIE'S PERFORMANCE STRATEGY FETCHER
-   */
-  const fetchPerformanceStrategy = async () => {
-    try {
-      const response = await api.get(`/files/${fileId}/performance`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        setPerformanceStrategy(response.data);
-        
-        // Auto-disable auto-update for large files
-        if (response.data.strategy === 'manual') {
-          setAutoUpdate(false);
-        }
-        
-        console.log(`🐱 Performance strategy: ${response.data.strategy} for ${response.data.fileInfo.rowCount} rows`);
+    if (filters.length > 0 && updateStrategy === 'realtime' && autoUpdate) {
+      executeQuery(true);
+    } else if (filters.length > 0 && updateStrategy === 'debounced' && autoUpdate) {
+      // Clear previous timer
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
       }
-    } catch (err) {
-      console.error('🐱 Performance analysis failed:', err);
-    }
-  };
-
-  /**
-   * 🐱 CHARLIE'S AUTO-UPDATE LOGIC: Smart updating based on file size
-   */
-  const handleAutoUpdate = useCallback(() => {
-    if (!performanceStrategy) return;
-
-    // Clear existing timer
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
-
-    if (performanceStrategy.strategy === 'real-time') {
-      // Real-time updates for small files
+      
+      // Set new debounced timer
       const timer = setTimeout(() => {
-        executeQuery();
-      }, performanceStrategy.updateDelay);
+        executeQuery(true);
+      }, performance?.updateInterval || 500);
+      
       setDebounceTimer(timer);
-    } else if (performanceStrategy.strategy === 'debounced') {
-      // Debounced updates for medium files
-      setFiltersChanged(true);
-      const timer = setTimeout(() => {
-        executeQuery();
-      }, performanceStrategy.updateDelay);
-      setDebounceTimer(timer);
-    } else {
-      // Manual updates for large files - just mark as changed
-      setFiltersChanged(true);
     }
-  }, [filters, logicalOperator, performanceStrategy, debounceTimer]);
-
-  /**
-   * 🐱 CHARLIE'S MAIN QUERY EXECUTION
-   */
-  const executeQuery = async () => {
-    if (filters.length === 0) return;
-
-    try {
-      setLoading(true);
-      setError('');
-      setFiltersChanged(false);
-
-      const queryRequest = {
-        fileId,
-        filters: filters.map(f => ({
-          type: f.filterType,
-          columnName: f.columnName,
-          value: f.value
-        })),
-        logicalOperator,
-        limit: rowsPerPage,
-        offset: page * rowsPerPage
-      };
-
-      console.log(`🐱 Executing CUT query with ${filters.length} filters`);
-
-      const response = await api.post(`/files/${fileId}/query`, queryRequest, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        setQueryResults(response.data);
-        console.log(`🐱 Query completed: ${response.data.data.filteredRows}/${response.data.data.totalRows} rows match filters in ${response.data.metadata.processingTimeMs}ms`);
-      } else {
-        setError('Query failed');
+    
+    // Cleanup timer on unmount
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
       }
+    };
+  }, [filters, updateStrategy, autoUpdate, performance]);
+
+  const initializeFile = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      console.log(`🐱 Initializing CUT for file ${fileId}`);
+
+      // Load column metadata and performance strategy in parallel
+      const [columnsResponse, performanceResponse] = await Promise.all([
+        api.get(`/api/v1/files/${fileId}/columns`),
+        api.get(`/api/v1/files/${fileId}/performance`)
+      ]);
+
+      if (!columnsResponse.data.success) {
+        throw new Error(columnsResponse.data.error || 'Failed to load column metadata');
+      }
+
+      setColumns(columnsResponse.data.columns || []);
+      setFileInfo(columnsResponse.data.fileInfo || {});
+      
+      // Set up performance strategy
+      if (performanceResponse.data) {
+        setPerformance(performanceResponse.data);
+        setUpdateStrategy(performanceResponse.data.strategy);
+        setAutoUpdate(performanceResponse.data.strategy !== 'manual');
+        
+        console.log(`🐱 Performance strategy: ${performanceResponse.data.strategy} for ${performanceResponse.data.estimatedRows} rows`);
+      }
+
+      setSuccessMessage(`File loaded! ${columnsResponse.data.columns?.length || 0} columns detected. ${performanceResponse.data?.strategy === 'realtime' ? 'Real-time filtering enabled.' : performanceResponse.data?.strategy === 'debounced' ? 'Smart debounced filtering enabled.' : 'Manual filtering mode (large file).'}`);
+      
     } catch (err) {
-      console.error('🐱 Query execution failed:', err);
-      setError(err.response?.data?.message || 'Query execution failed');
+      console.error('🐱 File initialization failed:', err);
+      const message = err.response?.data?.message || err.message || 'Failed to initialize file';
+      setError(`File loading failed: ${message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * 🐱 CHARLIE'S EXPORT FUNCTIONALITY
-   */
-  const handleExport = async () => {
-    if (filters.length === 0) {
-      setError('Please add filters before exporting');
+  const executeQuery = useCallback(async (isAutoUpdate = false) => {
+    if (!fileId || filters.length === 0) {
+      setFilteredData(null);
       return;
     }
 
+    setFiltering(true);
+    setError('');
+
     try {
-      setExporting(true);
-      setError('');
+      console.log(`🐱 Executing query with ${filters.length} filters (auto: ${isAutoUpdate})`);
 
       const queryRequest = {
-        fileId,
-        filters: filters.map(f => ({
-          type: f.filterType,
-          columnName: f.columnName,
-          value: f.value
-        })),
-        logicalOperator
+        filters,
+        includePreview: true,
+        previewLimit: 100,
+        includeAnalysis: false
       };
 
-      console.log(`🐱 Exporting filtered data with ${filters.length} filters`);
+      const response = await api.post(`/api/v1/files/${fileId}/query`, queryRequest);
 
-      const response = await api.post(`/files/${fileId}/export/filtered`, queryRequest, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        setSuccessMessage(`🐱 ${response.data.message}`);
-        
-        // Trigger download
-        window.open(response.data.downloadUrl, '_blank');
-        
-        console.log(`🐱 Export completed: ${response.data.metadata.filteredRows} rows exported`);
-      } else {
-        setError('Export failed');
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Query execution failed');
       }
+
+      setFilteredData(response.data.data);
+      setPage(0); // Reset pagination
+      
+      if (!isAutoUpdate) {
+        const resultCount = response.data.data.filteredCount;
+        const totalCount = response.data.data.totalRows;
+        setSuccessMessage(`Query complete! ${resultCount.toLocaleString()} of ${totalCount.toLocaleString()} rows match your filters.`);
+      }
+
+    } catch (err) {
+      console.error('🐱 Query execution failed:', err);
+      const message = err.response?.data?.message || err.message || 'Query execution failed';
+      setError(`Query failed: ${message}`);
+      setFilteredData(null);
+    } finally {
+      setFiltering(false);
+    }
+  }, [fileId, filters]);
+
+  const handleFiltersChange = (newFilters) => {
+    console.log(`🐱 Filters updated: ${newFilters.length} active filters`);
+    setFilters(newFilters);
+  };
+
+  const handleManualRefresh = () => {
+    executeQuery(false);
+  };
+
+  const handleExport = async () => {
+    if (!filteredData || filteredData.filteredCount === 0) {
+      setError('No filtered data to export. Apply some filters first.');
+      return;
+    }
+
+    setExporting(true);
+    setError('');
+
+    try {
+      console.log(`🐱 Exporting ${filteredData.filteredCount} filtered rows`);
+
+      const exportRequest = {
+        filters,
+        includeMetadata: true
+      };
+
+      const response = await api.post(`/api/v1/files/${fileId}/export/filtered`, exportRequest);
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Export failed');
+      }
+
+      // Trigger download
+      const downloadUrl = response.data.downloadUrl;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = response.data.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setSuccessMessage(`Export complete! ${response.data.filename} has been saved to your files and downloaded.`);
+
     } catch (err) {
       console.error('🐱 Export failed:', err);
-      setError(err.response?.data?.message || 'Export failed');
+      const message = err.response?.data?.message || err.message || 'Export failed';
+      setError(`Export failed: ${message}`);
     } finally {
       setExporting(false);
     }
   };
 
-  /**
-   * 🐱 CHARLIE'S FILTER CHANGE HANDLER
-   */
-  const handleFiltersChange = (newFilters) => {
-    setFilters(newFilters);
-    setPage(0); // Reset pagination when filters change
-  };
-
-  /**
-   * 🐱 CHARLIE'S PAGINATION HANDLERS
-   */
-  const handleChangePage = (event, newPage) => {
+  const handlePageChange = (event, newPage) => {
     setPage(newPage);
-    if (queryResults) {
-      executeQuery(); // Fetch new page
-    }
   };
 
-  const handleChangeRowsPerPage = (event) => {
+  const handleRowsPerPageChange = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-    if (queryResults) {
-      executeQuery(); // Fetch with new page size
-    }
   };
 
-  /**
-   * 🐱 CHARLIE'S PERFORMANCE INDICATOR COMPONENT
-   */
-  const PerformanceIndicator = () => {
-    if (!performanceStrategy) return null;
+  const getPerformanceIndicator = () => {
+    if (!performance) return null;
 
-    const strategyColors = {
-      'real-time': 'success',
-      'debounced': 'warning', 
-      'manual': 'error'
+    const indicators = {
+      realtime: { color: 'success', label: 'Real-time', icon: '⚡' },
+      debounced: { color: 'info', label: 'Smart Updates', icon: '🧠' },
+      manual: { color: 'warning', label: 'Manual Mode', icon: '👆' }
     };
 
-    const strategyLabels = {
-      'real-time': 'Real-time',
-      'debounced': 'Smart Update',
-      'manual': 'Manual'
-    };
+    const indicator = indicators[updateStrategy] || indicators.manual;
 
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-        <SpeedIcon fontSize="small" />
-        <Chip 
-          label={strategyLabels[performanceStrategy.strategy]}
-          color={strategyColors[performanceStrategy.strategy]}
-          size="small"
-        />
-        <Typography variant="caption" color="text.secondary">
-          {performanceStrategy.fileInfo.rowCount.toLocaleString()} rows • 
-          {(performanceStrategy.fileInfo.size / (1024 * 1024)).toFixed(1)}MB
-        </Typography>
-        <Tooltip title={
-          <Box>
-            <Typography variant="caption" display="block">Performance Strategy:</Typography>
-            {performanceStrategy.recommendations.map((rec, i) => (
-              <Typography key={i} variant="caption" display="block">• {rec}</Typography>
-            ))}
-          </Box>
-        }>
-          <IconButton size="small">
-            <InfoIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </Box>
+      <Chip
+        size="small"
+        color={indicator.color}
+        label={`${indicator.icon} ${indicator.label}`}
+        sx={{ ml: 1 }}
+      />
     );
   };
 
-  /**
-   * 🐱 CHARLIE'S RESULTS TABLE COMPONENT
-   */
-  const ResultsTable = () => {
-    if (!queryResults || !queryResults.data.rows.length) {
-      return (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            {filters.length === 0 
-              ? "Add filters to see results" 
-              : "No rows match your filters"
-            }
-          </Typography>
-        </Paper>
-      );
-    }
-
-    const columns = queryResults.data.columns;
-    const rows = queryResults.data.rows;
-
-    return (
-      <Paper>
-        <TableContainer sx={{ maxHeight: 600 }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow>
-                {columns.map((column) => (
-                  <TableCell key={column} sx={{ fontWeight: 'bold', bgcolor: 'background.paper' }}>
-                    {column}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((row, index) => (
-                <TableRow key={index} hover>
-                  {columns.map((column) => (
-                    <TableCell key={column}>
-                      {row[column] || ''}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        
-        <TablePagination
-          component="div"
-          count={queryResults.data.filteredRows}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          rowsPerPageOptions={[10, 25, 50, 100]}
-        />
-      </Paper>
-    );
-  };
+  const displayedRows = filteredData?.filteredRows ? 
+    filteredData.filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : [];
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SearchIcon color="primary" />
-          CUT - CSV Query Tool
-        </Typography>
-        <Typography variant="subtitle1" color="text.secondary">
-          Smart filtering for <strong>{fileName}</strong>
-        </Typography>
-        <PerformanceIndicator />
-      </Box>
+      <Typography variant="h4" component="h1" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+        🔨 CUT - Cutty Ultimate Tool
+        {getPerformanceIndicator()}
+        {(onClose || routeFileId) && (
+          <Button 
+            onClick={onClose || (() => navigate('/manage_files'))} 
+            sx={{ ml: 'auto' }} 
+            variant="outlined"
+          >
+            Back to Files
+          </Button>
+        )}
+      </Typography>
+      
+      <Typography variant="h6" component="h2" color="text.secondary" sx={{ mb: 3 }}>
+        The ultimate tool for cutting data into the shape of your dreams
+      </Typography>
 
-      {/* Alerts */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+        <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
-      
+
       {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage('')}>
+        <Alert severity="success" sx={{ mb: 2 }}>
           {successMessage}
         </Alert>
       )}
 
-      <Grid container spacing={3}>
-        {/* Left Panel - Filters */}
-        <Grid item xs={12} md={4}>
-          <FilterPanel fileId={fileId} onFiltersChange={handleFiltersChange} />
-          
-          {/* Query Controls */}
-          {filters.length > 0 && (
-            <Card sx={{ mt: 2 }}>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>Loading file analysis...</Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={3}>
+          {/* File Info Panel */}
+          {fileInfo && (
+            <Grid item xs={12}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    📄 File Information
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="body2" color="text.secondary">
+                        Filename: <strong>{fileInfo.filename}</strong>
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="body2" color="text.secondary">
+                        Columns: <strong>{columns.length}</strong>
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="body2" color="text.secondary">
+                        Estimated Rows: <strong>{performance?.estimatedRows?.toLocaleString() || 'Unknown'}</strong>
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Filter Panel */}
+          <Grid item xs={12} lg={4}>
+            <FilterPanel
+              columns={columns}
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              updateStrategy={updateStrategy}
+              isFiltering={filtering}
+            />
+          </Grid>
+
+          {/* Results Panel */}
+          <Grid item xs={12} lg={8}>
+            <Card>
               <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Query Controls
-                </Typography>
-                
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel>Logic</InputLabel>
-                  <Select
-                    value={logicalOperator}
-                    label="Logic"
-                    onChange={(e) => setLogicalOperator(e.target.value)}
-                  >
-                    <MenuItem value="AND">AND (all filters must match)</MenuItem>
-                    <MenuItem value="OR">OR (any filter can match)</MenuItem>
-                  </Select>
-                </FormControl>
-
-                {performanceStrategy?.strategy !== 'real-time' && (
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={autoUpdate}
-                        onChange={(e) => setAutoUpdate(e.target.checked)}
-                      />
-                    }
-                    label="Auto-update results"
-                  />
-                )}
-
-                {/* Manual Apply Button for large files or when auto-update is off */}
-                {(!autoUpdate || filtersChanged) && (
-                  <Box sx={{ mt: 2 }}>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      onClick={executeQuery}
-                      disabled={loading}
-                      startIcon={loading ? <CircularProgress size={20} /> : <RefreshIcon />}
-                    >
-                      {loading ? 'Applying Filters...' : 'Apply Filters'}
-                    </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    🎯 Filtered Results
+                    {filteredData && (
+                      <Typography component="span" color="text.secondary" sx={{ ml: 2, fontSize: '0.9em' }}>
+                        {filteredData.filteredCount.toLocaleString()} of {filteredData.totalRows.toLocaleString()} rows
+                      </Typography>
+                    )}
+                  </Typography>
+                  
+                  <Box>
+                    {updateStrategy === 'manual' && (
+                      <Tooltip title="Apply current filters">
+                        <IconButton 
+                          onClick={handleManualRefresh}
+                          disabled={filtering || filters.length === 0}
+                          color="primary"
+                        >
+                          {filtering ? <CircularProgress size={20} /> : <RefreshIcon />}
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    
+                    <Tooltip title="Export filtered data as CSV">
+                      <span>
+                        <IconButton
+                          onClick={handleExport}
+                          disabled={exporting || !filteredData || filteredData.filteredCount === 0}
+                          color="secondary"
+                        >
+                          {exporting ? <CircularProgress size={20} /> : <ExportIcon />}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Box>
-                )}
+                </Box>
 
-                {/* Export Button */}
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  onClick={handleExport}
-                  disabled={exporting || filters.length === 0}
-                  startIcon={exporting ? <CircularProgress size={20} /> : <GetAppIcon />}
-                  sx={{ mt: 2 }}
-                >
-                  {exporting ? 'Exporting...' : 'CUT IT! (Export)'}
-                </Button>
+                {filters.length === 0 ? (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <FilterIcon sx={{ fontSize: 60, color: 'text.secondary' }} />
+                    <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+                      Add filters to start cutting your data
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Use the filter panel on the left to create intelligent filters based on your column types
+                    </Typography>
+                  </Box>
+                ) : filteredData ? (
+                  <>
+                    {/* Filter Summary */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Active Filters ({filters.length}):
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {filters.map((filter, index) => (
+                          <Chip
+                            key={index}
+                            size="small"
+                            label={`${filter.column} ${filter.operator} ${filter.value || ''}`}
+                            variant="outlined"
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+
+                    <Divider sx={{ mb: 2 }} />
+
+                    {/* Results Table */}
+                    {displayedRows.length > 0 ? (
+                      <>
+                        <TableContainer component={Paper} sx={{ maxHeight: 600 }}>
+                          <Table stickyHeader size="small">
+                            <TableHead>
+                              <TableRow>
+                                {filteredData.headers.map((header, index) => (
+                                  <TableCell key={index} sx={{ fontWeight: 'bold' }}>
+                                    {header}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {displayedRows.map((row, rowIndex) => (
+                                <TableRow key={rowIndex} hover>
+                                  {row.map((cell, cellIndex) => (
+                                    <TableCell key={cellIndex}>
+                                      {cell}
+                                    </TableCell>
+                                  ))}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+
+                        <TablePagination
+                          rowsPerPageOptions={[25, 50, 100]}
+                          component="div"
+                          count={Math.min(filteredData.filteredCount, filteredData.filteredRows.length)}
+                          rowsPerPage={rowsPerPage}
+                          page={page}
+                          onPageChange={handlePageChange}
+                          onRowsPerPageChange={handleRowsPerPageChange}
+                        />
+
+                        {filteredData.filteredRows.length < filteredData.filteredCount && (
+                          <Alert severity="info" sx={{ mt: 2 }}>
+                            <InfoIcon sx={{ mr: 1 }} />
+                            Showing preview of first {filteredData.filteredRows.length} rows. 
+                            Export to get all {filteredData.filteredCount.toLocaleString()} filtered rows.
+                          </Alert>
+                        )}
+                      </>
+                    ) : (
+                      <Box sx={{ textAlign: 'center', py: 4 }}>
+                        <Typography variant="h6" color="text.secondary">
+                          No rows match your current filters
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Try adjusting your filter criteria or removing some filters
+                        </Typography>
+                      </Box>
+                    )}
+                  </>
+                ) : filtering ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress />
+                    <Typography sx={{ ml: 2 }}>Applying filters...</Typography>
+                  </Box>
+                ) : null}
               </CardContent>
             </Card>
-          )}
+          </Grid>
         </Grid>
-
-        {/* Right Panel - Results */}
-        <Grid item xs={12} md={8}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h6">
-                  Query Results
-                  {queryResults && (
-                    <Badge 
-                      badgeContent={queryResults.data.filteredRows} 
-                      color="primary" 
-                      sx={{ ml: 1 }}
-                    />
-                  )}
-                </Typography>
-                
-                {queryResults && (
-                  <Chip 
-                    icon={<TimerIcon />}
-                    label={`${queryResults.metadata.processingTimeMs}ms`}
-                    size="small"
-                    variant="outlined"
-                  />
-                )}
-              </Box>
-
-              {loading && (
-                <Box sx={{ mb: 2 }}>
-                  <LinearProgress />
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                    Processing filters...
-                  </Typography>
-                </Box>
-              )}
-
-              {queryResults && (
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  Showing {queryResults.data.filteredRows.toLocaleString()} of {queryResults.data.totalRows.toLocaleString()} rows
-                  {queryResults.data.filteredRows !== queryResults.data.totalRows && (
-                    <> ({((queryResults.data.filteredRows / queryResults.data.totalRows) * 100).toFixed(1)}% match)</>
-                  )}
-                </Alert>
-              )}
-
-              <ResultsTable />
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      )}
     </Box>
   );
 };

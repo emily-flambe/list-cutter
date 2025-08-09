@@ -13,12 +13,12 @@
  */
 
 import { Hono } from 'hono';
-import type { Env, CrosstabRequest, FieldsResponse, CrosstabResponse, CrosstabExportRequest, CrosstabExportResponse, ColumnsAnalysisResponse, QueryRequest, QueryResult } from '../types';
+import type { Env, CrosstabRequest, FieldsResponse, CrosstabResponse, CrosstabExportRequest, CrosstabExportResponse, ColumnsAnalysisResponse, FilterConfiguration } from '../types';
 import { validateFile } from '../services/security/file-validator';
 import { validateToken } from '../services/auth/jwt';
 import { CrosstabProcessor } from '../services/crosstab-processor';
 import { DataTypeDetector } from '../services/data-type-detector';
-import { QueryProcessor } from '../services/query-processor';
+import { QueryProcessor, type QueryRequest, type QueryResult, type ExportRequest, type ExportResult } from '../services/query-processor';
 
 const files = new Hono<{ Bindings: Env }>();
 
@@ -1215,9 +1215,9 @@ files.get('/:fileId/performance', async (c) => {
     console.log(`🐱 Performance analysis requested for file ${fileId}`);
 
     // Analyze file performance using QueryProcessor
-    const analysis = await QueryProcessor.analyzeFilePerformance(fileId, c.env, userId);
+    const analysis = await QueryProcessor.getPerformanceStrategy(fileId, c.env, userId);
 
-    console.log(`🐱 Performance analysis complete: ${analysis.strategy} strategy recommended for ${analysis.fileInfo.rowCount} rows`);
+    console.log(`🐱 Performance analysis complete: ${analysis.strategy} strategy recommended for ${analysis.estimatedRows} rows`);
 
     return c.json({
       success: true,

@@ -1,318 +1,404 @@
 /**
- * QueryProcessor - Charlie's Query Execution Service
+ * QueryProcessor - Orchestrates CUT query execution
  * 
- * 🐱 Charlie's Query Philosophy:
- * - Orchestrate file retrieval + filtering with excellent performance
- * - Smart caching and optimization strategies  
- * - Comprehensive error handling and user feedback
- * - Integration with existing security and auth patterns
+ * Charlie's Query Orchestration:
+ * - Coordinates file retrieval, filtering, and analysis
+ * - Smart caching and performance optimization
+ * - Export functionality with metadata preservation
+ * - Integration with existing file management system
  * 
- * This service coordinates between D1 database, R2 storage, and FilterProcessor
+ * Performance Targets: <1s file retrieval, <3s filtering, <500ms export
  */
 
-import { FilterProcessor } from './filter-processor';
+import { FilterProcessor, type FilteredResult } from './filter-processor';
 import { DataTypeDetector } from './data-type-detector';
-import type { QueryRequest, QueryResult, Env } from '../types';
+import type { FilterConfiguration, ColumnsAnalysisResponse } from '../types';
+
+export interface QueryRequest {
+  filters: FilterConfiguration[];
+  includePreview?: boolean;
+  previewLimit?: number;
+  includeAnalysis?: boolean;
+}
+
+export interface QueryResult {
+  success: boolean;
+  data?: FilteredResult;
+  analysis?: ColumnsAnalysisResponse;
+  performance?: {
+    fileRetrievalMs: number;
+    filteringMs: number;
+    totalMs: number;
+  };
+  error?: string;
+}
+
+export interface ExportRequest {
+  filters: FilterConfiguration[];
+  filename?: string;
+  includeMetadata?: boolean;
+}
+
+export interface ExportResult {
+  success: boolean;
+  fileId?: string;
+  filename?: string;
+  downloadUrl?: string;
+  csvContent?: string;
+  metadata?: {
+    originalFile: string;
+    appliedFilters: FilterConfiguration[];
+    exportedAt: string;
+    totalRows: number;
+    filteredRows: number;
+  };
+  error?: string;
+}
 
 export class QueryProcessor {
   /**
-   * 🐱 CHARLIE'S MAIN QUERY EXECUTION: Complete file-to-results pipeline
-   * Handles authentication, file retrieval, and filtering orchestration
+   * Execute a query with filters against a CSV file
+   * Orchestrates file retrieval and filtering
    */
   static async executeQuery(
+    fileId: string,
     request: QueryRequest,
-    env: Env,
-    userId?: string
+    env: any,
+    userId: string
   ): Promise<QueryResult> {
     const startTime = Date.now();
-    
+    const performance = {
+      fileRetrievalMs: 0,
+      filteringMs: 0,
+      totalMs: 0
+    };
+
     try {
-      console.log(`🐱 Starting query execution for file ${request.fileId} with ${request.filters.length} filters`);
-      
-      // Step 1: Validate request
-      this.validateQueryRequest(request);
-      
-      // Step 2: Retrieve file metadata from D1
-      const dbStart = Date.now();
-      const fileRecord = await this.getFileRecord(request.fileId, env, userId);
-      const dbTime = Date.now() - dbStart;
-      
-      if (!fileRecord) {
-        throw new Error(`File with ID ${request.fileId} not found or access denied`);
-      }
-      
-      // Step 3: Retrieve file content from R2
-      const r2Start = Date.now();
-      const csvContent = await this.getFileContent(fileRecord.r2_key, env);
-      const r2Time = Date.now() - r2Start;
-      
-      // Step 4: Execute filtering using FilterProcessor
-      const filterStart = Date.now();
-      const result = await FilterProcessor.filterCSVData(
+      console.log(`🐱 Executing query for file ${fileId} with ${request.filters?.length || 0} filters`);
+
+      // 1. Retrieve file content
+      const fileRetrievalStart = Date.now();
+      const csvContent = await this.retrieveFileContent(fileId, env, userId);
+      performance.fileRetrievalMs = Date.now() - fileRetrievalStart;
+
+      // 2. Apply filters
+      const filteringStart = Date.now();
+      const filteredResult = await FilterProcessor.applyFilters(
         csvContent,
-        request.filters,
-        request.logicalOperator || 'AND',
-        {
-          limit: request.limit,
-          offset: request.offset
-        }
+        request.filters || [],
+        request.includePreview || false,
+        request.previewLimit || 100
       );
-      
-      // Step 5: Enhance result with additional metadata
-      const enhancedResult: QueryResult = {
-        ...result,
-        metadata: {
-          ...result.metadata,
-          performance: {
-            ...result.metadata.performance,
-            database_query_ms: dbTime,
-            r2_retrieval_ms: r2Time,
-            file_read_ms: result.metadata.performance.file_read_ms,
-            filtering_ms: result.metadata.performance.filtering_ms,
-            total_time_ms: Date.now() - startTime,
-            throughput_mbps: result.metadata.performance.throughput_mbps
-          }
+      performance.filteringMs = Date.now() - filteringStart;
+
+      // 3. Include column analysis if requested
+      let analysis: ColumnsAnalysisResponse | undefined;
+      if (request.includeAnalysis) {
+        try {
+          const columnMetadata = DataTypeDetector.analyzeColumns(csvContent);
+          analysis = {
+            success: true,
+            columns: columnMetadata.columns,
+            rowCount: columnMetadata.rowCount,
+            processingTimeMs: columnMetadata.processingTimeMs
+          };
+        } catch (analysisError) {
+          console.warn('🐱 Column analysis failed:', analysisError);
+          // Continue without analysis rather than failing the whole query
         }
+      }
+
+      performance.totalMs = Date.now() - startTime;
+
+      console.log(`🐱 Query completed: ${filteredResult.filteredCount}/${filteredResult.totalRows} rows in ${performance.totalMs}ms`);
+
+      return {
+        success: true,
+        data: filteredResult,
+        analysis,
+        performance
       };
-      
-      const totalTime = Date.now() - startTime;
-      console.log(`🐱 Query completed successfully in ${totalTime}ms: ${result.data.filteredRows} matching rows`);
-      
-      return enhancedResult;
     } catch (error) {
-      const processingTime = Date.now() - startTime;
-      console.error(`🐱 Query execution failed after ${processingTime}ms:`, error);
-      throw new Error(`Query execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      performance.totalMs = Date.now() - startTime;
+      console.error('🐱 Query execution failed:', error);
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Query execution failed',
+        performance
+      };
     }
   }
 
   /**
-   * 🐱 CHARLIE'S FILE RECORD RETRIEVAL: Get file metadata with security checks
-   */
-  private static async getFileRecord(
-    fileId: string,
-    env: Env,
-    userId?: string
-  ): Promise<any> {
-    let query: string;
-    let params: any[];
-    
-    if (userId) {
-      // Authenticated user - check ownership or public files
-      query = `
-        SELECT id, filename, size, content_type, r2_key, is_public, user_id,
-               upload_date, last_accessed, file_hash
-        FROM files 
-        WHERE id = ? AND (user_id = ? OR is_public = 1)
-      `;
-      params = [fileId, userId];
-    } else {
-      // Anonymous user - only public files
-      query = `
-        SELECT id, filename, size, content_type, r2_key, is_public, user_id,
-               upload_date, last_accessed, file_hash
-        FROM files 
-        WHERE id = ? AND is_public = 1
-      `;
-      params = [fileId];
-    }
-    
-    const result = await env.DB.prepare(query).bind(...params).first();
-    
-    if (result) {
-      // Update last_accessed timestamp
-      await env.DB.prepare(`
-        UPDATE files SET last_accessed = ? WHERE id = ?
-      `).bind(new Date().toISOString(), fileId).run();
-    }
-    
-    return result;
-  }
-
-  /**
-   * 🐱 CHARLIE'S FILE CONTENT RETRIEVAL: Get CSV content from R2 with optimization
-   */
-  private static async getFileContent(r2Key: string, env: Env): Promise<string> {
-    if (!env.FILE_STORAGE) {
-      throw new Error('R2 storage not configured');
-    }
-    
-    try {
-      const object = await env.FILE_STORAGE.get(r2Key);
-      
-      if (!object) {
-        throw new Error(`File not found in storage: ${r2Key}`);
-      }
-      
-      const content = await object.text();
-      
-      if (!content || content.length === 0) {
-        throw new Error('File content is empty');
-      }
-      
-      return content;
-    } catch (error) {
-      console.error(`🐱 R2 retrieval failed for key ${r2Key}:`, error);
-      throw new Error(`Failed to retrieve file content: ${error instanceof Error ? error.message : 'Storage error'}`);
-    }
-  }
-
-  /**
-   * 🐱 CHARLIE'S REQUEST VALIDATION: Ensure query request is valid
-   */
-  private static validateQueryRequest(request: QueryRequest): void {
-    if (!request.fileId) {
-      throw new Error('fileId is required');
-    }
-    
-    if (!request.filters || !Array.isArray(request.filters)) {
-      throw new Error('filters must be an array');
-    }
-    
-    if (request.filters.length === 0) {
-      throw new Error('At least one filter is required');
-    }
-    
-    // Validate each filter
-    for (const filter of request.filters) {
-      if (!filter.columnName) {
-        throw new Error('Filter columnName is required');
-      }
-      
-      if (!filter.type) {
-        throw new Error('Filter type is required');
-      }
-      
-      if (filter.value === undefined || filter.value === null) {
-        // Only allow null/undefined for null-check filters
-        if (!['is_null', 'not_null'].includes(filter.type)) {
-          throw new Error(`Filter value is required for type: ${filter.type}`);
-        }
-      }
-    }
-    
-    // Validate logical operator
-    if (request.logicalOperator && !['AND', 'OR'].includes(request.logicalOperator)) {
-      throw new Error('logicalOperator must be "AND" or "OR"');
-    }
-    
-    // Validate pagination parameters
-    if (request.limit !== undefined && (request.limit < 1 || request.limit > 10000)) {
-      throw new Error('limit must be between 1 and 10000');
-    }
-    
-    if (request.offset !== undefined && request.offset < 0) {
-      throw new Error('offset must be non-negative');
-    }
-  }
-
-  /**
-   * 🐱 CHARLIE'S EXPORT QUERY: Generate filtered CSV for download
+   * Export filtered data as a new CSV file
+   * Saves to R2 storage and file management system
    */
   static async exportFilteredData(
-    request: QueryRequest,
-    env: Env,
-    userId?: string,
-    filename?: string
-  ): Promise<{
-    csvContent: string;
-    metadata: {
-      originalFilename: string;
-      filteredRows: number;
-      totalRows: number;
-      filtersApplied: number;
-      generatedAt: string;
-    };
-  }> {
-    console.log(`🐱 Starting filtered data export for file ${request.fileId}`);
-    
-    // Execute query without pagination to get all matching rows
-    const exportRequest = {
-      ...request,
-      limit: undefined,
-      offset: undefined
-    };
-    
-    const queryResult = await this.executeQuery(exportRequest, env, userId);
-    
-    // Generate CSV content using FilterProcessor
-    const csvContent = FilterProcessor.generateFilteredCSV(
-      queryResult.data.columns,
-      queryResult.data.rows
-    );
-    
-    // Get original file info
-    const fileRecord = await this.getFileRecord(request.fileId, env, userId);
-    
-    return {
-      csvContent,
-      metadata: {
-        originalFilename: fileRecord?.filename || 'unknown.csv',
-        filteredRows: queryResult.data.filteredRows,
-        totalRows: queryResult.data.totalRows,
-        filtersApplied: request.filters.length,
-        generatedAt: new Date().toISOString()
+    fileId: string,
+    request: ExportRequest,
+    env: any,
+    userId: string
+  ): Promise<ExportResult> {
+    const startTime = Date.now();
+
+    try {
+      console.log(`🐱 Exporting filtered data for file ${fileId} with ${request.filters?.length || 0} filters`);
+
+      // 1. Get original file metadata
+      const originalFile = await this.getFileMetadata(fileId, env, userId);
+      if (!originalFile) {
+        throw new Error('Original file not found or access denied');
       }
-    };
+
+      // 2. Retrieve and filter content
+      const csvContent = await this.retrieveFileContent(fileId, env, userId);
+      const filteredResult = await FilterProcessor.applyFilters(
+        csvContent,
+        request.filters || [],
+        false // Get all filtered rows for export
+      );
+
+      // 3. Generate export CSV with metadata
+      const metadata = {
+        originalFile: originalFile.filename,
+        appliedFilters: request.filters || [],
+        exportedAt: new Date().toISOString(),
+        totalRows: filteredResult.totalRows,
+        filteredRows: filteredResult.filteredCount
+      };
+
+      const csvExportContent = FilterProcessor.exportFilteredCSV(
+        filteredResult,
+        request.includeMetadata ? { appliedFilters: request.filters } : undefined
+      );
+
+      // 4. Generate filename
+      const timestamp = new Date().toISOString().split('T')[0];
+      const baseName = originalFile.filename.replace('.csv', '');
+      const filterSuffix = request.filters?.length > 0 ? `_filtered_${request.filters.length}` : '_cut';
+      const filename = request.filename || `${baseName}${filterSuffix}_${timestamp}.csv`;
+
+      // 5. Save to R2 storage
+      const newFileId = this.generateFileId();
+      const r2Key = `csv/${userId}/${newFileId}.csv`;
+      
+      await env.BUCKET.put(r2Key, csvExportContent, {
+        httpMetadata: {
+          contentType: 'text/csv',
+          contentDisposition: `attachment; filename="${filename}"`
+        }
+      });
+
+      // 6. Save metadata to D1 database
+      const insertResult = await env.DB.prepare(`
+        INSERT INTO files (
+          id, user_id, filename, file_size, content_type, 
+          r2_key, upload_date, metadata
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        newFileId,
+        userId,
+        filename,
+        csvExportContent.length,
+        'text/csv',
+        r2Key,
+        new Date().toISOString(),
+        JSON.stringify({
+          exportType: 'CUT_filtered',
+          originalFileId: fileId,
+          appliedFilters: request.filters?.length || 0,
+          ...metadata
+        })
+      ).run();
+
+      if (!insertResult.success) {
+        throw new Error('Failed to save export metadata to database');
+      }
+
+      // 7. Generate download URL
+      const downloadUrl = `/api/v1/files/${newFileId}/download`;
+
+      const processingTime = Date.now() - startTime;
+      console.log(`🐱 Export completed: ${filename} (${filteredResult.filteredCount} rows) in ${processingTime}ms`);
+
+      return {
+        success: true,
+        fileId: newFileId,
+        filename,
+        downloadUrl,
+        csvContent: csvExportContent,
+        metadata
+      };
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      console.error('🐱 Export failed:', error);
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Export failed'
+      };
+    }
   }
 
   /**
-   * 🐱 CHARLIE'S PERFORMANCE ANALYSIS: Get optimal strategy for file
+   * Get performance strategy for a file (real-time vs manual updates)
    */
-  static async analyzeFilePerformance(
+  static async getPerformanceStrategy(
     fileId: string,
-    env: Env,
-    userId?: string
+    env: any,
+    userId: string
   ): Promise<{
-    strategy: 'real-time' | 'debounced' | 'manual';
-    updateDelay: number;
-    fileInfo: {
-      size: number;
-      rowCount: number;
-      filename: string;
-    };
-    recommendations: string[];
+    strategy: 'realtime' | 'debounced' | 'manual';
+    fileSizeMB: number;
+    estimatedRows: number;
+    updateInterval?: number;
   }> {
-    // Get file metadata
-    const fileRecord = await this.getFileRecord(fileId, env, userId);
-    
-    if (!fileRecord) {
-      throw new Error(`File with ID ${fileId} not found or access denied`);
+    try {
+      const csvContent = await this.retrieveFileContent(fileId, env, userId);
+      const fileSizeMB = csvContent.length / (1024 * 1024);
+      const estimatedRows = (csvContent.match(/\n/g) || []).length;
+
+      // Performance strategy rules from architecture
+      if (estimatedRows < 10000) {
+        return {
+          strategy: 'realtime',
+          fileSizeMB,
+          estimatedRows
+        };
+      } else if (estimatedRows < 50000) {
+        return {
+          strategy: 'debounced',
+          fileSizeMB,
+          estimatedRows,
+          updateInterval: 500 // 500ms debounce
+        };
+      } else {
+        return {
+          strategy: 'manual',
+          fileSizeMB,
+          estimatedRows
+        };
+      }
+    } catch (error) {
+      console.error('🐱 Performance strategy analysis failed:', error);
+      // Default to manual for unknown files
+      return {
+        strategy: 'manual',
+        fileSizeMB: 0,
+        estimatedRows: 0
+      };
     }
-    
-    // Get file content to analyze row count (use Ruby's fast method)
-    const csvContent = await this.getFileContent(fileRecord.r2_key, env);
-    const { rowCount } = FilterProcessor.extractFields(csvContent);
-    
-    // Get performance strategy
-    const strategy = FilterProcessor.analyzePerformanceStrategy(rowCount);
-    
-    // Generate recommendations
-    const recommendations: string[] = [];
-    
-    if (strategy.strategy === 'real-time') {
-      recommendations.push('File is small - filters will update as you type');
-      recommendations.push('Excellent performance expected for all operations');
-    } else if (strategy.strategy === 'debounced') {
-      recommendations.push('Medium file - filters update after 500ms delay');
-      recommendations.push('Good performance with minor delay for better UX');
-    } else {
-      recommendations.push('Large file - use "Apply Filters" button for best performance');
-      recommendations.push('Consider adding more specific filters to reduce processing time');
+  }
+
+  /**
+   * Retrieve CSV content from R2 storage
+   */
+  private static async retrieveFileContent(
+    fileId: string,
+    env: any,
+    userId: string
+  ): Promise<string> {
+    try {
+      // Get file metadata from D1
+      const fileRecord = await env.DB.prepare(
+        'SELECT * FROM files WHERE id = ? AND user_id = ?'
+      ).bind(fileId, userId).first();
+
+      if (!fileRecord) {
+        // Check if this is a reference/demo file
+        if (fileId === 'reference-squirrel') {
+          // Handle squirrel reference data
+          const squirrelData = await env.BUCKET.get('reference-data/squirrel-data-full.csv');
+          if (squirrelData) {
+            return await squirrelData.text();
+          }
+        }
+        throw new Error('File not found or access denied');
+      }
+
+      // Retrieve from R2 storage
+      const r2Object = await env.BUCKET.get(fileRecord.r2_key);
+      if (!r2Object) {
+        throw new Error('File content not found in storage');
+      }
+
+      return await r2Object.text();
+    } catch (error) {
+      console.error('🐱 File retrieval failed:', error);
+      throw new Error(`Failed to retrieve file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-    
-    if (rowCount > 50000) {
-      recommendations.push('For better performance, consider filtering to reduce data size first');
+  }
+
+  /**
+   * Get file metadata from D1 database
+   */
+  private static async getFileMetadata(
+    fileId: string,
+    env: any,
+    userId: string
+  ): Promise<any> {
+    try {
+      const fileRecord = await env.DB.prepare(
+        'SELECT * FROM files WHERE id = ? AND user_id = ?'
+      ).bind(fileId, userId).first();
+
+      return fileRecord;
+    } catch (error) {
+      console.error('🐱 File metadata retrieval failed:', error);
+      return null;
     }
-    
-    return {
-      ...strategy,
-      fileInfo: {
-        size: fileRecord.size,
-        rowCount: rowCount,
-        filename: fileRecord.filename
-      },
-      recommendations
-    };
+  }
+
+  /**
+   * Generate unique file ID
+   */
+  private static generateFileId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+  }
+
+  /**
+   * Validate filter configuration
+   */
+  static validateFilters(filters: FilterConfiguration[]): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!Array.isArray(filters)) {
+      errors.push('Filters must be an array');
+      return { valid: false, errors };
+    }
+
+    if (filters.length > 10) {
+      errors.push('Maximum 10 filters allowed per query');
+    }
+
+    for (let i = 0; i < filters.length; i++) {
+      const filter = filters[i];
+      
+      if (!filter.column || typeof filter.column !== 'string') {
+        errors.push(`Filter ${i + 1}: Column name is required`);
+      }
+
+      if (!filter.operator || typeof filter.operator !== 'string') {
+        errors.push(`Filter ${i + 1}: Operator is required`);
+      }
+
+      if (filter.value === undefined || filter.value === null) {
+        // Allow null/undefined for null checks
+        if (!['is_null', 'not_null'].includes(filter.operator)) {
+          errors.push(`Filter ${i + 1}: Value is required for operator '${filter.operator}'`);
+        }
+      }
+
+      if (filter.dataType && !['TEXT', 'INTEGER', 'DECIMAL', 'DATE', 'BOOLEAN', 'CATEGORICAL'].includes(filter.dataType)) {
+        errors.push(`Filter ${i + 1}: Invalid data type '${filter.dataType}'`);
+      }
+
+      if (filter.logicalOperator && !['AND', 'OR'].includes(filter.logicalOperator)) {
+        errors.push(`Filter ${i + 1}: Invalid logical operator '${filter.logicalOperator}'`);
+      }
+    }
+
+    return { valid: errors.length === 0, errors };
   }
 }
