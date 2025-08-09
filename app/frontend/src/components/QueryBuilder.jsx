@@ -58,6 +58,8 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(!token);
+  const [demoMode, setDemoMode] = useState(false);
   
   // Pagination state
   const [page, setPage] = useState(0);
@@ -83,10 +85,20 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     }
   }, [error]);
 
-  // Initialize when fileId is provided
+  // Update authentication state when token changes
   useEffect(() => {
-    if (fileId && token) {
-      initializeFile();
+    setIsAnonymous(!token);
+  }, [token]);
+
+  // Initialize when component mounts or fileId changes
+  useEffect(() => {
+    // If no fileId and anonymous, use demo mode with squirrel data
+    if (!fileId && !token) {
+      setDemoMode(true);
+      setFileId('demo-squirrel');
+      initializeFile('demo-squirrel');
+    } else if (fileId) {
+      initializeFile(fileId);
     }
   }, [fileId, token]);
 
@@ -116,17 +128,39 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     };
   }, [filters, updateStrategy, autoUpdate, performance]);
 
-  const initializeFile = async () => {
+  const initializeFile = async (targetFileId) => {
+    const actualFileId = targetFileId || fileId;
     setLoading(true);
     setError('');
     
     try {
-      console.log(`🐱 Initializing CUT for file ${fileId}`);
+      console.log(`🐱 Initializing CUT for file ${actualFileId} (demo: ${demoMode})`);
+
+      let columnsUrl, performanceUrl;
+      
+      // Handle demo mode for anonymous users
+      if (actualFileId === 'demo-squirrel' && isAnonymous) {
+        columnsUrl = '/api/v1/public/demo/squirrel/columns';
+        performanceUrl = '/api/v1/public/demo/squirrel/performance';
+        setFileInfo({
+          filename: 'NYC Central Park Squirrel Census (Demo Data)',
+          id: 'demo-squirrel',
+          size: 0
+        });
+      } else if (actualFileId === 'reference-squirrel' && token) {
+        columnsUrl = '/api/v1/files/reference/squirrel/columns';
+        performanceUrl = '/api/v1/files/reference/squirrel/performance';
+      } else {
+        columnsUrl = `/api/v1/files/${actualFileId}/columns`;
+        performanceUrl = `/api/v1/files/${actualFileId}/performance`;
+      }
 
       // Load column metadata and performance strategy in parallel
       const [columnsResponse, performanceResponse] = await Promise.all([
-        api.get(`/api/v1/files/${fileId}/columns`),
-        api.get(`/api/v1/files/${fileId}/performance`)
+        api.get(columnsUrl),
+        api.get(performanceUrl).catch(() => ({
+          data: { strategy: 'realtime', estimatedRows: 3000, fileSizeMB: 0.5 }
+        })) // Default for demo mode
       ]);
 
       if (!columnsResponse.data.success) {
@@ -134,7 +168,9 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       }
 
       setColumns(columnsResponse.data.columns || []);
-      setFileInfo(columnsResponse.data.fileInfo || {});
+      if (!demoMode) {
+        setFileInfo(columnsResponse.data.fileInfo || {});
+      }
       
       // Set up performance strategy
       if (performanceResponse.data) {
@@ -145,7 +181,10 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
         console.log(`🐱 Performance strategy: ${performanceResponse.data.strategy} for ${performanceResponse.data.estimatedRows} rows`);
       }
 
-      setSuccessMessage(`File loaded! ${columnsResponse.data.columns?.length || 0} columns detected. ${performanceResponse.data?.strategy === 'realtime' ? 'Real-time filtering enabled.' : performanceResponse.data?.strategy === 'debounced' ? 'Smart debounced filtering enabled.' : 'Manual filtering mode (large file).'}`);
+      const modeMessage = demoMode 
+        ? 'Demo mode! Try CUT with NYC Squirrel Census data. ' 
+        : 'File loaded! ';
+      setSuccessMessage(`${modeMessage}${columnsResponse.data.columns?.length || 0} columns detected. ${performanceResponse.data?.strategy === 'realtime' ? 'Real-time filtering enabled.' : performanceResponse.data?.strategy === 'debounced' ? 'Smart debounced filtering enabled.' : 'Manual filtering mode (large file).'}`);
       
     } catch (err) {
       console.error('🐱 File initialization failed:', err);
@@ -166,7 +205,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     setError('');
 
     try {
-      console.log(`🐱 Executing query with ${filters.length} filters (auto: ${isAutoUpdate})`);
+      console.log(`🐱 Executing query with ${filters.length} filters (auto: ${isAutoUpdate}, demo: ${demoMode})`);
 
       const queryRequest = {
         filters,
@@ -175,7 +214,17 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
         includeAnalysis: false
       };
 
-      const response = await api.post(`/api/v1/files/${fileId}/query`, queryRequest);
+      let queryUrl;
+      // Handle demo mode for anonymous users
+      if (fileId === 'demo-squirrel' && isAnonymous) {
+        queryUrl = '/api/v1/public/demo/squirrel/query';
+      } else if (fileId === 'reference-squirrel' && token) {
+        queryUrl = '/api/v1/files/reference/squirrel/query';
+      } else {
+        queryUrl = `/api/v1/files/${fileId}/query`;
+      }
+
+      const response = await api.post(queryUrl, queryRequest);
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Query execution failed');
@@ -198,7 +247,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     } finally {
       setFiltering(false);
     }
-  }, [fileId, filters]);
+  }, [fileId, filters, demoMode, isAnonymous]);
 
   const handleFiltersChange = (newFilters) => {
     console.log(`🐱 Filters updated: ${newFilters.length} active filters`);
@@ -219,29 +268,57 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     setError('');
 
     try {
-      console.log(`🐱 Exporting ${filteredData.filteredCount} filtered rows`);
+      console.log(`🐱 Exporting ${filteredData.filteredCount} filtered rows (demo: ${demoMode})`);
 
-      const exportRequest = {
-        filters,
-        includeMetadata: true
-      };
+      // For demo mode, generate CSV directly from filtered data
+      if (demoMode || isAnonymous) {
+        const csvContent = generateCSVFromFilteredData(filteredData);
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `demo-cut-filtered_${timestamp}.csv`;
+        
+        // Create download link
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
 
-      const response = await api.post(`/api/v1/files/${fileId}/export/filtered`, exportRequest);
+        setSuccessMessage(`Demo export complete! ${filename} downloaded. Create an account to save exports to your file library.`);
+      } else {
+        // For authenticated users, use backend export
+        const exportRequest = {
+          filters,
+          includeMetadata: true
+        };
 
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Export failed');
+        let exportUrl;
+        if (fileId === 'reference-squirrel') {
+          exportUrl = '/api/v1/files/reference/squirrel/export/filtered';
+        } else {
+          exportUrl = `/api/v1/files/${fileId}/export/filtered`;
+        }
+
+        const response = await api.post(exportUrl, exportRequest);
+
+        if (!response.data.success) {
+          throw new Error(response.data.error || 'Export failed');
+        }
+
+        // Trigger download
+        const downloadUrl = response.data.downloadUrl;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = response.data.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        setSuccessMessage(`Export complete! ${response.data.filename} has been saved to your files and downloaded.`);
       }
-
-      // Trigger download
-      const downloadUrl = response.data.downloadUrl;
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = response.data.filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      setSuccessMessage(`Export complete! ${response.data.filename} has been saved to your files and downloaded.`);
 
     } catch (err) {
       console.error('🐱 Export failed:', err);
@@ -259,6 +336,31 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   const handleRowsPerPageChange = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+  };
+
+  // Helper function to generate CSV from filtered data
+  const generateCSVFromFilteredData = (data) => {
+    const csvParts = [];
+    
+    // Header row
+    csvParts.push(data.headers.map(h => escapeCSVCell(h)).join(','));
+    
+    // Data rows
+    for (const row of data.filteredRows) {
+      csvParts.push(row.map(cell => escapeCSVCell(cell)).join(','));
+    }
+    
+    return csvParts.join('\n');
+  };
+
+  // Helper function to escape CSV cells
+  const escapeCSVCell = (cell) => {
+    const str = String(cell || '');
+    // If contains comma, newline, or quote, wrap in quotes and escape internal quotes
+    if (str.includes(',') || str.includes('\n') || str.includes('\r') || str.includes('"')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
   };
 
   const getPerformanceIndicator = () => {
@@ -304,6 +406,13 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       <Typography variant="h6" component="h2" color="text.secondary" sx={{ mb: 3 }}>
         The ultimate tool for cutting data into the shape of your dreams
       </Typography>
+
+      {isAnonymous && demoMode && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          📊 <strong>Demo Mode:</strong> Try CUT with the <a href="https://www.thesquirrelcensus.com/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>NYC Squirrel Census</a> dataset!<br />
+          <a href="/login" style={{color: 'inherit', textDecoration: 'underline'}}>Login</a> or <a href="/register" style={{color: 'inherit', textDecoration: 'underline'}}>create an account</a> to use CUT with your own CSV files.
+        </Alert>
+      )}
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>

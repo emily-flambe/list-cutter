@@ -64,6 +64,7 @@ function App() {
             <Route path="/analysis" element={<Analysis />} />
             <Route path="/analysis/cuttytabs" element={<Cuttytabs />} />
             <Route path="/cuttytabs" element={<Cuttytabs />} />
+            <Route path="/cut" element={<QueryBuilder />} />
             <Route path="/cut/:fileId" element={<QueryBuilder />} />
           </Routes>
         </Layout>
