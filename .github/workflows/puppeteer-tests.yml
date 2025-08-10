@@ -43,10 +43,13 @@ jobs:
         env:
           CI: true
       
-      - name: Upload screenshots on failure
+      - name: Upload debugging artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: error-screenshots
-          path: ./debug-*.png
+          name: puppeteer-debug-artifacts
+          path: |
+            ./debug-*.png
+            ./screenshots/
           retention-days: 7
+          if-no-files-found: ignore

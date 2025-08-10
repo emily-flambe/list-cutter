@@ -134,7 +134,22 @@ async function testSimpleNavigation() {
     } catch (error) {
         console.error('Test failed:', error);
         try {
-            await page.screenshot({ path: 'debug-error.png', fullPage: true });
+            // Take comprehensive error screenshot
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            await page.screenshot({ 
+                path: `debug-error-${timestamp}.png`, 
+                fullPage: true 
+            });
+            
+            // Also capture page info for debugging
+            const url = page.url();
+            const title = await page.title().catch(() => 'Could not get title');
+            
+            console.log('🐛 Debug Info:');
+            console.log(`   URL: ${url}`);
+            console.log(`   Title: ${title}`);
+            console.log(`   Screenshot: debug-error-${timestamp}.png`);
+            
         } catch (screenshotError) {
             console.log('Could not take error screenshot:', screenshotError.message);
         }
