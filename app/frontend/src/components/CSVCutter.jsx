@@ -10,10 +10,14 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Upload as UploadIcon } from '@mui/icons-material';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import { Upload as UploadIcon, ExpandMore as ExpandMoreIcon, Download as DownloadIcon, Save as SaveIcon, ContentCut as ContentCutIcon } from '@mui/icons-material';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
+import cuttyLogo from '../assets/cutty_logo.png';
 
 const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE) || 10 * 1024 * 1024;
 const MAX_FILE_SIZE_MB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(2);
@@ -345,47 +349,137 @@ const CSVCutter = () => {
             </Button>
 
             {downloadUrl && (
-              <Box sx={{ mt: 3, display: 'flex', alignItems: 'center' }}>
-                <Button
-                  variant="contained"
-                  color="success"
-                  component="a"
-                  href={downloadUrl}
-                  download="filtered.csv"
-                  sx={{ mr: 2 }}
-                >
-                  Download CSV
-                </Button>
-                {token.token !== null ? (
-                  <Button
-                    variant="contained"
-                    onClick={() => setShowSaveField(!showSaveField)}
+              <Box sx={{ mt: 3 }}>
+                <Accordion>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    sx={{
+                      backgroundColor: '#4caf50',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: '#45a049',
+                      },
+                      '&.Mui-expanded': {
+                        backgroundColor: '#45a049',
+                      },
+                      borderRadius: '4px 4px 0 0',
+                    }}
                   >
-                    Save to My Files
-                  </Button>
-                ) : (
-                  <Typography variant="body2" color="textSecondary">
-                    Log in to save this file to your account.
-                  </Typography>
-                )}
-              </Box>
-            )}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <ContentCutIcon />
+                      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                        CUT it!
+                      </Typography>
+                    </Box>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
+                      {/* Download Button - Always available */}
+                      <Button
+                        variant="contained"
+                        color="success"
+                        component="a"
+                        href={downloadUrl}
+                        download="filtered.csv"
+                        startIcon={<DownloadIcon />}
+                        sx={{ 
+                          py: 1.5,
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        Download
+                      </Button>
 
-            {showSaveField && (
-              <Box sx={{ mt: 2 }}>
-                <TextField
-                  label="Filename"
-                  value={filename}
-                  onChange={(e) => setFilename(e.target.value)}
-                  fullWidth
-                />
-                <Button
-                  variant="contained"
-                  onClick={handleSaveToMyFiles}
-                  sx={{ mt: 2 }}
-                >
-                  Save
-                </Button>
+                      {/* Save to My Files Button - Conditional styling */}
+                      <Box sx={{ position: 'relative' }}>
+                        <Button
+                          variant="contained"
+                          startIcon={<SaveIcon />}
+                          onClick={() => token.token ? setShowSaveField(!showSaveField) : null}
+                          disabled={!token.token}
+                          sx={{ 
+                            py: 1.5,
+                            fontSize: '1.1rem',
+                            fontWeight: 'bold',
+                            width: '100%',
+                            backgroundColor: token.token ? undefined : '#ccc',
+                            color: token.token ? undefined : '#999',
+                            backgroundImage: token.token ? undefined : 
+                              'repeating-linear-gradient(45deg, rgba(255,255,255,.1), rgba(255,255,255,.1) 10px, transparent 10px, transparent 20px)',
+                            '&:disabled': {
+                              cursor: 'not-allowed',
+                            }
+                          }}
+                        >
+                          Save to My Files
+                        </Button>
+                      </Box>
+
+                      {/* Scary warning for logged-out users */}
+                      {!token.token && (
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 2, 
+                          mt: 2, 
+                          p: 2,
+                          backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                          borderRadius: 1,
+                          border: '1px solid rgba(255, 0, 0, 0.3)'
+                        }}>
+                          <Box
+                            component="img"
+                            src={cuttyLogo}
+                            alt="Angry Cutty"
+                            sx={{
+                              width: '60px',
+                              height: 'auto',
+                              transform: 'scaleX(-1)',
+                              filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 10px #ff0000)',
+                            }}
+                          />
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              color: '#ff0000',
+                              fontWeight: 'bold',
+                              fontSize: '1.1rem',
+                              textShadow: '0 0 5px rgba(255, 0, 0, 0.5)'
+                            }}
+                          >
+                            You must be logged in to save things.
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {/* Save filename field - only show for logged-in users */}
+                      {showSaveField && token.token && (
+                        <Box sx={{ mt: 2 }}>
+                          <TextField
+                            label="Filename"
+                            value={filename}
+                            onChange={(e) => setFilename(e.target.value)}
+                            fullWidth
+                            sx={{ mb: 2 }}
+                          />
+                          <Button
+                            variant="contained"
+                            onClick={handleSaveToMyFiles}
+                            startIcon={<SaveIcon />}
+                            sx={{ 
+                              py: 1.5,
+                              fontSize: '1.1rem',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            Save Now
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
               </Box>
             )}
           </Box>

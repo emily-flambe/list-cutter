@@ -58,7 +58,7 @@ export class FilterProcessor {
         return {
           filteredRows: resultRows,
           totalRows: allRows.length,
-          filteredCount: allRows.length,
+          filteredCount: allRows.length, // All rows match when no filters
           processingTimeMs: Date.now() - startTime,
           headers
         };
@@ -110,6 +110,7 @@ export class FilterProcessor {
       // Process rows with filtering
       const filteredRows: string[][] = [];
       let totalRows = 0;
+      let filteredCount = 0; // Track actual filtered count separately from preview
       let processedRows = 0;
       let rowIndex = firstNewlineIndex + 1;
       
@@ -139,6 +140,8 @@ export class FilterProcessor {
           const passesAllFilters = this.evaluateRowFilters(values, headers, filters);
           
           if (passesAllFilters) {
+            filteredCount++; // Always increment the actual filtered count
+            
             // Include this row in results (with preview limit if needed)
             if (!includePreview || filteredRows.length < previewLimit) {
               filteredRows.push(values);
@@ -153,12 +156,12 @@ export class FilterProcessor {
       }
 
       const processingTime = Date.now() - startTime;
-      console.log(`🐱 Filtered ${totalRows} rows to ${filteredRows.length} results in ${processingTime}ms`);
+      console.log(`🐱 Filtered ${totalRows} rows to ${filteredCount} results in ${processingTime}ms`);
 
       return {
         filteredRows,
         totalRows,
-        filteredCount: filteredRows.length,
+        filteredCount, // Now returns the actual count of filtered rows, not just preview length
         processingTimeMs: processingTime,
         headers
       };
@@ -281,12 +284,20 @@ export class FilterProcessor {
     switch (operator) {
       case 'contains':
         return lowerCell.includes(lowerFilter);
+      case 'not_contains':
+        return !lowerCell.includes(lowerFilter);
       case 'equals':
         return lowerCell === lowerFilter;
+      case 'not_equals':
+        return lowerCell !== lowerFilter;
       case 'starts_with':
         return lowerCell.startsWith(lowerFilter);
       case 'ends_with':
         return lowerCell.endsWith(lowerFilter);
+      case 'is_empty':
+        return cellValue.trim() === '';
+      case 'is_not_empty':
+        return cellValue.trim() !== '';
       case 'regex':
         try {
           const regex = new RegExp(filterValue, 'i');
@@ -309,11 +320,22 @@ export class FilterProcessor {
     const cellNum = parseFloat(cellValue);
     const filterNum = parseFloat(filterValue);
     
-    if (isNaN(cellNum) || isNaN(filterNum)) return false;
+    if (isNaN(cellNum) || isNaN(filterNum)) {
+      // Handle is_empty and is_not_empty for numeric columns
+      if (operator === 'is_empty') {
+        return cellValue.trim() === '';
+      }
+      if (operator === 'is_not_empty') {
+        return cellValue.trim() !== '';
+      }
+      return false;
+    }
 
     switch (operator) {
       case 'equals':
         return cellNum === filterNum;
+      case 'not_equals':
+        return cellNum !== filterNum;
       case 'greater_than':
         return cellNum > filterNum;
       case 'less_than':
@@ -327,6 +349,10 @@ export class FilterProcessor {
         const [min, max] = filterValue.split(',').map(v => parseFloat(v.trim()));
         if (isNaN(min) || isNaN(max)) return false;
         return cellNum >= min && cellNum <= max;
+      case 'is_empty':
+        return cellValue.trim() === '';
+      case 'is_not_empty':
+        return cellValue.trim() !== '';
       default:
         return cellNum === filterNum;
     }

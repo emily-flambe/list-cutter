@@ -19,18 +19,25 @@ import {
   TableRow,
   TablePagination,
   IconButton,
-  Tooltip
+  Tooltip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
 import {
   FilterList as FilterIcon,
-  Download as ExportIcon,
+  Download as DownloadIcon,
+  Save as SaveIcon,
   Refresh as RefreshIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  ContentCut as ContentCutIcon,
+  ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import { AuthContext } from '../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import FilterPanel from './FilterPanel';
+import cuttyLogo from '../assets/cutty_logo.png';
 
 /**
  * QueryBuilder - Main CUT (Cutty Ultimate Tool) interface
@@ -50,6 +57,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   const [columns, setColumns] = useState([]);
   const [filters, setFilters] = useState([]);
   const [filteredData, setFilteredData] = useState(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [filtering, setFiltering] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -140,7 +148,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
 
       // Only show success message for non-demo mode (check both demoMode state and demo file ID)
       if (!demoMode && actualFileId !== 'demo-npors2025') {
-        setSuccessMessage(`File loaded! ${columnsResponse.data.columns?.length || 0} columns detected. Ready to apply filters.`);
+        setSuccessMessage(`File loaded! ${columnsResponse.data.columns?.length || 0} columns detected. Click "Show Data" to preview.`);
       }
       
     } catch (err) {
@@ -153,7 +161,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   };
 
   const executeQuery = useCallback(async (isAutoUpdate = false) => {
-    if (!fileId || filters.length === 0) {
+    if (!fileId) {
       setFilteredData(null);
       return;
     }
@@ -165,7 +173,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       console.log(`🐱 Executing query with ${filters.length} filters (auto: ${isAutoUpdate}, demo: ${demoMode})`);
 
       const queryRequest = {
-        filters,
+        filters: filters.length > 0 ? filters : [],
         includePreview: true,
         previewLimit: 100,
         includeAnalysis: false
@@ -188,12 +196,17 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       }
 
       setFilteredData(response.data.data);
+      setDataLoaded(true);
       setPage(0); // Reset pagination
       
       if (!isAutoUpdate) {
         const resultCount = response.data.data.filteredCount;
         const totalCount = response.data.data.totalRows;
-        setSuccessMessage(`Query complete! ${resultCount.toLocaleString()} of ${totalCount.toLocaleString()} rows match your filters.`);
+        if (filters.length > 0) {
+          setSuccessMessage(`Query complete! ${resultCount.toLocaleString()} of ${totalCount.toLocaleString()} rows match your filters.`);
+        } else {
+          setSuccessMessage(`Data loaded! Showing ${Math.min(resultCount, 100).toLocaleString()} preview rows of ${totalCount.toLocaleString()} total.`);
+        }
       }
 
     } catch (err) {
@@ -217,7 +230,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
 
   const handleExport = async () => {
     if (!filteredData || filteredData.filteredCount === 0) {
-      setError('No filtered data to export. Apply some filters first.');
+      setError('No data to export. Click "Show Data" first.');
       return;
     }
 
@@ -227,9 +240,32 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     try {
       console.log(`🐱 Exporting ${filteredData.filteredCount} filtered rows (demo: ${demoMode})`);
 
-      // For demo mode, generate CSV directly from filtered data
+      // For demo mode, get full filtered dataset and generate CSV client-side
       if (demoMode || isAnonymous) {
-        const csvContent = generateCSVFromFilteredData(filteredData);
+        console.log(`🐱 Demo export: Getting full filtered dataset with ${filters.length} filters`);
+        
+        // Call query endpoint to get ALL filtered data (not just preview)
+        let queryUrl;
+        if (fileId === 'demo-npors2025') {
+          queryUrl = '/api/v1/public/demo/npors2025/query';
+        } else {
+          queryUrl = '/api/v1/public/demo/squirrel/query';
+        }
+        
+        const queryRequest = {
+          filters: filters.length > 0 ? filters : [],
+          includePreview: true,
+          previewLimit: 999999 // Get all rows, not just 100
+        };
+        
+        const queryResponse = await api.post(queryUrl, queryRequest);
+        
+        if (!queryResponse.data.success) {
+          throw new Error(queryResponse.data.error || 'Failed to get full dataset');
+        }
+        
+        const fullFilteredData = queryResponse.data.data;
+        const csvContent = generateCSVFromFilteredData(fullFilteredData);
         const timestamp = new Date().toISOString().split('T')[0];
         const filename = `demo-cut-filtered_${timestamp}.csv`;
         
@@ -244,7 +280,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
         link.remove();
         window.URL.revokeObjectURL(url);
 
-        setSuccessMessage(`Demo export complete! ${filename} downloaded. Create an account to save exports to your file library.`);
+        setSuccessMessage(`Demo export complete! ${filename} downloaded with all ${fullFilteredData.filteredCount.toLocaleString()} ${filters.length > 0 ? 'filtered' : ''} rows. Create an account to save exports to your file library.`);
       } else {
         // For authenticated users, use backend export
         const exportRequest = {
@@ -324,23 +360,51 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   const displayedRows = filteredData?.filteredRows ? 
     filteredData.filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : [];
 
+  // Helper function to check if a column is being filtered
+  const getFilteredColumnNames = () => {
+    return new Set(filters.map(filter => filter.column));
+  };
+
+  const filteredColumns = getFilteredColumnNames();
+
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-        🔨 CUT - Cutty Ultimate Tool
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         {(onClose || routeFileId) && (
           <Button 
             onClick={onClose || (() => navigate('/manage_files'))} 
-            sx={{ ml: 'auto' }} 
             variant="outlined"
           >
             Back to Files
           </Button>
         )}
+        <Box sx={{ flex: 1 }} />
+        {(onClose || routeFileId) && (
+          <Box sx={{ width: '120px' }} />
+        )}
+      </Box>
+      
+      <Typography variant="h2" component="h1" sx={{ textAlign: 'center', fontWeight: 'bold', mb: 1 }}>
+        CUT
       </Typography>
       
-      <Typography variant="h6" component="h2" color="text.secondary" sx={{ mb: 3 }}>
-        The ultimate tool for cutting data into the shape of your dreams
+      <Typography 
+        variant="h5" 
+        component="h2" 
+        sx={{ 
+          textAlign: 'center', 
+          mb: 1,
+          '& span:first-letter': {
+            fontSize: '1.5em',
+            fontWeight: 'bold'
+          }
+        }}
+      >
+        <span>Cutty</span> <span>Ultimate</span> <span>Tool</span>
+      </Typography>
+      
+      <Typography variant="h6" component="h3" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+        The best list cutter EVER
       </Typography>
 
       {isAnonymous && demoMode && (
@@ -372,28 +436,71 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
           {/* File Info Panel */}
           {fileInfo && (
             <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    File Information
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Filename: <strong>{fileInfo.filename}</strong>
+              <Card sx={{ backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                    {/* Left: File Name */}
+                    <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>
+                      <Typography 
+                        variant="subtitle1" 
+                        sx={{ 
+                          fontWeight: 600, 
+                          color: 'text.primary',
+                          wordBreak: 'break-word',
+                          lineHeight: 1.2,
+                          textAlign: 'left'
+                        }}
+                      >
+                        {fileInfo.filename}
                       </Typography>
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Columns: <strong>{columns.length}</strong>
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <Typography variant="body2" color="text.secondary">
-                        Rows: <strong>{fileInfo.totalRows ? fileInfo.totalRows.toLocaleString() : 'Unknown'}</strong>
-                      </Typography>
-                    </Grid>
-                  </Grid>
+                    </Box>
+                    
+                    {/* Center: Metrics as Chips */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                      <Chip 
+                        label={`${columns.length} cols`}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: '0.75rem', height: '24px' }}
+                      />
+                      <Chip 
+                        label={fileInfo.totalRows ? `${fileInfo.totalRows.toLocaleString()} rows` : 'Unknown rows'}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: '0.75rem', height: '24px' }}
+                      />
+                      <Chip 
+                        label={fileInfo.size ? `${(fileInfo.size / 1024 / 1024).toFixed(1)} MB` : 'Unknown size'}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: '0.75rem', height: '24px' }}
+                      />
+                    </Box>
+                    
+                    {/* Right: Schema Button */}
+                    <Box sx={{ flexShrink: 0 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<InfoIcon />}
+                        sx={{
+                          textTransform: 'none',
+                          fontSize: '0.8rem',
+                          px: 2,
+                          py: 0.5,
+                          borderColor: 'primary.main',
+                          color: 'primary.main',
+                          '&:hover': {
+                            backgroundColor: 'primary.main',
+                            color: 'white'
+                          }
+                        }}
+                        disabled
+                      >
+                        Schema
+                      </Button>
+                    </Box>
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
@@ -410,29 +517,29 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
             />
           </Grid>
 
-          {/* Apply Filters Button */}
-          {filters.length > 0 && (
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={handleManualRefresh}
-                  disabled={filtering}
-                  startIcon={filtering ? <CircularProgress size={20} /> : <FilterIcon />}
-                  sx={{
-                    px: 6,
-                    py: 1.5,
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    textTransform: 'none'
-                  }}
-                >
-                  {filtering ? 'Applying Filters...' : 'Apply Filters'}
-                </Button>
-              </Box>
-            </Grid>
-          )}
+          {/* Show Data / Apply Filters Button */}
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleManualRefresh}
+                disabled={filtering}
+                startIcon={filtering ? <CircularProgress size={20} /> : (filters.length > 0 ? <FilterIcon /> : <RefreshIcon />)}
+                sx={{
+                  px: 6,
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  textTransform: 'none'
+                }}
+              >
+                {filtering ? 
+                  (filters.length > 0 ? 'Applying Filters...' : 'Loading Data...') : 
+                  (filters.length > 0 ? 'Apply Filters' : (!dataLoaded ? 'Show Data' : 'Refresh Data'))}
+              </Button>
+            </Box>
+          </Grid>
 
           {/* Results Panel */}
           <Grid item xs={12}>
@@ -440,59 +547,162 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6">
-                    Filtered Results
-                    {filteredData && (
-                      <Typography component="span" color="text.secondary" sx={{ ml: 2, fontSize: '0.9em' }}>
-                        {filteredData.filteredCount.toLocaleString()} of {filteredData.totalRows.toLocaleString()} rows
-                      </Typography>
-                    )}
+                    Data Preview
                   </Typography>
                   
-                  <Box>
-                    <Tooltip title="Export filtered data as CSV">
-                      <span>
-                        <IconButton
-                          onClick={handleExport}
-                          disabled={exporting || !filteredData || filteredData.filteredCount === 0}
-                          color="secondary"
+                  {/* CUT it! Expandable Element */}
+                  {filteredData && filteredData.filteredCount > 0 && (
+                    <Box sx={{ minWidth: 300 }}>
+                      <Accordion>
+                        <AccordionSummary
+                          expandIcon={<ExpandMoreIcon />}
+                          sx={{
+                            backgroundColor: '#4caf50',
+                            color: 'white',
+                            '&:hover': {
+                              backgroundColor: '#45a049',
+                            },
+                            '&.Mui-expanded': {
+                              backgroundColor: '#45a049',
+                            },
+                            borderRadius: '4px 4px 0 0',
+                            minHeight: '48px',
+                            '& .MuiAccordionSummary-content': {
+                              margin: '8px 0',
+                            }
+                          }}
                         >
-                          {exporting ? <CircularProgress size={20} /> : <ExportIcon />}
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <ContentCutIcon />
+                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                              CUT it!
+                            </Typography>
+                          </Box>
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ p: 2 }}>
+                          <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
+                            {/* Download Button - Always available */}
+                            <Button
+                              variant="contained"
+                              color="success"
+                              onClick={handleExport}
+                              disabled={exporting}
+                              startIcon={exporting ? <CircularProgress size={20} /> : <DownloadIcon />}
+                              sx={{ 
+                                py: 1,
+                                fontSize: '1rem',
+                                fontWeight: 'bold'
+                              }}
+                            >
+                              {exporting ? 'Preparing Download...' : 'Download'}
+                            </Button>
+
+                            {/* Save to My Files Button - Conditional styling */}
+                            <Box sx={{ position: 'relative' }}>
+                              <Button
+                                variant="contained"
+                                startIcon={<SaveIcon />}
+                                onClick={() => token ? () => {} : null}
+                                disabled={!token || exporting}
+                                sx={{ 
+                                  py: 1,
+                                  fontSize: '1rem',
+                                  fontWeight: 'bold',
+                                  width: '100%',
+                                  backgroundColor: token ? undefined : '#ccc',
+                                  color: token ? undefined : '#999',
+                                  backgroundImage: token ? undefined : 
+                                    'repeating-linear-gradient(45deg, rgba(255,255,255,.1), rgba(255,255,255,.1) 10px, transparent 10px, transparent 20px)',
+                                  '&:disabled': {
+                                    cursor: 'not-allowed',
+                                  }
+                                }}
+                              >
+                                Save to My Files
+                              </Button>
+                            </Box>
+
+                            {/* Scary warning for logged-out users */}
+                            {!token && (
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 2, 
+                                mt: 1, 
+                                p: 1.5,
+                                backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                                borderRadius: 1,
+                                border: '1px solid rgba(255, 0, 0, 0.3)'
+                              }}>
+                                <Box
+                                  component="img"
+                                  src={cuttyLogo}
+                                  alt="Angry Cutty"
+                                  sx={{
+                                    width: '40px',
+                                    height: 'auto',
+                                    transform: 'scaleX(-1)',
+                                    filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 8px #ff0000)',
+                                  }}
+                                />
+                                <Typography 
+                                  variant="body2" 
+                                  sx={{ 
+                                    color: '#ff0000',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.9rem',
+                                    textShadow: '0 0 3px rgba(255, 0, 0, 0.5)'
+                                  }}
+                                >
+                                  You must be logged in to save things.
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+                        </AccordionDetails>
+                      </Accordion>
+                    </Box>
+                  )}
                 </Box>
 
-                {filters.length === 0 ? (
+                {!dataLoaded ? (
                   <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <FilterIcon sx={{ fontSize: 60, color: 'text.secondary' }} />
+                    <InfoIcon sx={{ fontSize: 60, color: 'text.secondary' }} />
                     <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
-                      Add filters to start cutting your data
+                      Ready to explore your data
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Use the filter panel on the left to create intelligent filters based on your column types
+                      Click "Show Data" above to preview your dataset{filters.length > 0 ? ' with filters applied' : ''}
                     </Typography>
                   </Box>
                 ) : filteredData ? (
                   <>
+                    {/* Preview Info Banner */}
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      Previewing the first {Math.min(filteredData.filteredRows.length, filteredData.filteredCount).toLocaleString()} rows ({filteredData.filteredCount.toLocaleString()} total)
+                    </Alert>
+                    
                     {/* Filter Summary */}
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Active Filters ({filters.length}):
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {filters.map((filter, index) => (
-                          <Chip
-                            key={index}
-                            size="small"
-                            label={`${filter.column} ${filter.operator} ${filter.value || ''}`}
-                            variant="outlined"
-                          />
-                        ))}
-                      </Box>
-                    </Box>
-
-                    <Divider sx={{ mb: 2 }} />
+                    {filters.length > 0 && (
+                      <>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1, textAlign: 'left' }}>
+                            Active Filters ({filters.length}):
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {filters.map((filter, index) => (
+                              <Chip
+                                key={index}
+                                size="small"
+                                label={`${filter.column} ${filter.operator} ${filter.value || ''}`}
+                                variant="outlined"
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                        <Divider sx={{ mb: 2 }} />
+                      </>
+                    )}
 
                     {/* Results Table */}
                     {displayedRows.length > 0 ? (
@@ -501,21 +711,57 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                           <Table stickyHeader size="small">
                             <TableHead>
                               <TableRow>
-                                {filteredData.headers.map((header, index) => (
-                                  <TableCell key={index} sx={{ fontWeight: 'bold' }}>
-                                    {header}
-                                  </TableCell>
-                                ))}
+                                {filteredData.headers.map((header, index) => {
+                                  const isFiltered = filteredColumns.has(header);
+                                  return (
+                                    <TableCell 
+                                      key={index} 
+                                      sx={{ 
+                                        fontWeight: 'bold',
+                                        ...(isFiltered && {
+                                          backgroundColor: 'rgba(25, 118, 210, 0.08)', // Very subtle blue tint
+                                          borderBottom: '2px solid rgba(25, 118, 210, 0.3)', // Subtle blue border
+                                          position: 'relative',
+                                          '&::before': {
+                                            content: '""',
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            height: '3px',
+                                            backgroundColor: 'primary.main',
+                                            opacity: 0.6
+                                          }
+                                        })
+                                      }}
+                                    >
+                                      {header}
+                                    </TableCell>
+                                  );
+                                })}
                               </TableRow>
                             </TableHead>
                             <TableBody>
                               {displayedRows.map((row, rowIndex) => (
                                 <TableRow key={rowIndex} hover>
-                                  {row.map((cell, cellIndex) => (
-                                    <TableCell key={cellIndex}>
-                                      {cell}
-                                    </TableCell>
-                                  ))}
+                                  {row.map((cell, cellIndex) => {
+                                    const header = filteredData.headers[cellIndex];
+                                    const isFiltered = filteredColumns.has(header);
+                                    return (
+                                      <TableCell 
+                                        key={cellIndex}
+                                        sx={{
+                                          ...(isFiltered && {
+                                            backgroundColor: 'rgba(25, 118, 210, 0.03)', // Even more subtle for data cells
+                                            borderLeft: '1px solid rgba(25, 118, 210, 0.15)', // Subtle left border
+                                            borderRight: '1px solid rgba(25, 118, 210, 0.15)', // Subtle right border
+                                          })
+                                        }}
+                                      >
+                                        {cell}
+                                      </TableCell>
+                                    );
+                                  })}
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -536,7 +782,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                           <Alert severity="info" sx={{ mt: 2 }}>
                             <InfoIcon sx={{ mr: 1 }} />
                             Showing preview of first {filteredData.filteredRows.length} rows. 
-                            Export to get all {filteredData.filteredCount.toLocaleString()} filtered rows.
+                            Export to get all {filteredData.filteredCount.toLocaleString()} {filters.length > 0 ? 'filtered' : ''} rows.
                           </Alert>
                         )}
                       </>

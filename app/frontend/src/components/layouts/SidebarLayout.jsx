@@ -108,7 +108,7 @@ const SidebarLayout = ({ children }) => {
         case '/do-stuff/cuttytabs':
           return "Time for a swim swim!";
         case '/do-stuff/cut':
-          return "Time to slice and dice your data with precision!";
+          return "I was born for this!";
         case '/faq':
           return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.15rem' } };
         case '/logout':
