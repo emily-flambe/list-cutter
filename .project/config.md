@@ -19,6 +19,11 @@ See: .project/contexts/dependencies.md
 <!-- User interface patterns and design decisions -->
 See: .project/contexts/ui-ux-patterns.md
 
+## Feature Specifications
+<!-- Detailed design specs and expected behaviors for features -->
+See: .project/feature-specs/README.md
+See: .project/feature-specs/cut-dynamic-query-builder.md
+
 ## Debugging & Troubleshooting
 <!-- Hard-earned tribal knowledge and debugging procedures -->
 See: .project/contexts/debugging-lessons.md
