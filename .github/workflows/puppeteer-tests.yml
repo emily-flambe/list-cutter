@@ -23,6 +23,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Install Chrome dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgbm1 libxss1 libnss3 libatk-bridge2.0-0 libgtk-3-0 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 libnss3 libcups2 libxrandr2 libasound2 libatk1.0-0 libgtk-3-0 libdrm2 libxss1 libgconf-2-4
+      
+      - name: Install Puppeteer browsers
+        run: npx puppeteer browsers install chrome
+      
       - name: Run Puppeteer tests
         run: npm run test:puppeteer
         env:
@@ -30,7 +38,7 @@ jobs:
       
       - name: Upload screenshots on failure
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: error-screenshots
           path: ./debug-*.png

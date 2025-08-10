@@ -15,8 +15,8 @@ async function testSimpleNavigation() {
             '--disable-dev-shm-usage',
             '--disable-gpu',
             '--disable-web-security'
-        ],
-        executablePath: isCI ? '/usr/bin/google-chrome-stable' : undefined
+        ]
+        // Let Puppeteer use its own bundled Chrome in CI
     });
     
     try {
