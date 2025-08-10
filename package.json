@@ -16,7 +16,7 @@
     "dev:frontend": "cd app/frontend && npm run dev",
     "test": "npm run test:workers",
     "test:workers": "cd cloudflare/workers && npm test",
-    "test:puppeteer": "node test-simple-puppeteer.js",
+    "test:e2e": "cd cloudflare/workers && npm run test:e2e",
     "lint": "npm run lint:workers",
     "lint:workers": "cd cloudflare/workers && npm run lint",
     "clean": "npm run clean:workers && npm run clean:frontend",
@@ -27,7 +27,5 @@
     "cloudflare/workers",
     "app/frontend"
   ],
-  "dependencies": {
-    "puppeteer": "^24.16.0"
-  }
+  "dependencies": {}
 }

@@ -24,6 +24,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
+    "test:e2e:auth": "playwright test e2e/tests/auth-flow.spec.ts",
+    "test:e2e:auth:headed": "playwright test e2e/tests/auth-flow.spec.ts --headed",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",

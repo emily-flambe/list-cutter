@@ -21,6 +21,20 @@ export class TestDataGenerator {
   }
 
   /**
+   * Get predefined test user credentials from environment
+   * Uses secure credentials for consistent testing
+   */
+  static getPredefinedTestUser() {
+    return {
+      email: process.env.TEST_USER_EMAIL || 'test2',
+      password: process.env.TEST_USER_PASSWORD || '12346789',
+      firstName: 'Test',
+      lastName: 'User',
+      username: 'test2',
+    };
+  }
+
+  /**
    * Generate test CSV content with various scenarios
    */
   static generateCSVContent(scenario: 'basic' | 'large' | 'special-chars' | 'empty' | 'malformed' = 'basic') {

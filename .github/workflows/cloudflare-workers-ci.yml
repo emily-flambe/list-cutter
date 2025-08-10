@@ -37,8 +37,8 @@ jobs:
         working-directory: cloudflare/workers
         run: npm test
 
-  puppeteer-e2e:
-    name: Puppeteer E2E Tests
+  e2e-tests:
+    name: Playwright E2E Tests
     runs-on: ubuntu-latest
     
     steps:
@@ -48,46 +48,40 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
       
       - name: Install dependencies
+        working-directory: cloudflare/workers
         run: npm ci
       
-      - name: Install Chrome and system dependencies for Puppeteer
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libnss3-dev \
-            libatk-bridge2.0-dev \
-            libdrm-dev \
-            libgtk-3-dev \
-            libgbm-dev
-          # Install Chrome
-          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+      - name: Install Playwright browsers
+        working-directory: cloudflare/workers
+        run: npx playwright install --with-deps
       
-      - name: Run Puppeteer tests
-        run: npm run test:puppeteer
+      - name: Run E2E tests
+        working-directory: cloudflare/workers
+        run: npm run test:e2e
         env:
           CI: true
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          BASE_URL: https://cutty-dev.emilycogsdill.com
       
-      - name: Upload debugging artifacts on failure
-        if: failure()
+      - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: puppeteer-debug-artifacts
+          name: playwright-results
           path: |
-            ./debug-*.png
-            ./screenshots/
-          retention-days: 7
+            cloudflare/workers/e2e/reports/
+            cloudflare/workers/e2e/artifacts/
+          retention-days: 30
           if-no-files-found: ignore
 
   deploy-dev:
     name: Deploy to Development
-    needs: [test, puppeteer-e2e]
+    needs: [test, e2e-tests]
     runs-on: ubuntu-latest
     if: contains(github.event.pull_request.labels.*.name, 'deploy-dev')
     

@@ -19,16 +19,19 @@ const auth = new Hono<{ Bindings: Env }>();
 // Login endpoint
 auth.post('/login', async (c) => {
   try {
-    const { email, password } = await c.req.json();
+    const { email, username, password } = await c.req.json();
     
-    if (!email || !password) {
-      return c.json({ error: 'Email and password are required' }, 400);
+    // Accept either email or username for login
+    const loginIdentifier = email || username;
+    
+    if (!loginIdentifier || !password) {
+      return c.json({ error: 'Username/email and password are required' }, 400);
     }
 
-    // Get user from database
+    // Get user from database - check both email and username fields
     const user = await c.env.DB.prepare(
-      'SELECT * FROM users WHERE email = ?'
-    ).bind(email).first();
+      'SELECT * FROM users WHERE email = ? OR username = ?'
+    ).bind(loginIdentifier, loginIdentifier).first();
 
     if (!user) {
       return c.json({ error: 'Invalid credentials' }, 401);

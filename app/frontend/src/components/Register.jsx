@@ -1,6 +1,7 @@
 // frontend/src/pages/Register.jsx
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import api from '../api';
+import { AuthContext } from '../context/AuthContext';
 // Optimized direct imports for better tree-shaking and build performance
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -14,6 +15,7 @@ import GoogleSignInButton, { GoogleOAuthCallback } from './GoogleSignInButton';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -80,7 +82,14 @@ const Register = () => {
         formData
       );
       console.log('Registration successful:', response.data);
-      setSuccessMessage(response.data.detail || response.data.message);
+      
+      // Auto-login after successful registration
+      if (response.data.tokens) {
+        login(response.data.tokens.access_token, formData.username, response.data.tokens.refresh_token);
+        navigate('/'); // Navigate to the home page after successful registration
+      } else {
+        setSuccessMessage(response.data.detail || response.data.message || 'Registration successful! Please login.');
+      }
     } catch (error) {
       console.error("❌ REGISTRATION FAILED - DETAILED ERROR ANALYSIS:");
       console.error("=".repeat(60));
@@ -238,12 +247,13 @@ const Register = () => {
         />
 
         <TextField
-          label="Email"
+          label="Email *"
           name="email"
           type="email"
           variant="outlined"
           value={formData.email}
           onChange={handleChange}
+          required
           disabled={loading}
           error={Boolean(errors.email)}
           helperText={errors.email}

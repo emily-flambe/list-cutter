@@ -63,6 +63,25 @@ test.describe('Authentication Flow Tests', () => {
     }
   });
 
+  test('should login with predefined test user', async () => {
+    const testUser = TestDataGenerator.getPredefinedTestUser();
+    
+    // Test login with predefined credentials
+    await appPage.loginPage.goto();
+    await appPage.loginPage.waitForFormReady();
+    await appPage.loginPage.login(testUser.email, testUser.password);
+    
+    // Verify login success
+    const isLoggedIn = await appPage.isLoggedIn();
+    expect(isLoggedIn).toBe(true);
+    
+    // Verify user display name if available
+    const displayName = await appPage.getUserDisplayName();
+    if (displayName) {
+      expect(displayName.length).toBeGreaterThan(0);
+    }
+  });
+
   test('should reject login with invalid credentials', async () => {
     await appPage.loginPage.goto();
     await appPage.loginPage.waitForFormReady();
