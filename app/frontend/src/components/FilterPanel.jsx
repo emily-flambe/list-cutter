@@ -40,6 +40,7 @@ const FilterPanel = ({
   columns: columnsFromParent, 
   filters: filtersFromParent = [], 
   onFiltersChange,
+  onApplyFilters,
   isFiltering
 }) => {
   const { token } = useContext(AuthContext);
@@ -194,7 +195,7 @@ const FilterPanel = ({
                 variant="contained"
                 color="primary"
                 size="small"
-                onClick={() => console.log('Apply Filters clicked')}
+                onClick={() => onApplyFilters && onApplyFilters()}
                 sx={{ mr: 2 }}
               >
                 Apply Filters

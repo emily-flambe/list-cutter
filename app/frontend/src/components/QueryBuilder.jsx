@@ -405,6 +405,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
               columns={columns}
               filters={filters}
               onFiltersChange={handleFiltersChange}
+              onApplyFilters={handleManualRefresh}
               isFiltering={filtering}
             />
           </Grid>
