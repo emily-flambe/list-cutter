@@ -108,8 +108,7 @@ const Home = () => {
                 sx={{
                   transform: `scale(${config.scale}) rotate(${config.rotate}deg)`,
                   opacity: config.opacity,
-                  transition: 'all 0.8s ease-in-out',
-                  filter: currentLogoIndex === index ? 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.3))' : 'none'
+                  transition: 'all 0.8s ease-in-out'
                 }}
               >
                 <img 
@@ -119,7 +118,8 @@ const Home = () => {
                     width: '80px', 
                     height: '80px', 
                     objectFit: 'contain',
-                    animation: 'spin 4s linear infinite'
+                    animation: `spin 4s linear infinite`,
+                    animationDelay: `${index * 0.8}s`
                   }} 
                 />
               </Box>
