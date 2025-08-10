@@ -119,7 +119,7 @@ const Home = () => {
                     height: '80px', 
                     objectFit: 'contain',
                     animation: `spin 4s linear infinite`,
-                    animationDelay: `${index * 0.8}s`
+                    animationDelay: `-${index * 0.8}s`
                   }} 
                 />
               </Box>
