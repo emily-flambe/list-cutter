@@ -14,9 +14,13 @@ async function testSimpleNavigation() {
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
             '--disable-gpu',
-            '--disable-web-security'
-        ]
-        // Let Puppeteer use its own bundled Chrome in CI
+            '--disable-web-security',
+            '--disable-extensions',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding'
+        ],
+        executablePath: isCI ? '/usr/bin/google-chrome-stable' : undefined
     });
     
     try {

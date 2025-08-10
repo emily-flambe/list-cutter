@@ -23,13 +23,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Install Chrome dependencies
+      - name: Install Chrome and system dependencies for Puppeteer
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgbm1 libxss1 libnss3 libatk-bridge2.0-0 libgtk-3-0 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 libnss3 libcups2 libxrandr2 libasound2 libatk1.0-0 libgtk-3-0 libdrm2 libxss1 libgconf-2-4
-      
-      - name: Install Puppeteer browsers
-        run: npx puppeteer browsers install chrome
+          sudo apt-get install -y \
+            libnss3-dev \
+            libatk-bridge2.0-dev \
+            libdrm-dev \
+            libgtk-3-dev \
+            libgbm-dev
+          # Install Chrome
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
       
       - name: Run Puppeteer tests
         run: npm run test:puppeteer
