@@ -36,12 +36,10 @@ import FilterPanel from './FilterPanel';
  * QueryBuilder - Main CUT (Cutty Ultimate Tool) interface
  * 
  * Charlie's Feature Implementation:
- * - Smart performance strategies based on file size
- * - Real-time filtering for small files (<10k rows)
- * - Debounced updates for medium files (10k-50k rows) 
- * - Manual "Apply Filters" for large files (>50k rows)
+ * - Manual "Apply Filters" button for all file sizes
  * - Export filtered data as new CSV files
  * - Integration with existing authentication and file management
+ * - Simple, predictable filtering behavior
  */
 const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   const { token } = useContext(AuthContext);
@@ -52,7 +50,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   const [columns, setColumns] = useState([]);
   const [filters, setFilters] = useState([]);
   const [filteredData, setFilteredData] = useState(null);
-  const [performance, setPerformance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [filtering, setFiltering] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -64,11 +61,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
-  
-  // Performance strategy state
-  const [updateStrategy, setUpdateStrategy] = useState('manual');
-  const [autoUpdate, setAutoUpdate] = useState(false);
-  const [debounceTimer, setDebounceTimer] = useState(null);
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -102,31 +94,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     }
   }, [fileId, token]);
 
-  // Auto-update logic based on performance strategy
-  useEffect(() => {
-    if (filters.length > 0 && updateStrategy === 'realtime' && autoUpdate) {
-      executeQuery(true);
-    } else if (filters.length > 0 && updateStrategy === 'debounced' && autoUpdate) {
-      // Clear previous timer
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
-      
-      // Set new debounced timer
-      const timer = setTimeout(() => {
-        executeQuery(true);
-      }, performance?.updateInterval || 500);
-      
-      setDebounceTimer(timer);
-    }
-    
-    // Cleanup timer on unmount
-    return () => {
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
-    };
-  }, [filters, updateStrategy, autoUpdate, performance]);
+  // No auto-update logic - all filtering is manual
 
   const initializeFile = async (targetFileId) => {
     const actualFileId = targetFileId || fileId;
@@ -136,12 +104,11 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     try {
       console.log(`🐱 Initializing CUT for file ${actualFileId} (demo: ${demoMode})`);
 
-      let columnsUrl, performanceUrl;
+      let columnsUrl;
       
       // Handle demo mode for anonymous users
       if (actualFileId === 'demo-npors2025' && isAnonymous) {
         columnsUrl = '/api/v1/public/demo/npors2025/columns';
-        performanceUrl = '/api/v1/public/demo/npors2025/performance';
         setFileInfo({
           filename: '2025 National Public Opinion Reference Survey (Demo Data)',
           id: 'demo-npors2025',
@@ -149,19 +116,12 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
         });
       } else if (actualFileId === 'reference-squirrel' && token) {
         columnsUrl = '/api/v1/files/reference/squirrel/columns';
-        performanceUrl = '/api/v1/files/reference/squirrel/performance';
       } else {
         columnsUrl = `/api/v1/files/${actualFileId}/columns`;
-        performanceUrl = `/api/v1/files/${actualFileId}/performance`;
       }
 
-      // Load column metadata and performance strategy in parallel
-      const [columnsResponse, performanceResponse] = await Promise.all([
-        api.get(columnsUrl),
-        api.get(performanceUrl).catch(() => ({
-          data: { strategy: 'realtime', estimatedRows: 3000, fileSizeMB: 0.5 }
-        })) // Default for demo mode
-      ]);
+      // Load column metadata
+      const columnsResponse = await api.get(columnsUrl);
 
       if (!columnsResponse.data.success) {
         throw new Error(columnsResponse.data.error || 'Failed to load column metadata');
@@ -177,19 +137,10 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       if (!demoMode) {
         setFileInfo(columnsResponse.data.fileInfo || {});
       }
-      
-      // Set up performance strategy
-      if (performanceResponse.data) {
-        setPerformance(performanceResponse.data);
-        setUpdateStrategy(performanceResponse.data.strategy);
-        setAutoUpdate(performanceResponse.data.strategy !== 'manual');
-        
-        console.log(`🐱 Performance strategy: ${performanceResponse.data.strategy} for ${performanceResponse.data.estimatedRows} rows`);
-      }
 
       // Only show success message for non-demo mode (check both demoMode state and demo file ID)
       if (!demoMode && actualFileId !== 'demo-npors2025') {
-        setSuccessMessage(`File loaded! ${columnsResponse.data.columns?.length || 0} columns detected. ${performanceResponse.data?.strategy === 'realtime' ? 'Real-time filtering enabled.' : performanceResponse.data?.strategy === 'debounced' ? 'Smart debounced filtering enabled.' : 'Manual filtering mode (large file).'}`);
+        setSuccessMessage(`File loaded! ${columnsResponse.data.columns?.length || 0} columns detected. Ready to apply filters.`);
       }
       
     } catch (err) {
@@ -369,26 +320,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     return str;
   };
 
-  const getPerformanceIndicator = () => {
-    if (!performance) return null;
-
-    const indicators = {
-      realtime: { color: 'success', label: 'Real-time', icon: '⚡' },
-      debounced: { color: 'info', label: 'Smart Updates', icon: '🧠' },
-      manual: { color: 'warning', label: 'Manual Mode', icon: '👆' }
-    };
-
-    const indicator = indicators[updateStrategy] || indicators.manual;
-
-    return (
-      <Chip
-        size="small"
-        color={indicator.color}
-        label={`${indicator.icon} ${indicator.label}`}
-        sx={{ ml: 1 }}
-      />
-    );
-  };
 
   const displayedRows = filteredData?.filteredRows ? 
     filteredData.filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) : [];
@@ -397,7 +328,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" component="h1" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
         🔨 CUT - Cutty Ultimate Tool
-        {getPerformanceIndicator()}
         {(onClose || routeFileId) && (
           <Button 
             onClick={onClose || (() => navigate('/manage_files'))} 
@@ -445,7 +375,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
-                    📄 File Information
+                    File Information
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} md={4}>
@@ -475,10 +405,33 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
               columns={columns}
               filters={filters}
               onFiltersChange={handleFiltersChange}
-              updateStrategy={updateStrategy}
               isFiltering={filtering}
             />
           </Grid>
+
+          {/* Apply Filters Button */}
+          {filters.length > 0 && (
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={handleManualRefresh}
+                  disabled={filtering}
+                  startIcon={filtering ? <CircularProgress size={20} /> : <FilterIcon />}
+                  sx={{
+                    px: 6,
+                    py: 1.5,
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    textTransform: 'none'
+                  }}
+                >
+                  {filtering ? 'Applying Filters...' : 'Apply Filters'}
+                </Button>
+              </Box>
+            </Grid>
+          )}
 
           {/* Results Panel */}
           <Grid item xs={12}>
@@ -495,18 +448,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                   </Typography>
                   
                   <Box>
-                    {updateStrategy === 'manual' && (
-                      <Tooltip title="Apply current filters">
-                        <IconButton 
-                          onClick={handleManualRefresh}
-                          disabled={filtering || filters.length === 0}
-                          color="primary"
-                        >
-                          {filtering ? <CircularProgress size={20} /> : <RefreshIcon />}
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                    
                     <Tooltip title="Export filtered data as CSV">
                       <span>
                         <IconButton

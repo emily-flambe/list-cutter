@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The CUT (Cutty Ultimate Tool) is a dynamic query builder that enables users to interactively filter, analyze, and export CSV data. The tool provides an intuitive interface for building complex data queries through column-by-column selection, intelligent filtering based on data types, real-time analysis with crosstabs, and seamless data export functionality. This feature transforms Cutty from a simple CSV processor into a powerful data analysis platform.
+The CUT (Cutty Ultimate Tool) is a dynamic query builder that enables users to interactively filter, analyze, and export CSV data. The tool provides an intuitive interface for building complex data queries through column-by-column selection, intelligent filtering based on data types, manual-controlled analysis with crosstabs, and seamless data export functionality. This feature transforms Cutty from a simple CSV processor into a powerful data analysis platform.
 
 ## Requirements
 
@@ -15,9 +15,9 @@ The CUT (Cutty Ultimate Tool) is a dynamic query builder that enables users to i
 1. WHEN a user uploads or selects a CSV file THEN the system SHALL display all available columns with their detected data types
 2. WHEN a user clicks on a column THEN the system SHALL add it to the active filter builder
 3. WHEN a column is added to the filter builder THEN the system SHALL display appropriate filter options based on the column's data type (text, number, date, boolean)
-4. WHEN a user applies filters AND the file has fewer than 10,000 rows THEN the system SHALL update the data preview in real-time
-5. WHEN a user applies filters AND the file has 10,000 or more rows THEN the system SHALL require manual refresh or "recalculate" action
-6. WHEN a user removes a filter THEN the system SHALL update the results according to the same size-based rules
+4. WHEN a user creates filters THEN the system SHALL require manual "Apply Filters" action for all file sizes
+5. WHEN a user clicks "Apply Filters" THEN the system SHALL update the data preview with loading indicators
+6. WHEN a user removes a filter THEN the system SHALL require manual "Apply Filters" action to update results
 
 ### Requirement 2
 
@@ -33,7 +33,7 @@ The CUT (Cutty Ultimate Tool) is a dynamic query builder that enables users to i
 
 ### Requirement 3
 
-**User Story:** As a data analyst, I want to see real-time analysis of filtered data through crosstabs and other visualizations, so that I can understand data patterns before exporting.
+**User Story:** As a data analyst, I want to see analysis of filtered data through crosstabs and other visualizations after applying filters, so that I can understand data patterns before exporting.
 
 #### Acceptance Criteria
 

@@ -4,7 +4,7 @@
 
 The CUT (Cutty Ultimate Tool) dynamic query builder is a comprehensive data analysis interface that extends Cutty's existing CSV processing capabilities. The system builds upon the current architecture, leveraging the existing CrosstabProcessor service, file management system, and React frontend components. The design emphasizes performance, usability, and seamless integration with the existing Cutty ecosystem.
 
-The tool transforms the current static filter approach into a dynamic, interactive query builder with real-time analysis capabilities, intelligent data type detection, and advanced export functionality.
+The tool transforms the current static filter approach into a dynamic, interactive query builder with manual-controlled analysis capabilities, intelligent data type detection, and advanced export functionality.
 
 ## Architecture
 
@@ -97,7 +97,7 @@ interface CUTState {
 **Key Features:**
 - File selection dropdown (integrates with existing file management)
 - Column display with data type indicators
-- Real-time filter management
+- Manual filter management with "Apply Filters" button
 - Analysis configuration panel
 - Export controls with "CUT IT" button
 
@@ -131,7 +131,7 @@ interface FilterConfiguration {
 
 #### Analysis Viewer Component (`AnalysisViewer.jsx`)
 
-Displays real-time analysis results including crosstabs and summary statistics.
+Displays analysis results including crosstabs and summary statistics after filters are applied.
 
 ```typescript
 interface AnalysisViewerProps {
@@ -426,7 +426,7 @@ class CUTErrorHandler {
 ### User-Friendly Error Messages
 
 - **Filter Errors**: "The filter for column 'Age' expects a number, but 'abc' was provided"
-- **Performance Errors**: "This file is too large for real-time updates. Click 'Recalculate' to apply filters"
+- **Performance Errors**: "Processing large dataset. Please wait while filters are applied."
 - **Data Errors**: "Column 'Date' contains invalid date formats. Some rows may be excluded"
 
 ## Performance Considerations
@@ -434,7 +434,7 @@ class CUTErrorHandler {
 ### Frontend Optimization
 
 - **Virtual Scrolling**: For large datasets in preview tables
-- **Debounced Updates**: Prevent excessive API calls during filter editing
+- **Manual Updates**: Prevent excessive API calls with explicit "Apply Filters" action
 - **Memoization**: Cache expensive calculations and renders
 - **Lazy Loading**: Load analysis components only when needed
 
@@ -445,25 +445,8 @@ class CUTErrorHandler {
 - **Index Optimization**: Create efficient database indexes for metadata
 - **Connection Pooling**: Optimize database connection usage
 
-### Real-time Update Strategy
+### Manual Update Strategy
 
-```typescript
-interface UpdateStrategy {
-  fileSize: number;
-  rowCount: number;
-  strategy: 'realtime' | 'manual' | 'debounced';
-  updateInterval?: number;
-}
-
-class UpdateManager {
-  static determineStrategy(fileMetadata: FileMetadata): UpdateStrategy;
-  static scheduleUpdate(strategy: UpdateStrategy, callback: () => void): void;
-}
-```
-
-**Update Rules:**
-- Files < 10,000 rows: Real-time updates
-- Files 10,000-50,000 rows: Debounced updates (500ms delay)
-- Files > 50,000 rows: Manual updates only
+All file sizes use manual "Apply Filters" button for predictable performance and user control. This eliminates complexity around different update strategies and provides a consistent user experience regardless of dataset size.
 
 This design provides a comprehensive foundation for the CUT dynamic query builder while maintaining compatibility with Cutty's existing architecture and performance requirements.

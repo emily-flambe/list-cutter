@@ -44,7 +44,7 @@
 - [ ] 2.2 Create query execution API endpoint
   - Implement POST /api/v1/files/:fileId/query endpoint
   - Add support for filter application and pagination
-  - Implement real-time vs manual update logic based on file size
+  - Implement manual update logic for all file sizes
   - _Requirements: 1.4, 1.5, 1.6_
 
 - [ ] 2.3 Build analysis API endpoint
@@ -95,10 +95,10 @@
   - Add summary statistics display (count, unique values, nulls)
   - _Requirements: 3.1, 3.2, 3.4, 3.5_
 
-- [ ] 3.5 Implement real-time update logic in frontend
-  - Add file size detection to determine update strategy
-  - Implement debounced updates for medium-sized files
-  - Create manual recalculate button for large files
+- [ ] 3.5 Implement manual update logic in frontend
+  - Create prominent "Apply Filters" button
+  - Add loading states during filter application
+  - Implement consistent manual filtering for all file sizes
   - _Requirements: 1.4, 1.5, 1.6, 3.3_
 
 - [ ] 4. Create export functionality and file management integration

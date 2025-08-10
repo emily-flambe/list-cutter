@@ -40,7 +40,6 @@ const FilterPanel = ({
   columns: columnsFromParent, 
   filters: filtersFromParent = [], 
   onFiltersChange,
-  updateStrategy,
   isFiltering
 }) => {
   const { token } = useContext(AuthContext);
@@ -70,16 +69,29 @@ const FilterPanel = ({
     const newFilter = {
       id: Date.now(),
       selectedColumn: columnName, // Pre-select the column if provided
+      column: columnName,
+      operator: 'contains',
+      value: ''
     };
     const updatedFilters = [...filters, newFilter];
     setFilters(updatedFilters);
     console.log('🟢 Filters now:', updatedFilters.length);
+    
+    // Notify parent component about filter changes
+    if (onFiltersChange) {
+      onFiltersChange(updatedFilters);
+    }
   };
   
   // Remove filter
   const removeFilter = (filterId) => {
     const updatedFilters = filters.filter(f => f.id !== filterId);
     setFilters(updatedFilters);
+    
+    // Notify parent component about filter changes
+    if (onFiltersChange) {
+      onFiltersChange(updatedFilters);
+    }
   };
   
   // Update filter column selection
@@ -87,11 +99,52 @@ const FilterPanel = ({
     console.log('🟢 Updating filter', filterId, 'to column:', columnName);
     const updatedFilters = filters.map(filter => {
       if (filter.id === filterId) {
-        return { ...filter, selectedColumn: columnName };
+        return { ...filter, selectedColumn: columnName, column: columnName };
       }
       return filter;
     });
     setFilters(updatedFilters);
+    
+    // Notify parent component about filter changes
+    if (onFiltersChange) {
+      onFiltersChange(updatedFilters);
+    }
+  };
+  
+  // Update filter operator
+  const updateFilterOperator = (filterId, operator) => {
+    console.log('🟢 Updating filter', filterId, 'operator to:', operator);
+    const updatedFilters = filters.map(filter => {
+      if (filter.id === filterId) {
+        // Clear value when switching to is_empty or is_not_empty
+        const newValue = (operator === 'is_empty' || operator === 'is_not_empty') ? '' : filter.value;
+        return { ...filter, operator, value: newValue };
+      }
+      return filter;
+    });
+    setFilters(updatedFilters);
+    
+    // Notify parent component about filter changes
+    if (onFiltersChange) {
+      onFiltersChange(updatedFilters);
+    }
+  };
+  
+  // Update filter value
+  const updateFilterValue = (filterId, value) => {
+    console.log('🟢 Updating filter', filterId, 'value to:', value);
+    const updatedFilters = filters.map(filter => {
+      if (filter.id === filterId) {
+        return { ...filter, value };
+      }
+      return filter;
+    });
+    setFilters(updatedFilters);
+    
+    // Notify parent component about filter changes
+    if (onFiltersChange) {
+      onFiltersChange(updatedFilters);
+    }
   };
   
   // Show loading state
@@ -133,9 +186,20 @@ const FilterPanel = ({
         {/* Filters section */}
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1">
-              Active Filters ({filters.length})
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+              <Typography variant="subtitle1">
+                Active Filters ({filters.length})
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                onClick={() => console.log('Apply Filters clicked')}
+                sx={{ mr: 2 }}
+              >
+                Apply Filters
+              </Button>
+            </Box>
           </AccordionSummary>
           <AccordionDetails>
             {filters.length === 0 ? (
@@ -145,7 +209,13 @@ const FilterPanel = ({
             ) : (
               <Box sx={{ mb: 2 }}>
                 {filters.map((filter) => (
-                  <Box key={filter.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <Box key={filter.id} sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1.5, 
+                    mb: 2,
+                    flexWrap: 'wrap'
+                  }}>
                     <Tooltip title="Remove filter">
                       <IconButton 
                         onClick={() => removeFilter(filter.id)}
@@ -157,7 +227,7 @@ const FilterPanel = ({
                       </IconButton>
                     </Tooltip>
                     
-                    <FormControl sx={{ minWidth: 200 }}>
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
                       <InputLabel>Select Column</InputLabel>
                       <Select
                         value={filter.selectedColumn}
@@ -171,6 +241,34 @@ const FilterPanel = ({
                         ))}
                       </Select>
                     </FormControl>
+                    
+                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                      <InputLabel>Operator</InputLabel>
+                      <Select
+                        value={filter.operator}
+                        label="Operator"
+                        onChange={(e) => updateFilterOperator(filter.id, e.target.value)}
+                      >
+                        <MenuItem value="equals">Equals</MenuItem>
+                        <MenuItem value="not_equals">Not Equals</MenuItem>
+                        <MenuItem value="contains">Contains</MenuItem>
+                        <MenuItem value="not_contains">Not Contains</MenuItem>
+                        <MenuItem value="starts_with">Starts With</MenuItem>
+                        <MenuItem value="ends_with">Ends With</MenuItem>
+                        <MenuItem value="is_empty">Is Empty</MenuItem>
+                        <MenuItem value="is_not_empty">Is Not Empty</MenuItem>
+                      </Select>
+                    </FormControl>
+                    
+                    {filter.operator !== 'is_empty' && filter.operator !== 'is_not_empty' && (
+                      <TextField
+                        size="small"
+                        label="Value"
+                        value={filter.value}
+                        onChange={(e) => updateFilterValue(filter.id, e.target.value)}
+                        sx={{ minWidth: 180 }}
+                      />
+                    )}
                   </Box>
                 ))}
               </Box>

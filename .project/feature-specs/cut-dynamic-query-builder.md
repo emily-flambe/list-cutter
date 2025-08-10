@@ -19,18 +19,18 @@ CUT is a dynamic query builder that transforms Cutty from a simple CSV processor
 - Uses Material-UI components matching existing design patterns
 - Integrates with current file management system
 
-### 2. Real-time vs Manual Updates
-**Purpose**: Balance performance with user experience based on dataset size
+### 2. Manual Filter Application
+**Purpose**: Provide predictable, user-controlled filtering behavior for all dataset sizes
 
-**Behavior Thresholds**:
-- **< 10,000 rows**: Real-time filter updates on every change
-- **10,000-50,000 rows**: Debounced updates (500ms delay)
-- **> 50,000 rows**: Manual "Recalculate" button required
+**Behavior**:
+- **All file sizes**: Manual "Apply Filters" button required for all queries
+- Filters are only applied when user explicitly clicks "Apply Filters"
+- No automatic or real-time filtering to ensure predictable performance
 
 **Performance Requirements**:
-- Query response < 2s for datasets under 50,000 rows
+- Query response < 5s for typical datasets
 - Progress indicators for operations > 500ms
-- Query result caching for repeated filter applications
+- Clear loading states during filter application
 
 ### 3. Analysis Viewer
 **Purpose**: Display filtered data insights through crosstabs and statistics
@@ -39,7 +39,7 @@ CUT is a dynamic query builder that transforms Cutty from a simple CSV processor
 - Generate frequency tables with row/column percentages
 - Display summary statistics (count, unique values, nulls)
 - Integrate with existing `CuttytabsTable` component
-- Update analysis when filters change (respecting update strategy)
+- Update analysis only when user applies filters manually
 
 **Testing Criteria**:
 - Crosstab calculations match expected statistical outputs
