@@ -22,8 +22,7 @@ import publicRoutes from './routes/public';
 // Import security middleware
 import { rateLimitMiddleware } from './services/security';
 
-// Import Cuttytabs processing
-import { runIncrementalProcessing } from './services/segment-processor';
+// Cuttytabs processing removed - no longer using cron jobs
 
 type HonoVariables = {
   userId?: string;
@@ -313,23 +312,7 @@ app.onError((err, c): Response => {
 
 // Export the Hono app as default
 export default {
-  fetch: app.fetch,
-  
-  // Cron job handler for Cuttytabs incremental processing
-  async scheduled(event: ScheduledEvent, env: CloudflareEnv, ctx: ExecutionContext): Promise<void> {
-    console.log('Cron trigger fired:', event.cron, 'at', new Date().toISOString());
-    
-    // Run incremental processing in the background
-    ctx.waitUntil(
-      runIncrementalProcessing(env)
-        .then(stats => {
-          console.log('Cron processing completed successfully:', stats);
-        })
-        .catch(error => {
-          console.error('Cron processing failed:', error);
-        })
-    );
-  }
+  fetch: app.fetch
 };
 
 // Export Durable Objects

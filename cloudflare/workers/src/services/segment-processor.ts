@@ -96,7 +96,7 @@ export async function processSegments(env: Env): Promise<ProcessingStats> {
       LIMIT 50
     `).all();
 
-    console.log(`Found ${segments.results.length} segments to process`);
+    // console.log(`Found ${segments.results.length} segments to process`);
 
     for (const segment of segments.results) {
       try {
@@ -119,7 +119,7 @@ export async function processSegments(env: Env): Promise<ProcessingStats> {
         stats.recordsEvaluated += changedRecords.results.length;
 
         if (changedRecords.results.length > 0) {
-          console.log(`Processing ${changedRecords.results.length} changed records for segment ${segment.name}`);
+          // console.log(`Processing ${changedRecords.results.length} changed records for segment ${segment.name}`);
 
           // Evaluate which changed records match the segment criteria
           const matchingRecords = await env.DB.prepare(`
@@ -209,15 +209,15 @@ export async function processSegments(env: Env): Promise<ProcessingStats> {
 
   stats.processingTimeMs = Date.now() - startTime;
   
-  console.log('Segment processing complete:', {
-    segmentsProcessed: stats.segmentsProcessed,
-    recordsEvaluated: stats.recordsEvaluated,
-    membershipsAdded: stats.membershipsAdded,
-    membershipsRemoved: stats.membershipsRemoved,
-    activationsQueued: stats.activationsQueued,
-    processingTimeMs: stats.processingTimeMs,
-    errorsCount: stats.errors.length
-  });
+  // console.log('Segment processing complete:', {
+  //   segmentsProcessed: stats.segmentsProcessed,
+  //   recordsEvaluated: stats.recordsEvaluated,
+  //   membershipsAdded: stats.membershipsAdded,
+  //   membershipsRemoved: stats.membershipsRemoved,
+  //   activationsQueued: stats.activationsQueued,
+  //   processingTimeMs: stats.processingTimeMs,
+  //   errorsCount: stats.errors.length
+  // });
 
   return stats;
 }
@@ -246,7 +246,7 @@ export async function processActivationQueue(env: Env): Promise<ProcessingStats>
     stats.recordsEvaluated = googleAdsStats.processed;
     stats.errors = googleAdsStats.errors;
 
-    console.log('Activation processing delegated to Google Ads service:', googleAdsStats);
+    // console.log('Activation processing delegated to Google Ads service:', googleAdsStats);
 
   } catch (error) {
     const errorMsg = `Critical error in processActivationQueue: ${error}`;
@@ -262,7 +262,7 @@ export async function processActivationQueue(env: Env): Promise<ProcessingStats>
  * Main entry point for cron job - processes both segments and activations
  */
 export async function runIncrementalProcessing(env: Env): Promise<ProcessingStats> {
-  console.log('Starting incremental processing...');
+  // console.log('Starting incremental processing...');
   
   const segmentStats = await processSegments(env);
   const activationStats = await processActivationQueue(env);
@@ -278,6 +278,6 @@ export async function runIncrementalProcessing(env: Env): Promise<ProcessingStat
     errors: [...segmentStats.errors, ...activationStats.errors]
   };
 
-  console.log('Incremental processing complete:', combinedStats);
+  // console.log('Incremental processing complete:', combinedStats);
   return combinedStats;
 }
