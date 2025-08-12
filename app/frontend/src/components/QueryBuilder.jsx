@@ -242,6 +242,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
 
     try {
       console.log(`🐱 Executing query with ${filters.length} filters (auto: ${isAutoUpdate}, demo: ${demoMode})`);
+      console.log('🐱 Filter details:', JSON.stringify(filters, null, 2));
 
       const queryRequest = {
         filters: filters.length > 0 ? filters : [],

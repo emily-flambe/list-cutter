@@ -1147,60 +1147,20 @@ files.post('/:fileId/export/filtered', async (c) => {
       userId
     );
 
-    // Generate optimized filename
-    const timestamp = new Date().toISOString().split('T')[0];
-    const baseName = exportResult.metadata?.originalFile?.replace(/\.[^/.]+$/, '') || 'filtered';
-    const exportFilename = queryRequest.filename || `cut_filtered_${baseName}_${timestamp}.csv`;
-
-    // Generate new file ID and key for export
-    const exportFileId = crypto.randomUUID();
-    const exportFileKey = `files/${userId}/${exportFileId}/${exportFilename}`;
-    // Check if we got valid CSV content
-    if (!exportResult.success || !exportResult.csvContent) {
-      console.error('🐱 Export failed - no CSV content generated');
+    // Check if we got valid export result
+    if (!exportResult.success || !exportResult.fileId) {
+      console.error('🐱 Export failed - no data generated');
       return c.json({ 
         error: 'Export failed - no data generated', 
         details: exportResult.error 
       }, 500);
     }
     
-    const exportFileSize = new TextEncoder().encode(exportResult.csvContent).length;
-    
-    console.log(`🐱 Generated CSV content: ${exportFileSize} bytes`);
-
-    // Upload filtered CSV to R2
-    await c.env.FILE_STORAGE.put(exportFileKey, exportResult.csvContent, {
-      httpMetadata: {
-        contentType: 'text/csv',
-        contentDisposition: `attachment; filename="${exportFilename}"`
-      },
-      customMetadata: {
-        userId,
-        originalName: exportFilename,
-        size: exportFileSize.toString(),
-        uploadedAt: new Date().toISOString(),
-        source: 'cut-filtered',
-        originalFileId: fileId,
-        filtersApplied: (exportResult.metadata?.appliedFilters?.length || 0).toString(),
-        filteredRows: (exportResult.metadata?.filteredRows || 0).toString(),
-        totalRows: (exportResult.metadata?.totalRows || 0).toString()
-      }
-    });
-
-    // Create tags for the exported file
-    const tags = [
-      'cut-filtered',
-      'export',
-      `original-file:${fileId}`,
-      `filters:${exportResult.metadata?.appliedFilters?.length || 0}`,
-      'charlie-optimized'  // Charlie's optimization mark!
-    ];
-
-    // Save export file metadata to database
-    await c.env.DB.prepare(
-      `INSERT INTO files (id, user_id, filename, original_filename, r2_key, file_size, mime_type, upload_status, tags) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(exportFileId, userId, exportFilename, exportFilename, exportFileKey, exportFileSize, 'text/csv', 'completed', JSON.stringify(tags)).run();
+    // The file has already been saved to R2 and database by QueryProcessor.exportFilteredData
+    // We just need to use the fileId and filename it returned
+    const exportFileId = exportResult.fileId;
+    const exportFilename = exportResult.filename;
+    const exportFileSize = exportResult.metadata?.fileSize || 0;
 
     const totalTime = Date.now() - startTime;
     console.log(`🐱 CUT export completed in ${totalTime}ms: ${exportResult.metadata?.filteredRows || 0}/${exportResult.metadata?.totalRows || 0} rows exported`);

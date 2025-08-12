@@ -236,15 +236,19 @@ export class FilterProcessor {
     const filterValue = String(filter.value || '').trim();
     
     // Handle null/empty checks first
-    if (filter.operator === 'is_null') {
+    if (filter.operator === 'is_null' || filter.operator === 'is_empty') {
       return cellValue === '' || cellValue.toLowerCase() === 'null';
     }
-    if (filter.operator === 'not_null') {
+    if (filter.operator === 'not_null' || filter.operator === 'is_not_empty') {
       return cellValue !== '' && cellValue.toLowerCase() !== 'null';
     }
 
-    // Skip empty cells for other operators (unless explicitly checking for empty)
-    if (cellValue === '' && filter.operator !== 'equals') {
+    // For "not_contains", "not_equals" operators, empty cells should be evaluated normally
+    // (an empty cell doesn't contain any string, so it passes "not_contains" filters)
+    if (cellValue === '' && 
+        filter.operator !== 'equals' && 
+        filter.operator !== 'not_equals' && 
+        filter.operator !== 'not_contains') {
       return false;
     }
 

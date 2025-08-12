@@ -165,7 +165,8 @@ export class QueryProcessor {
         appliedFilters: request.filters || [],
         exportedAt: new Date().toISOString(),
         totalRows: filteredResult.totalRows,
-        filteredRows: filteredResult.filteredCount
+        filteredRows: filteredResult.filteredCount,
+        fileSize: 0  // Will be updated after generating CSV
       };
 
       const csvExportContent = FilterProcessor.exportFilteredCSV(
@@ -215,6 +216,9 @@ export class QueryProcessor {
       // 7. Generate download URL
       const downloadUrl = `/api/v1/files/${newFileId}/download`;
 
+      // Update metadata with actual file size
+      metadata.fileSize = csvExportContent.length;
+      
       const processingTime = Date.now() - startTime;
       console.log(`🐱 Export completed: ${filename} (${filteredResult.filteredCount} rows) in ${processingTime}ms`);
 
