@@ -522,7 +522,6 @@ describe('QueryEngine', () => {
 1. Add WebSocket endpoint alongside SSE
 2. Migrate hot segments to WebSocket updates
 3. Keep SSE for backward compatibility
-4. Performance monitoring dashboard
 
 ## Modern Architecture Benefits
 

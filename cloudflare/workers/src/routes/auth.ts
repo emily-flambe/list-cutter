@@ -13,22 +13,26 @@ import { Hono } from 'hono';
 import type { Env } from '../types';
 import { generateToken, generateTokenPair, validateToken, refreshAccessToken, blacklistToken } from '../services/auth/jwt';
 import { hashPassword, verifyPassword } from '../services/storage/d1';
+import { createDemoFilesForUser } from '../services/demo-data';
 
 const auth = new Hono<{ Bindings: Env }>();
 
 // Login endpoint
 auth.post('/login', async (c) => {
   try {
-    const { email, password } = await c.req.json();
+    const { email, username, password } = await c.req.json();
     
-    if (!email || !password) {
-      return c.json({ error: 'Email and password are required' }, 400);
+    // Accept either email or username for login
+    const loginIdentifier = email || username;
+    
+    if (!loginIdentifier || !password) {
+      return c.json({ error: 'Username/email and password are required' }, 400);
     }
 
-    // Get user from database
+    // Get user from database - check both email and username fields
     const user = await c.env.DB.prepare(
-      'SELECT * FROM users WHERE email = ?'
-    ).bind(email).first();
+      'SELECT * FROM users WHERE email = ? OR username = ?'
+    ).bind(loginIdentifier, loginIdentifier).first();
 
     if (!user) {
       return c.json({ error: 'Invalid credentials' }, 401);
@@ -101,12 +105,15 @@ auth.post('/register', async (c) => {
     // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Create user with role
+    // Create user with role - get the actual user ID from the created record
     const result = await c.env.DB.prepare(
-      'INSERT INTO users (email, password_hash, username, role) VALUES (?, ?, ?, ?)'
-    ).bind(email, passwordHash, username || email.split('@')[0], role).run();
+      'INSERT INTO users (email, password_hash, username, role) VALUES (?, ?, ?, ?) RETURNING id'
+    ).bind(email, passwordHash, username || email.split('@')[0], role).first();
 
-    const userId = result.meta.last_row_id;
+    const userId = result.id;
+
+    // Create demo files for new user
+    await createDemoFilesForUser(userId, c.env);
 
     // Generate tokens with role
     const tokens = await generateTokenPair(
@@ -325,6 +332,11 @@ auth.get('/google/callback', async (c) => {
       'ON CONFLICT(email) DO UPDATE SET google_id = ?, updated_at = CURRENT_TIMESTAMP ' +
       'RETURNING id, email, username, role'
     ).bind(email, payload.name || email.split('@')[0], payload.sub, role, 'OAUTH_USER', payload.sub).first();
+
+    // Create demo files for new users (only if this is a new user)
+    if (!existingUser) {
+      await createDemoFilesForUser(user.id, c.env);
+    }
 
     // Generate our own tokens with role (use generateTokenPair like main branch)
     const tokens = await generateTokenPair(

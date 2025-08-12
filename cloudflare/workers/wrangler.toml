@@ -158,9 +158,9 @@ dataset = "cutty-metrics"
 # script_name = "cutty-dev"
 # Commented out - using external agent via WebSocket proxy
 
-# Cron triggers for Cuttytabs incremental processing
-[triggers]
-crons = ["* * * * *"]  # Every minute for real-time segmentation
+# Cron triggers disabled - segment processing removed
+# [triggers]
+# crons = ["* * * * *"]  # Every minute for real-time segmentation
 
 # ⚠️  NO STAGING ENVIRONMENT - Only development (cutty-dev) and production (cutty-prod)
 
