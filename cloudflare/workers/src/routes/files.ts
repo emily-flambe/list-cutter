@@ -22,7 +22,7 @@ import { QueryProcessor, type QueryRequest, type QueryResult, type ExportRequest
 
 const files = new Hono<{ Bindings: Env }>();
 
-// Middleware to verify authentication (skip for download endpoint)
+// Middleware to verify authentication (skip for certain endpoints)
 files.use('*', async (c, next) => {
   // Allow anonymous access to download endpoint for synthetic data
   if (c.req.method === 'GET' && c.req.path.match(/\/[a-f0-9-]{36}$/)) {
@@ -37,6 +37,25 @@ files.use('*', async (c, next) => {
         // Authentication failed, but we'll continue without setting userId
         console.log('Optional authentication failed for download:', error);
       }
+    }
+    await next();
+    return;
+  }
+
+  // Allow anonymous access to process and export endpoints
+  if (c.req.path === '/process' || c.req.path === '/export') {
+    const authHeader = c.req.header('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const payload = await validateToken(token, c.env.JWT_SECRET, c.env.AUTH_KV);
+        c.set('userId', payload.user_id);
+      } catch (error) {
+        console.log('Optional authentication for process/export:', error);
+        c.set('userId', 'anonymous');
+      }
+    } else {
+      c.set('userId', 'anonymous');
     }
     await next();
     return;
@@ -1072,23 +1091,19 @@ files.post('/:fileId/query', async (c) => {
     const fileId = c.req.param('fileId');
     const queryRequest: QueryRequest = await c.req.json();
 
-    // Validate the query request has fileId
-    if (!queryRequest.fileId) {
-      queryRequest.fileId = fileId; // Use URL param if not in body
-    }
-
-    // Ensure fileId matches URL param for security
-    if (queryRequest.fileId !== fileId) {
-      return c.json({ error: 'File ID mismatch between URL and request body' }, 400);
-    }
-
     console.log(`🐱 CUT query started for file ${fileId} with ${queryRequest.filters?.length || 0} filters`);
 
-    // Execute query using QueryProcessor
-    const result = await QueryProcessor.executeQuery(queryRequest, c.env, userId);
+    // Execute query using QueryProcessor with correct parameters
+    const result = await QueryProcessor.executeQuery(fileId, queryRequest, c.env, userId);
 
     const totalTime = Date.now() - startTime;
-    console.log(`🐱 CUT query completed successfully in ${totalTime}ms: ${result.data.filteredRows}/${result.data.totalRows} rows match filters`);
+    
+    // Safe access to result.data properties with null checks
+    if (result.success && result.data) {
+      console.log(`🐱 CUT query completed successfully in ${totalTime}ms: ${result.data.filteredCount}/${result.data.totalRows} rows match filters`);
+    } else {
+      console.log(`🐱 CUT query completed with error in ${totalTime}ms`);
+    }
 
     return c.json(result);
   } catch (error) {
@@ -1126,21 +1141,32 @@ files.post('/:fileId/export/filtered', async (c) => {
 
     // Export filtered data using QueryProcessor
     const exportResult = await QueryProcessor.exportFilteredData(
+      fileId,
       queryRequest, 
       c.env, 
-      userId, 
-      queryRequest.filename
+      userId
     );
 
     // Generate optimized filename
     const timestamp = new Date().toISOString().split('T')[0];
-    const baseName = exportResult.metadata.originalFilename.replace(/\.[^/.]+$/, '');
+    const baseName = exportResult.metadata?.originalFile?.replace(/\.[^/.]+$/, '') || 'filtered';
     const exportFilename = queryRequest.filename || `cut_filtered_${baseName}_${timestamp}.csv`;
 
     // Generate new file ID and key for export
     const exportFileId = crypto.randomUUID();
     const exportFileKey = `files/${userId}/${exportFileId}/${exportFilename}`;
+    // Check if we got valid CSV content
+    if (!exportResult.success || !exportResult.csvContent) {
+      console.error('🐱 Export failed - no CSV content generated');
+      return c.json({ 
+        error: 'Export failed - no data generated', 
+        details: exportResult.error 
+      }, 500);
+    }
+    
     const exportFileSize = new TextEncoder().encode(exportResult.csvContent).length;
+    
+    console.log(`🐱 Generated CSV content: ${exportFileSize} bytes`);
 
     // Upload filtered CSV to R2
     await c.env.FILE_STORAGE.put(exportFileKey, exportResult.csvContent, {
@@ -1155,9 +1181,9 @@ files.post('/:fileId/export/filtered', async (c) => {
         uploadedAt: new Date().toISOString(),
         source: 'cut-filtered',
         originalFileId: fileId,
-        filtersApplied: exportResult.metadata.filtersApplied.toString(),
-        filteredRows: exportResult.metadata.filteredRows.toString(),
-        totalRows: exportResult.metadata.totalRows.toString()
+        filtersApplied: (exportResult.metadata?.appliedFilters?.length || 0).toString(),
+        filteredRows: (exportResult.metadata?.filteredRows || 0).toString(),
+        totalRows: (exportResult.metadata?.totalRows || 0).toString()
       }
     });
 
@@ -1166,7 +1192,7 @@ files.post('/:fileId/export/filtered', async (c) => {
       'cut-filtered',
       'export',
       `original-file:${fileId}`,
-      `filters:${exportResult.metadata.filtersApplied}`,
+      `filters:${exportResult.metadata?.appliedFilters?.length || 0}`,
       'charlie-optimized'  // Charlie's optimization mark!
     ];
 
@@ -1177,7 +1203,7 @@ files.post('/:fileId/export/filtered', async (c) => {
     ).bind(exportFileId, userId, exportFilename, exportFilename, exportFileKey, exportFileSize, 'text/csv', 'completed', JSON.stringify(tags)).run();
 
     const totalTime = Date.now() - startTime;
-    console.log(`🐱 CUT export completed in ${totalTime}ms: ${exportResult.metadata.filteredRows}/${exportResult.metadata.totalRows} rows exported`);
+    console.log(`🐱 CUT export completed in ${totalTime}ms: ${exportResult.metadata?.filteredRows || 0}/${exportResult.metadata?.totalRows || 0} rows exported`);
 
     return c.json({
       success: true,
@@ -1192,7 +1218,7 @@ files.post('/:fileId/export/filtered', async (c) => {
         ...exportResult.metadata,
         processingTimeMs: totalTime
       },
-      message: `Filtered data exported in ${totalTime}ms! ${exportResult.metadata.filteredRows} rows saved as "${exportFilename}".`
+      message: `Filtered data exported in ${totalTime}ms! ${exportResult.metadata?.filteredRows || 0} rows saved as "${exportFilename}".`
     });
   } catch (error) {
     const totalTime = Date.now() - startTime;
@@ -1232,5 +1258,332 @@ files.get('/:fileId/performance', async (c) => {
     }, 500);
   }
 });
+
+// Anonymous/Authenticated CSV processing endpoint
+files.post('/process', async (c) => {
+  try {
+    const userId = c.get('userId') || 'anonymous';
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+
+    if (!file) {
+      return c.json({ error: 'No file provided' }, 400);
+    }
+
+    // Validate file
+    const validation = await validateFile(file, {
+      maxSize: parseInt(c.env.MAX_FILE_SIZE || '52428800'),
+      allowedTypes: ['text/csv', 'application/vnd.ms-excel', 'text/plain'],
+      allowedExtensions: ['.csv', '.txt', '.tsv']
+    });
+
+    if (!validation.valid) {
+      return c.json({ 
+        error: 'File validation failed', 
+        details: validation.errors 
+      }, 400);
+    }
+
+    // Read file content
+    const content = await file.text();
+    const rows = content.trim().split('\n');
+    const headers = rows[0].split(',').map(h => h.trim());
+
+    // For anonymous users, store temporarily in R2
+    const fileId = crypto.randomUUID();
+    const fileKey = userId === 'anonymous' 
+      ? `temp/${fileId}/${file.name}`
+      : `files/${userId}/${fileId}/${file.name}`;
+
+    // Store file in R2
+    await c.env.FILE_STORAGE.put(fileKey, content, {
+      httpMetadata: {
+        contentType: file.type,
+        contentDisposition: `attachment; filename="${file.name}"`
+      },
+      customMetadata: {
+        userId,
+        originalName: file.name,
+        size: file.size.toString(),
+        uploadedAt: new Date().toISOString(),
+        temporary: userId === 'anonymous' ? 'true' : 'false'
+      }
+    });
+
+    // For authenticated users, save to database
+    if (userId !== 'anonymous') {
+      await c.env.DB.prepare(
+        `INSERT INTO files (id, user_id, filename, original_filename, r2_key, file_size, mime_type, upload_status, tags) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        fileId, 
+        userId, 
+        file.name, 
+        file.name, 
+        fileKey, 
+        file.size, 
+        file.type, 
+        'completed', 
+        JSON.stringify(['uploaded', 'csv'])
+      ).run();
+    }
+
+    return c.json({
+      success: true,
+      columns: headers,
+      file_path: fileId,
+      rowCount: rows.length - 1,
+      message: userId === 'anonymous' 
+        ? 'File processed temporarily. Download your results before leaving.'
+        : 'File uploaded and saved to your account.'
+    });
+  } catch (error) {
+    console.error('Process error:', error);
+    return c.json({ error: 'Processing failed' }, 500);
+  }
+});
+
+// Anonymous/Authenticated CSV export endpoint
+files.post('/export', async (c) => {
+  try {
+    const userId = c.get('userId') || 'anonymous';
+    const { columns, file_path: fileId, filters } = await c.req.json();
+
+    if (!fileId || !columns || columns.length === 0) {
+      return c.json({ error: 'Missing required parameters' }, 400);
+    }
+
+    // Get file from R2
+    const fileKey = userId === 'anonymous' 
+      ? `temp/${fileId}/`
+      : `files/${userId}/${fileId}/`;
+
+    // List files with the prefix to find the actual file
+    const listResult = await c.env.FILE_STORAGE.list({ prefix: fileKey, limit: 1 });
+    if (!listResult.objects || listResult.objects.length === 0) {
+      // Try to find it in the database for authenticated users
+      if (userId !== 'anonymous') {
+        const fileRecord = await c.env.DB.prepare(
+          'SELECT r2_key FROM files WHERE id = ? AND user_id = ?'
+        ).bind(fileId, userId).first();
+        
+        if (fileRecord) {
+          const object = await c.env.FILE_STORAGE.get(fileRecord.r2_key);
+          if (object) {
+            const content = await object.text();
+            const filteredCsv = processCSV(content, columns, filters);
+            return new Response(filteredCsv, {
+              headers: {
+                'Content-Type': 'text/csv',
+                'Content-Disposition': 'attachment; filename="filtered.csv"'
+              }
+            });
+          }
+        }
+      }
+      return c.json({ error: 'File not found' }, 404);
+    }
+
+    // Get the file
+    const object = await c.env.FILE_STORAGE.get(listResult.objects[0].key);
+    if (!object) {
+      return c.json({ error: 'File data not found' }, 404);
+    }
+
+    const content = await object.text();
+    const filteredCsv = processCSV(content, columns, filters);
+
+    return new Response(filteredCsv, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': 'attachment; filename="filtered.csv"'
+      }
+    });
+  } catch (error) {
+    console.error('Export error:', error);
+    return c.json({ error: 'Export failed' }, 500);
+  }
+});
+
+// Save filtered CSV to user's files (authenticated only)
+files.post('/save', async (c) => {
+  try {
+    const userId = c.get('userId');
+    if (!userId || userId === 'anonymous') {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+
+    const formData = await c.req.formData();
+    const filename = formData.get('filename') as string;
+    const metadata = formData.get('metadata') as string;
+    const file_path = formData.get('file_path') as string; // The original file ID
+    const columns = formData.get('columns') as string;
+    const filters = formData.get('filters') as string;
+
+    if (!filename || !file_path) {
+      return c.json({ error: 'Missing required parameters' }, 400);
+    }
+
+    // Parse columns and filters
+    const selectedColumns = columns ? JSON.parse(columns) : [];
+    const appliedFilters = filters ? JSON.parse(filters) : {};
+
+    // Get the original file from R2 or database
+    let content: string | null = null;
+    
+    // First try temp storage (for recently processed files)
+    const tempKey = `temp/${file_path}/`;
+    const tempList = await c.env.FILE_STORAGE.list({ prefix: tempKey, limit: 1 });
+    if (tempList.objects && tempList.objects.length > 0) {
+      const object = await c.env.FILE_STORAGE.get(tempList.objects[0].key);
+      if (object) {
+        content = await object.text();
+      }
+    }
+
+    // If not found in temp, try user's files
+    if (!content) {
+      const fileRecord = await c.env.DB.prepare(
+        'SELECT r2_key FROM files WHERE id = ? AND user_id = ?'
+      ).bind(file_path, userId).first();
+      
+      if (fileRecord) {
+        const object = await c.env.FILE_STORAGE.get(fileRecord.r2_key);
+        if (object) {
+          content = await object.text();
+        }
+      }
+    }
+
+    if (!content) {
+      return c.json({ error: 'Original file not found' }, 404);
+    }
+
+    // Process the CSV with filters
+    const filteredCsv = processCSV(content, selectedColumns, appliedFilters);
+
+    // Generate new file ID and save
+    const newFileId = crypto.randomUUID();
+    const newFileKey = `files/${userId}/${newFileId}/${filename}`;
+
+    // Save filtered CSV to R2
+    await c.env.FILE_STORAGE.put(newFileKey, filteredCsv, {
+      httpMetadata: {
+        contentType: 'text/csv',
+        contentDisposition: `attachment; filename="${filename}"`
+      },
+      customMetadata: {
+        userId,
+        originalName: filename,
+        size: filteredCsv.length.toString(),
+        uploadedAt: new Date().toISOString(),
+        source: 'cut-filtered',
+        ...(metadata ? JSON.parse(metadata) : {})
+      }
+    });
+
+    // Save to database
+    await c.env.DB.prepare(
+      `INSERT INTO files (id, user_id, filename, original_filename, r2_key, file_size, mime_type, upload_status, tags) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      newFileId, 
+      userId, 
+      filename, 
+      filename, 
+      newFileKey, 
+      filteredCsv.length, 
+      'text/csv', 
+      'completed', 
+      JSON.stringify(['cut-filtered', 'saved', `columns:${selectedColumns.length}`])
+    ).run();
+
+    return c.json({
+      success: true,
+      fileId: newFileId,
+      filename,
+      message: 'File saved to your collection!'
+    });
+  } catch (error) {
+    console.error('Save error:', error);
+    return c.json({ error: 'Failed to save file' }, 500);
+  }
+});
+
+// Helper function to process CSV with filters
+function processCSV(content: string, columns: string[], filters: any): string {
+  const rows = content.trim().split('\n');
+  const headers = rows[0].split(',').map(h => h.trim());
+  
+  // Find column indices
+  const columnIndices = columns.map(col => headers.indexOf(col)).filter(i => i !== -1);
+  
+  if (columnIndices.length === 0) {
+    return '';
+  }
+
+  // Build result CSV
+  const resultRows: string[] = [];
+  
+  // Add headers
+  resultRows.push(columnIndices.map(i => headers[i]).join(','));
+  
+  // Process data rows
+  for (let i = 1; i < rows.length; i++) {
+    const values = rows[i].split(',');
+    let includeRow = true;
+    
+    // Apply filters
+    for (const col of columns) {
+      if (filters[col]) {
+        const colIndex = headers.indexOf(col);
+        if (colIndex !== -1) {
+          const value = values[colIndex]?.trim();
+          const filter = filters[col];
+          
+          // Simple filter logic (can be enhanced)
+          if (filter.startsWith('>')) {
+            const threshold = parseFloat(filter.substring(1));
+            if (isNaN(threshold) || parseFloat(value) <= threshold) {
+              includeRow = false;
+              break;
+            }
+          } else if (filter.startsWith('<')) {
+            const threshold = parseFloat(filter.substring(1));
+            if (isNaN(threshold) || parseFloat(value) >= threshold) {
+              includeRow = false;
+              break;
+            }
+          } else if (filter.startsWith('!=')) {
+            const compareValue = filter.substring(2).trim();
+            if (value === compareValue) {
+              includeRow = false;
+              break;
+            }
+          } else if (filter.startsWith('=')) {
+            const compareValue = filter.substring(1).trim();
+            if (value !== compareValue) {
+              includeRow = false;
+              break;
+            }
+          } else if (filter.toLowerCase().includes('like')) {
+            const pattern = filter.toLowerCase().replace('like', '').trim().replace(/%/g, '.*');
+            const regex = new RegExp(pattern, 'i');
+            if (!regex.test(value)) {
+              includeRow = false;
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    if (includeRow) {
+      resultRows.push(columnIndices.map(i => values[i] || '').join(','));
+    }
+  }
+  
+  return resultRows.join('\n');
+}
 
 export default files;

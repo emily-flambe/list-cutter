@@ -183,7 +183,7 @@ export class QueryProcessor {
       const newFileId = this.generateFileId();
       const r2Key = `csv/${userId}/${newFileId}.csv`;
       
-      await env.BUCKET.put(r2Key, csvExportContent, {
+      await env.FILE_STORAGE.put(r2Key, csvExportContent, {
         httpMetadata: {
           contentType: 'text/csv',
           contentDisposition: `attachment; filename="${filename}"`
@@ -193,23 +193,19 @@ export class QueryProcessor {
       // 6. Save metadata to D1 database
       const insertResult = await env.DB.prepare(`
         INSERT INTO files (
-          id, user_id, filename, file_size, content_type, 
-          r2_key, upload_date, metadata
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          id, user_id, filename, original_filename, file_size, mime_type, 
+          r2_key, upload_status, tags
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         newFileId,
         userId,
         filename,
+        filename,
         csvExportContent.length,
         'text/csv',
         r2Key,
-        new Date().toISOString(),
-        JSON.stringify({
-          exportType: 'CUT_filtered',
-          originalFileId: fileId,
-          appliedFilters: request.filters?.length || 0,
-          ...metadata
-        })
+        'completed',
+        JSON.stringify(['cut-filtered', 'export', `original-file:${fileId}`])
       ).run();
 
       if (!insertResult.success) {
@@ -309,7 +305,7 @@ export class QueryProcessor {
         // Check if this is a reference/demo file
         if (fileId === 'reference-squirrel') {
           // Handle squirrel reference data
-          const squirrelData = await env.BUCKET.get('reference-data/squirrel-data-full.csv');
+          const squirrelData = await env.FILE_STORAGE.get('reference-data/squirrel-data-full.csv');
           if (squirrelData) {
             return await squirrelData.text();
           }
@@ -318,7 +314,7 @@ export class QueryProcessor {
       }
 
       // Retrieve from R2 storage
-      const r2Object = await env.BUCKET.get(fileRecord.r2_key);
+      const r2Object = await env.FILE_STORAGE.get(fileRecord.r2_key);
       if (!r2Object) {
         throw new Error('File content not found in storage');
       }

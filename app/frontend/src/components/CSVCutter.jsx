@@ -13,7 +13,11 @@ import Typography from '@mui/material/Typography';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
-import { Upload as UploadIcon, ExpandMore as ExpandMoreIcon, Download as DownloadIcon, Save as SaveIcon, ContentCut as ContentCutIcon } from '@mui/icons-material';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import { Upload as UploadIcon, ExpandMore as ExpandMoreIcon, Download as DownloadIcon, Save as SaveIcon, ContentCut as ContentCutIcon, FolderOpen as FolderOpenIcon } from '@mui/icons-material';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
 import { useContext } from 'react';
@@ -36,8 +40,28 @@ const CSVCutter = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [showSaveField, setShowSaveField] = useState(false);
   const [filename, setFilename] = useState("");
+  const [showLoginMessage, setShowLoginMessage] = useState(false);
+  const [userFiles, setUserFiles] = useState([]);
+  const [selectedFileId, setSelectedFileId] = useState("");
+  const [fileSource, setFileSource] = useState("upload"); // "upload" or "saved"
   const fileInputRef = useRef(null);
   const token = useContext(AuthContext);
+
+  // Load user's files when component mounts if authenticated
+  useEffect(() => {
+    if (token.token) {
+      loadUserFiles();
+    }
+  }, [token.token]);
+
+  const loadUserFiles = async () => {
+    try {
+      const response = await api.get('/api/v1/files/');
+      setUserFiles(response.data.files || []);
+    } catch (error) {
+      console.error('Error loading user files:', error);
+    }
+  };
 
 
   const handleFileChange = (event) => {
@@ -82,6 +106,27 @@ const CSVCutter = () => {
   };
 
   const handleUpload = async () => {
+    // Handle loading from saved files
+    if (fileSource === "saved" && selectedFileId) {
+      try {
+        // Get file columns/fields from the backend
+        const response = await api.get(`/api/v1/files/${selectedFileId}/fields`);
+        setColumns(response.data.fields || []);
+        setFilePath(selectedFileId);
+        setErrorMessage("");
+        
+        // Update row count if available
+        if (response.data.rowCount) {
+          setRowCount(response.data.rowCount);
+        }
+      } catch (error) {
+        console.error("Error loading file:", error);
+        setErrorMessage("Error loading file. Please try again.");
+      }
+      return;
+    }
+
+    // Original upload logic for new files
     if (!file) {
       setErrorMessage("Please select a file.");
       return;
@@ -145,6 +190,7 @@ const CSVCutter = () => {
     }
 
     try {
+      console.log('Cutting list with columns:', selectedColumns, 'and filters:', filters);
       const exportUrl = `/api/v1/files/export`;
       const response = await api.post(
         exportUrl,
@@ -156,7 +202,10 @@ const CSVCutter = () => {
       const url = window.URL.createObjectURL(blob);
       setDownloadUrl(url);
       setShowSaveField(false);
-      setFilename(`${file.name.split('.csv')[0]}_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.csv`);
+      // Initialize filename with a default value
+      const baseFilename = file?.name ? file.name.split('.csv')[0] : 'filtered';
+      setFilename(`${baseFilename}_cut_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.csv`);
+      console.log('Cut list successful, download URL created');
     } catch (error) {
       console.error("Error exporting CSV:", error);
       alert("Error exporting CSV");
@@ -164,19 +213,42 @@ const CSVCutter = () => {
   };
 
   const handleSaveToMyFiles = async () => {
-    if (!filename) {
+    console.log('handleSaveToMyFiles called');
+    console.log('Token:', !!token.token);
+    console.log('Filename:', filename);
+    console.log('FilePath:', filePath);
+    console.log('Selected Columns:', selectedColumns);
+    
+    if (!token.token) {
+      setShowLoginMessage(true);
+      return;
+    }
+    
+    if (!filename || filename.trim() === '') {
       alert("Please provide a filename.");
       return;
     }
 
+    if (!filePath) {
+      alert("Please process or select a file first.");
+      return;
+    }
+
+    if (selectedColumns.length === 0) {
+      alert("Please select at least one column.");
+      return;
+    }
+
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("filename", filename);
+    formData.append("filename", filename.trim());
+    formData.append("file_path", filePath); // The file ID from the process endpoint
+    formData.append("columns", JSON.stringify(selectedColumns));
+    formData.append("filters", JSON.stringify(filters));
 
     // Create metadata object
     const metadata = {
         generated_file_details: {
-            source_file: file.name,
+            source_file: file?.name || 'unknown',
             columns: selectedColumns,
             column_filters: {}
         }
@@ -191,13 +263,22 @@ const CSVCutter = () => {
     formData.append("metadata", JSON.stringify(metadata));
 
     try {
-        await api.post(`/api/v1/files/save`, formData, {
+        console.log('Sending save request to /api/v1/files/save');
+        const response = await api.post(`/api/v1/files/save`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });
+        console.log('Save response:', response.data);
         setShowPopup(true);
+        setShowSaveField(false);
+        alert("File saved to your collection!");
+        // Refresh the user files list
+        if (window.loadUserFiles) {
+            await loadUserFiles();
+        }
     } catch (error) {
         console.error("Error saving file:", error);
-        alert("Error saving file. Please try again.");
+        console.error("Error details:", error.response?.data);
+        alert(`Error saving file: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -258,33 +339,103 @@ const CSVCutter = () => {
         </Typography>
         
         <Box sx={{ my: 2 }}>
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            id="csv-file-input"
-          />
-          <label htmlFor="csv-file-input">
-            <Button
-              variant="contained"
-              component="span"
-              startIcon={<UploadIcon />}
-              sx={{ mr: 2 }}
-            >
-              Choose File
-            </Button>
-          </label>
+          {/* File source selector for authenticated users */}
+          {token.token && userFiles.length > 0 && (
+            <FormControl sx={{ minWidth: 200, mr: 2 }}>
+              <InputLabel>File Source</InputLabel>
+              <Select
+                value={fileSource}
+                onChange={(e) => {
+                  setFileSource(e.target.value);
+                  // Reset file selection when switching source
+                  setFile(null);
+                  setSelectedFileId("");
+                  setColumns([]);
+                  setSelectedColumns([]);
+                  setFilters({});
+                  setFilePath("");
+                  setIsFileValid(false);
+                }}
+                label="File Source"
+              >
+                <MenuItem value="upload">Upload New File</MenuItem>
+                <MenuItem value="saved">Select from My Files</MenuItem>
+              </Select>
+            </FormControl>
+          )}
 
-          {isFileValid && (
-            <Button
-              variant="contained"
-              onClick={handleUpload}
-              color="primary"
-            >
-              Upload CSV
-            </Button>
+          {/* Show file selector or upload button based on source */}
+          {fileSource === "saved" && token.token ? (
+            <Box sx={{ display: 'inline-block' }}>
+              <FormControl sx={{ minWidth: 300, mr: 2 }}>
+                <InputLabel>Select a File</InputLabel>
+                <Select
+                  value={selectedFileId}
+                  onChange={async (e) => {
+                    const fileId = e.target.value;
+                    setSelectedFileId(fileId);
+                    const selectedFile = userFiles.find(f => f.id === fileId);
+                    if (selectedFile) {
+                      setFile({ name: selectedFile.filename, size: selectedFile.file_size });
+                      setFileInfo(`${selectedFile.filename} (${(selectedFile.file_size / (1024 * 1024)).toFixed(2)} MB)`);
+                      setFilePath(fileId);
+                      setIsFileValid(true);
+                    }
+                  }}
+                  label="Select a File"
+                >
+                  {userFiles.map((f) => (
+                    <MenuItem key={f.id} value={f.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <FolderOpenIcon sx={{ mr: 1, fontSize: 'small' }} />
+                        {f.filename} ({(f.file_size / (1024 * 1024)).toFixed(2)} MB)
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {selectedFileId && (
+                <Button
+                  variant="contained"
+                  onClick={handleUpload}
+                  color="primary"
+                >
+                  Load File
+                </Button>
+              )}
+            </Box>
+          ) : (
+            // Original upload interface
+            <>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                id="csv-file-input"
+              />
+              <label htmlFor="csv-file-input">
+                <Button
+                  variant="contained"
+                  component="span"
+                  startIcon={<UploadIcon />}
+                  sx={{ mr: 2 }}
+                >
+                  Choose File
+                </Button>
+              </label>
+
+              {isFileValid && (
+                <Button
+                  variant="contained"
+                  onClick={handleUpload}
+                  color="primary"
+                >
+                  Upload CSV
+                </Button>
+              )}
+            </>
           )}
         </Box>
 
@@ -354,13 +505,13 @@ const CSVCutter = () => {
                   <AccordionSummary
                     expandIcon={<ExpandMoreIcon />}
                     sx={{
-                      backgroundColor: '#4caf50',
+                      backgroundColor: 'var(--action)',
                       color: 'white',
                       '&:hover': {
-                        backgroundColor: '#45a049',
+                        backgroundColor: 'var(--dark-accent)',
                       },
                       '&.Mui-expanded': {
-                        backgroundColor: '#45a049',
+                        backgroundColor: 'var(--dark-accent)',
                       },
                       borderRadius: '4px 4px 0 0',
                     }}
@@ -396,28 +547,27 @@ const CSVCutter = () => {
                         <Button
                           variant="contained"
                           startIcon={<SaveIcon />}
-                          onClick={() => token.token ? setShowSaveField(!showSaveField) : null}
-                          disabled={!token.token}
+                          onClick={() => {
+                            console.log('Save to My Files clicked - logged in:', !!token.token);
+                            if (token.token) {
+                              setShowSaveField(!showSaveField);
+                            } else {
+                              setShowLoginMessage(true);
+                            }
+                          }}
                           sx={{ 
                             py: 1.5,
                             fontSize: '1.1rem',
                             fontWeight: 'bold',
-                            width: '100%',
-                            backgroundColor: token.token ? undefined : '#ccc',
-                            color: token.token ? undefined : '#999',
-                            backgroundImage: token.token ? undefined : 
-                              'repeating-linear-gradient(45deg, rgba(255,255,255,.1), rgba(255,255,255,.1) 10px, transparent 10px, transparent 20px)',
-                            '&:disabled': {
-                              cursor: 'not-allowed',
-                            }
+                            width: '100%'
                           }}
                         >
                           Save to My Files
                         </Button>
                       </Box>
 
-                      {/* Scary warning for logged-out users */}
-                      {!token.token && (
+                      {/* Login message - only show when save clicked while not logged in */}
+                      {showLoginMessage && !token.token && (
                         <Box sx={{ 
                           display: 'flex', 
                           alignItems: 'center', 
@@ -428,6 +578,18 @@ const CSVCutter = () => {
                           borderRadius: 1,
                           border: '1px solid rgba(255, 0, 0, 0.3)'
                         }}>
+                          <Typography 
+                            variant="body1" 
+                            sx={{ 
+                              color: '#ff0000',
+                              fontWeight: 'bold',
+                              fontSize: '1.1rem',
+                              textShadow: '0 0 5px rgba(255, 0, 0, 0.5)',
+                              flex: 1
+                            }}
+                          >
+                            You must be logged in to save things.
+                          </Typography>
                           <Box
                             component="img"
                             src={cuttyLogo}
@@ -439,17 +601,6 @@ const CSVCutter = () => {
                               filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 10px #ff0000)',
                             }}
                           />
-                          <Typography 
-                            variant="body1" 
-                            sx={{ 
-                              color: '#ff0000',
-                              fontWeight: 'bold',
-                              fontSize: '1.1rem',
-                              textShadow: '0 0 5px rgba(255, 0, 0, 0.5)'
-                            }}
-                          >
-                            You must be logged in to save things.
-                          </Typography>
                         </Box>
                       )}
 

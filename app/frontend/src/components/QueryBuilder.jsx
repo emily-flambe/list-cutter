@@ -22,7 +22,11 @@ import {
   Tooltip,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import {
   FilterList as FilterIcon,
@@ -63,8 +67,15 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [showLoginMessage, setShowLoginMessage] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(!token);
   const [demoMode, setDemoMode] = useState(false);
+  
+  // File selection state for logged-in users
+  const [availableFiles, setAvailableFiles] = useState([]);
+  const [selectedFileId, setSelectedFileId] = useState('');
+  const [showFileSelection, setShowFileSelection] = useState(false);
+  const [loadingFiles, setLoadingFiles] = useState(false);
   
   // Pagination state
   const [page, setPage] = useState(0);
@@ -99,8 +110,68 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       initializeFile('demo-npors2025');
     } else if (fileId) {
       initializeFile(fileId);
+      setShowFileSelection(false);
+    } else if (token && !fileId) {
+      // Logged-in user with no fileId - show file selection
+      setShowFileSelection(true);
+      loadAvailableFiles();
     }
   }, [fileId, token]);
+
+  // Load available files for logged-in users
+  const loadAvailableFiles = async () => {
+    if (!token) return;
+    
+    setLoadingFiles(true);
+    setError('');
+    
+    try {
+      console.log('🐱 Loading available files for user');
+      const response = await api.get('/api/v1/files?type=csv');
+      
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to load files');
+      }
+
+      // Fetch enhanced metadata for each file (row count, column count)
+      const filesWithMetadata = await Promise.all(
+        response.data.files.map(async (file) => {
+          try {
+            const metadataResponse = await api.get(`/api/v1/files/${file.id}/columns`);
+            if (metadataResponse.data.success) {
+              return {
+                ...file,
+                totalRows: metadataResponse.data.fileInfo.totalRows,
+                totalColumns: metadataResponse.data.fileInfo.totalColumns
+              };
+            }
+          } catch (err) {
+            console.warn(`Failed to load metadata for file ${file.id}:`, err);
+          }
+          return file; // Return without enhanced metadata if failed
+        })
+      );
+
+      setAvailableFiles(filesWithMetadata);
+      console.log(`🐱 Loaded ${filesWithMetadata.length} available files`);
+    } catch (err) {
+      console.error('🐱 Failed to load available files:', err);
+      setError(`Failed to load your files: ${err.message}`);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
+  // Handle file selection from dropdown
+  const handleFileSelection = (selectedId) => {
+    console.log(`🐱 File selected: ${selectedId}`);
+    setSelectedFileId(selectedId);
+    if (selectedId) {
+      setFileId(selectedId);
+      setShowFileSelection(false);
+      // initializeFile will be called by the useEffect above
+    }
+  };
 
   // No auto-update logic - all filtering is manual
 
@@ -228,6 +299,65 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     executeQuery(false);
   };
 
+  const handleSaveToMyFiles = async () => {
+    console.log('Save to My Files clicked');
+    console.log('Token:', !!token);
+    console.log('Filtered data:', !!filteredData);
+    
+    if (!token) {
+      setShowLoginMessage(true);
+      return;
+    }
+
+    if (!filteredData || filteredData.filteredCount === 0) {
+      setError('No data to save. Click "Show Data" first.');
+      return;
+    }
+
+    setExporting(true);
+    setError('');
+
+    try {
+      console.log(`🐱 Saving ${filteredData.filteredCount} filtered rows to user files`);
+
+      // Generate filename
+      const timestamp = new Date().toISOString().split('T')[0];
+      const baseFilename = fileInfo?.filename ? fileInfo.filename.replace('.csv', '') : 'filtered';
+      const filename = `${baseFilename}_cut_${timestamp}.csv`;
+
+      // Prepare save request - use the actual export endpoint which already works
+      const exportRequest = {
+        fileId: fileId,
+        filters,
+        filename: filename,
+        includeMetadata: true
+      };
+      console.log('Sending save request to export/filtered endpoint...');
+      const response = await api.post(`/api/v1/files/${fileId}/export/filtered`, exportRequest);
+
+      console.log('Save response:', response.data);
+      
+      // Check if the file was actually saved
+      if (response.data.success && response.data.savedFile) {
+        const savedFilename = response.data.savedFile.filename;
+        setSuccessMessage(`File saved to your collection as "${savedFilename}"!`);
+        console.log(`✅ File saved with ID: ${response.data.savedFile.id}`);
+      } else {
+        setSuccessMessage(`File saved to your collection as "${filename}"!`);
+      }
+      
+      // Refresh available files list if function exists
+      if (availableFiles.length > 0) {
+        await loadAvailableFiles();
+      }
+    } catch (error) {
+      console.error('🐱 Error saving file:', error);
+      setError(`Failed to save file: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleExport = async () => {
     if (!filteredData || filteredData.filteredCount === 0) {
       setError('No data to export. Click "Show Data" first.');
@@ -284,6 +414,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       } else {
         // For authenticated users, use backend export
         const exportRequest = {
+          fileId: fileId,  // Add the fileId to the request
           filters,
           includeMetadata: true
         };
@@ -301,16 +432,30 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
           throw new Error(response.data.error || 'Export failed');
         }
 
-        // Trigger download
+        // Trigger download - fetch the actual CSV content
         const downloadUrl = response.data.downloadUrl;
+        const filename = response.data.savedFile?.filename || 'filtered_export.csv';
+        
+        console.log('Download URL:', downloadUrl);
+        console.log('Filename:', filename);
+        
+        // Fetch the CSV file with proper response type
+        const fileResponse = await api.get(downloadUrl, {
+          responseType: 'text'
+        });
+        
+        // Create blob and download
+        const blob = new Blob([fileResponse.data], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = response.data.filename;
+        link.href = url;
+        link.download = filename;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
 
-        setSuccessMessage(`Export complete! ${response.data.filename} has been saved to your files and downloaded.`);
+        setSuccessMessage(`Export complete! ${filename} has been saved to your files and downloaded.`);
       }
 
     } catch (err) {
@@ -407,6 +552,68 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
         The best list cutter EVER
       </Typography>
 
+      {showFileSelection && !isAnonymous && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Select a file to analyze:
+            </Typography>
+            
+            {loadingFiles ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={20} sx={{ mr: 2 }} />
+                <Typography>Loading your files...</Typography>
+              </Box>
+            ) : availableFiles.length > 0 ? (
+              <FormControl fullWidth>
+                <InputLabel>Choose a file</InputLabel>
+                <Select
+                  value={selectedFileId}
+                  label="Choose a file"
+                  onChange={(e) => handleFileSelection(e.target.value)}
+                  sx={{ mb: 2 }}
+                >
+                  {availableFiles.map((file) => (
+                    <MenuItem key={file.id} value={file.id}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                        <Typography sx={{ fontWeight: 'medium' }}>
+                          {file.filename}
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+                          {file.totalRows && (
+                            <Chip 
+                              label={`${file.totalRows.toLocaleString()} rows`}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                          {file.totalColumns && (
+                            <Chip 
+                              label={`${file.totalColumns} cols`}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                          <Chip 
+                            label={`${(file.size / (1024 * 1024)).toFixed(1)} MB`}
+                            size="small"
+                            variant="outlined"
+                          />
+                        </Box>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            ) : (
+              <Alert severity="info">
+                No CSV files found in your account. <a href="/file_upload">Upload a file</a> to get started with CUT!
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {isAnonymous && demoMode && (
         <Alert severity="info" sx={{ mb: 2 }}>
           <strong>Demo Mode:</strong> Try CUT with the 2025 National Public Opinion Reference Survey dataset!<br />
@@ -431,7 +638,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
           <CircularProgress />
           <Typography sx={{ ml: 2 }}>Loading file analysis...</Typography>
         </Box>
-      ) : (
+      ) : !showFileSelection ? (
         <Grid container spacing={3}>
           {/* File Info Panel */}
           {fileInfo && (
@@ -557,13 +764,13 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                         <AccordionSummary
                           expandIcon={<ExpandMoreIcon />}
                           sx={{
-                            backgroundColor: '#4caf50',
+                            backgroundColor: 'var(--action)',
                             color: 'white',
                             '&:hover': {
-                              backgroundColor: '#45a049',
+                              backgroundColor: 'var(--dark-accent)',
                             },
                             '&.Mui-expanded': {
-                              backgroundColor: '#45a049',
+                              backgroundColor: 'var(--dark-accent)',
                             },
                             borderRadius: '4px 4px 0 0',
                             minHeight: '48px',
@@ -602,28 +809,22 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                               <Button
                                 variant="contained"
                                 startIcon={<SaveIcon />}
-                                onClick={() => token ? () => {} : null}
-                                disabled={!token || exporting}
+                                onClick={handleSaveToMyFiles}
+                                disabled={exporting || (!token && false)}
                                 sx={{ 
                                   py: 1,
                                   fontSize: '1rem',
                                   fontWeight: 'bold',
                                   width: '100%',
-                                  backgroundColor: token ? undefined : '#ccc',
-                                  color: token ? undefined : '#999',
-                                  backgroundImage: token ? undefined : 
-                                    'repeating-linear-gradient(45deg, rgba(255,255,255,.1), rgba(255,255,255,.1) 10px, transparent 10px, transparent 20px)',
-                                  '&:disabled': {
-                                    cursor: 'not-allowed',
-                                  }
+                                  opacity: token ? 1 : 0.7
                                 }}
                               >
                                 Save to My Files
                               </Button>
                             </Box>
 
-                            {/* Scary warning for logged-out users */}
-                            {!token && (
+                            {/* Login message - only show when save clicked while not logged in */}
+                            {showLoginMessage && !token && (
                               <Box sx={{ 
                                 display: 'flex', 
                                 alignItems: 'center', 
@@ -634,6 +835,18 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                                 borderRadius: 1,
                                 border: '1px solid rgba(255, 0, 0, 0.3)'
                               }}>
+                                <Typography 
+                                  variant="body2" 
+                                  sx={{ 
+                                    color: '#ff0000',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.9rem',
+                                    textShadow: '0 0 3px rgba(255, 0, 0, 0.5)',
+                                    flex: 1
+                                  }}
+                                >
+                                  You must be logged in to save things.
+                                </Typography>
                                 <Box
                                   component="img"
                                   src={cuttyLogo}
@@ -645,17 +858,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                                     filter: 'hue-rotate(0deg) saturate(2) brightness(1.2) drop-shadow(0 0 8px #ff0000)',
                                   }}
                                 />
-                                <Typography 
-                                  variant="body2" 
-                                  sx={{ 
-                                    color: '#ff0000',
-                                    fontWeight: 'bold',
-                                    fontSize: '0.9rem',
-                                    textShadow: '0 0 3px rgba(255, 0, 0, 0.5)'
-                                  }}
-                                >
-                                  You must be logged in to save things.
-                                </Typography>
                               </Box>
                             )}
                           </Box>
@@ -721,16 +923,17 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                                         ...(isFiltered && {
                                           backgroundColor: 'rgba(25, 118, 210, 0.08)', // Very subtle blue tint
                                           borderBottom: '2px solid rgba(25, 118, 210, 0.3)', // Subtle blue border
-                                          position: 'relative',
-                                          '&::before': {
+                                          // Removed position: 'relative' to preserve sticky header functionality
+                                          '&::after': {  // Changed from ::before to ::after to avoid positioning issues
                                             content: '""',
                                             position: 'absolute',
-                                            top: 0,
+                                            bottom: 0,
                                             left: 0,
                                             right: 0,
                                             height: '3px',
                                             backgroundColor: 'primary.main',
-                                            opacity: 0.6
+                                            opacity: 0.6,
+                                            zIndex: 1
                                           }
                                         })
                                       }}
@@ -807,6 +1010,16 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
             </Card>
           </Grid>
         </Grid>
+      ) : (
+        // Show a message when file selection is active
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+            Select a file above to start using CUT
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Choose from your uploaded CSV files to begin filtering and analysis
+          </Typography>
+        </Box>
       )}
     </Box>
   );

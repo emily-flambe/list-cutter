@@ -1,12 +1,17 @@
-name: Cloudflare Workers CI
+name: Build, Test & Deploy
 
 on:
-  push:
-    branches: [main, feature-cut-mvp]
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'cloudflare/workers/**'
+      - 'app/frontend/**'
+      - '.github/workflows/cloudflare-workers-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'cloudflare/workers/**'
+      - 'app/frontend/**'
       - '.github/workflows/cloudflare-workers-ci.yml'
 
 jobs:
@@ -14,7 +19,6 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,36 +29,33 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      # Build Frontend
+      - name: Install dependencies - Frontend
+        working-directory: app/frontend
+        run: npm ci
+      
+      - name: Build Frontend
+        working-directory: app/frontend
+        run: npm run build
+        env:
+          CI: true
+          NODE_ENV: production
+          VITE_AI_WORKER_API_KEY: ${{ secrets.AI_WORKER_API_KEY }}
+
+      # Build & Test Cloudflare Workers
+      - name: Install dependencies - Workers
         working-directory: cloudflare/workers
         run: npm ci
 
-      - name: Build project
+      - name: Build Workers
         working-directory: cloudflare/workers
         run: npm run build
 
-      - name: Run tests
+      - name: Run unit tests
         working-directory: cloudflare/workers
         run: npm test
 
-  e2e-tests:
-    name: Playwright E2E Tests
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        working-directory: cloudflare/workers
-        run: npm ci
-      
+      # E2E Tests
       - name: Install Playwright browsers
         working-directory: cloudflare/workers
         run: npx playwright install --with-deps
@@ -79,44 +80,4 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
-  deploy-dev:
-    name: Deploy to Development
-    needs: [test, e2e-tests]
-    runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.labels.*.name, 'deploy-dev')
-    
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies - Frontend
-        working-directory: app/frontend
-        run: npm ci
-      
-      - name: Build Frontend
-        working-directory: app/frontend
-        run: npm run build
-        env:
-          CI: true
-          NODE_ENV: production
-          VITE_AI_WORKER_API_KEY: ${{ secrets.AI_WORKER_API_KEY }}
-      
-      - name: Install dependencies - Cloudflare Worker
-        working-directory: cloudflare/workers
-        run: npm ci
-
-      - name: Deploy to Cloudflare Workers (Development)
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: cloudflare/workers
-          command: deploy
 
