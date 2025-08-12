@@ -670,7 +670,6 @@ files.get('/:fileId/fields', async (c) => {
     const totalTime = Date.now() - startTime;
     const metrics = CrosstabProcessor.getPerformanceMetrics('field_extraction', startTime, fileSize);
     
-    console.log(`🐰 Field extraction performance: DB:${dbTime}ms, R2:${r2Time}ms, Read:${readTime}ms, Process:${totalTime-dbTime-r2Time-readTime}ms, Total:${totalTime}ms, Throughput:${metrics.throughputMBps.toFixed(2)}MB/s`);
 
     const response: FieldsResponse = {
       success: true,
@@ -686,7 +685,7 @@ files.get('/:fileId/fields', async (c) => {
     return c.json(response);
   } catch (error) {
     const totalTime = Date.now() - startTime;
-    console.error(`🐰 Fields extraction failed after ${totalTime}ms:`, error);
+    console.error(`Fields extraction failed after ${totalTime}ms:`, error);
     
     return c.json({ 
       error: 'Failed to extract fields', 
@@ -756,7 +755,6 @@ files.get('/:fileId/columns', async (c) => {
     const totalTime = Date.now() - startTime;
     const metrics = CrosstabProcessor.getPerformanceMetrics('column_analysis', startTime, fileSize);
     
-    console.log(`🐰 Column analysis performance: DB:${dbTime}ms, R2:${r2Time}ms, Read:${readTime}ms, Analysis:${analysisTime}ms, Total:${totalTime}ms, Throughput:${metrics.throughputMBps.toFixed(2)}MB/s`);
 
     const response: ColumnsAnalysisResponse = {
       success: true,
@@ -786,7 +784,7 @@ files.get('/:fileId/columns', async (c) => {
     return c.json(response);
   } catch (error) {
     const totalTime = Date.now() - startTime;
-    console.error(`🐰 Column analysis failed after ${totalTime}ms:`, error);
+    console.error(`Column analysis failed after ${totalTime}ms:`, error);
     
     return c.json({ 
       error: 'Failed to analyze column types', 
@@ -877,7 +875,6 @@ files.post('/:fileId/analyze/crosstab', async (c) => {
       matrix_size: `${Object.keys(crosstabData.rowTotals).length}x${Object.keys(crosstabData.columnTotals).length}`
     };
     
-    console.log(`🐰 Crosstab analysis performance: DB:${dbTime}ms, R2:${r2Time}ms, Read:${readTime}ms, Analysis:${analysisTime}ms, Total:${totalTime}ms, Throughput:${processingMetrics.throughputMBps.toFixed(2)}MB/s, Matrix:${analysisMetrics.matrix_size}`);
 
     const response: CrosstabResponse = {
       success: true,
@@ -893,7 +890,7 @@ files.post('/:fileId/analyze/crosstab', async (c) => {
     return c.json(response);
   } catch (error) {
     const totalTime = Date.now() - startTime;
-    console.error(`🐰 Crosstab analysis failed after ${totalTime}ms:`, error);
+    console.error(`Crosstab analysis failed after ${totalTime}ms:`, error);
     
     return c.json({ 
       error: 'Failed to generate crosstab analysis', 
@@ -1051,7 +1048,6 @@ files.post('/:fileId/export/crosstab', async (c) => {
       compression_ratio: (exportFileSize / fileSize * 100).toFixed(1) + '%'
     };
     
-    console.log(`🐰 Crosstab export performance: DB:${dbTime}ms, R2Get:${r2Time}ms, Read:${readTime}ms, Analysis:${analysisTime}ms, Export:${exportTime}ms, Upload:${uploadTime}ms, Save:${dbSaveTime}ms, Total:${totalTime}ms, Throughput:${processingMetrics.throughputMBps.toFixed(2)}MB/s`);
     
     const response: CrosstabExportResponse = {
       success: true,
@@ -1068,7 +1064,7 @@ files.post('/:fileId/export/crosstab', async (c) => {
     return c.json(response);
   } catch (error) {
     const totalTime = Date.now() - startTime;
-    console.error(`🐰 Crosstab export failed after ${totalTime}ms:`, error);
+    console.error(`Crosstab export failed after ${totalTime}ms:`, error);
     
     return c.json({ 
       error: 'Failed to export crosstab analysis', 
@@ -1091,7 +1087,6 @@ files.post('/:fileId/query', async (c) => {
     const fileId = c.req.param('fileId');
     const queryRequest: QueryRequest = await c.req.json();
 
-    console.log(`🐱 CUT query started for file ${fileId} with ${queryRequest.filters?.length || 0} filters`);
 
     // Execute query using QueryProcessor with correct parameters
     const result = await QueryProcessor.executeQuery(fileId, queryRequest, c.env, userId);
@@ -1100,15 +1095,13 @@ files.post('/:fileId/query', async (c) => {
     
     // Safe access to result.data properties with null checks
     if (result.success && result.data) {
-      console.log(`🐱 CUT query completed successfully in ${totalTime}ms: ${result.data.filteredCount}/${result.data.totalRows} rows match filters`);
     } else {
-      console.log(`🐱 CUT query completed with error in ${totalTime}ms`);
     }
 
     return c.json(result);
   } catch (error) {
     const totalTime = Date.now() - startTime;
-    console.error(`🐱 CUT query failed after ${totalTime}ms:`, error);
+    console.error(`CUT query failed after ${totalTime}ms:`, error);
     
     return c.json({ 
       error: 'Failed to execute query', 
@@ -1137,7 +1130,6 @@ files.post('/:fileId/export/filtered', async (c) => {
       return c.json({ error: 'File ID mismatch between URL and request body' }, 400);
     }
 
-    console.log(`🐱 CUT export started for file ${fileId} with ${queryRequest.filters?.length || 0} filters`);
 
     // Export filtered data using QueryProcessor
     const exportResult = await QueryProcessor.exportFilteredData(
@@ -1149,7 +1141,7 @@ files.post('/:fileId/export/filtered', async (c) => {
 
     // Check if we got valid export result
     if (!exportResult.success || !exportResult.fileId) {
-      console.error('🐱 Export failed - no data generated');
+      console.error('Export failed - no data generated');
       return c.json({ 
         error: 'Export failed - no data generated', 
         details: exportResult.error 
@@ -1163,7 +1155,6 @@ files.post('/:fileId/export/filtered', async (c) => {
     const exportFileSize = exportResult.metadata?.fileSize || 0;
 
     const totalTime = Date.now() - startTime;
-    console.log(`🐱 CUT export completed in ${totalTime}ms: ${exportResult.metadata?.filteredRows || 0}/${exportResult.metadata?.totalRows || 0} rows exported`);
 
     return c.json({
       success: true,
@@ -1182,7 +1173,7 @@ files.post('/:fileId/export/filtered', async (c) => {
     });
   } catch (error) {
     const totalTime = Date.now() - startTime;
-    console.error(`🐱 CUT export failed after ${totalTime}ms:`, error);
+    console.error(`CUT export failed after ${totalTime}ms:`, error);
     
     return c.json({ 
       error: 'Failed to export filtered data', 
@@ -1198,19 +1189,17 @@ files.get('/:fileId/performance', async (c) => {
     const userId = c.get('userId');
     const fileId = c.req.param('fileId');
 
-    console.log(`🐱 Performance analysis requested for file ${fileId}`);
 
     // Analyze file performance using QueryProcessor
     const analysis = await QueryProcessor.getPerformanceStrategy(fileId, c.env, userId);
 
-    console.log(`🐱 Performance analysis complete: ${analysis.strategy} strategy recommended for ${analysis.estimatedRows} rows`);
 
     return c.json({
       success: true,
       ...analysis
     });
   } catch (error) {
-    console.error(`🐱 Performance analysis failed:`, error);
+    console.error('Performance analysis failed:', error);
     
     return c.json({ 
       error: 'Failed to analyze file performance', 

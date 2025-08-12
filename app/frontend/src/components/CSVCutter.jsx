@@ -219,7 +219,6 @@ const CSVCutter = () => {
     }
 
     try {
-      console.log('Cutting list with columns:', selectedColumns, 'and filters:', filters);
       const exportUrl = `/api/v1/files/export`;
       const response = await api.post(
         exportUrl,
@@ -234,7 +233,6 @@ const CSVCutter = () => {
       // Initialize filename with a default value
       const baseFilename = file?.name ? file.name.split('.csv')[0] : 'filtered';
       setFilename(`${baseFilename}_cut_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.csv`);
-      console.log('Cut list successful, download URL created');
     } catch (error) {
       console.error("Error exporting CSV:", error);
       alert("Error exporting CSV");
@@ -242,11 +240,6 @@ const CSVCutter = () => {
   };
 
   const handleSaveToMyFiles = async () => {
-    console.log('handleSaveToMyFiles called');
-    console.log('Token:', !!token.token);
-    console.log('Filename:', filename);
-    console.log('FilePath:', filePath);
-    console.log('Selected Columns:', selectedColumns);
     
     if (!token.token) {
       setShowLoginMessage(true);
@@ -292,11 +285,9 @@ const CSVCutter = () => {
     formData.append("metadata", JSON.stringify(metadata));
 
     try {
-        console.log('Sending save request to /api/v1/files/save');
         const response = await api.post(`/api/v1/files/save`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
         });
-        console.log('Save response:', response.data);
         setShowPopup(true);
         setShowSaveField(false);
         alert("File saved to your collection!");
@@ -590,7 +581,6 @@ const CSVCutter = () => {
                           variant="contained"
                           startIcon={<SaveIcon />}
                           onClick={() => {
-                            console.log('Save to My Files clicked - logged in:', !!token.token);
                             if (token.token) {
                               setShowSaveField(!showSaveField);
                             } else {

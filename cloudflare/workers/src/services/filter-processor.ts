@@ -156,7 +156,6 @@ export class FilterProcessor {
       }
 
       const processingTime = Date.now() - startTime;
-      console.log(`🐱 Filtered ${totalRows} rows to ${filteredCount} results in ${processingTime}ms`);
 
       return {
         filteredRows,
@@ -167,7 +166,7 @@ export class FilterProcessor {
       };
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      console.error(`🐱 Filter processing failed after ${processingTime}ms:`, error);
+      console.error(`Filter processing failed after ${processingTime}ms:`, error);
       throw new Error(`Failed to apply filters: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

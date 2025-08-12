@@ -502,7 +502,6 @@ publicRoutes.post('/demo/:dataset/query', async (c) => {
 
     const { filters = [], includePreview = true, previewLimit = 100 } = await c.req.json();
     
-    console.log(`🐱 Demo query for ${dataset.displayName} with ${filters.length} filters`);
 
     // Get the CSV data from R2
     const object = await c.env.FILE_STORAGE.get(dataset.filename);

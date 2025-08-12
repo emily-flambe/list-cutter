@@ -72,7 +72,6 @@ const Register = () => {
     }
 
     try {
-      console.log('🚀 Attempting registration...');
       console.log('📍 API Base URL:', api.defaults.baseURL);
       console.log('📋 Form data:', { ...formData, password: '***', password2: '***' });
       

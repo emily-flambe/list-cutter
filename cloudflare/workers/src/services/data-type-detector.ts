@@ -200,7 +200,6 @@ export class DataTypeDetector {
       });
 
       const processingTime = Date.now() - startTime;
-      console.log(`🐰 Type detection completed: ${fields.length} columns, ${processedRows} rows analyzed in ${processingTime}ms`);
 
       return {
         columns: columnMetadata,

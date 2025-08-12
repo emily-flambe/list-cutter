@@ -231,7 +231,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
 
       const receivedColumns = columnsResponse.data.columns || [];
       if (!Array.isArray(receivedColumns)) {
-        console.warn('🐱 Invalid columns data received:', receivedColumns);
+        console.warn('Invalid columns data received:', receivedColumns);
         throw new Error('Invalid column data format received from server');
       }
 
@@ -253,7 +253,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       }
       
     } catch (err) {
-      console.error('🐱 File initialization failed:', err);
+      console.error('File initialization failed:', err);
       const message = err.response?.data?.message || err.message || 'Failed to initialize file';
       setError(`File loading failed: ${message}`);
     } finally {
@@ -310,7 +310,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       }
 
     } catch (err) {
-      console.error('🐱 Query execution failed:', err);
+      console.error('Query execution failed:', err);
       const message = err.response?.data?.message || err.message || 'Query execution failed';
       setError(`Query failed: ${message}`);
       setFilteredData(null);
@@ -380,7 +380,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
         await loadAvailableFiles();
       }
     } catch (error) {
-      console.error('🐱 Error saving file:', error);
+      console.error('Error saving file:', error);
       setError(`Failed to save file: ${error.response?.data?.error || error.message}`);
     } finally {
       setExporting(false);
@@ -488,7 +488,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       }
 
     } catch (err) {
-      console.error('🐱 Export failed:', err);
+      console.error('Export failed:', err);
       const message = err.response?.data?.message || err.message || 'Export failed';
       setError(`Export failed: ${message}`);
     } finally {

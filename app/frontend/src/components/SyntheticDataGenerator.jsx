@@ -52,7 +52,6 @@ const SyntheticDataGenerator = () => {
   // Listen for agent form fill events
   useEffect(() => {
     const handleAgentFormFill = (event) => {
-      console.log('📝 Received agent-form-fill event:', event.detail);
       
       if (event.detail) {
         const newFormData = { ...formData };
@@ -149,7 +148,6 @@ const SyntheticDataGenerator = () => {
     }
 
     try {
-      console.log('🚀 Generating synthetic data...');
       console.log('📋 Form data:', formData);
       
       const payload = {

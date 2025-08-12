@@ -74,7 +74,6 @@ export class QueryProcessor {
     };
 
     try {
-      console.log(`🐱 Executing query for file ${fileId} with ${request.filters?.length || 0} filters`);
 
       // 1. Retrieve file content
       const fileRetrievalStart = Date.now();
@@ -110,7 +109,6 @@ export class QueryProcessor {
 
       performance.totalMs = Date.now() - startTime;
 
-      console.log(`🐱 Query completed: ${filteredResult.filteredCount}/${filteredResult.totalRows} rows in ${performance.totalMs}ms`);
 
       return {
         success: true,
@@ -120,7 +118,7 @@ export class QueryProcessor {
       };
     } catch (error) {
       performance.totalMs = Date.now() - startTime;
-      console.error('🐱 Query execution failed:', error);
+      console.error('Query execution failed:', error);
       
       return {
         success: false,
@@ -143,7 +141,6 @@ export class QueryProcessor {
     const startTime = Date.now();
 
     try {
-      console.log(`🐱 Exporting filtered data for file ${fileId} with ${request.filters?.length || 0} filters`);
 
       // 1. Get original file metadata
       const originalFile = await this.getFileMetadata(fileId, env, userId);
@@ -220,7 +217,6 @@ export class QueryProcessor {
       metadata.fileSize = csvExportContent.length;
       
       const processingTime = Date.now() - startTime;
-      console.log(`🐱 Export completed: ${filename} (${filteredResult.filteredCount} rows) in ${processingTime}ms`);
 
       return {
         success: true,
@@ -232,7 +228,7 @@ export class QueryProcessor {
       };
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      console.error('🐱 Export failed:', error);
+      console.error('Export failed:', error);
       
       return {
         success: false,
@@ -281,7 +277,7 @@ export class QueryProcessor {
         };
       }
     } catch (error) {
-      console.error('🐱 Performance strategy analysis failed:', error);
+      console.error('Performance strategy analysis failed:', error);
       // Default to manual for unknown files
       return {
         strategy: 'manual',
@@ -325,7 +321,7 @@ export class QueryProcessor {
 
       return await r2Object.text();
     } catch (error) {
-      console.error('🐱 File retrieval failed:', error);
+      console.error('File retrieval failed:', error);
       throw new Error(`Failed to retrieve file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -345,7 +341,7 @@ export class QueryProcessor {
 
       return fileRecord;
     } catch (error) {
-      console.error('🐱 File metadata retrieval failed:', error);
+      console.error('File metadata retrieval failed:', error);
       return null;
     }
   }

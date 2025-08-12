@@ -55,10 +55,8 @@ const FilterPanel = ({
   
   // Update columns when parent provides them
   useEffect(() => {
-    console.log('🟢 FilterPanel got columns:', columnsFromParent?.length);
     
     if (columnsFromParent && Array.isArray(columnsFromParent) && columnsFromParent.length > 0) {
-      console.log('🟢 Setting columns:', columnsFromParent.length);
       setColumns(columnsFromParent);
       setLoading(false);
       setError('');
@@ -67,7 +65,6 @@ const FilterPanel = ({
   
   // Add a new filter - SIMPLE VERSION
   const addFilter = (columnName = '') => {
-    console.log('🟢 Adding filter for column:', columnName);
     const newFilter = {
       id: Date.now(),
       selectedColumn: columnName, // Pre-select the column if provided
@@ -77,7 +74,6 @@ const FilterPanel = ({
     };
     const updatedFilters = [...filters, newFilter];
     setFilters(updatedFilters);
-    console.log('🟢 Filters now:', updatedFilters.length);
     
     // Notify parent component about filter changes
     if (onFiltersChange) {
@@ -98,7 +94,6 @@ const FilterPanel = ({
   
   // Update filter column selection
   const updateFilterColumn = (filterId, columnName) => {
-    console.log('🟢 Updating filter', filterId, 'to column:', columnName);
     const updatedFilters = filters.map(filter => {
       if (filter.id === filterId) {
         return { ...filter, selectedColumn: columnName, column: columnName };
@@ -115,7 +110,6 @@ const FilterPanel = ({
   
   // Update filter operator
   const updateFilterOperator = (filterId, operator) => {
-    console.log('🟢 Updating filter', filterId, 'operator to:', operator);
     const updatedFilters = filters.map(filter => {
       if (filter.id === filterId) {
         // Clear value when switching to is_empty or is_not_empty
@@ -134,7 +128,6 @@ const FilterPanel = ({
   
   // Update filter value
   const updateFilterValue = (filterId, value) => {
-    console.log('🟢 Updating filter', filterId, 'value to:', value);
     const updatedFilters = filters.map(filter => {
       if (filter.id === filterId) {
         return { ...filter, value };

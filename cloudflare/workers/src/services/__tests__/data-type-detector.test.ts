@@ -159,7 +159,6 @@ Sales,active
       // Ruby's performance target: <500ms for 1000 rows
       expect(duration).toBeLessThan(500);
       
-      console.log(`🐰 Performance test: 1000 rows analyzed in ${duration}ms`);
     });
   });
 });

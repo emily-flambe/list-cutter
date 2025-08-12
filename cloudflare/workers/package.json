@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev --remote",
+    "dev:local": "wrangler dev --local",
     "deploy": "wrangler deploy",
     "deploy:dev": "wrangler deploy",
     "deploy:staging": "wrangler deploy --env staging",
