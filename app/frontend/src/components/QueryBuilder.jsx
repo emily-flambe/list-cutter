@@ -149,7 +149,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     setError('');
     
     try {
-      console.log('🐱 Loading available files for user');
       const response = await api.get('/api/v1/files?type=csv');
       
       if (!response.data.success) {
@@ -176,9 +175,8 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       );
 
       setAvailableFiles(filesWithMetadata);
-      console.log(`🐱 Loaded ${filesWithMetadata.length} available files`);
     } catch (err) {
-      console.error('🐱 Failed to load available files:', err);
+      console.error('Failed to load available files:', err);
       setError(`Failed to load your files: ${err.message}`);
     } finally {
       setLoadingFiles(false);
@@ -187,7 +185,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
 
   // Handle file selection from dropdown
   const handleFileSelection = (selectedId) => {
-    console.log(`🐱 File selected: ${selectedId}`);
     setSelectedFileId(selectedId);
     if (selectedId) {
       setFileId(selectedId);
@@ -204,7 +201,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     setError('');
     
     try {
-      console.log(`🐱 Initializing CUT for file ${actualFileId} (demo: ${demoMode})`);
 
       let columnsUrl;
       
@@ -275,8 +271,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     setError('');
 
     try {
-      console.log(`🐱 Executing query with ${filters.length} filters (auto: ${isAutoUpdate}, demo: ${demoMode})`);
-      console.log('🐱 Filter details:', JSON.stringify(filters, null, 2));
 
       const queryRequest = {
         filters: filters.length > 0 ? filters : [],
@@ -326,7 +320,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   }, [fileId, filters, demoMode, isAnonymous]);
 
   const handleFiltersChange = (newFilters) => {
-    console.log(`🐱 Filters updated: ${newFilters.length} active filters`);
     setFilters(newFilters);
   };
 
@@ -353,7 +346,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     setError('');
 
     try {
-      console.log(`🐱 Saving ${filteredData.filteredCount} filtered rows to user files`);
 
       // Use the filename from the input field or generate one
       const filename = exportFilename || (() => {
@@ -405,11 +397,9 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     setError('');
 
     try {
-      console.log(`🐱 Exporting ${filteredData.filteredCount} filtered rows (demo: ${demoMode})`);
 
       // For demo mode, get full filtered dataset and generate CSV client-side
       if (demoMode || isAnonymous) {
-        console.log(`🐱 Demo export: Getting full filtered dataset with ${filters.length} filters`);
         
         // Call query endpoint to get ALL filtered data (not just preview)
         let queryUrl;
@@ -552,7 +542,12 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   const filteredColumns = getFilteredColumnNames();
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ 
+      p: { xs: 2, sm: 3 }, 
+      maxWidth: '1400px', 
+      mx: 'auto',
+      width: '100%'
+    }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         {(onClose || routeFileId) && (
           <Button 
@@ -592,7 +587,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       </Typography>
 
       {showFileSelection && !isAnonymous && (
-        <Card sx={{ mb: 3 }}>
+        <Card sx={{ mb: 3, maxWidth: '1200px', mx: 'auto' }}>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>
               Select a file to analyze:
@@ -654,20 +649,20 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       )}
 
       {isAnonymous && demoMode && (
-        <Alert severity="info" sx={{ mb: 2 }}>
+        <Alert severity="info" sx={{ mb: 2, maxWidth: '1400px', mx: 'auto' }}>
           <strong>Demo Mode:</strong> Try CUT with the 2025 National Public Opinion Reference Survey dataset!<br />
           <a href="/login" style={{color: 'inherit', textDecoration: 'underline'}}>Login</a> or <a href="/register" style={{color: 'inherit', textDecoration: 'underline'}}>create an account</a> to use CUT with your own CSV files.
         </Alert>
       )}
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2, maxWidth: '1400px', mx: 'auto' }}>
           {error}
         </Alert>
       )}
 
       {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }}>
+        <Alert severity="success" sx={{ mb: 2, maxWidth: '1400px', mx: 'auto' }}>
           {successMessage}
         </Alert>
       )}
@@ -678,7 +673,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
           <Typography sx={{ ml: 2 }}>Loading file analysis...</Typography>
         </Box>
       ) : !showFileSelection ? (
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ maxWidth: '1400px', mx: 'auto' }}>
           {/* File Info Panel */}
           {fileInfo && (
             <Grid item xs={12}>
@@ -820,7 +815,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                   
                   {/* CUT it! Expandable Element */}
                   {filteredData && filteredData.filteredCount > 0 && (
-                    <Box sx={{ minWidth: 300 }}>
+                    <Box sx={{ minWidth: 350 }}>
                       <Accordion>
                         <AccordionSummary
                           expandIcon={<ExpandMoreIcon />}
@@ -980,7 +975,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                     {/* Results Table */}
                     {displayedRows.length > 0 ? (
                       <>
-                        <TableContainer component={Paper} sx={{ maxHeight: 600 }}>
+                        <TableContainer component={Paper} sx={{ maxHeight: 700 }}>
                           <Table stickyHeader size="small">
                             <TableHead>
                               <TableRow>

@@ -459,7 +459,7 @@ const SidebarLayout = ({ children }) => {
       >
 
 
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: { xs: 1, sm: 1.5, md: 1.5 }, maxWidth: 'none', width: '100%' }}>
           {children}
         </Box>
       </Box>
