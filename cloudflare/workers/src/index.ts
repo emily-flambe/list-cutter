@@ -35,10 +35,7 @@ const CSP_POLICY = `default-src 'self'; script-src 'self' 'unsafe-inline' https:
 
 // Basic initialization middleware
 app.use('*', async (c, next): Promise<void> => {
-  // Simple request logging in development
-  if (c.env.ENVIRONMENT === 'development') {
-    console.log(`${c.req.method} ${c.req.path}`);
-  }
+  // Request logging disabled for production readiness
   await next();
 });
 
@@ -53,8 +50,7 @@ app.use('*', secureHeaders());
 // CORS configuration - Allow same-origin and development (moved before prettyJSON)
 app.use('*', cors({
   origin: (origin, c) => {
-    // Log for debugging
-    console.log('CORS check - Origin:', origin, 'Environment:', c?.env?.ENVIRONMENT);
+    // CORS check for origin validation
     
     // In development, allow localhost and 127.0.0.1 origins
     const environment = c?.env?.ENVIRONMENT || 'development';
