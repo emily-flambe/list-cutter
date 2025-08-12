@@ -29,7 +29,7 @@ const DEMO_DATASETS: Record<string, {
     filename: 'demo/squirrel-data.csv',
     displayName: 'NYC Squirrel Census',
     downloadName: 'nyc-squirrel-census-demo.csv',
-    description: 'NYC Squirrel Census 2018 data'
+    description: 'NYC Squirrel Census data'
   },
   'npors2025': {
     filename: 'demo/NPORS_2025.csv',
@@ -351,7 +351,7 @@ publicRoutes.get('/demo/:dataset/info', async (c) => {
   // Dataset-specific information
   const datasetInfo = {
     squirrel: {
-      name: 'NYC Squirrel Census 2018',
+      name: 'NYC Squirrel Census',
       description: 'The Squirrel Census is a multimedia science, design, and storytelling project focusing on the Eastern gray squirrel, found throughout Central Park.',
       source: 'NYC Parks & Recreation and Squirrel Census volunteers',
       fields: 'Location coordinates, squirrel behaviors, physical characteristics, and interaction data',
