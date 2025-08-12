@@ -44,6 +44,7 @@ const CSVCutter = () => {
   const [userFiles, setUserFiles] = useState([]);
   const [selectedFileId, setSelectedFileId] = useState("");
   const [fileSource, setFileSource] = useState("upload"); // "upload" or "saved"
+  const [showFileSelector, setShowFileSelector] = useState(true); // Show file selector after initial processing
   const fileInputRef = useRef(null);
   const token = useContext(AuthContext);
 
@@ -63,6 +64,32 @@ const CSVCutter = () => {
     }
   };
 
+
+  const resetFileState = () => {
+    setFile(null);
+    setFileInfo("");
+    setIsFileValid(false);
+    setRowCount(0);
+    setColumns([]);
+    setSelectedColumns([]);
+    setFilters({});
+    setFilePath("");
+    setDownloadUrl("");
+    setShowPopup(false);
+    setErrorMessage("");
+    setShowSaveField(false);
+    setFilename("");
+    setShowLoginMessage(false);
+    setSelectedFileId("");
+    setShowFileSelector(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleChangeFile = () => {
+    resetFileState();
+  };
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -114,6 +141,7 @@ const CSVCutter = () => {
         setColumns(response.data.fields || []);
         setFilePath(selectedFileId);
         setErrorMessage("");
+        setShowFileSelector(false); // Hide file selector after successful load
         
         // Update row count if available
         if (response.data.rowCount) {
@@ -157,6 +185,7 @@ const CSVCutter = () => {
       setColumns(response.data.columns);
       setFilePath(response.data.file_path || "");
       setErrorMessage("");
+      setShowFileSelector(false); // Hide file selector after successful upload
 
       // Set file info with the original row count
       setFileInfo(`${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
@@ -287,16 +316,7 @@ const CSVCutter = () => {
   };
 
   const handlePopupStartOver = () => {
-    setFile(null);
-    setColumns([]);
-    setSelectedColumns([]);
-    setFilters({});
-    setFilePath("");
-    setDownloadUrl("");
-    setShowPopup(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    resetFileState();
   };
 
   const handlePopupKeepGoing = () => {
@@ -338,6 +358,7 @@ const CSVCutter = () => {
           Max file size: {MAX_FILE_SIZE_MB}MB
         </Typography>
         
+        {showFileSelector && (
         <Box sx={{ my: 2 }}>
           {/* File source selector for authenticated users */}
           {token.token && userFiles.length > 0 && (
@@ -438,6 +459,7 @@ const CSVCutter = () => {
             </>
           )}
         </Box>
+        )}
 
         {fileInfo && (
           <Typography variant="body2" className="file-info">
@@ -459,9 +481,19 @@ const CSVCutter = () => {
 
         {columns.length > 0 && (
           <Box sx={{ mt: 3 }}>
-            <Typography variant="body2" sx={{ color: '#00ccf0', fontWeight: 'bold', mb: 2 }}>
-            🦑 File uploaded successfully 🦑
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="body2" sx={{ color: '#00ccf0', fontWeight: 'bold' }}>
+                🦑 File uploaded successfully 🦑
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleChangeFile}
+                sx={{ ml: 2 }}
+              >
+                Change File
+              </Button>
+            </Box>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }} gutterBottom>
               Select Columns & Filters:
             </Typography>
@@ -525,13 +557,23 @@ const CSVCutter = () => {
                   </AccordionSummary>
                   <AccordionDetails sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
+                      {/* Filename field - Always available */}
+                      <TextField
+                        label="File Name"
+                        value={filename}
+                        onChange={(e) => setFilename(e.target.value)}
+                        fullWidth
+                        sx={{ mb: 1 }}
+                        helperText="Enter a name for your cut file"
+                      />
+                      
                       {/* Download Button - Always available */}
                       <Button
                         variant="contained"
                         color="success"
                         component="a"
                         href={downloadUrl}
-                        download="filtered.csv"
+                        download={filename}
                         startIcon={<DownloadIcon />}
                         sx={{ 
                           py: 1.5,

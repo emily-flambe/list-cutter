@@ -26,7 +26,8 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel
+  InputLabel,
+  TextField
 } from '@mui/material';
 import {
   FilterList as FilterIcon,
@@ -76,6 +77,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   const [selectedFileId, setSelectedFileId] = useState('');
   const [showFileSelection, setShowFileSelection] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [exportFilename, setExportFilename] = useState('');
   
   // Pagination state
   const [page, setPage] = useState(0);
@@ -100,6 +102,27 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   useEffect(() => {
     setIsAnonymous(!token);
   }, [token]);
+
+  // Function to handle changing file
+  const handleChangeFile = () => {
+    // Reset state
+    setFileId('');
+    setFileInfo(null);
+    setColumns([]);
+    setFilters([]);
+    setFilteredData(null);
+    setDataLoaded(false);
+    setError('');
+    setSuccessMessage('');
+    setSelectedFileId('');
+    setShowFileSelection(true);
+    setPage(0);
+    
+    // Load available files for selection
+    if (token) {
+      loadAvailableFiles();
+    }
+  };
 
   // Initialize when component mounts or fileId changes
   useEffect(() => {
@@ -188,11 +211,15 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
       // Handle demo mode for anonymous users
       if (actualFileId === 'demo-npors2025' && isAnonymous) {
         columnsUrl = '/api/v1/public/demo/npors2025/columns';
-        setFileInfo({
+        const demoFileInfo = {
           filename: '2025 National Public Opinion Reference Survey (Demo Data)',
           id: 'demo-npors2025',
           size: 0
-        });
+        };
+        setFileInfo(demoFileInfo);
+        // Set default filename for demo
+        const timestamp = new Date().toISOString().split('T')[0];
+        setExportFilename(`demo-cut-filtered_${timestamp}.csv`);
       } else if (actualFileId === 'reference-squirrel' && token) {
         columnsUrl = '/api/v1/files/reference/squirrel/columns';
       } else {
@@ -214,7 +241,14 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
 
       setColumns(receivedColumns);
       if (!demoMode) {
-        setFileInfo(columnsResponse.data.fileInfo || {});
+        const info = columnsResponse.data.fileInfo || {};
+        setFileInfo(info);
+        // Set default filename
+        if (info.filename) {
+          const timestamp = new Date().toISOString().split('T')[0];
+          const baseFilename = info.filename.replace('.csv', '');
+          setExportFilename(`${baseFilename}_cut_${timestamp}.csv`);
+        }
       }
 
       // Only show success message for non-demo mode (check both demoMode state and demo file ID)
@@ -321,10 +355,12 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     try {
       console.log(`🐱 Saving ${filteredData.filteredCount} filtered rows to user files`);
 
-      // Generate filename
-      const timestamp = new Date().toISOString().split('T')[0];
-      const baseFilename = fileInfo?.filename ? fileInfo.filename.replace('.csv', '') : 'filtered';
-      const filename = `${baseFilename}_cut_${timestamp}.csv`;
+      // Use the filename from the input field or generate one
+      const filename = exportFilename || (() => {
+        const timestamp = new Date().toISOString().split('T')[0];
+        const baseFilename = fileInfo?.filename ? fileInfo.filename.replace('.csv', '') : 'filtered';
+        return `${baseFilename}_cut_${timestamp}.csv`;
+      })();
 
       // Prepare save request - use the actual export endpoint which already works
       const exportRequest = {
@@ -397,8 +433,10 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
         
         const fullFilteredData = queryResponse.data.data;
         const csvContent = generateCSVFromFilteredData(fullFilteredData);
-        const timestamp = new Date().toISOString().split('T')[0];
-        const filename = `demo-cut-filtered_${timestamp}.csv`;
+        const filename = exportFilename || (() => {
+          const timestamp = new Date().toISOString().split('T')[0];
+          return `demo-cut-filtered_${timestamp}.csv`;
+        })();
         
         // Create download link
         const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -435,7 +473,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
 
         // Trigger download - fetch the actual CSV content
         const downloadUrl = response.data.downloadUrl;
-        const filename = response.data.savedFile?.filename || 'filtered_export.csv';
+        const filename = exportFilename || response.data.savedFile?.filename || 'filtered_export.csv';
         
         console.log('Download URL:', downloadUrl);
         console.log('Filename:', filename);
@@ -685,8 +723,30 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                       />
                     </Box>
                     
-                    {/* Right: Schema Button */}
-                    <Box sx={{ flexShrink: 0 }}>
+                    {/* Right: Buttons */}
+                    <Box sx={{ flexShrink: 0, display: 'flex', gap: 1 }}>
+                      {/* Change File Button - only show for logged-in users */}
+                      {!isAnonymous && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={handleChangeFile}
+                          sx={{
+                            textTransform: 'none',
+                            fontSize: '0.8rem',
+                            px: 2,
+                            py: 0.5,
+                            borderColor: 'primary.main',
+                            color: 'primary.main',
+                            '&:hover': {
+                              backgroundColor: 'primary.main',
+                              color: 'white'
+                            }
+                          }}
+                        >
+                          Change File
+                        </Button>
+                      )}
                       <Button
                         variant="outlined"
                         size="small"
@@ -789,6 +849,16 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                         </AccordionSummary>
                         <AccordionDetails sx={{ p: 2 }}>
                           <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
+                            {/* Filename field - Always available */}
+                            <TextField
+                              label="File Name"
+                              value={exportFilename}
+                              onChange={(e) => setExportFilename(e.target.value)}
+                              fullWidth
+                              sx={{ mb: 1 }}
+                              helperText="Enter a name for your cut file"
+                            />
+                            
                             {/* Download Button - Always available */}
                             <Button
                               variant="contained"
