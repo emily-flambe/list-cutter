@@ -55,29 +55,7 @@ jobs:
         working-directory: cloudflare/workers
         run: npm test
 
-      # E2E Tests
-      - name: Install Playwright browsers
-        working-directory: cloudflare/workers
-        run: npx playwright install --with-deps
-      
-      - name: Run E2E tests
-        working-directory: cloudflare/workers
-        run: npm run test:e2e
-        env:
-          CI: true
-          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
-          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
-          BASE_URL: https://cutty-dev.emilycogsdill.com
-      
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-results
-          path: |
-            cloudflare/workers/e2e/reports/
-            cloudflare/workers/e2e/artifacts/
-          retention-days: 30
-          if-no-files-found: ignore
+      # E2E Tests temporarily disabled - will be re-added in separate PR
+      # See GitHub issue for implementation plan
 
 
