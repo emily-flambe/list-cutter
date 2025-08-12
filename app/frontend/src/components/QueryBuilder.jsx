@@ -921,11 +921,14 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                                       key={index} 
                                       sx={{ 
                                         fontWeight: 'bold',
+                                        position: 'sticky',
+                                        top: 0,
+                                        zIndex: 10,
+                                        backgroundColor: 'background.paper',
                                         ...(isFiltered && {
                                           backgroundColor: 'rgba(25, 118, 210, 0.08)', // Very subtle blue tint
                                           borderBottom: '2px solid rgba(25, 118, 210, 0.3)', // Subtle blue border
-                                          // Removed position: 'relative' to preserve sticky header functionality
-                                          '&::after': {  // Changed from ::before to ::after to avoid positioning issues
+                                          '&::after': {
                                             content: '""',
                                             position: 'absolute',
                                             bottom: 0,
@@ -933,8 +936,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                                             right: 0,
                                             height: '3px',
                                             backgroundColor: 'primary.main',
-                                            opacity: 0.6,
-                                            zIndex: 1
+                                            opacity: 0.6
                                           }
                                         })
                                       }}
