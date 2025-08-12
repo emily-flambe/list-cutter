@@ -15,7 +15,7 @@ async function globalSetup(config: FullConfig) {
   try {
     // Wait for services to be ready
     console.log('🔧 Checking if backend service is ready...');
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8788';
+    const backendUrl = process.env.BASE_URL || process.env.BACKEND_URL || 'http://localhost:8788';
     
     // Retry logic for service readiness
     let retries = 0;
@@ -45,7 +45,7 @@ async function globalSetup(config: FullConfig) {
     
     // Check frontend service
     console.log('🔧 Checking if frontend service is ready...');
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.BASE_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
     
     retries = 0;
     while (retries < maxRetries) {
