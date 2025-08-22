@@ -22,8 +22,7 @@ import publicRoutes from './routes/public';
 // Import security middleware
 import { rateLimitMiddleware } from './services/security';
 
-// Import Cuttytabs processing
-import { runIncrementalProcessing } from './services/segment-processor';
+// Cuttytabs processing removed - no longer using cron jobs
 
 type HonoVariables = {
   userId?: string;
@@ -36,10 +35,7 @@ const CSP_POLICY = `default-src 'self'; script-src 'self' 'unsafe-inline' https:
 
 // Basic initialization middleware
 app.use('*', async (c, next): Promise<void> => {
-  // Simple request logging in development
-  if (c.env.ENVIRONMENT === 'development') {
-    console.log(`${c.req.method} ${c.req.path}`);
-  }
+  // Request logging disabled for production readiness
   await next();
 });
 
@@ -54,8 +50,7 @@ app.use('*', secureHeaders());
 // CORS configuration - Allow same-origin and development (moved before prettyJSON)
 app.use('*', cors({
   origin: (origin, c) => {
-    // Log for debugging
-    console.log('CORS check - Origin:', origin, 'Environment:', c?.env?.ENVIRONMENT);
+    // CORS check for origin validation
     
     // In development, allow localhost and 127.0.0.1 origins
     const environment = c?.env?.ENVIRONMENT || 'development';
@@ -313,23 +308,7 @@ app.onError((err, c): Response => {
 
 // Export the Hono app as default
 export default {
-  fetch: app.fetch,
-  
-  // Cron job handler for Cuttytabs incremental processing
-  async scheduled(event: ScheduledEvent, env: CloudflareEnv, ctx: ExecutionContext): Promise<void> {
-    console.log('Cron trigger fired:', event.cron, 'at', new Date().toISOString());
-    
-    // Run incremental processing in the background
-    ctx.waitUntil(
-      runIncrementalProcessing(env)
-        .then(stats => {
-          console.log('Cron processing completed successfully:', stats);
-        })
-        .catch(error => {
-          console.error('Cron processing failed:', error);
-        })
-    );
-  }
+  fetch: app.fetch
 };
 
 // Export Durable Objects

@@ -11,7 +11,8 @@
   "ai": {
     "contextFiles": [
       ".project/config.md",
-      ".project/contexts/*.md"
+      ".project/contexts/*.md",
+      ".project/feature-specs/*.md"
     ],
     "personas": {
       "builder": { "emoji": "🔨", "focus": "architecture, features" },

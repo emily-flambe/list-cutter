@@ -23,6 +23,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import DataArrayIcon from '@mui/icons-material/DataArray';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
+import BuildIcon from '@mui/icons-material/Build';
+import SearchIcon from '@mui/icons-material/Search';
 import { Link, useLocation } from 'react-router-dom';
 import cuttlefishLogo from '../assets/cutty_logo.png';
 import { useContext, useEffect, useState } from 'react';
@@ -40,7 +42,7 @@ const Layout = ({ children }) => {
   const [loadingUser, setLoadingUser] = useState(true); // Add loading state
   const [openFiles, setOpenFiles] = useState(false); // Add state for toggling Files group
   const [openPeople, setOpenPeople] = useState(false); // Add state for toggling People group
-  const [openAnalysis, setOpenAnalysis] = useState(false); // Add state for toggling Analysis group
+  const [openDoStuff, setOpenDoStuff] = useState(false); // Add state for toggling Do Stuff group
 
   useEffect(() => {
     // Initialize theme on app startup
@@ -75,10 +77,10 @@ const Layout = ({ children }) => {
     ...(token ? [] : [{ text: 'Login', icon: <LoginIcon />, path: '/login' }]),
     ...(token ? [] : [{ text: 'CSV Cutter', icon: <ContentCutIcon />, path: '/csv_cutter' }]),
     ...(token ? [{ text: 'CSV Cutter PLUS', icon: <ContentCutIcon />, path: '/csv_cutter_plus' }] : []),
-    // Show Files for everyone, but behavior differs based on auth
-    { text: token ? (openFiles ? 'Files (-)' : 'Files (+)') : 'Files', icon: <FolderIcon />, isGroup: token, path: token ? undefined : '/manage_files' },
-    // Show Analysis for everyone, but behavior differs based on auth
-    { text: token ? (openAnalysis ? 'Analysis (-)' : 'Analysis (+)') : 'Analysis', icon: <AnalyticsIcon />, isGroup: token, path: token ? undefined : '/cuttytabs' },
+    // Show Files for logged-in users only as a group
+    ...(token ? [{ text: openFiles ? 'Files (-)' : 'Files (+)', icon: <FolderIcon />, isGroup: true }] : []),
+    // Show Do Stuff for everyone, but behavior differs based on auth
+    { text: token ? (openDoStuff ? 'Do Stuff (-)' : 'Do Stuff (+)') : 'Do Stuff', icon: <BuildIcon />, isGroup: token, path: token ? undefined : '/cut' },
     ...(token ? [{ text: openPeople ? 'People (-)' : 'People (+)', icon: <ListIcon />, isGroup: true }] : []),
     ...(token ? [{ text: 'FAQ', icon: <HelpIcon />, path: '/faq' }] : []),
     { text: 'About', icon: <HomeIcon />, path: '/' },
@@ -110,6 +112,8 @@ const Layout = ({ children }) => {
           return "Creating FAKE people? That's MY job!";
         case '/cuttytabs':
           return "Segmenting data like a true cuttlefish! Dynamic and efficient!";
+        case '/cut':
+          return "CUT IT! Slice and dice your data with precision and style!";
         case '/faq':
           return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.15rem' } };
         case '/logout':
@@ -180,8 +184,8 @@ const Layout = ({ children }) => {
                       onClick={() => {
                         if (item.text.includes('Files')) {
                           setOpenFiles(!openFiles);
-                        } else if (item.text.includes('Analysis')) {
-                          setOpenAnalysis(!openAnalysis);
+                        } else if (item.text.includes('Do Stuff')) {
+                          setOpenDoStuff(!openDoStuff);
                         } else if (item.text.includes('People')) {
                           setOpenPeople(!openPeople);
                         }
@@ -203,22 +207,22 @@ const Layout = ({ children }) => {
                               <ListItemText primary="Upload" />
                             </ListItemButton>
                           </ListItem>
-                          <ListItem key="manage" disablePadding>
-                            <ListItemButton 
-                              component={Link} 
-                              to="/manage_files" 
-                              sx={{ paddingLeft: 4 }}
-                            >
-                              <ListItemIcon><FolderIcon /></ListItemIcon>
-                              <ListItemText primary="Manage" />
-                            </ListItemButton>
-                          </ListItem>
                         </List>
                       </Collapse>
                     )}
-                    {item.text.includes('Analysis') && (
-                      <Collapse in={openAnalysis} timeout="auto" unmountOnExit>
+                    {item.text.includes('Do Stuff') && (
+                      <Collapse in={openDoStuff} timeout="auto" unmountOnExit>
                         <List component="div" disablePadding>
+                          <ListItem key="cut" disablePadding>
+                            <ListItemButton 
+                              component={Link} 
+                              to="/cut" 
+                              sx={{ paddingLeft: 4 }}
+                            >
+                              <ListItemIcon><SearchIcon /></ListItemIcon>
+                              <ListItemText primary="CUT" />
+                            </ListItemButton>
+                          </ListItem>
                           <ListItem key="cuttytabs" disablePadding>
                             <ListItemButton 
                               component={Link} 
@@ -227,6 +231,26 @@ const Layout = ({ children }) => {
                             >
                               <ListItemIcon><TrendingUpIcon /></ListItemIcon>
                               <ListItemText primary="Cuttytabs" />
+                            </ListItemButton>
+                          </ListItem>
+                          <ListItem key="manage_files" disablePadding>
+                            <ListItemButton 
+                              component={Link} 
+                              to="/manage_files" 
+                              sx={{ paddingLeft: 4 }}
+                            >
+                              <ListItemIcon><FolderIcon /></ListItemIcon>
+                              <ListItemText primary="Manage Files" />
+                            </ListItemButton>
+                          </ListItem>
+                          <ListItem key="synthetic_data" disablePadding>
+                            <ListItemButton 
+                              component={Link} 
+                              to="/synthetic-data" 
+                              sx={{ paddingLeft: 4 }}
+                            >
+                              <ListItemIcon><DataArrayIcon /></ListItemIcon>
+                              <ListItemText primary="Generate Fake Data" />
                             </ListItemButton>
                           </ListItem>
                         </List>
@@ -243,16 +267,6 @@ const Layout = ({ children }) => {
                             >
                               <ListItemIcon><PersonIcon /></ListItemIcon>
                               <ListItemText primary="Load Person Records" />
-                            </ListItemButton>
-                          </ListItem>
-                          <ListItem key="synthetic_data" disablePadding>
-                            <ListItemButton 
-                              component={Link} 
-                              to="/synthetic-data" 
-                              sx={{ paddingLeft: 4 }}
-                            >
-                              <ListItemIcon><DataArrayIcon /></ListItemIcon>
-                              <ListItemText primary="Generate Fake Data" />
                             </ListItemButton>
                           </ListItem>
                         </List>

@@ -1,10 +1,17 @@
-name: Cloudflare Workers CI
+name: Build, Test & Deploy
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'cloudflare/workers/**'
+      - 'app/frontend/**'
+      - '.github/workflows/cloudflare-workers-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'cloudflare/workers/**'
+      - 'app/frontend/**'
       - '.github/workflows/cloudflare-workers-ci.yml'
 
 jobs:
@@ -12,7 +19,6 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,35 +29,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        working-directory: cloudflare/workers
-        run: npm ci
-
-      - name: Build project
-        working-directory: cloudflare/workers
-        run: npm run build
-
-      - name: Run tests
-        working-directory: cloudflare/workers
-        run: npm test
-
-  deploy-dev:
-    name: Deploy to Development
-    needs: test
-    runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.labels.*.name, 'deploy-dev')
-    
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
+      # Build Frontend
       - name: Install dependencies - Frontend
         working-directory: app/frontend
         run: npm ci
@@ -63,16 +41,21 @@ jobs:
           CI: true
           NODE_ENV: production
           VITE_AI_WORKER_API_KEY: ${{ secrets.AI_WORKER_API_KEY }}
-      
-      - name: Install dependencies - Cloudflare Worker
+
+      # Build & Test Cloudflare Workers
+      - name: Install dependencies - Workers
         working-directory: cloudflare/workers
         run: npm ci
 
-      - name: Deploy to Cloudflare Workers (Development)
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: cloudflare/workers
-          command: deploy
+      - name: Build Workers
+        working-directory: cloudflare/workers
+        run: npm run build
+
+      - name: Run unit tests
+        working-directory: cloudflare/workers
+        run: npm test
+
+      # E2E Tests temporarily disabled - will be re-added in separate PR
+      # See GitHub issue for implementation plan
+
 

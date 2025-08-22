@@ -25,6 +25,8 @@ import FAQ from './components/FAQ';
 import SyntheticDataGenerator from './components/SyntheticDataGenerator';
 import Analysis from './components/Analysis';
 import Cuttytabs from './components/Cuttytabs';
+import DoStuff from './components/DoStuff';
+import QueryBuilder from './components/QueryBuilder';
 
 // Design Testing Component
 import DesignTester from './components/DesignTester';
@@ -85,6 +87,12 @@ function AppWithLayouts() {
             <Route path="/synthetic-data" element={<SyntheticDataGenerator />} />
             <Route path="/analysis" element={<Analysis />} />
             <Route path="/analysis/cuttytabs" element={<Cuttytabs />} />
+            <Route path="/cuttytabs" element={<Cuttytabs />} />
+            <Route path="/do-stuff" element={<DoStuff />} />
+            <Route path="/do-stuff/cut" element={<QueryBuilder />} />
+            <Route path="/do-stuff/cut/:fileId" element={<QueryBuilder />} />
+            <Route path="/cut" element={<QueryBuilder />} />
+            <Route path="/cut/:fileId" element={<QueryBuilder />} />
           </Routes>
         </SidebarLayout>
       </Router>

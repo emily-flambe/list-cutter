@@ -40,13 +40,13 @@ agent.get('/chat/:sessionId/messages', async (c) => {
   try {
     const response = await fetch(`${agentUrl}/agents/chat/default/get-messages?sessionId=${sessionId}`);
     if (!response.ok) {
-      console.error('Failed to get messages:', response.status);
+      // Silently handle failed message fetches - returns empty array
       return c.json({ messages: [] });
     }
     const data = await response.json();
     return c.json(data);
   } catch (error) {
-    console.error('Error fetching messages:', error);
+    // Error fetching messages - return empty array
     return c.json({ messages: [] });
   }
 });

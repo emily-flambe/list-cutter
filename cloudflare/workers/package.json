@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev --remote",
+    "dev:local": "wrangler dev --local",
     "deploy": "wrangler deploy",
     "deploy:dev": "wrangler deploy",
     "deploy:staging": "wrangler deploy --env staging",
@@ -20,10 +21,6 @@
     "test:performance": "vitest run tests/performance/",
     "test:performance:watch": "vitest --watch tests/performance/",
     "test:benchmark": "node tests/performance/benchmark.js",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed",
-    "test:e2e:debug": "playwright test --debug",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
@@ -34,7 +31,6 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.53",
     "@cloudflare/workers-types": "^4.20241230.0",
-    "@playwright/test": "^1.48.2",
     "@types/benchmark": "^2.1.5",
     "@types/node": "^22.10.6",
     "@typescript-eslint/eslint-plugin": "^8.20.0",

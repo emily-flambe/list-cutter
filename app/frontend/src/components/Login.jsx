@@ -16,7 +16,7 @@ import GoogleSignInButton, { GoogleOAuthCallback } from './GoogleSignInButton';
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate(); // Get the navigate function
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [credentials, setCredentials] = useState({ identifier: '', password: '' });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   
@@ -33,9 +33,21 @@ const Login = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.post(`/api/v1/auth/login`, credentials);
-      login(response.data.access_token, credentials.username, response.data.refresh_token);
-      navigate('/');
+      // Send identifier as both username and email - backend will check both
+      const loginData = {
+        username: credentials.identifier,
+        email: credentials.identifier,
+        password: credentials.password
+      };
+      const response = await api.post(`/api/v1/auth/login`, loginData);
+      // Extract tokens from the nested structure
+      const { tokens, user } = response.data;
+      if (tokens && tokens.access_token && tokens.refresh_token) {
+        login(tokens.access_token, user?.username || credentials.identifier, tokens.refresh_token);
+        navigate('/');
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (err) {
       setError('Invalid credentials');
     } finally {
@@ -91,12 +103,13 @@ const Login = () => {
       {/* Email/Password Form */}
       <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <TextField
-          label="Username"
-          name="username"
-          value={credentials.username}
+          label="Username or Email"
+          name="identifier"
+          value={credentials.identifier}
           onChange={handleChange}
           required
           disabled={loading}
+          placeholder="Enter username or email"
         />
         <TextField
           label="Password"
