@@ -42,6 +42,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import FilterPanel from './FilterPanel';
+import SQLPreviewPanel from './SQLPreviewPanel';
 import cuttyLogo from '../assets/cutty_logo.png';
 
 /**
@@ -82,6 +83,11 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
   // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
+  
+  // SQL Preview Panel state
+  const [sqlPanelExpanded, setSqlPanelExpanded] = useState(
+    typeof window !== 'undefined' ? localStorage.getItem('sqlPanelExpanded') === 'true' : false
+  );
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -505,6 +511,13 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
     setPage(0);
   };
 
+  const handleSQLPanelToggle = (newExpanded) => {
+    setSqlPanelExpanded(newExpanded);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sqlPanelExpanded', String(newExpanded));
+    }
+  };
+
   // Helper function to generate CSV from filtered data
   const generateCSVFromFilteredData = (data) => {
     const csvParts = [];
@@ -777,6 +790,18 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
               onFiltersChange={handleFiltersChange}
               onApplyFilters={handleManualRefresh}
               isFiltering={filtering}
+            />
+          </Grid>
+
+          {/* SQL Preview Panel */}
+          <Grid item xs={12}>
+            <SQLPreviewPanel
+              filters={filters}
+              columns={columns}
+              isExpanded={sqlPanelExpanded}
+              onToggle={handleSQLPanelToggle}
+              persistState={true}
+              tableName={fileInfo?.filename?.replace(/\.(csv|xlsx?)$/i, '') || 'data'}
             />
           </Grid>
 
