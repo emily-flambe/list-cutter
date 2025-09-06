@@ -240,6 +240,36 @@ describe('SQL Preview Panel Component [phase-1]', () => {
     })
   })
 
+  describe('Security', () => {
+    it('properly escapes HTML in SQL to prevent XSS', () => {
+      // Create a filter with malicious HTML that could cause XSS
+      const maliciousFilter = {
+        column: 'name',
+        operator: 'equals',
+        value: '<script>alert("XSS")</script>',
+        dataType: 'TEXT'
+      }
+      
+      render(
+        <SQLPreviewPanel 
+          filters={[maliciousFilter]} 
+          columns={mockColumns}
+          isExpanded={true}
+        />
+      )
+      
+      const sqlContent = screen.getByTestId('sql-content')
+      
+      // Verify no actual script tags are rendered
+      expect(sqlContent.innerHTML).not.toContain('<script>')
+      expect(sqlContent.innerHTML).not.toContain('</script>')
+      
+      // Verify the content is properly escaped
+      expect(sqlContent.innerHTML).toContain('&lt;script&gt;')
+      expect(sqlContent.innerHTML).toContain('&lt;/script&gt;')
+    })
+  })
+
   describe('Panel expansion state', () => {
     it('toggles expansion state when header is clicked', async () => {
       const user = userEvent.setup()

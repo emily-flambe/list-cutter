@@ -61,10 +61,15 @@ export default function SQLPreviewPanel({
 
   const highlightedSQL = useMemo(() => {
     try {
+      // Prism.js automatically escapes HTML entities during highlighting to prevent XSS
+      // See: https://prismjs.com/faq.html#how-do-i-know-which-tokens-i-can-style-for
       return Prism.highlight(sql, Prism.languages.sql, 'sql')
     } catch (error) {
       console.error('Error highlighting SQL:', error)
-      return sql
+      // Fallback: escape HTML manually if Prism fails
+      const div = document.createElement('div')
+      div.textContent = sql
+      return div.innerHTML
     }
   }, [sql])
 

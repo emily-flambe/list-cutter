@@ -6,7 +6,17 @@
 import { compileFiltersToSQL } from './sqlPreviewCompiler'
 
 // Simple encryption key - in production, use environment variable
-const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'cutty-sql-export-2024'
+let ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY
+
+// In production, require the encryption key to be set
+if (!ENCRYPTION_KEY) {
+  if (import.meta.env.MODE === 'production') {
+    throw new Error('VITE_ENCRYPTION_KEY must be set in production environments for SQL export security.')
+  } else {
+    // Allow fallback only in development/test
+    ENCRYPTION_KEY = 'cutty-sql-export-2024'
+  }
+}
 
 /**
  * Simple hash function for signatures
@@ -22,10 +32,15 @@ function simpleHash(str) {
 }
 
 /**
- * Encrypts filter state to a token
+ * Encodes filter state to a shareable token
+ * 
+ * NOTE: This uses base64 encoding for URL-safe sharing, NOT for security.
+ * The filter data is not sensitive - it's just UI state that users would
+ * create themselves. The signature prevents tampering but doesn't hide data.
+ * 
  * @param {Array} filters - Filter configurations
- * @param {Object} options - Encryption options
- * @returns {string} - Encrypted token with signature
+ * @param {Object} options - Encoding options
+ * @returns {string} - Base64-encoded token with signature
  */
 export function encryptFilterState(filters, options = {}) {
   const { expiresIn = 86400000 } = options // Default 24 hours
@@ -36,7 +51,8 @@ export function encryptFilterState(filters, options = {}) {
     expires: expiresIn > 0 ? Date.now() + expiresIn : null
   }
   
-  // Simple obfuscation - in production, use proper encryption
+  // Base64 encoding for URL sharing (not encryption)
+  // The data is just filter configurations, not sensitive information
   const jsonStr = JSON.stringify(payload)
   const encoded = btoa(jsonStr)
   const signature = simpleHash(encoded + ENCRYPTION_KEY)
@@ -45,9 +61,9 @@ export function encryptFilterState(filters, options = {}) {
 }
 
 /**
- * Decrypts filter state from a token
- * @param {string} token - Encrypted token with signature
- * @returns {Array} - Decrypted filter configurations
+ * Decodes filter state from a token
+ * @param {string} token - Base64-encoded token with signature
+ * @returns {Array} - Decoded filter configurations
  */
 export function decryptFilterState(token) {
   if (!token || typeof token !== 'string') {
