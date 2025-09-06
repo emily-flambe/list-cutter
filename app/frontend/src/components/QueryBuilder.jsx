@@ -800,7 +800,6 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
               columns={columns}
               isExpanded={sqlPanelExpanded}
               onToggle={handleSQLPanelToggle}
-              persistState={true}
               tableName={fileInfo?.filename?.replace(/\.(csv|xlsx?)$/i, '') || 'data'}
             />
           </Grid>

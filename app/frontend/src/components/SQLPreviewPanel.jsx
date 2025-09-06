@@ -18,52 +18,25 @@ import 'prismjs/components/prism-sql'
 import 'prismjs/themes/prism-tomorrow.css'
 import { compileFiltersToSQL } from '../utils/sqlPreviewCompiler'
 
-/**
- * SQL Preview Panel Component
- * Displays SQL query generated from filters with syntax highlighting
- */
 export default function SQLPreviewPanel({ 
   filters = [], 
   columns = [], 
   isExpanded = false, 
   onToggle,
-  persistState = false,
   tableName = 'data'
 }) {
   const [copySuccess, setCopySuccess] = useState(false)
   const [copyError, setCopyError] = useState(false)
-  const [expanded, setExpanded] = useState(isExpanded)
   const [updateAnnouncement, setUpdateAnnouncement] = useState('')
 
-  // Load expansion state from localStorage if persistence is enabled
-  useEffect(() => {
-    if (persistState && typeof window !== 'undefined') {
-      const saved = localStorage.getItem('sqlPanelExpanded')
-      if (saved !== null) {
-        setExpanded(saved === 'true')
-      }
-    }
-  }, [persistState])
-
-  // Sync with external isExpanded prop
-  useEffect(() => {
-    setExpanded(isExpanded)
-  }, [isExpanded])
-
-  // Generate SQL from filters
   const sql = useMemo(() => {
     try {
-      // Map filters to SQL-compatible format and add dataType
       const sqlFilters = (filters || []).filter(f => 
         f && (f.column || f.selectedColumn) && f.operator
       ).map(filter => {
-        // Determine column name (handle both column and selectedColumn)
         const columnName = filter.column || filter.selectedColumn
-        
-        // Find column metadata to determine dataType
         const columnMeta = columns.find(c => c.name === columnName)
         
-        // Map operator for SQL (handle is_empty/is_not_empty)
         let sqlOperator = filter.operator
         if (filter.operator === 'is_empty') {
           sqlOperator = 'is_null'
@@ -75,7 +48,7 @@ export default function SQLPreviewPanel({
           column: columnName,
           operator: sqlOperator,
           value: filter.value || null,
-          dataType: columnMeta?.type || 'TEXT' // Default to TEXT if type unknown
+          dataType: columnMeta?.type || 'TEXT'
         }
       })
       
@@ -86,7 +59,6 @@ export default function SQLPreviewPanel({
     }
   }, [filters, columns, tableName])
 
-  // Apply syntax highlighting
   const highlightedSQL = useMemo(() => {
     try {
       return Prism.highlight(sql, Prism.languages.sql, 'sql')
@@ -96,24 +68,15 @@ export default function SQLPreviewPanel({
     }
   }, [sql])
 
-  // Announce SQL updates to screen readers
   useEffect(() => {
-    if (sql && expanded) {
+    if (sql && isExpanded) {
       setUpdateAnnouncement('SQL query updated')
       const timer = setTimeout(() => setUpdateAnnouncement(''), 1000)
       return () => clearTimeout(timer)
     }
-  }, [sql, expanded])
+  }, [sql, isExpanded])
 
   const handleToggle = (event, newExpanded) => {
-    setExpanded(newExpanded)
-    
-    // Persist state if enabled
-    if (persistState && typeof window !== 'undefined') {
-      localStorage.setItem('sqlPanelExpanded', String(newExpanded))
-    }
-    
-    // Call external handler if provided
     if (onToggle) {
       onToggle(newExpanded)
     }
@@ -134,11 +97,9 @@ export default function SQLPreviewPanel({
   return (
     <>
       <Accordion 
-        expanded={expanded} 
+        expanded={isExpanded} 
         onChange={handleToggle}
         data-testid="sql-preview-panel"
-        aria-expanded={expanded}
-        aria-label="SQL Preview Panel"
       >
         <AccordionSummary 
           expandIcon={<ExpandMoreIcon />}
@@ -149,7 +110,6 @@ export default function SQLPreviewPanel({
         </AccordionSummary>
         <AccordionDetails>
           <Box sx={{ width: '100%' }}>
-            {/* SQL Content with syntax highlighting */}
             <Box
               data-testid="sql-content"
               component="pre"
@@ -168,7 +128,6 @@ export default function SQLPreviewPanel({
               dangerouslySetInnerHTML={{ __html: highlightedSQL }}
             />
             
-            {/* Action buttons */}
             <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
               <Button 
                 startIcon={<CopyIcon />}
@@ -184,7 +143,6 @@ export default function SQLPreviewPanel({
         </AccordionDetails>
       </Accordion>
       
-      {/* Copy success notification */}
       <Snackbar
         open={copySuccess}
         autoHideDuration={2000}
@@ -200,7 +158,6 @@ export default function SQLPreviewPanel({
         </Alert>
       </Snackbar>
       
-      {/* Copy error notification */}
       <Snackbar
         open={copyError}
         autoHideDuration={3000}
@@ -216,7 +173,6 @@ export default function SQLPreviewPanel({
         </Alert>
       </Snackbar>
       
-      {/* Screen reader announcement */}
       <div
         role="status"
         aria-live="polite"
