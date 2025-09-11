@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
@@ -14,6 +14,8 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import ClearIcon from '@mui/icons-material/Clear';
 import MinimizeIcon from '@mui/icons-material/Minimize';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import AssistantMessage from './AssistantMessage';
 import AssistantInput from './AssistantInput';
 import { ActionButtonGroup } from './ActionButton';
@@ -34,24 +36,30 @@ const AssistantChat = () => {
     setError
   } = useAssistant();
 
+  const [isExpanded, setIsExpanded] = useState(false);
   const hasNewMessages = messages.length > 1; // More than just welcome message
+
+  const toggleSize = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   const ChatWindow = () => (
     <Paper
       elevation={8}
       sx={{
         position: 'fixed',
-        bottom: 100,
+        bottom: isExpanded ? 24 : 100,
         right: 24,
-        width: 380,
-        height: 500,
+        width: isExpanded ? 600 : 380,
+        height: isExpanded ? 'calc(100vh - 100px)' : 500,
         display: 'flex',
         flexDirection: 'column',
         zIndex: 1300,
         overflow: 'hidden',
         borderRadius: 2,
         border: '1px solid',
-        borderColor: 'divider'
+        borderColor: 'divider',
+        transition: 'all 0.3s ease-in-out'
       }}
     >
       {/* Header */}
@@ -81,6 +89,16 @@ const AssistantChat = () => {
               disabled={messages.length === 0}
             >
               <ClearIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
+            <IconButton
+              size="small"
+              onClick={toggleSize}
+              sx={{ color: 'inherit', mr: 1 }}
+            >
+              {isExpanded ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
             </IconButton>
           </Tooltip>
           
