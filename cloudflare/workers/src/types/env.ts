@@ -8,16 +8,6 @@ export interface CloudflareEnv {
   JWT_AUDIENCE: string;
   FRONTEND_URL?: string;
   
-  // AI Worker Integration
-  AI_WORKER_URL: string;
-  AI_WORKER_API_KEY: string;
-  
-  // Anthropic API Key for AI Agent (Cutty uses Claude)
-  ANTHROPIC_API_KEY: string;
-  
-  // Agent Integration
-  AGENT_ENABLED?: string;
-  AGENT_URL?: string;
   
   // Security environment variables
   SECURITY_PERFORMANCE_THRESHOLD?: string;
@@ -35,6 +25,15 @@ export interface CloudflareEnv {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_REDIRECT_URI: string;
+  
+  // AutoRAG configuration
+  AUTORAG_INSTANCE_NAME?: string;
+  AUTORAG_API_KEY?: string;
+  AUTORAG_TIMEOUT_MS?: string;
+  AUTORAG_MAX_SOURCES?: string;
+  AUTORAG_MIN_CONFIDENCE?: string;
+  AUTORAG_RATE_LIMIT?: string;
+  AUTORAG_BURST_LIMIT?: string;
   
   // Bindings
   DB: D1Database;
@@ -68,8 +67,6 @@ export interface CloudflareEnv {
   // Optional bindings
   RATE_LIMITER?: DurableObjectNamespace;
   
-  // AI Agent Durable Object
-  CUTTY_AGENT: DurableObjectNamespace;
 }
 
 // Alias for backwards compatibility and cleaner imports

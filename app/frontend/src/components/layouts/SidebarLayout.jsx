@@ -40,6 +40,7 @@ import { AuthContext } from '../../context/AuthContext';
 import cuttlefishLogo from '../../assets/cutty_logo.png';
 import ThemeSwitcher from '../ThemeSwitcher';
 import FontSwitcher from '../FontSwitcher';
+import AssistantChat from '../Assistant/AssistantChat';
 import api from '../../api';
 
 const drawerWidth = 280;
@@ -463,6 +464,9 @@ const SidebarLayout = ({ children }) => {
           {children}
         </Box>
       </Box>
+
+      {/* Assistant Chat - Floating */}
+      <AssistantChat />
     </Box>
   );
 };

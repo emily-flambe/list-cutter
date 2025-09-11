@@ -43,6 +43,10 @@ JWT_AUDIENCE = "cutty"
 SECURITY_PERFORMANCE_THRESHOLD = "100"
 SECURITY_METRICS_RETENTION_DAYS = "30"
 SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
+AUTORAG_INSTANCE_NAME = "cutty-rag"
+AUTORAG_TIMEOUT_MS = "30000"
+AUTORAG_MAX_SOURCES = "5"
+AUTORAG_MIN_CONFIDENCE = "0.3"
 # ✅ PRODUCTION SECRETS: OAuth secrets configured via Cloudflare Dashboard
 # ✅ JWT_SECRET - Authentication tokens (CONFIGURED)
 # ✅ API_KEY_SALT - API key generation (CONFIGURED)  
@@ -64,6 +68,12 @@ migrations_table = "d1_migrations"
 binding = "FILE_STORAGE"
 bucket_name = "cutty-files-prod"
 preview_bucket_name = "cutty-files-dev"
+
+# R2 Bucket for AutoRAG documentation (SHARED between dev and prod)
+[[r2_buckets]]
+binding = "DOCS_BUCKET"
+bucket_name = "cutty-docs"
+preview_bucket_name = "cutty-docs"
 
 # Security KV Namespaces (Production)
 [[kv_namespaces]]
@@ -95,3 +105,7 @@ preview_id = "c490355daf9b4b84b484303d08c42eb2"
 [[analytics_engine_datasets]]
 binding = "ANALYTICS"
 dataset = "cutty-metrics-prod"
+
+# Workers AI binding for AutoRAG
+[ai]
+binding = "AI"

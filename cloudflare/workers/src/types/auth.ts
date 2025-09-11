@@ -47,18 +47,6 @@ export interface BlacklistedToken {
   blacklisted_at: number;
 }
 
-// API Key type
-export interface APIKey {
-  id: string;
-  user_id: string;
-  key_hash: string;
-  name: string;
-  permissions: string[];
-  expires_at?: number;
-  created_at: string;
-  last_used_at?: string;
-}
-
 // User registration data
 export interface UserRegistration {
   username: string;

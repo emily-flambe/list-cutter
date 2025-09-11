@@ -41,28 +41,6 @@ export interface BlacklistedToken {
   blacklisted_at: number;
 }
 
-// API Key types
-export interface APIKey {
-  key_id: string;
-  user_id: string;
-  name: string;
-  key_hash: string;
-  key_prefix: string;
-  permissions: string[];
-  created_at: number;
-  last_used: number | null;
-  expires_at: number | null;
-  is_active: boolean;
-  rate_limit_override: number | null;
-}
-
-export interface APIKeyCreateRequest {
-  name: string;
-  permissions: string[];
-  expires_in_days?: number;
-  rate_limit_override?: number;
-}
-
 // Environment types with all required bindings
 export interface Env {
   // Environment variables
@@ -107,9 +85,7 @@ export interface Env {
 // Authentication context types
 export interface AuthContext {
   user: User;
-  authMethod: 'jwt' | 'api_key';
-  apiKey?: APIKey;
-  permissions?: string[];
+  authMethod: 'jwt';
 }
 
 // Security event types
@@ -134,9 +110,7 @@ export interface UserRegistration {
 // Request context types for Hono
 export interface HonoContext {
   user?: User;
-  authMethod?: 'jwt' | 'api_key';
-  apiKey?: APIKey;
-  permissions?: string[];
+  authMethod?: 'jwt';
 }
 
 // Extend Hono context type
@@ -383,4 +357,3 @@ export interface CutFilterRequest {
 }
 
 export { CloudflareEnv } from './types/env';
-export { APIPermission, PERMISSION_DESCRIPTIONS, PERMISSION_PRESETS } from './types/permissions';

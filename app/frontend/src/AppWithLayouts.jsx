@@ -8,8 +8,6 @@ import { createDynamicTheme } from './themes/muiTheme';
 // Layout Component - using sidebar layout only
 import SidebarLayout from './components/layouts/SidebarLayout';
 
-// Chat Component - Lazy load to avoid SSR issues
-const ChatBot = lazy(() => import('./components/ChatBotWrapper'));
 
 // Page Components
 import Home from './components/Home';
@@ -31,8 +29,6 @@ import QueryBuilder from './components/QueryBuilder';
 // Design Testing Component
 import DesignTester from './components/DesignTester';
 
-// Agent Action Handler
-import AgentActionHandler from './components/AgentActionHandler';
 
 import './App.css';
 
@@ -68,10 +64,6 @@ function AppWithLayouts() {
       <AuthProvider>
         <Router>
           <SidebarLayout>
-            <Suspense fallback={null}>
-              <ChatBot />
-            </Suspense>
-            {import.meta.env.VITE_AGENT_ENABLED === 'true' && <AgentActionHandler />}
             <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
