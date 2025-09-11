@@ -206,15 +206,52 @@ export class CuttyAssistant {
       }
       
       // Use the Workers AI binding to query AutoRAG using aiSearch method
-      // This searches the indexed documents and generates a response
+      // Keep the query simple - let AutoRAG's system prompt handle the rest
+      const query = request.question;
+      
       const response = await this.env.AI.autorag(this.config.instance_name).aiSearch({
-        query: request.question
+        query: query,
+        max_num_results: 5, // Give the model enough context to work with
+        rewrite_query: true // Let AutoRAG optimize the query for better retrieval
       });
       
       // Format response to match expected structure
       // AutoRAG returns 'response' for the answer and 'data' for sources
+      let answer = response.response || 'Whoops! My tentacles got tangled up with that question. Try asking in a different way!';
+      
+      // Aggressively remove ALL file and document references
+      // Remove anything in square brackets with parentheses (markdown links)
+      answer = answer.replace(/\[[^\]]*\]\([^)]*\)/g, '');
+      // Remove anything that looks like a file path or document reference
+      answer = answer.replace(/\b[\w-]+\.(md|txt|json|yml|yaml|html|pdf|doc|docx)\b/gi, '');
+      answer = answer.replace(/\[[\w\s-]+\]/g, ''); // Remove bracketed text
+      answer = answer.replace(/\([\w/.-]+\)/g, ''); // Remove parenthetical paths
+      answer = answer.replace(/\b(docs?|documentation|document|file|guide|page|section)s?\b[\w/.-]*/gi, '');
+      // Remove "as described/outlined in..." and everything after
+      answer = answer.replace(/,?\s*(as\s+)?(outlined|described|shown|found|mentioned|detailed|explained|documented|specified|indicated|presented|covered|discussed)\s+(in|at|within|by|under|on)\s+[\w\s/.-]+/gi, '');
+      // Remove document/guide references at end of sentences
+      answer = answer.replace(/\s+(in|from|at)\s+(the\s+)?[\w\s-]*(document|guide|overview|documentation|section|page)\.?$/gi, '.');
+      // Clean up extra whitespace, periods, and commas
+      answer = answer.replace(/\s{2,}/g, ' ').replace(/\.+/g, '.').replace(/,\s*\./g, '.').replace(/\s+,/g, ',').trim();
+      
+      // Post-process to clean up response
+      // Remove file references but keep reasonable length
+      const MAX_ANSWER_LENGTH = 250; // reasonable for helpful responses
+      if (answer.length > MAX_ANSWER_LENGTH) {
+        // Try to cut at a sentence boundary
+        const sentences = answer.match(/[^.!?]+[.!?]+/g) || [answer];
+        let truncated = '';
+        for (const sentence of sentences) {
+          if ((truncated + sentence).length > MAX_ANSWER_LENGTH) {
+            break;
+          }
+          truncated += sentence;
+        }
+        answer = truncated || sentences[0] || answer.substring(0, MAX_ANSWER_LENGTH) + '...';
+      }
+      
       const formattedResponse: AutoRAGResponse = {
-        answer: response.response || 'I couldn\'t find a specific answer to your question. Please try rephrasing or ask a different question.',
+        answer,
         sources: response.data?.map((item: any) => ({
           filename: item.filename,
           title: item.attributes?.file?.title || item.filename,
