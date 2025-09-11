@@ -94,8 +94,8 @@ const AssistantMessage = ({ message, onActionClick }) => {
             {message.content}
           </Typography>
 
-          {/* Sources section - only for assistant messages */}
-          {!isUser && message.sources && message.sources.length > 0 && (
+          {/* Sources section - DISABLED - we don't want to show sources */}
+          {/* {!isUser && message.sources && message.sources.length > 0 && (
             <Box sx={{ mt: 2 }}>
               <Typography 
                 variant="caption" 
@@ -114,7 +114,7 @@ const AssistantMessage = ({ message, onActionClick }) => {
                 ))}
               </Stack>
             </Box>
-          )}
+          )} */}
 
           {/* Action buttons - only for assistant messages */}
           {!isUser && message.actions && message.actions.length > 0 && (
