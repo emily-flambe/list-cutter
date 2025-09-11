@@ -84,11 +84,11 @@ const AssistantMessage = ({ message, onActionClick }) => {
           }}
         >
           <Typography
-            variant="body2"
             sx={{
+              fontSize: '0.875rem',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
-              lineHeight: 1.4
+              lineHeight: 1.5
             }}
           >
             {message.content}

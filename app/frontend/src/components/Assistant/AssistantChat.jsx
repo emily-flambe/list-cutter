@@ -48,10 +48,10 @@ const AssistantChat = () => {
       elevation={8}
       sx={{
         position: 'fixed',
-        bottom: isExpanded ? 24 : 100,
+        bottom: isExpanded ? 24 : 80,
         right: 24,
-        width: isExpanded ? 600 : 380,
-        height: isExpanded ? 'calc(100vh - 100px)' : 500,
+        width: isExpanded ? 800 : 500,
+        height: isExpanded ? 'calc(100vh - 48px)' : 600,
         display: 'flex',
         flexDirection: 'column',
         zIndex: 1300,
