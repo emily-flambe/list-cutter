@@ -31,47 +31,6 @@ export class InvalidTokenError extends AuthenticationError {
   }
 }
 
-export class APIKeyError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly keyId?: string
-  ) {
-    super(message);
-    this.name = 'APIKeyError';
-  }
-}
-
-export class APIKeyNotFoundError extends APIKeyError {
-  constructor(keyId?: string) {
-    super(
-      keyId ? `API key not found: ${keyId}` : 'API key not found',
-      'API_KEY_NOT_FOUND',
-      keyId
-    );
-  }
-}
-
-export class APIKeyExpiredError extends APIKeyError {
-  constructor(keyId?: string) {
-    super(
-      keyId ? `API key expired: ${keyId}` : 'API key has expired',
-      'API_KEY_EXPIRED',
-      keyId
-    );
-  }
-}
-
-export class APIKeyInactiveError extends APIKeyError {
-  constructor(keyId?: string) {
-    super(
-      keyId ? `API key is inactive: ${keyId}` : 'API key is inactive',
-      'API_KEY_INACTIVE',
-      keyId
-    );
-  }
-}
-
 export class ConfigurationError extends Error {
   constructor(
     message: string,
@@ -139,10 +98,6 @@ export function isAuthenticationError(error: any): error is AuthenticationError 
   return error instanceof AuthenticationError;
 }
 
-export function isAPIKeyError(error: any): error is APIKeyError {
-  return error instanceof APIKeyError;
-}
-
 export function isConfigurationError(error: any): error is ConfigurationError {
   return error instanceof ConfigurationError;
 }
@@ -166,9 +121,6 @@ export function createErrorResponse(error: Error, includeStack: boolean = false)
   if (isAuthenticationError(error)) {
     response.code = error.code;
     response.details = error.details;
-  } else if (isAPIKeyError(error)) {
-    response.code = error.code;
-    response.keyId = error.keyId;
   } else if (isConfigurationError(error)) {
     response.configKey = error.configKey;
   } else if (isSecurityError(error)) {
@@ -200,17 +152,6 @@ export function getHttpStatusForError(error: Error): number {
         return 400;
       default:
         return 401;
-    }
-  }
-
-  if (isAPIKeyError(error)) {
-    switch (error.code) {
-      case 'API_KEY_NOT_FOUND':
-      case 'API_KEY_EXPIRED':
-      case 'API_KEY_INACTIVE':
-        return 401;
-      default:
-        return 400;
     }
   }
 

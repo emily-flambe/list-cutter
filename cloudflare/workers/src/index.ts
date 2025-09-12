@@ -14,10 +14,10 @@ import filesRoutes from './routes/files';
 import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin';
 import syntheticDataRoutes from './routes/synthetic-data';
-import agentRoutes from './routes/agent';
 import segmentsRoutes from './routes/segments';
 import realtimeRoutes from './routes/realtime';
 import publicRoutes from './routes/public';
+import assistantRoutes from './routes/assistant';
 
 // Import security middleware
 import { rateLimitMiddleware } from './services/security';
@@ -31,7 +31,7 @@ type HonoVariables = {
 const app = new Hono<{ Bindings: CloudflareEnv; Variables: HonoVariables }>();
 
 // Content Security Policy - single source of truth
-const CSP_POLICY = `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: https://www.google-analytics.com; connect-src 'self' http://localhost:8788 https://*.emily-cogsdill.workers.dev wss://*.emily-cogsdill.workers.dev https://ai.emilycogsdill.com https://cutty-agent.emilycogsdill.com wss://cutty-agent.emilycogsdill.com https://cutty.emilycogsdill.com https://cutty-dev.emilycogsdill.com https://cloudflareinsights.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://stats.g.doubleclick.net`;
+const CSP_POLICY = `default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: https://www.google-analytics.com; connect-src 'self' http://localhost:8788 https://*.emily-cogsdill.workers.dev https://cutty.emilycogsdill.com https://cutty-dev.emilycogsdill.com https://cloudflareinsights.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://stats.g.doubleclick.net`;
 
 // Basic initialization middleware
 app.use('*', async (c, next): Promise<void> => {
@@ -66,9 +66,7 @@ app.use('*', cors({
     const allowedOrigins = [
       'https://cutty.emilycogsdill.com', 
       'https://835ef64d-cutty.emily-cogsdill.workers.dev', 
-      'https://cutty.emily-cogsdill.workers.dev',
-      'https://cutty-agent.emilycogsdill.com',
-      'https://cutty-agent.emily-cogsdill.workers.dev'
+      'https://cutty.emily-cogsdill.workers.dev'
     ];
     return allowedOrigins.includes(origin || '') ? origin : false;
   },
@@ -188,10 +186,10 @@ v1.route('/files', filesRoutes); // File operations at /api/v1/files/*
 v1.route('/auth', authRoutes); // Authentication routes at /api/v1/auth/*
 v1.route('/admin', adminRoutes); // Admin routes at /api/v1/admin/*
 v1.route('/synthetic-data', syntheticDataRoutes); // Synthetic data generation at /api/v1/synthetic-data/*
-v1.route('/agent', agentRoutes); // Agent WebSocket proxy at /api/v1/agent/*
 v1.route('/segments', segmentsRoutes); // Cuttytabs segmentation at /api/v1/segments/*
 v1.route('/realtime', realtimeRoutes); // Real-time updates via SSE at /api/v1/realtime/*
 v1.route('/public', publicRoutes); // Public demo routes at /api/v1/public/* (no authentication required)
+v1.route('/assistant', assistantRoutes); // AutoRAG-powered assistant at /api/v1/assistant/*
 // Analysis endpoints are integrated through files route at /api/v1/files/:fileId/analyze/* and /api/v1/files/:fileId/fields
 
 // Frontend serving logic for non-API routes
@@ -222,7 +220,7 @@ app.get('*', async (c, next): Promise<Response> => {
       response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
       response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
       
-      // Set CSP for same-origin API access with Cloudflare analytics support and Cutty Agent
+      // Set CSP for same-origin API access with Cloudflare analytics support
       response.headers.set('Content-Security-Policy', CSP_POLICY);
       
       // Set caching headers based on file type
@@ -311,5 +309,3 @@ export default {
   fetch: app.fetch
 };
 
-// Export Durable Objects
-// CuttyAgent export removed - using external agent via WebSocket proxy

@@ -17,8 +17,7 @@ Cutty is a web-based platform that brings order to chaos by providing intelligen
 - [x] Basic CSV transformations (filter, sort, export)
 - [x] Synthetic data generation
 - [x] File storage and management (R2)
-- [x] AI chatbot assistance (Cutty the Cuttlefish)
-- [x] Real-time agent actions via WebSocket
+- [ ] AI assistant integration (planned for future)
 - [x] File lineage tracking
 - [x] Responsive web interface
 
@@ -87,7 +86,7 @@ Cutty is a web-based platform that brings order to chaos by providing intelligen
 - Performance: <200ms API response time achieved
 - Reliability: 99.9% uptime
 - User satisfaction: Positive feedback on ease of use
-- Feature adoption: Usage of AI assistant features
+- Feature adoption: Usage of data processing features
 - Data processed: Volume of CSV files handled
 
 ## Out of Scope
@@ -114,7 +113,7 @@ Cutty is a web-based platform that brings order to chaos by providing intelligen
 3. Create cross-tabulation reports from data
 4. Share processed data with team members
 5. Track file transformations and lineage
-6. Get AI assistance for data tasks
+6. Get assistance for data tasks (AI planned for future)
 
 ## Feature Priorities
 
@@ -132,7 +131,7 @@ Cutty is a web-based platform that brings order to chaos by providing intelligen
 
 ### Future Considerations
 1. Enterprise features (SSO, audit logs)
-2. Advanced AI capabilities
+2. Advanced automation capabilities
 3. Integration marketplace
 4. Custom scripting support
 

@@ -12,9 +12,9 @@
 - **Repository**: `github.com/emily-flambe/list-cutter`
 - **Worktrees Directory**: `~/Documents/GitHub/list-cutter/worktrees/`
 
-### Agent Service
-- **Repository**: `github.com/emily-flambe/cutty-agent`
-- **Location**: `~/Documents/GitHub/cutty-agent/`
+### Agent Service (Deprecated)
+- **Repository**: No longer maintained
+- **Location**: N/A
 
 ## Important Notes
 

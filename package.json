@@ -27,5 +27,9 @@
     "cloudflare/workers",
     "app/frontend"
   ],
-  "dependencies": {}
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.886.0",
+    "dotenv": "^17.2.2",
+    "gray-matter": "^4.0.3"
+  }
 }

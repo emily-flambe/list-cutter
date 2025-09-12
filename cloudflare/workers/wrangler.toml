@@ -55,9 +55,10 @@ JWT_AUDIENCE = "cutty"
 SECURITY_PERFORMANCE_THRESHOLD = "100"
 SECURITY_METRICS_RETENTION_DAYS = "30"
 SECURITY_ENABLE_REAL_TIME_MONITORING = "true"
-AI_WORKER_URL = "https://ai.emilycogsdill.com"
-AGENT_ENABLED = "true"
-AGENT_URL = "https://cutty-agent.emilycogsdill.com"
+AUTORAG_INSTANCE_NAME = "cutty-rag"
+AUTORAG_TIMEOUT_MS = "30000"
+AUTORAG_MAX_SOURCES = "5"
+AUTORAG_MIN_CONFIDENCE = "0.3"
 # ✅ SECRETS CONFIGURED: All required secrets are set via Cloudflare Dashboard
 # ✅ JWT_SECRET - Authentication tokens (CONFIGURED)
 # ✅ API_KEY_SALT - API key generation (CONFIGURED)  
@@ -92,6 +93,12 @@ preview_bucket_name = "cutty-files-dev"
 # binding = "BACKUP_STORAGE"
 # bucket_name = "cutty-backup-dev"
 # preview_bucket_name = "cutty-backup-dev"
+
+# R2 Bucket for AutoRAG documentation (SHARED between dev and prod)
+[[r2_buckets]]
+binding = "DOCS_BUCKET"
+bucket_name = "cutty-docs"
+preview_bucket_name = "cutty-docs"
 
 # Security KV Namespaces (Development)
 [[kv_namespaces]]
@@ -151,12 +158,9 @@ preview_id = "607ebf3e08bb4d1abe4252aa2b968e38"
 binding = "ANALYTICS"
 dataset = "cutty-metrics"
 
-# Durable Objects for AI Agent
-# [[durable_objects]]
-# binding = "CUTTY_AGENT"
-# class_name = "CuttyAgent"
-# script_name = "cutty-dev"
-# Commented out - using external agent via WebSocket proxy
+# Workers AI binding for AutoRAG
+[ai]
+binding = "AI"
 
 # Cron triggers disabled - segment processing removed
 # [triggers]
