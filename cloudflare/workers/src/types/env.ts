@@ -67,6 +67,10 @@ export interface CloudflareEnv {
   // Optional bindings
   RATE_LIMITER?: DurableObjectNamespace;
   
+  // Workers AI binding for AutoRAG
+  AI?: any; // Workers AI binding type
+  DOCS_BUCKET?: R2Bucket; // R2 bucket for AutoRAG documentation
+  
 }
 
 // Alias for backwards compatibility and cleaner imports
