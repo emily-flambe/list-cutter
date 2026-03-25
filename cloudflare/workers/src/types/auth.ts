@@ -59,6 +59,40 @@ export interface APIKey {
   last_used_at?: string;
 }
 
+// API Key creation request
+export interface APIKeyCreateRequest {
+  name: string;
+  permissions: string[];
+  expires_in_days?: number;
+  rate_limit_override?: number;
+}
+
+// Authentication context attached to requests
+export interface AuthContext {
+  user: User;
+  authMethod: 'jwt' | 'api_key';
+  apiKey?: APIKey;
+  permissions?: string[];
+}
+
+// API Key authentication context (used by apiKeyAuth middleware)
+export interface APIKeyAuthContext {
+  api_key: APIKey;
+  user_id: string;
+  permissions: string[];
+}
+
+// Security event logging
+export interface SecurityEvent {
+  timestamp: number;
+  event_type: string;
+  user_id?: number;
+  ip_address?: string;
+  user_agent?: string;
+  success: boolean;
+  metadata?: Record<string, any>;
+}
+
 // User registration data
 export interface UserRegistration {
   username: string;

@@ -105,9 +105,9 @@ const SidebarLayout = ({ children }) => {
           return "Pick your tool, any tool! Let's get stuff done!";
         case '/do-stuff/synthetic-data':
           return "LET'S SPILL SOME INK.";
-        case '/do-stuff/cuttytabs':
+        case '/analysis/cuttytabs':
           return "Time for a swim swim!";
-        case '/do-stuff/cut':
+        case '/cut':
           return "I was born for this!";
         case '/faq':
           return { text: "Are you still looking for answers where there are only questions?", style: { fontWeight: 'bold', fontFamily: 'Creepster, cursive', color: 'red', fontSize: '1.15rem' } };

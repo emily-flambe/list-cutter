@@ -39,7 +39,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   config => {
-    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -80,19 +80,17 @@ api.interceptors.response.use(
           originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
           return api(originalRequest);
         } else {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('refreshToken');
           localStorage.removeItem('token');
-          
+          localStorage.removeItem('refreshToken');
+
           if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
             window.location.href = '/login';
           }
         }
       } catch (refreshError) {
         console.error('Token refresh error:', refreshError);
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('refreshToken');
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         
         if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
           window.location.href = '/login';

@@ -3,3 +3,7 @@ export * from './env';
 export * from './errors';
 export * from './hono-context';
 export * from './auth';
+export * from './permissions';
+export * from './synthetic-data';
+export * from './analysis';
+export * from './cut';

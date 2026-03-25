@@ -26,7 +26,7 @@ const DoStuff = () => {
       title: 'CUT',
       description: 'Smart CSV filtering with intelligent data detection',
       icon: ContentCutIcon,
-      path: '/do-stuff/cut',
+      path: '/cut',
       requiresAuth: false,
     },
     {

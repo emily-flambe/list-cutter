@@ -1,63 +1,71 @@
-// Simple authentication middleware for R2 monitoring system
-import type { Context } from 'hono';
+import type { Env, UserJWTPayload } from '../types';
+import { verifyJWT, isTokenBlacklisted } from '../services/auth/jwt';
+import { ApiError } from './error';
 
-export interface AuthContext {
-  userId?: string;
-  isAdmin?: boolean;
-}
+/**
+ * Verify authentication from request headers
+ */
+export async function verifyAuth(request: Request, env: Env): Promise<UserJWTPayload | null> {
+  // Extract Authorization header - should be in format "Bearer <token>"
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null; // No valid authorization header found
+  }
 
-export async function authenticateRequest(c: Context): Promise<AuthContext | null> {
-  // For now, implement a simple authentication check
-  // In production, this would validate JWT tokens, API keys, etc.
+  // Remove "Bearer " prefix to get the actual token
+  const token = authHeader.substring(7);
   
-  const authHeader = c.req.header('Authorization');
-  if (!authHeader) {
-    return null;
+  // Verify JWT token signature, expiration, and structure
+  // This cryptographically validates the token was issued by us and hasn't been tampered with
+  const payload = await verifyJWT(token, env.JWT_SECRET);
+  if (!payload) {
+    return null; // Token is invalid, expired, or malformed
   }
-
-  // Simple bearer token check for demo purposes
-  if (authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    
-    // Mock authentication - replace with real JWT validation
-    if (token === 'demo-token') {
-      return {
-        userId: 'demo-user',
-        isAdmin: false
-      };
-    }
-    
-    if (token === 'admin-token') {
-      return {
-        userId: 'admin-user',
-        isAdmin: true
-      };
-    }
+  
+  // Check if token has been manually blacklisted
+  // Tokens can be blacklisted during logout, security incidents, or account suspension
+  if (await isTokenBlacklisted(token, env)) {
+    return null; // Token is valid but has been intentionally revoked
   }
-
-  return null;
+  
+  return payload; // Token is valid and active
 }
 
-export function requireAuth() {
-  return async (c: Context, next: () => Promise<void>): Promise<Response | void> => {
-    const auth = await authenticateRequest(c);
-    if (!auth) {
-      return c.json({ error: 'Authentication required' }, 401);
-    }
-    
-    c.set('auth', auth);
-    await next();
-  };
+/**
+ * Require authentication and throw error if not authenticated
+ */
+export async function requireAuth(request: Request, env: Env): Promise<UserJWTPayload> {
+  const user = await verifyAuth(request, env);
+  if (!user) {
+    throw new ApiError(401, 'Unauthorized');
+  }
+  return user;
 }
 
-export function requireAdmin() {
-  return async (c: Context, next: () => Promise<void>): Promise<Response | void> => {
-    const auth = await authenticateRequest(c);
-    if (!auth || !auth.isAdmin) {
-      return c.json({ error: 'Admin access required' }, 403);
-    }
-    
-    c.set('auth', auth);
-    await next();
-  };
+/**
+ * Extract user context from request headers (set by security middleware)
+ */
+export function getUserContext(request: Request): UserJWTPayload | null {
+  // Extract user information from custom headers set by upstream security middleware
+  // These headers are populated after successful JWT token validation
+  const userId = request.headers.get('X-User-ID');
+  const username = request.headers.get('X-Username');
+  const email = request.headers.get('X-User-Email');
+  
+  // Both user ID and username are required for valid user context
+  if (!userId || !username) {
+    return null; // Missing essential user information
+  }
+  
+  // Reconstruct a UserJWTPayload-compatible object from headers
+  // Note: This is used when JWT parsing has already been done by middleware
+  return {
+    user_id: parseInt(userId), // Convert string header back to number
+    username,
+    email: email || undefined, // Email is optional
+    iat: 0, // These JWT-specific fields are not relevant when extracted from headers
+    exp: 0, // The original token validation already handled expiration
+    jti: '', // JWT ID not needed for header-based context
+    token_type: 'access' // Assume access token type for header-based auth
+  } as UserJWTPayload;
 }

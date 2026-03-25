@@ -110,7 +110,7 @@ const Layout = ({ children }) => {
           return "Have we met?";
         case '/synthetic-data':
           return "Creating FAKE people? That's MY job!";
-        case '/cuttytabs':
+        case '/analysis/cuttytabs':
           return "Segmenting data like a true cuttlefish! Dynamic and efficient!";
         case '/cut':
           return "CUT IT! Slice and dice your data with precision and style!";
@@ -226,7 +226,7 @@ const Layout = ({ children }) => {
                           <ListItem key="cuttytabs" disablePadding>
                             <ListItemButton 
                               component={Link} 
-                              to="/cuttytabs" 
+                              to="/analysis/cuttytabs" 
                               sx={{ paddingLeft: 4 }}
                             >
                               <ListItemIcon><TrendingUpIcon /></ListItemIcon>

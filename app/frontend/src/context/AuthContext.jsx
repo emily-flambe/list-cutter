@@ -12,11 +12,11 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('authToken'));
+  const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(null);
 
   const login = (newToken, username, refreshToken) => {
-    localStorage.setItem('authToken', newToken);
+    localStorage.setItem('token', newToken);
     localStorage.setItem('refreshToken', refreshToken);
     setToken(newToken);
     fetchUserData(newToken);
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
       const newAccessToken = response.data.access_token;
       const newRefreshToken = response.data.refresh_token;
       
-      localStorage.setItem('authToken', newAccessToken);
+      localStorage.setItem('token', newAccessToken);
       if (newRefreshToken) {
         localStorage.setItem('refreshToken', newRefreshToken);
       }
@@ -90,13 +90,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const clearAllTokens = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
   };
 
   const validateToken = async () => {
-    const storedToken = localStorage.getItem('authToken');
+    const storedToken = localStorage.getItem('token');
     if (storedToken) {
       try {
         const response = await api.get('/api/v1/auth/user');

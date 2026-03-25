@@ -4,7 +4,7 @@
  * This consolidated security service provides only essential security features:
  * - JWT authentication (via existing jwt.ts service)
  * - Basic rate limiting
- * - Input validation for file uploads
+ * - Input sanitization
  * 
  * Removed features: threat detection, PII scanning, compliance management,
  * incident response, audit logging, and other enterprise-grade features.
@@ -64,64 +64,6 @@ export class RateLimiter {
 
     return { allowed: true, remaining: this.maxRequests - newCount };
   }
-}
-
-/**
- * Basic file validation
- */
-export interface FileValidationOptions {
-  maxSizeBytes?: number;
-  allowedMimeTypes?: string[];
-  allowedExtensions?: string[];
-}
-
-export function validateFile(
-  file: File,
-  options: FileValidationOptions = {}
-): { valid: boolean; error?: string } {
-  const {
-    maxSizeBytes = 52428800, // 50MB default
-    allowedMimeTypes = ['text/csv', 'application/vnd.ms-excel', 'text/plain'],
-    allowedExtensions = ['.csv', '.txt', '.tsv']
-  } = options;
-
-  // Check file size
-  if (file.size > maxSizeBytes) {
-    return { 
-      valid: false, 
-      error: `File size ${file.size} bytes exceeds maximum of ${maxSizeBytes} bytes` 
-    };
-  }
-
-  // Check MIME type
-  if (allowedMimeTypes.length > 0 && !allowedMimeTypes.includes(file.type)) {
-    return { 
-      valid: false, 
-      error: `File type ${file.type} is not allowed. Allowed types: ${allowedMimeTypes.join(', ')}` 
-    };
-  }
-
-  // Check file extension
-  const fileName = file.name.toLowerCase();
-  const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
-  
-  if (allowedExtensions.length > 0 && !hasValidExtension) {
-    return { 
-      valid: false, 
-      error: `File extension not allowed. Allowed extensions: ${allowedExtensions.join(', ')}` 
-    };
-  }
-
-  // Validate filename
-  const invalidChars = /[<>:"/\\|?*\x00-\x1f]/;
-  if (invalidChars.test(file.name)) {
-    return { 
-      valid: false, 
-      error: 'Filename contains invalid characters' 
-    };
-  }
-
-  return { valid: true };
 }
 
 /**
@@ -186,8 +128,7 @@ export function rateLimitMiddleware(options?: { windowMs?: number; maxRequests?:
                        c.req.header('X-Real-IP') ||
                        'dev-' + (c.req.header('User-Agent') || 'unknown');
 
-      const limiter = new InMemoryRateLimiter(options?.windowMs, options?.maxRequests);
-      const { allowed, remaining } = limiter.checkLimit(identifier);
+      const { allowed, remaining } = devRateLimiter.checkLimit(identifier);
 
       // Set rate limit headers
       c.header('X-RateLimit-Limit', String(options?.maxRequests || 60));
