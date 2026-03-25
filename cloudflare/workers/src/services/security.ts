@@ -4,8 +4,7 @@
  * This consolidated security service provides only essential security features:
  * - JWT authentication (via existing jwt.ts service)
  * - Basic rate limiting
- * - Input sanitization
- * 
+ *
  * Removed features: threat detection, PII scanning, compliance management,
  * incident response, audit logging, and other enterprise-grade features.
  */
@@ -175,20 +174,3 @@ export function rateLimitMiddleware(options?: { windowMs?: number; maxRequests?:
   };
 }
 
-/**
- * Basic input sanitization
- */
-export function sanitizeInput(input: string): string {
-  // Remove null bytes
-  let sanitized = input.replace(/\0/g, '');
-  
-  // Trim whitespace
-  sanitized = sanitized.trim();
-  
-  // Limit length
-  if (sanitized.length > 10000) {
-    sanitized = sanitized.substring(0, 10000);
-  }
-  
-  return sanitized;
-}

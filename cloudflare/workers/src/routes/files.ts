@@ -14,7 +14,7 @@
 
 import { Hono } from 'hono';
 import type { Env, CrosstabRequest, FieldsResponse, CrosstabResponse, CrosstabExportRequest, CrosstabExportResponse, ColumnsAnalysisResponse, FilterConfiguration } from '../types';
-import { validateFile } from '../services/security/file-validator';
+import { validateFile } from '../services/file-validator';
 import { validateToken } from '../services/auth/jwt';
 import { CrosstabProcessor } from '../services/crosstab-processor';
 import { DataTypeDetector } from '../services/data-type-detector';
