@@ -484,8 +484,8 @@ const Cuttytabs = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+    <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
+      <Typography variant="h4" component="h1" gutterBottom sx={{ fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' } }}>
         Cuttytabs
       </Typography>
       <Typography variant="h6" component="h2" color="text.secondary" sx={{ mb: 3 }}>
@@ -657,7 +657,7 @@ const Cuttytabs = () => {
         {crosstabData && (
           <Grid item xs={12}>
             <Paper sx={{ p: 3, mt: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1, mb: 2 }}>
                 <Typography variant="h6">
                   {columnVariable ? `Crosstab Results: ${rowVariable} × ${columnVariable}` : `Frequency Counts: ${rowVariable}`}
                 </Typography>

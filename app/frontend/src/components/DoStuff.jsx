@@ -69,6 +69,7 @@ const DoStuff = () => {
             mb: 1,
             color: 'var(--primary-text)',
             textAlign: 'center',
+            fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' },
           }}
         >
           Do Stuff
@@ -105,21 +106,21 @@ const DoStuff = () => {
               }}
             >
               <CardActionArea onClick={() => handleCardClick(tool.path)}>
-                <CardContent sx={{ p: 4 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2, sm: 3, md: 4 } }}>
                     <Box
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        width: 64,
-                        height: 64,
+                        width: { xs: 48, sm: 64 },
+                        height: { xs: 48, sm: 64 },
                         borderRadius: 3,
                         bgcolor: 'rgba(59, 130, 246, 0.08)',
                         flexShrink: 0,
                       }}
                     >
-                      <tool.icon sx={{ fontSize: 32, color: 'var(--primary-text)', opacity: 0.8 }} />
+                      <tool.icon sx={{ fontSize: { xs: 24, sm: 32 }, color: 'var(--primary-text)', opacity: 0.8 }} />
                     </Box>
                     
                     <Box sx={{ flex: 1 }}>

@@ -259,15 +259,16 @@ const ManageFiles = () => {
         position: 'relative'
       }}>
         {/* Top Row: Text on left, Large Cutty on right */}
-        <Box sx={{ 
-          display: 'flex', 
+        <Box sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           alignItems: 'center',
           justifyContent: 'flex-start',
           width: '100%',
           maxWidth: '900px',
-          mb: -6,
-          gap: 3,
-          pl: 2
+          mb: { xs: 0, sm: -6 },
+          gap: { xs: 2, sm: 3 },
+          pl: { xs: 0, sm: 2 }
         }}>
           {/* Red Glowing Text */}
           <Typography 
@@ -278,7 +279,7 @@ const ManageFiles = () => {
               fontWeight: 'bold',
               fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
               lineHeight: 1.2,
-              textAlign: 'left',
+              textAlign: { xs: 'center', sm: 'left' },
               flex: 1,
               '@keyframes textGlow': {
                 '0%': {
@@ -301,7 +302,7 @@ const ManageFiles = () => {
             src={cuttyLogo}
             alt="Angry Cutty"
             sx={{
-              width: { xs: '380px', sm: '450px', md: '500px', lg: '520px' },
+              width: { xs: '200px', sm: '300px', md: '500px', lg: '520px' },
               height: 'auto',
               flexShrink: 0,
               transform: 'scaleX(-1)',
@@ -372,8 +373,8 @@ const ManageFiles = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" component="h1" sx={{ mb: 4 }}>
+    <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
+      <Typography variant="h4" component="h1" sx={{ mb: { xs: 2, sm: 4 }, fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
         Manage Files
       </Typography>
       
@@ -444,8 +445,9 @@ const ManageFiles = () => {
           </Typography>
         </Paper>
       ) : (
+        <Box sx={{ overflowX: 'auto' }}>
         <TableContainer component={Paper}>
-          <Table>
+          <Table sx={{ minWidth: 650 }}>
             <TableHead>
               <TableRow>
                 <TableCell sx={{ fontSize: '0.75rem', fontWeight: 'bold' }}>File Name</TableCell>
@@ -518,6 +520,7 @@ const ManageFiles = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        </Box>
       )}
 
       {/* Delete Confirmation Dialog */}
