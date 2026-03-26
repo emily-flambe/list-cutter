@@ -58,7 +58,7 @@ const Home = () => {
   return (
     <Box sx={{ 
       bgcolor: 'var(--secondary-bg)',
-      padding: 4,
+      padding: { xs: 2, sm: 4 },
       borderRadius: 2,
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
       textAlign: 'left',
@@ -71,7 +71,7 @@ const Home = () => {
       <Typography 
         variant="body2" 
         sx={{ 
-          fontSize: '1.5em',
+          fontSize: { xs: '1rem', sm: '1.5em' },
           color: 'var(--primary-text)',
           opacity: 0.8,
           mb: 4,
@@ -99,8 +99,9 @@ const Home = () => {
             display: 'flex', 
             justifyContent: 'center', 
             alignItems: 'center', 
-            gap: 3,
-            height: '100%'
+            gap: { xs: 1, sm: 3 },
+            height: '100%',
+            flexWrap: 'wrap'
           }}>
             {logoConfigs.map((config, index) => (
               <Box

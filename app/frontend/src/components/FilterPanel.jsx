@@ -207,7 +207,7 @@ const FilterPanel = ({
             {/* Active Filters section */}
             <Accordion defaultExpanded>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
                   <Typography variant="subtitle1">
                     Active Filters ({filters.length})
                   </Typography>
@@ -236,8 +236,9 @@ const FilterPanel = ({
                       <Box key={filter.id} sx={{ 
                         display: 'flex', 
                         alignItems: 'center', 
-                        gap: 1.5, 
+                        gap: { xs: 1, sm: 1.5 },
                         mb: 2,
+                        width: { xs: '100%' },
                         flexWrap: 'wrap'
                       }}>
                         <Tooltip title="Remove filter">
@@ -251,7 +252,7 @@ const FilterPanel = ({
                           </IconButton>
                         </Tooltip>
                         
-                        <FormControl size="small" sx={{ minWidth: 180 }}>
+                        <FormControl size="small" sx={{ minWidth: { xs: 120, sm: 180 } }}>
                           <InputLabel>Select Column</InputLabel>
                           <Select
                             value={filter.selectedColumn}
@@ -266,7 +267,7 @@ const FilterPanel = ({
                           </Select>
                         </FormControl>
                         
-                        <FormControl size="small" sx={{ minWidth: 140 }}>
+                        <FormControl size="small" sx={{ minWidth: { xs: 100, sm: 140 } }}>
                           <InputLabel>Operator</InputLabel>
                           <Select
                             value={filter.operator}
@@ -290,7 +291,7 @@ const FilterPanel = ({
                             label="Value"
                             value={filter.value}
                             onChange={(e) => updateFilterValue(filter.id, e.target.value)}
-                            sx={{ minWidth: 180 }}
+                            sx={{ minWidth: { xs: 120, sm: 180 }, flex: { xs: 1 } }}
                           />
                         )}
                       </Box>
@@ -309,7 +310,8 @@ const FilterPanel = ({
                   placeholder="Search columns..."
                   value={columnSearch}
                   onChange={(e) => setColumnSearch(e.target.value)}
-                  sx={{ 
+                  fullWidth
+                  sx={{
                     mb: 2, 
                     '& input': { textAlign: 'left' },
                     '& .MuiInputBase-input::placeholder': { textAlign: 'left' }
@@ -374,7 +376,7 @@ const FilterPanel = ({
                           <Typography variant="caption" color="text.secondary" sx={{ 
                             flex: 1, 
                             fontWeight: 500,
-                            minWidth: '200px',
+                            minWidth: { xs: '100%', sm: '200px' },
                             textAlign: 'right'
                           }}>
                             Example Values: <Box component="span" sx={{ 

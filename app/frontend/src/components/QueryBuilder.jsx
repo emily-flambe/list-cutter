@@ -692,7 +692,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
             <Grid item xs={12}>
               <Card sx={{ backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                 <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between', gap: 2 }}>
                     {/* Left: File Name */}
                     <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>
                       <Typography 
@@ -710,7 +710,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                     </Box>
                     
                     {/* Center: Metrics as Chips */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, flexWrap: 'wrap' }}>
                       <Chip 
                         label={`${columns.length} cols`}
                         size="small"
@@ -732,7 +732,7 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                     </Box>
                     
                     {/* Right: Buttons */}
-                    <Box sx={{ flexShrink: 0, display: 'flex', gap: 1 }}>
+                    <Box sx={{ flexShrink: 0, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                       {/* Change File Button - only show for logged-in users */}
                       {!isAnonymous && (
                         <Button
@@ -832,14 +832,14 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
           <Grid item xs={12}>
             <Card>
               <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 2, gap: 2 }}>
                   <Typography variant="h6">
                     Data Preview
                   </Typography>
                   
                   {/* CUT it! Expandable Element */}
                   {filteredData && filteredData.filteredCount > 0 && (
-                    <Box sx={{ minWidth: 350 }}>
+                    <Box sx={{ minWidth: { xs: 'auto', sm: 350 }, width: { xs: '100%', sm: 'auto' } }}>
                       <Accordion>
                         <AccordionSummary
                           expandIcon={<ExpandMoreIcon />}
@@ -999,8 +999,8 @@ const QueryBuilder = ({ fileId: propFileId, onClose }) => {
                     {/* Results Table */}
                     {displayedRows.length > 0 ? (
                       <>
-                        <TableContainer component={Paper} sx={{ maxHeight: 700 }}>
-                          <Table stickyHeader size="small">
+                        <TableContainer component={Paper} sx={{ maxHeight: 700, overflowX: 'auto' }}>
+                          <Table stickyHeader size="small" sx={{ minWidth: 650 }}>
                             <TableHead>
                               <TableRow>
                                 {filteredData.headers.map((header, index) => {
